@@ -50,22 +50,42 @@ typedef struct USART_Settings
 
     /* Buffer management */
     char                        *buffer;
-    uint8_t                     index;
-
+    uint16_t                    index;
 } USART_Settings;
 
 /*
  * Initializes usarts.
  *
  * @param   serial_port: Which serial port to initialize
- *    @arg RFID1_SERIAL
- *    @arg RFID2_SERIAL
  *    @arg SYSTEM_SERIAL
  * @return: None
  */
 void Serial_Init(
       USART_Port serial_port
 );
+
+/*
+ * Sets up and initiates a DMA transfer over specified serial port.
+ *
+ * @param [in] serial_port: Which serial port to initialize
+ *    @arg SYSTEM_SERIAL
+ * @param [in] *pBuffer: pointer to the buffer with message to send
+ * @param [in] wBufferLen: length of the message to send
+ * @return: None
+ */
+void Serial_DMAConfig(
+      USART_Port serial_port,
+      char *pBuffer,
+      uint16_t wBufferLen
+);
+
+/*
+ * Sets up NVIC for Serial DMA
+ *
+ * @param   None
+ * @return: None
+ */
+void Serial_DMANVICConfig( void );
 
 /**
  * Sends a message out through the specified serial port after base64 encoding

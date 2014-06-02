@@ -19,6 +19,8 @@
 #include "CommStackMgr.h"
 #include "CBErrors.h"
 #include <assert.h>
+#include "stm32f2xx_dma.h"
+#include "misc.h"
 
 /**
  * @brief Definition for the debug, connected to UART4
@@ -73,7 +75,7 @@ static USART_Settings s_USART_Port[MAX_SERIAL] =
 
             /* Buffer management */
             &system_serial_buffer[0],   // *buffer;
-            0                           // index
+            0,                          // index
       }
 };
 
@@ -82,9 +84,14 @@ void Serial_Init( USART_Port serial_port )
 {
     assert(serial_port < MAX_SERIAL);
 
-    NVIC_InitTypeDef   NVIC_InitStructure;
+    /* Set up Interrupt controller to handle USART DMA */
+//    Serial_DMANVICConfig();
+
+    NVIC_Config( DMA1_Stream4_IRQn, DMA1_Stream4_PRIO );
+
     GPIO_InitTypeDef   GPIO_InitStructure;
     USART_InitTypeDef  USART_InitStructure;
+    NVIC_InitTypeDef   NVIC_InitStructure;
 
     /* Rest of USARTs use a different APBus1 */
     RCC_APB1PeriphClockCmd( s_USART_Port[serial_port].usart_clk, ENABLE );
@@ -106,12 +113,14 @@ void Serial_Init( USART_Port serial_port )
     USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
     USART_InitStructure.USART_Mode           = USART_Mode_Rx | USART_Mode_Tx;
 
-    /* Setting interrupt for USART */
-    NVIC_InitStructure.NVIC_IRQChannel       = s_USART_Port[serial_port].usart_irq_num;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority    = 0;
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority           = 0;
-    NVIC_InitStructure.NVIC_IRQChannelCmd    = ENABLE;
-    NVIC_Init(&NVIC_InitStructure);
+//    /* Setting interrupt for USART */
+//    NVIC_InitStructure.NVIC_IRQChannel       = s_USART_Port[serial_port].usart_irq_num;
+//    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority    = 0;
+//    NVIC_InitStructure.NVIC_IRQChannelSubPriority           = 0;
+//    NVIC_InitStructure.NVIC_IRQChannelCmd    = ENABLE;
+//    NVIC_Init(&NVIC_InitStructure);
+
+    NVIC_Config( s_USART_Port[serial_port].usart_irq_num, UART4_PRIO );
 
     /* Set up alt function */
     GPIO_PinAFConfig(
@@ -148,6 +157,66 @@ void Serial_Init( USART_Port serial_port )
 
     /* Enable USART interrupts */
     USART_ITConfig(s_USART_Port[serial_port].usart, USART_IT_RXNE, ENABLE);
+
+}
+
+/******************************************************************************/
+void Serial_DMAConfig(
+      USART_Port serial_port,
+      char *pBuffer,
+      uint16_t wBufferLen
+)
+{
+   assert(wBufferLen <= MAX_MSG_LEN);
+
+   s_USART_Port[serial_port].index = wBufferLen;
+   MEMCPY( s_USART_Port[serial_port].buffer, pBuffer, s_USART_Port[serial_port].index );
+
+   DMA_InitTypeDef  DMA_InitStructure;
+
+   DMA_DeInit(DMA1_Stream4);
+
+   DMA_InitStructure.DMA_Channel             = DMA_Channel_4;
+   DMA_InitStructure.DMA_DIR                 = DMA_DIR_MemoryToPeripheral; // Transmit
+   DMA_InitStructure.DMA_Memory0BaseAddr     = (uint32_t)s_USART_Port[serial_port].buffer;
+   DMA_InitStructure.DMA_BufferSize          = (uint16_t)s_USART_Port[serial_port].index;
+   DMA_InitStructure.DMA_PeripheralBaseAddr  = (uint32_t)&UART4->DR;
+   DMA_InitStructure.DMA_PeripheralInc       = DMA_PeripheralInc_Disable;
+   DMA_InitStructure.DMA_MemoryInc           = DMA_MemoryInc_Enable;
+   DMA_InitStructure.DMA_PeripheralDataSize  = DMA_PeripheralDataSize_Byte;
+   DMA_InitStructure.DMA_MemoryDataSize      = DMA_MemoryDataSize_Byte;
+   DMA_InitStructure.DMA_Mode                = DMA_Mode_Normal;
+   DMA_InitStructure.DMA_Priority            = DMA_Priority_High;
+   DMA_InitStructure.DMA_FIFOMode            = DMA_FIFOMode_Enable;
+   DMA_InitStructure.DMA_FIFOThreshold       = DMA_FIFOThreshold_Full;
+   DMA_InitStructure.DMA_MemoryBurst         = DMA_MemoryBurst_Single;
+   DMA_InitStructure.DMA_PeripheralBurst     = DMA_PeripheralBurst_Single;
+
+   DMA_Init(DMA1_Stream4, &DMA_InitStructure);
+
+   /* Enable the USART Tx DMA request */
+   USART_DMACmd(UART4, USART_DMAReq_Tx, ENABLE);
+
+   /* Enable DMA Stream Transfer Complete interrupt */
+   DMA_ITConfig(DMA1_Stream4, DMA_IT_TC, ENABLE);
+
+   /* Enable the DMA TX Stream */
+   DMA_Cmd(DMA1_Stream4, ENABLE);
+}
+
+/******************************************************************************/
+void Serial_DMANVICConfig( void ) {
+  NVIC_InitTypeDef NVIC_InitStructure;
+
+  /* Configure the Priority Group to 2 bits */
+  NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);
+
+  /* Enable the USART3 RX DMA Interrupt */
+  NVIC_InitStructure.NVIC_IRQChannel = DMA1_Stream4_IRQn;
+  NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
+  NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
+  NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+  NVIC_Init(&NVIC_InitStructure);
 }
 
 /******************************************************************************/
