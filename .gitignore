@@ -1,0 +1,26 @@
+# This file tells git what to ignore
+
+*.o
+*.d
+*.a
+*.bin
+*.hex
+*.exe
+*.LIB
+*.lib
+*.map
+*.elf
+*~
+*.lst
+*.swp
+dbg/
+rel/
+spy/
+Debug/
+.svn/
+*_gen.*
+ipAndMac.h
+cscope.out
+*.bak
+env.mk
+version.h

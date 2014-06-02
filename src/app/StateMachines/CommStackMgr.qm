@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<model version="2.2.03">
+ <framework name="qpc"/>
+ <package name="Events" stereotype="0x01">
+  <class name="MSG_RECEIVED" superclass="qpc::QEvt"/>
+  <class name="MSG_SEND_OUT" superclass="qpc::QEvt"/>
+  <class name="MSG_APP_TO_DIAG_MODE" superclass="qpc::QEvt"/>
+  <class name="MSG_DIAG_TO_APP_MODE" superclass="qpc::QEvt"/>
+ </package>
+ <package name="AOs" stereotype="0x02">
+  <class name="CommStackMgr" superclass="qpc::QActive">
+   <documentation>MtrDiag Active Object</documentation>
+   <attribute name="BtldrTimerEvt" type="QTimeEvt" visibility="0x01" properties="0x00">
+    <documentation>Used for timing how long before the application boots.</documentation>
+   </attribute>
+   <statechart>
+    <initial target="../1">
+     <action>(void)e;        /* suppress the compiler warning about unused parameter */
+
+QS_OBJ_DICTIONARY(&amp;l_CommStackMgr);
+QS_FUN_DICTIONARY(&amp;QHsm_top);
+QS_FUN_DICTIONARY(&amp;CommStackMgr_initial);
+QS_FUN_DICTIONARY(&amp;CommStackMgr_Running);
+
+QActive_subscribe((QActive *)me, MSG_SEND_OUT_SIG);
+QActive_subscribe((QActive *)me, MSG_RECEIVED_SIG);
+QActive_subscribe((QActive *)me, BTLDR_BOOT_APP_TIMEOUT_SIG);
+QActive_subscribe((QActive *)me, BTLDR_BOOT_APP_SIG);
+QActive_subscribe((QActive *)me, MSG_TO_RFID_SEND_OUT_SIG);
+QActive_subscribe((QActive *)me, MSG_FROM_RFID_RECEIVED_SIG);</action>
+     <initial_glyph conn="1,2,4,3,4,2">
+      <action box="0,-2,6,2"/>
+     </initial_glyph>
+    </initial>
+    <state name="Active">
+     <documentation>This state is a catch-all Active state.  If any signals need
+to be handled that do not cause state transitions and are 
+common to the entire AO, they should be handled here.
+ 
+@param  me: Pointer to the Interstage state machine
+@param  e:  Pointer to the event being processed.
+@retval status: QState type that specifies where the state
+machine is going next.
+</documentation>
+     <entry>/* Arm the boot to app timeout.  */
+QTimeEvt_postIn(&amp;me-&gt;BtldrTimerEvt, (QActive *)me, BOOT_APP_TIMEOUT);</entry>
+     <tran trig="MSG_SEND_OUT">
+      <tran_glyph conn="3,9,3,-1,21">
+       <action box="0,-2,16,2"/>
+      </tran_glyph>
+     </tran>
+     <tran trig="BTLDR_BOOT_APP_TIMEOUT">
+      <tran_glyph conn="3,17,3,-1,21">
+       <action box="0,-2,20,2"/>
+      </tran_glyph>
+     </tran>
+     <tran trig="BTLDR_BOOT_APP">
+      <action>log_printf(&quot;Attempting to boot Application\n&quot;);
+/* If we made it here, no errors have been encountered and we
+ * can safely proceed to boot the Application FW image */
+
+/* Disable the Systick ISR */
+SysTick-&gt;CTRL &amp;= ~(SysTick_CTRL_TICKINT_Msk   | SysTick_CTRL_ENABLE_Msk);
+
+/* Jump to user application */
+JumpAddress = *(__IO uint32_t*) (USER_FLASH_FIRST_PAGE_ADDRESS + 4);
+Jump_To_Application = (pFunction) JumpAddress;
+
+/* Initialize user application's Stack Pointer */
+__set_MSP(*(__IO uint32_t*) USER_FLASH_FIRST_PAGE_ADDRESS);
+log_printf(&quot;Starting Application\n&quot;);
+
+/* After this call, we are running the Application FW image */
+Jump_To_Application();</action>
+      <tran_glyph conn="3,20,3,-1,21">
+       <action box="0,-2,18,2"/>
+      </tran_glyph>
+     </tran>
+     <tran trig="MSG_RECEIVED">
+      <tran_glyph conn="3,14,3,-1,21">
+       <action box="0,-2,17,2"/>
+      </tran_glyph>
+     </tran>
+     <state_glyph node="3,3,94,82">
+      <entry box="1,2,5,2"/>
+     </state_glyph>
+    </state>
+    <state_diagram size="108,90"/>
+   </statechart>
+  </class>
+  <attribute name="AO_CommStackMgr" type="QActive * const" visibility="0x00" properties="0x00"/>
+  <operation name="CommStackMgr_ctor" type="void" visibility="0x00" properties="0x00">
+   <documentation>This function is a C &quot;constructor&quot; for this active object.</documentation>
+   <code>CommStackMgr *me = &amp;l_CommStackMgr;
+QActive_ctor(&amp;me-&gt;super, (QStateHandler)&amp;CommStackMgr_initial);
+QTimeEvt_ctor(&amp;me-&gt;BtldrTimerEvt, BTLDR_BOOT_APP_TIMEOUT_SIG);</code>
+  </operation>
+ </package>
+ <directory name=".">
+  <file name="CommStackMgr_gen.c">
+   <text>// $Id$
+/**
+ * @file    CommStackMgr.c
+ * Declarations for functions for the CommStackMgr AO.  This state
+ * machine handles all incoming messages and their distribution for the
+ * bootloader.
+ *
+ * Note: If editing this file, please make sure to update the CommStackMgr.qm
+ * model.  The generated code from that model should be very similar to the
+ * code in this file.
+ *
+ * @date    05/27/2014
+ * @author  Harry Rostovtsev
+ * @email   harry_rostovtsev@datacard.com
+ * Copyright (C) 2014 Datacard. All rights reserved.
+ */
+// $Log$
+#include &lt;stdio.h&gt;
+#include &lt;string.h&gt;
+#include &quot;CommStackMgr.h&quot;
+#include &quot;Shared.h&quot;  /* Declarations used by both shared and standalone AOs */
+#include &quot;project_includes.h&quot;  /* Project specific includes and declarations*/
+#include &quot;crc32compat.h&quot;
+#include &quot;flash_if.h&quot;
+#include &quot;base64_wrapper.h&quot;
+
+Q_DEFINE_THIS_FILE;
+
+/* application signals cannot overlap the device-driver signals */
+Q_ASSERT_COMPILE(MAX_SHARED_SIG &lt; DEV_DRIVER_SIG);
+
+#define LWIP_ALLOWED
+#define USER_FLASH_FIRST_PAGE_ADDRESS                              0x08020000
+#define BOOT_APP_TIMEOUT                                           30000
+
+typedef void (*pFunction)(void);
+pFunction Jump_To_Application;
+uint32_t JumpAddress;
+
+/* Active object class -----------------------------------------------------*/
+$declare(AOs::CommStackMgr)
+
+/* Local objects -----------------------------------------------------------*/
+static CommStackMgr l_CommStackMgr; /* the single instance of the Interstage active object */
+
+/* Global-scope objects ----------------------------------------------------*/
+QActive * const AO_CommStackMgr = (QActive *)&amp;l_CommStackMgr;  /* &quot;opaque&quot; AO pointer */
+
+$define(AOs::CommStackMgr_ctor)
+$define(AOs::CommStackMgr)
+
+/******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/</text>
+  </file>
+  <file name="CommStackMgr_gen.h">
+   <text>// $Id$
+/**
+ * @file    CommStackMgr.h
+ * Declarations for functions for the CommStackMgr AO.  This state
+ * machine handles all incoming messages and their distribution for the
+ * bootloader.
+ *
+ * Note: If editing this file, please make sure to update the CommStackMgr.qm
+ * model.  The generated code from that model should be very similar to the
+ * code in this file.
+ *
+ * @date    05/27/2014
+ * @author  Harry Rostovtsev
+ * @email   harry_rostovtsev@datacard.com
+ * Copyright (C) 2014 Datacard. All rights reserved.
+ */
+// $Log$
+#ifndef COMM_STACK_MGR_H
+#define COMM_STACK_MGR_H
+#include &quot;qp_port.h&quot;
+
+$declare(AOs::CommStackMgr_ctor)
+$declare(AOs::AO_CommStackMgr)
+#endif                                                    /* COMM_STACK_MGR_H */
+/******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/</text>
+  </file>
+ </directory>
+</model>
