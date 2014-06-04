@@ -178,6 +178,7 @@ ASM_SRCS 				:= \
 C_SRCS 					:= \
 			      		main.c \
 			      		CommStackMgr.c \
+			      		SerialMgr.c \
 			      		stm32f2xx_it.c \
 			      		system_stm32f2xx.c \
 			      		no_heap.c \

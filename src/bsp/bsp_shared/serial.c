@@ -15,10 +15,11 @@
 #include "project_includes.h"
 #include "base64_wrapper.h"
 #include <stdio.h>
-#include "qp_port.h"                                               /* QP-port */
-#include "CommStackMgr.h"
+#include "qp_port.h"                                        /* for QP support */
+#include "CBSignals.h"
 #include "CBErrors.h"
 #include <assert.h>
+#include <string.h>
 #include "stm32f2xx_dma.h"
 #include "misc.h"
 
@@ -91,7 +92,7 @@ void Serial_Init( USART_Port serial_port )
 
     GPIO_InitTypeDef   GPIO_InitStructure;
     USART_InitTypeDef  USART_InitStructure;
-    NVIC_InitTypeDef   NVIC_InitStructure;
+//    NVIC_InitTypeDef   NVIC_InitStructure;
 
     /* Rest of USARTs use a different APBus1 */
     RCC_APB1PeriphClockCmd( s_USART_Port[serial_port].usart_clk, ENABLE );

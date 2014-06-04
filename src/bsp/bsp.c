@@ -1,26 +1,24 @@
-// $Id$
 /**
  * @file bsp.c
- * @brief  This file contains the Board Support Package functions for Redwood_H1 Board
+ * @brief  This file contains the Board Support Package functions for board
  *
- * @date   09/27/2012
+ * @date   06/03/2014
  * @author Harry Rostovtsev
  * @email  harry_rostovtsev@datacard.com
- * Copyright (C) 2012 Datacard. All rights reserved.
+ * Copyright (C) 2014 Datacard. All rights reserved.
  */
-// $Log$
+
+#include "bsp.h"
+#include <stdio.h>
+#include <string.h>
 
 #include "stm32f2xx.h"
 #include "stm32f2xx_rcc.h"
 #include "stm32f2xx_gpio.h"
-#include "bsp.h"
-#include <stdio.h>
-
-#ifndef NOT_NEEDED_IN_TEST_PROJ
-
-#include "qp_port.h"
-#include "project_includes.h"
 #include "stm32f2x7_eth_bsp.h"
+
+#include "qp_port.h"                                        /* for QP support */
+#include "project_includes.h"
 
 Q_DEFINE_THIS_FILE;
 
@@ -38,14 +36,14 @@ QSTimeCtr QS_tickPeriod_;
 
 #endif
 
-#endif
 /**
-  * @brief  Initializes the BSP for the Redwood_H1 board. Should be called only
-  * once and only in the beginning.
+  * Initializes the BSP for the board. Should be called only once and only in
+  * the beginning.  Most clocks (not all), and any device hardware bringup is
+  * done here.
   * @param  None
   * @retval None
   */
-void BSP_init(void) {
+void BSP_init( void ) {
 
 	SystemInit();         /* initialize STM32 system (clock, PLL and Flash) */
 
@@ -332,4 +330,4 @@ void SysTick_Handler(void) {
 
 #endif
 
-/******** Copyright (C) 2012 Datacard. All rights reserved *****END OF FILE****/
+/******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/

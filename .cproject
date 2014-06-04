@@ -40,20 +40,29 @@
 							</tool>
 						</toolChain>
 					</folderInfo>
+					<fileInfo id="org.eclipse.cdt.cross.arm.gnu.sourcery.windows.toolchain.base.272356297.900958739" name="CommStackMgr_gen.h" rcbsApplicability="disable" resourcePath="src/app/StateMachines/CommStackMgr_gen.h" toolsToInvoke=""/>
+					<fileInfo id="org.eclipse.cdt.cross.arm.gnu.sourcery.windows.toolchain.base.272356297.1465052980" name="SerialMgr_gen.h" rcbsApplicability="disable" resourcePath="src/app/StateMachines/SerialMgr_gen.h" toolsToInvoke=""/>
 					<folderInfo id="org.eclipse.cdt.cross.arm.gnu.sourcery.windows.toolchain.base.272356297.1155221945" name="/" resourcePath="src/bsp/bsp_shared/CMSIS_shared/Device/ST/STM32F10x">
 						<toolChain id="cdt.managedbuild.toolchain.gnu.cross.base.269393992" name="Cross GCC" superClass="cdt.managedbuild.toolchain.gnu.cross.base" unusedChildren="">
 							<option id="cdt.managedbuild.option.gnu.cross.prefix.1786689064.1123913625" name="Prefix" superClass="cdt.managedbuild.option.gnu.cross.prefix.1786689064"/>
 							<option id="cdt.managedbuild.option.gnu.cross.path.1868608359.144879699" name="Path" superClass="cdt.managedbuild.option.gnu.cross.path.1868608359"/>
-							<tool id="cdt.managedbuild.tool.gnu.cross.c.compiler.462039212" name="Cross GCC Compiler" superClass="cdt.managedbuild.tool.gnu.cross.c.compiler.8393009"/>
-							<tool id="cdt.managedbuild.tool.gnu.cross.cpp.compiler.1203199408" name="Cross G++ Compiler" superClass="cdt.managedbuild.tool.gnu.cross.cpp.compiler.1015938519"/>
+							<targetPlatform archList="all" binaryParser="org.eclipse.cdt.core.ELF" id="cdt.managedbuild.targetPlatform.gnu.cross" isAbstract="false" osList="all" superClass="cdt.managedbuild.targetPlatform.gnu.cross"/>
+							<tool id="cdt.managedbuild.tool.gnu.cross.c.compiler.462039212" name="Cross GCC Compiler" superClass="cdt.managedbuild.tool.gnu.cross.c.compiler.8393009">
+								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.1111930992" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
+							</tool>
+							<tool id="cdt.managedbuild.tool.gnu.cross.cpp.compiler.1203199408" name="Cross G++ Compiler" superClass="cdt.managedbuild.tool.gnu.cross.cpp.compiler.1015938519">
+								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.92737014" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
+							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.cross.c.linker.642000603" name="Cross GCC Linker" superClass="cdt.managedbuild.tool.gnu.cross.c.linker.1358432524"/>
 							<tool id="cdt.managedbuild.tool.gnu.cross.cpp.linker.367043954" name="Cross G++ Linker" superClass="cdt.managedbuild.tool.gnu.cross.cpp.linker.1803912948"/>
 							<tool id="cdt.managedbuild.tool.gnu.cross.archiver.1328443638" name="Cross GCC Archiver" superClass="cdt.managedbuild.tool.gnu.cross.archiver.1882857018"/>
-							<tool id="cdt.managedbuild.tool.gnu.cross.assembler.1152581713" name="Cross GCC Assembler" superClass="cdt.managedbuild.tool.gnu.cross.assembler.1347079118"/>
+							<tool id="cdt.managedbuild.tool.gnu.cross.assembler.1152581713" name="Cross GCC Assembler" superClass="cdt.managedbuild.tool.gnu.cross.assembler.1347079118">
+								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.845578095" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
+							</tool>
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
-						<entry excluding="src/bsp/bsp_shared/CMSIS_shared/Device/ST/STM32F10x" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+						<entry excluding="src/app/StateMachines/SerialMgr_gen.h|src/app/StateMachines/SerialMgr_gen.c|src/app/StateMachines/CommStackMgr_gen.h|src/app/StateMachines/CommStackMgr_gen.c|src/bsp/bsp_shared/CMSIS_shared/Device/ST/STM32F10x" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>

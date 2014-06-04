@@ -25,7 +25,7 @@
 
 #include "mem_datacopy.h"
 #include "Shared.h"
-#include "LWIPMgr.h"
+#include "CommStackMgr.h"
 
 /* These are TCP defines to allow us to turn off TCP/IP but still allow compilation */
 #define LWIP_TCP           1

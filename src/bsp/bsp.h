@@ -16,6 +16,15 @@
 #include "Shared.h"
 
 #define BSP_TICKS_PER_SEC 10000 // Tells QPC how often to run with respect to system clock
+#define BSP_TICKS_PER_MS  (BSP_TICKS_PER_SEC / 1000)
+
+/**
+ * Convert seconds to BSP ticks used by timers in QP.
+ *
+ * @param  seconds: number of seconds that is desired
+ * @retval ticks: number of ticks to actually arm the QP timer on the laminator.
+ */
+#define SEC_TO_TICKS( seconds )   (uint32_t)( (1.0 * seconds) * BSP_TICKS_PER_SEC )
 
 typedef enum ISR_Priorities {   /* ISR priorities starting from the highest urgency */
 	EXTI0_PRIO,                                         /* highest priority */
@@ -49,11 +58,8 @@ typedef enum ISR_Priorities {   /* ISR priorities starting from the highest urge
 
 void BSP_init(void);
 void NVIC_Config(uint8_t irq, uint8_t priority);
-
-#ifndef NOT_NEEDED_IN_TEST_PROJ
 void BSP_busyDelay(void);               // to artificially extend RTC processing
 void BSP_Delay(uint32_t nCount);	          // Delay used for init of hardware
-#endif
 
 #endif                                                                // bsp_h
 /******** Copyright (C) 2012 Datacard. All rights reserved *****END OF FILE****/

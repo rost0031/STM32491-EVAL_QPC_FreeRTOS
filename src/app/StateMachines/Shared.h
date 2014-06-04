@@ -16,7 +16,7 @@
 #ifndef SHARED_H_
 #define SHARED_H_
 
-#include "qp_port.h"
+#include "qp_port.h"                                        /* for QP support */
 
 #define MAX_MSG_LEN                    512
 
@@ -85,67 +85,42 @@
 /* These are the priorities of all the Shared Active Objects.  The priorities are lowest at zero. */
 enum AO_Priorities {
    NEVER_USE_ZERO_PRIORITY	= 0,  // Never use this.  It breaks everything
-   FWFLASHMGR_PRIORITY,
+   SERIAL_MGR_PRIORITY,
    COMM_STACK_PRIORITY,
    ETH_PRIORITY,        // Ethernet should always be almost the lowest priority
    MAX_SHARED_PRIORITY  // This should always be at the end of this enum list since other modules will reference it
 };
 
+/* These need to be visible to LWIPMgr AO, which is part of a shared port. Most
+ * event types should be defined within their respective AOs. */
+
+/* A type to define the source of the message */
 typedef enum MsgSrcTag {
    SERIAL = 0,
 } MsgSrc;
 
-/* MsgEvt types will use CommStackSignals for signal names.  These events are
- * responsible for getting data from Eth/serial to CommStackMgr */
+/**
+* MsgEvt types will use CommStackSignals for
+* signal names.  These events are responsible
+* for getting data from Eth/Serial to CommStackMgr
+*/
 typedef struct MsgEvtTag {
-   QEvent      super;
-   MsgSrc      msg_src;
-   uint16_t    msg_len;
-   char        msg[MAX_MSG_LEN];
-} MsgEvt;
-
-enum CommStackSignals {
-   /* Q_USER_SIG is the first signal that user applications are allowed to use.
-    * Should always be at the very top of the very first enum list
+/* protected: */
+    QEvt super;
+    /**
+    * Where the msg came from so it can be routed
+    * back to the sender.
     */
-   MSG_SEND_OUT_SIG = Q_USER_SIG,
-   MSG_RECEIVED_SIG,
-   MSG_FROM_RFID_RECEIVED_SIG,
-   MSG_TO_RFID_SEND_OUT_SIG,
-   MSG_FROM_RFID1_REC_SIG,
-   MSG_FROM_RFID2_REC_SIG,
-   MSG_MAX_SIG,
-};
-
-enum FWDataSignals {
-   FWDATA_INIT_FW_UPGRADE_SIG = MSG_MAX_SIG,
-   FWDATA_PACKET_REC_SIG,
-   FWDATA_FINISH_FW_UPGRADE_SIG,
-   FWDATA_MAX_SIG,
-};
-
-/* BtldrEvt types will use BootloaderSignals for signal names.  These events are
- * general bootloader events that don't carry any data and are for general use*/
-typedef struct BtldrEvtTag {
-   QEvent		super;
-} BtldrEvt;
-
-enum BootloaderSignals {
-   BTLDR_FLASH_READY_SIG = FWDATA_MAX_SIG,
-   BTLDR_FLASH_WRITE_PASS_SIG,
-   BTLDR_FLASH_WRITE_FAIL_SIG,
-   BTLDR_FLASH_ERROR_SIG,
-   BTLDR_TIMEOUT_SIG,
-   BTLDR_BOOT_APP_TIMEOUT_SIG,
-   BTLDR_BOOT_APP_SIG,
-   BTLDR_MAX_SIG,
-
-};
-
-/* INSERT NEW SIGNAL CATEGORIES BEFORE HERE...POINT MAX_SHARED_SIG TO YOUR LAST SIGNAL */
-enum FinalSignal {
-   MAX_SHARED_SIG = BTLDR_MAX_SIG,  /*Last published shared signal - should always be at the bottom of this list */
-};
+    MsgSrc msg_src;
+    /**
+    * Length of the msg buffer
+    */
+    uint16_t msg_len;
+    /**
+    * Buffer that holds the data of the msg.
+    */
+    char msg[MAX_MSG_LEN];
+} MsgEvt;
 
 #endif                                                           /* SHARED_H_ */
 /******** Copyright (C) 2012 Datacard. All rights reserved *****END OF FILE****/

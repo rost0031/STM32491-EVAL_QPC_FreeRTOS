@@ -7,7 +7,6 @@
 *
 * Please visit www.state-machine.com/qm for more information.
 *****************************************************************************/
-// $Id$
 /**
  * @file    CommStackMgr.c
  * Declarations for functions for the CommStackMgr AO.  This state
@@ -23,14 +22,8 @@
  * @email   harry_rostovtsev@datacard.com
  * Copyright (C) 2014 Datacard. All rights reserved.
  */
-// $Log$
-#include <stdio.h>
-#include <string.h>
 #include "CommStackMgr.h"
-#include "Shared.h"  /* Declarations used by both shared and standalone AOs */
-#include "project_includes.h"  /* Project specific includes and declarations*/
-#include "crc32compat.h"
-#include "base64_wrapper.h"
+#include "CBSignals.h"                              /* Signal declarations. */
 
 Q_DEFINE_THIS_FILE;
 
@@ -53,10 +46,6 @@ uint32_t JumpAddress;
 typedef struct CommStackMgrTag {
 /* protected: */
     QActive super;
-    /** 
-    * Used for timing how long before the application boots.
-    */
-    QTimeEvt BtldrTimerEvt;
 } CommStackMgr;
 
 /* protected: */
@@ -86,11 +75,10 @@ QActive * const AO_CommStackMgr = (QActive *)&l_CommStackMgr;  /* "opaque" AO po
 void CommStackMgr_ctor(void) {
     CommStackMgr *me = &l_CommStackMgr;
     QActive_ctor(&me->super, (QStateHandler)&CommStackMgr_initial);
-    QTimeEvt_ctor(&me->BtldrTimerEvt, BTLDR_BOOT_APP_TIMEOUT_SIG);
 }
 /* @(/2/0) .................................................................*/
-/* @(/2/0/1) ...............................................................*/
-/* @(/2/0/1/0) */
+/* @(/2/0/0) ...............................................................*/
+/* @(/2/0/0/0) */
 static QState CommStackMgr_initial(CommStackMgr * const me, QEvt const * const e) {
     (void)e;        /* suppress the compiler warning about unused parameter */
 
@@ -101,56 +89,18 @@ static QState CommStackMgr_initial(CommStackMgr * const me, QEvt const * const e
 
     QActive_subscribe((QActive *)me, MSG_SEND_OUT_SIG);
     QActive_subscribe((QActive *)me, MSG_RECEIVED_SIG);
-    QActive_subscribe((QActive *)me, BTLDR_BOOT_APP_TIMEOUT_SIG);
-    QActive_subscribe((QActive *)me, BTLDR_BOOT_APP_SIG);
-    QActive_subscribe((QActive *)me, MSG_TO_RFID_SEND_OUT_SIG);
-    QActive_subscribe((QActive *)me, MSG_FROM_RFID_RECEIVED_SIG);
     return Q_TRAN(&CommStackMgr_Active);
 }
-/* @(/2/0/1/1) .............................................................*/
+/* @(/2/0/0/1) .............................................................*/
 static QState CommStackMgr_Active(CommStackMgr * const me, QEvt const * const e) {
     QState status;
     switch (e->sig) {
-        /* @(/2/0/1/1) */
-        case Q_ENTRY_SIG: {
-            /* Arm the boot to app timeout.  */
-            QTimeEvt_postIn(&me->BtldrTimerEvt, (QActive *)me, BOOT_APP_TIMEOUT);
-            status = Q_HANDLED();
-            break;
-        }
-        /* @(/2/0/1/1/0) */
+        /* @(/2/0/0/1/0) */
         case MSG_SEND_OUT_SIG: {
             status = Q_HANDLED();
             break;
         }
-        /* @(/2/0/1/1/1) */
-        case BTLDR_BOOT_APP_TIMEOUT_SIG: {
-            status = Q_HANDLED();
-            break;
-        }
-        /* @(/2/0/1/1/2) */
-        case BTLDR_BOOT_APP_SIG: {
-            log_printf("Attempting to boot Application\n");
-            /* If we made it here, no errors have been encountered and we
-             * can safely proceed to boot the Application FW image */
-
-            /* Disable the Systick ISR */
-            SysTick->CTRL &= ~(SysTick_CTRL_TICKINT_Msk   | SysTick_CTRL_ENABLE_Msk);
-
-            /* Jump to user application */
-            JumpAddress = *(__IO uint32_t*) (USER_FLASH_FIRST_PAGE_ADDRESS + 4);
-            Jump_To_Application = (pFunction) JumpAddress;
-
-            /* Initialize user application's Stack Pointer */
-            __set_MSP(*(__IO uint32_t*) USER_FLASH_FIRST_PAGE_ADDRESS);
-            log_printf("Starting Application\n");
-
-            /* After this call, we are running the Application FW image */
-            Jump_To_Application();
-            status = Q_HANDLED();
-            break;
-        }
-        /* @(/2/0/1/1/3) */
+        /* @(/2/0/0/1/1) */
         case MSG_RECEIVED_SIG: {
             status = Q_HANDLED();
             break;

@@ -14,8 +14,9 @@
 #ifndef LWIPMGR_H_
 #define LWIPMGR_H_
 
-#include "qf.h"                                             /* for QF support */
+#include "qp_port.h"                                        /* for QP support */
 #include "Shared.h"
+#include "CBSignals.h"
 #include "project_includes.h"                       /* for motor enums support*/
 
 enum LWIPMgrSignals {
