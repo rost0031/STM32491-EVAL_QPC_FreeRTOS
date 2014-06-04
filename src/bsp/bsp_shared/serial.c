@@ -23,22 +23,6 @@
 #include "stm32f2xx_dma.h"
 #include "misc.h"
 
-/**
- * @brief Definition for the debug, connected to UART4
- */
-#define DEBUG_USART                    UART4
-#define DEBUG_CLK                      RCC_APB1Periph_UART4
-#define DEBUG_TX_PIN                   GPIO_Pin_10
-#define DEBUG_TX_GPIO_PORT             GPIOC
-#define DEBUG_TX_SOURCE                GPIO_PinSource10
-#define DEBUG_TX_AF                    GPIO_AF_UART4
-#define DEBUG_RX_PIN                   GPIO_Pin_11
-#define DEBUG_RX_GPIO_PORT             GPIOC
-#define DEBUG_RX_SOURCE                GPIO_PinSource11
-#define DEBUG_RX_AF                    GPIO_AF_UART4
-#define DEBUG_IRQn                     UART4_IRQn
-#define DEBUG_BAUD                     115200
-
 /* Maximum Timeout values for flags and events waiting loops. These timeouts are
    not based on accurate values, they just guarantee that the application will
    not remain stuck if the serial communication is corrupted.
@@ -53,30 +37,31 @@ static char          system_serial_buffer[MAX_MSG_LEN];
 /**
  * An internal structure that holds almost all the settings for the USART ports
  */
-static USART_Settings s_USART_Port[MAX_SERIAL] =
+static USART_Settings_t s_USART_Port[MAX_SERIAL] =
 {
       {
-            SYSTEM_SERIAL,              // port
+            SYSTEM_SERIAL,             // port
 
             /* USART settings */
-            DEBUG_USART,                // usart;
-            DEBUG_BAUD,                 // usart_baud;
-            DEBUG_CLK,                  // usart_clk;
-            DEBUG_IRQn,                 // usart_irq_num;
+            UART4,                     // usart;
+            115200,                    // usart_baud;
+            RCC_APB1Periph_UART4,      // usart_clk;
+            UART4_IRQn,                // usart_irq_num;
+            UART4_PRIO,                // usart_irq_prio;
 
-            DEBUG_TX_GPIO_PORT,         // tx_port;
-            DEBUG_TX_PIN,               // tx_pin;
-            DEBUG_TX_SOURCE,            // tx_af_pin_source;
-            DEBUG_TX_AF,                // tx_af;
+            GPIOC,                     // tx_port;
+            GPIO_Pin_10,               // tx_pin;
+            GPIO_PinSource10,          // tx_af_pin_source;
+            GPIO_AF_UART4,             // tx_af;
 
-            DEBUG_RX_GPIO_PORT,         // rx_port;
-            DEBUG_RX_PIN,               // rx_pin;
-            DEBUG_RX_SOURCE,            // rx_af_pin_source;
-            DEBUG_RX_AF,                // rx_af;
+            GPIOC,                     // rx_port;
+            GPIO_Pin_11,               // rx_pin;
+            GPIO_PinSource11,          // rx_af_pin_source;
+            GPIO_AF_UART4,             // rx_af;
 
             /* Buffer management */
-            &system_serial_buffer[0],   // *buffer;
-            0,                          // index
+            &system_serial_buffer[0],  // *buffer;
+            0,                         // index
       }
 };
 
@@ -86,13 +71,7 @@ void Serial_Init( USART_Port serial_port )
     assert(serial_port < MAX_SERIAL);
 
     /* Set up Interrupt controller to handle USART DMA */
-//    Serial_DMANVICConfig();
-
     NVIC_Config( DMA1_Stream4_IRQn, DMA1_Stream4_PRIO );
-
-    GPIO_InitTypeDef   GPIO_InitStructure;
-    USART_InitTypeDef  USART_InitStructure;
-//    NVIC_InitTypeDef   NVIC_InitStructure;
 
     /* Rest of USARTs use a different APBus1 */
     RCC_APB1PeriphClockCmd( s_USART_Port[serial_port].usart_clk, ENABLE );
@@ -105,7 +84,7 @@ void Serial_Init( USART_Port serial_port )
        - Hardware flow control disabled (RTS and CTS signals)
        - Receive and transmit enabled
      */
-
+    USART_InitTypeDef  USART_InitStructure;
     USART_InitStructure.USART_Parity         = USART_Parity_No;
 
     USART_InitStructure.USART_BaudRate       = s_USART_Port[serial_port].usart_baud;
@@ -114,14 +93,10 @@ void Serial_Init( USART_Port serial_port )
     USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
     USART_InitStructure.USART_Mode           = USART_Mode_Rx | USART_Mode_Tx;
 
-//    /* Setting interrupt for USART */
-//    NVIC_InitStructure.NVIC_IRQChannel       = s_USART_Port[serial_port].usart_irq_num;
-//    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority    = 0;
-//    NVIC_InitStructure.NVIC_IRQChannelSubPriority           = 0;
-//    NVIC_InitStructure.NVIC_IRQChannelCmd    = ENABLE;
-//    NVIC_Init(&NVIC_InitStructure);
-
-    NVIC_Config( s_USART_Port[serial_port].usart_irq_num, UART4_PRIO );
+    NVIC_Config(
+          s_USART_Port[serial_port].usart_irq_num,
+          s_USART_Port[serial_port].usart_irq_prio
+    );
 
     /* Set up alt function */
     GPIO_PinAFConfig(
@@ -137,6 +112,7 @@ void Serial_Init( USART_Port serial_port )
     );
 
     /* Configure basic alt function structure*/
+    GPIO_InitTypeDef   GPIO_InitStructure;
     GPIO_InitStructure.GPIO_Mode             = GPIO_Mode_AF;
     GPIO_InitStructure.GPIO_OType            = GPIO_OType_PP;
     GPIO_InitStructure.GPIO_PuPd             = GPIO_PuPd_UP;
@@ -158,7 +134,6 @@ void Serial_Init( USART_Port serial_port )
 
     /* Enable USART interrupts */
     USART_ITConfig(s_USART_Port[serial_port].usart, USART_IT_RXNE, ENABLE);
-
 }
 
 /******************************************************************************/
@@ -181,7 +156,8 @@ void Serial_DMAConfig(
    DMA_InitStructure.DMA_DIR                 = DMA_DIR_MemoryToPeripheral; // Transmit
    DMA_InitStructure.DMA_Memory0BaseAddr     = (uint32_t)s_USART_Port[serial_port].buffer;
    DMA_InitStructure.DMA_BufferSize          = (uint16_t)s_USART_Port[serial_port].index;
-   DMA_InitStructure.DMA_PeripheralBaseAddr  = (uint32_t)&UART4->DR;
+//   DMA_InitStructure.DMA_PeripheralBaseAddr  = (uint32_t)&UART4->DR;
+   DMA_InitStructure.DMA_PeripheralBaseAddr  = (uint32_t)&(s_USART_Port[serial_port].usart)->DR;
    DMA_InitStructure.DMA_PeripheralInc       = DMA_PeripheralInc_Disable;
    DMA_InitStructure.DMA_MemoryInc           = DMA_MemoryInc_Enable;
    DMA_InitStructure.DMA_PeripheralDataSize  = DMA_PeripheralDataSize_Byte;
@@ -201,23 +177,16 @@ void Serial_DMAConfig(
    /* Enable DMA Stream Transfer Complete interrupt */
    DMA_ITConfig(DMA1_Stream4, DMA_IT_TC, ENABLE);
 
-   /* Enable the DMA TX Stream */
-   DMA_Cmd(DMA1_Stream4, ENABLE);
+
 }
 
 /******************************************************************************/
-void Serial_DMANVICConfig( void ) {
-  NVIC_InitTypeDef NVIC_InitStructure;
-
-  /* Configure the Priority Group to 2 bits */
-  NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);
-
-  /* Enable the USART3 RX DMA Interrupt */
-  NVIC_InitStructure.NVIC_IRQChannel = DMA1_Stream4_IRQn;
-  NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
-  NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
-  NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-  NVIC_Init(&NVIC_InitStructure);
+void Serial_DMAStartXfer(
+      USART_Port serial_port
+)
+{
+   /* Enable the DMA TX Stream */
+   DMA_Cmd(DMA1_Stream4, ENABLE);
 }
 
 /******************************************************************************/

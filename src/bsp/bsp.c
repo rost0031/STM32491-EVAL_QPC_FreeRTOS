@@ -92,8 +92,10 @@ void BSP_init( void ) {
 	BSP_Delay(64);
 	char *tmp = "TESTING DMA USART!\n";
 	Serial_DMAConfig( SYSTEM_SERIAL, tmp, strlen(tmp) );
+	Serial_DMAStartXfer( SYSTEM_SERIAL );
 	BSP_Delay(51200);
 	Serial_DMAConfig( SYSTEM_SERIAL, tmp, strlen(tmp) );
+	Serial_DMAStartXfer( SYSTEM_SERIAL );
 	BSP_Delay(64);
 	printf("FINISH: Testing DMA serial output\n");
 

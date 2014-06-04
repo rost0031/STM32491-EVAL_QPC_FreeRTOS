@@ -87,9 +87,9 @@ static QState SerialMgr_Active(SerialMgr * const me, QEvt const * const e);
 static QState SerialMgr_Idle(SerialMgr * const me, QEvt const * const e);
 
 /** 
-* This state indicates that the DMA is currently busy outputting to the serial port
-* and cannot process incoming data.  Instead, incoming events will be deferred in 
-* this state and handled once the AO goes back to Idle state.
+* This state indicates that the DMA is currently busy outputting to the serial 
+* port and cannot process incoming data.  Instead, incoming events will be 
+* deferred in this state and handled once the AO goes back to Idle state.
 *  
 * @param  me: Pointer to the state machine
 * @param  e:  Pointer to the event being processed.
@@ -201,11 +201,17 @@ static QState SerialMgr_Busy(SerialMgr * const me, QEvt const * const e) {
     switch (e->sig) {
         /* @(/2/0/3/1/1) */
         case Q_ENTRY_SIG: {
-            /* Post a timer */
+            /* Post a timer on entry */
             QTimeEvt_rearm(
                 &me->serialTimerEvt,
                 SEC_TO_TICKS( LL_MAX_TIMEOUT_SERIAL_DMA_BUSY_SEC )
             );
+            status = Q_HANDLED();
+            break;
+        }
+        /* @(/2/0/3/1/1) */
+        case Q_EXIT_SIG: {
+            QTimeEvt_disarm( &me->serialTimerEvt ); /* Disarm timer on exit */
             status = Q_HANDLED();
             break;
         }

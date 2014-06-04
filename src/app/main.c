@@ -33,14 +33,17 @@ static union SmallEvents {
 
 static union MediumEvents {
     void   *e0;                                       /* minimum event size */
-} l_medPoolSto[10];                    /* storage for the medium event pool */
-
-static union LargeEvents {
-    void   *e0;                                       /* minimum event size */
     uint8_t e1[sizeof(MsgEvt)];
     uint8_t e2[sizeof(EthEvt)];
     uint8_t e3[sizeof(SerialDataEvt)];
-} l_lrgPoolSto[10];                    /* storage for the large event pool */
+} l_medPoolSto[10];                    /* storage for the medium event pool */
+
+//static union LargeEvents {
+//    void   *e0;                                       /* minimum event size */
+//    uint8_t e1[sizeof(MsgEvt)];
+//    uint8_t e2[sizeof(EthEvt)];
+//    uint8_t e3[sizeof(SerialDataEvt)];
+//} l_lrgPoolSto[10];                    /* storage for the large event pool */
 
 /*..........................................................................*/
 int main(void) {
@@ -74,12 +77,12 @@ int main(void) {
     debug_printf("Initializing event storage pools\n");
     QF_poolInit(l_smlPoolSto, sizeof(l_smlPoolSto), sizeof(l_smlPoolSto[0]));
     QF_poolInit(l_medPoolSto, sizeof(l_medPoolSto), sizeof(l_medPoolSto[0]));
-    QF_poolInit(l_lrgPoolSto, sizeof(l_lrgPoolSto), sizeof(l_lrgPoolSto[0]));
+//    QF_poolInit(l_lrgPoolSto, sizeof(l_lrgPoolSto), sizeof(l_lrgPoolSto[0]));
 
     /* Start Active objects */
     debug_printf("Starting Active Objects\n");
 
-    QActive_start(AO_CommStackMgr, SERIAL_MGR_PRIORITY,
+    QActive_start(AO_SerialMgr, SERIAL_MGR_PRIORITY,
                   l_SerialMgrQueueSto, Q_DIM(l_SerialMgrQueueSto),
                   (void *)0, 0, (QEvent *)0);
 

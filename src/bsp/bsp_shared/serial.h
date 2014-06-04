@@ -16,7 +16,8 @@
 #include "stm32f2xx_usart.h"
 #include "stm32f2xx_gpio.h"
 #include "stm32f2xx_rcc.h"
-
+#include "stm32f2xx_dma.h"
+#include "bsp.h"
 
 typedef enum USART_Ports
 {
@@ -30,28 +31,44 @@ typedef enum USART_Ports
  */
 typedef struct USART_Settings
 {
-    USART_Port                  port;
+    USART_Port                   port;
 
     /* USART settings */
-    USART_TypeDef *             usart;
-    const uint32_t              usart_baud;
-    uint32_t                    usart_clk;
-    IRQn_Type                   usart_irq_num;
+    USART_TypeDef *              usart;
+    const uint32_t               usart_baud;
+    uint32_t                     usart_clk;
+    IRQn_Type                    usart_irq_num;
+    ISR_Priority                 usart_irq_prio;
 
-    GPIO_TypeDef *              tx_port;
-    const uint16_t              tx_pin;
-    const uint16_t              tx_af_pin_source;
-    const uint16_t              tx_af;
+    GPIO_TypeDef *               tx_port;
+    const uint16_t               tx_pin;
+    const uint16_t               tx_af_pin_source;
+    const uint16_t               tx_af;
 
-    GPIO_TypeDef *              rx_port;
-    const uint16_t              rx_pin;
-    const uint16_t              rx_af_pin_source;
-    const uint16_t              rx_af;
+    GPIO_TypeDef *               rx_port;
+    const uint16_t               rx_pin;
+    const uint16_t               rx_af_pin_source;
+    const uint16_t               rx_af;
 
     /* Buffer management */
-    char                        *buffer;
-    uint16_t                    index;
-} USART_Settings;
+    char                         *buffer;
+    uint16_t                     index;
+} USART_Settings_t;
+
+/*
+ * All settings that are needed to set up (almost) all the hardware for each
+ * serial port.
+ */
+typedef struct USART_DMA_Settings
+{
+    USART_Port                   port;
+
+    IRQn_Type                    dma_irq_num;
+    ISR_Priority                 dma_irq_prio;
+    uint32_t                     dma_channel;
+    DMA_Stream_TypeDef           dma_stream;
+
+} USART_DMA_Settings_t;
 
 /*
  * Initializes usarts.
@@ -80,12 +97,15 @@ void Serial_DMAConfig(
 );
 
 /*
- * Sets up NVIC for Serial DMA
+ * Starts the DMA transfer over serial
  *
- * @param   None
+ * @param [in] serial_port: Which serial port to initialize DMA transfer with
+ *    @arg SYSTEM_SERIAL
  * @return: None
  */
-void Serial_DMANVICConfig( void );
+void Serial_DMAStartXfer(
+      USART_Port serial_port
+);
 
 /**
  * Sends a message out through the specified serial port after base64 encoding

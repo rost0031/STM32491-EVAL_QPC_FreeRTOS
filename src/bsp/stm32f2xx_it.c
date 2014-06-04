@@ -130,7 +130,7 @@ void DebugMon_Handler(void) {
 
 /******************************************************************************/
 void DMA1_Stream4_IRQHandler(void) {
-   QK_ISR_ENTRY();                        /* inform QK about entering an ISR */
+//   QK_ISR_ENTRY();                        /* inform QK about entering an ISR */
 
    /* Test on DMA Stream Transfer Complete interrupt */
    if ( RESET != DMA_GetITStatus(DMA1_Stream4, DMA_IT_TCIF4) ) {
@@ -141,7 +141,7 @@ void DMA1_Stream4_IRQHandler(void) {
       DMA_ClearITPendingBit(DMA1_Stream4, DMA_IT_TCIF4);
    }
 
-   QK_ISR_EXIT();                          /* inform QK about exiting an ISR */
+//   QK_ISR_EXIT();                          /* inform QK about exiting an ISR */
 }
 
 /******** Copyright (C) 2012 Datacard. All rights reserved *****END OF FILE****/

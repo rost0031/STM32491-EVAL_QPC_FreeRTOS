@@ -132,9 +132,9 @@ QState LWIPMgr_initial(LWIPMgr *me, QEvent const *e) {
     debug_printf("IP address:\n");
     debug_printf("%d.%d.%d.%d\n",
           STATIC_IPADDR0, STATIC_IPADDR1, STATIC_IPADDR2, STATIC_IPADDR3);
-    debug_printf("MAC address: %2.2X:%2.2X:%2.2X:%2.2X:%2.2X:%2.2X",
+    debug_printf("MAC address: %2.2X:%2.2X:%2.2X:%2.2X:%2.2X:%2.2X\n",
           macaddr[0], macaddr[1],macaddr[2],macaddr[3],macaddr[4], macaddr[5]);
-
+    printf(" \n\n");
                                           /* initialize the Ethernet Driver */
     me->netif = eth_driver_init((QActive *)me, macaddr);
 
