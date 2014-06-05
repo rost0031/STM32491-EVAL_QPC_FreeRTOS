@@ -24,6 +24,8 @@
  */
 #include "CommStackMgr.h"
 #include "CBSignals.h"                              /* Signal declarations. */
+#include "SerialMgr.h"                     /* For SerialDataEvt declaration */
+#include <stdio.h>                              /* For snprintf declaration */
 
 Q_DEFINE_THIS_FILE;
 
@@ -95,6 +97,23 @@ static QState CommStackMgr_initial(CommStackMgr * const me, QEvt const * const e
 static QState CommStackMgr_Active(CommStackMgr * const me, QEvt const * const e) {
     QState status;
     switch (e->sig) {
+        /* @(/2/0/0/1) */
+        case Q_ENTRY_SIG: {
+            /* Send a test debug msg */
+            /* 1. Construct a new msg event indicating that a msg has been received */
+            SerialDataEvt *serDataEvt = Q_NEW(SerialDataEvt, UART_DMA_START_SIG);
+
+            /* 2. Fill the msg payload and get the msg source and length */
+            serDataEvt->wBufferLen = snprintf(
+                serDataEvt->buffer,
+                MAX_MSG_LEN,
+                "Test debug msg from CommStackMgr\n"
+            );
+            debug_printf("snprintf got %d bytes\n", serDataEvt->wBufferLen);
+            QF_PUBLISH((QEvent *)serDataEvt, AO_CommStackMgr);
+            status = Q_HANDLED();
+            break;
+        }
         /* @(/2/0/0/1/0) */
         case MSG_SEND_OUT_SIG: {
             status = Q_HANDLED();

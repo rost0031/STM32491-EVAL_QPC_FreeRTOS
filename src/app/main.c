@@ -53,6 +53,19 @@ int main(void) {
     debug_printf("Initialized BSP\n");
     log_printf("Starting Bootloader version %s built on %s\n", FW_VER, BUILD_DATE);
 
+    /* Memcpy test */
+    char temp1[64] = "Some data here";
+    char temp2[64];
+    memset(temp2, 0, sizeof(temp2));
+
+    debug_printf("Testing regular memcpy\n");
+    memcpy(temp2, temp1, sizeof(temp1));
+    debug_printf("Finished\n");
+
+    debug_printf("Testing FAST memcpy\n");
+    MEMCPY(temp2, temp1, sizeof(temp1));
+    debug_printf("Finished\n");
+
 	/* Instantiate the Active objects by calling their "constructors"          */
     debug_printf("Initializing AO constructors\n");
     SerialMgr_ctor();

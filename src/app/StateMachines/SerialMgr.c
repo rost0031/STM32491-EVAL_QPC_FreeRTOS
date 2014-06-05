@@ -25,6 +25,7 @@
 #include "CBSignals.h"                              /* Signal declarations. */
 #include "CBTimeouts.h"                            /* Timeout declarations. */
 #include "bsp.h"        /* For seconds to bsp tick conversion (SEC_TO_TICK) */
+#include "serial.h"                             /* For serial functionality */
 #include <stdio.h>
 
 Q_DEFINE_THIS_FILE;
@@ -185,6 +186,15 @@ static QState SerialMgr_Idle(SerialMgr * const me, QEvt const * const e) {
         }
         /* @(/2/0/3/1/0/0) */
         case UART_DMA_START_SIG: {
+            debug_printf("Got UART_DMA_START with data of length:%d\n", ((SerialDataEvt const *) e)->wBufferLen);
+            printf("%s\n", (char *)((SerialDataEvt const *) e)->buffer);
+            /* Set up the DMA buffer here */
+            Serial_DMAConfig(
+                SYSTEM_SERIAL,
+                (char *)((SerialDataEvt const *) e)->buffer,
+                ((SerialDataEvt const *) e)->wBufferLen
+            );
+            debug_printf("Returned from Serial_DMAConfig\n");
             status = Q_TRAN(&SerialMgr_Busy);
             break;
         }
@@ -206,6 +216,9 @@ static QState SerialMgr_Busy(SerialMgr * const me, QEvt const * const e) {
                 &me->serialTimerEvt,
                 SEC_TO_TICKS( LL_MAX_TIMEOUT_SERIAL_DMA_BUSY_SEC )
             );
+
+            /* Start the DMA transfer over serial */
+            Serial_DMAStartXfer( SYSTEM_SERIAL );
             status = Q_HANDLED();
             break;
         }
@@ -217,6 +230,7 @@ static QState SerialMgr_Busy(SerialMgr * const me, QEvt const * const e) {
         }
         /* @(/2/0/3/1/1/0) */
         case UART_DMA_DONE_SIG: {
+            debug_printf("Got UART_DMA_DONE");
             status = Q_TRAN(&SerialMgr_Idle);
             break;
         }

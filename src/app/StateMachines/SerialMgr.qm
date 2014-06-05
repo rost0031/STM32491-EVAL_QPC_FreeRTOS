@@ -88,6 +88,13 @@ if (rq != (SerialDataEvt *)0) {
     debug_printf(&quot;No deferred requests\n&quot;);
 }</entry>
       <tran trig="UART_DMA_START" target="../../1">
+       <action>debug_printf(&quot;Got UART_DMA_START\n&quot;);
+/* Set up the DMA buffer here */
+Serial_DMAConfig(
+    SYSTEM_SERIAL,
+    (char *)((SerialDataEvt const *) e)-&gt;buffer,
+    ((SerialDataEvt const *) e)-&gt;wBufferLen
+);</action>
        <tran_glyph conn="25,14,1,3,17">
         <action box="0,-2,15,2"/>
        </tran_glyph>
@@ -110,9 +117,13 @@ machine is going next.
 QTimeEvt_rearm(
     &amp;me-&gt;serialTimerEvt,
     SEC_TO_TICKS( LL_MAX_TIMEOUT_SERIAL_DMA_BUSY_SEC )
-);</entry>
+);
+
+/* Start the DMA transfer over serial */
+Serial_DMAStartXfer( SYSTEM_SERIAL );</entry>
       <exit>QTimeEvt_disarm( &amp;me-&gt;serialTimerEvt ); /* Disarm timer on exit */</exit>
       <tran trig="UART_DMA_DONE" target="../../0">
+       <action>debug_printf(&quot;Got UART_DMA_DONE&quot;);</action>
        <tran_glyph conn="42,18,3,1,-17">
         <action box="-14,-2,14,2"/>
        </tran_glyph>
@@ -183,6 +194,7 @@ QEQueue_init(
 #include &quot;CBSignals.h&quot;                              /* Signal declarations. */
 #include &quot;CBTimeouts.h&quot;                            /* Timeout declarations. */
 #include &quot;bsp.h&quot;        /* For seconds to bsp tick conversion (SEC_TO_TICK) */
+#include &quot;serial.h&quot;                             /* For serial functionality */
 #include &lt;stdio.h&gt;
 
 Q_DEFINE_THIS_FILE;

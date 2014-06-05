@@ -46,6 +46,18 @@ common to the entire AO, they should be handled here.
 @retval status: QState type that specifies where the state
 machine is going next.
 </documentation>
+     <entry>/* Send a test debug msg */
+/* 1. Construct a new msg event indicating that a msg has been received */
+SerialDataEvt *serDataEvt = Q_NEW(SerialDataEvt, UART_DMA_START_SIG);
+
+/* 2. Fill the msg payload and get the msg source and length */
+serDataEvt-&gt;wBufferLen = snprintf(
+    serDataEvt-&gt;buffer,
+    MAX_MSG_LEN,
+    &quot;Test debug msg from CommStackMgr\n&quot;
+);
+
+QF_PUBLISH((QEvent *)serDataEvt, AO_CommStackMgr);</entry>
      <tran trig="MSG_SEND_OUT">
       <tran_glyph conn="3,9,3,-1,21">
        <action box="0,-2,16,2"/>
@@ -56,7 +68,9 @@ machine is going next.
        <action box="0,-2,17,2"/>
       </tran_glyph>
      </tran>
-     <state_glyph node="3,3,94,82"/>
+     <state_glyph node="3,3,94,82">
+      <entry box="1,2,5,2"/>
+     </state_glyph>
     </state>
     <state_diagram size="108,90"/>
    </statechart>
@@ -87,6 +101,8 @@ QActive_ctor(&amp;me-&gt;super, (QStateHandler)&amp;CommStackMgr_initial);</code
  */
 #include &quot;CommStackMgr.h&quot;
 #include &quot;CBSignals.h&quot;                              /* Signal declarations. */
+#include &quot;SerialMgr.h&quot;                     /* For SerialDataEvt declaration */
+#include &lt;stdio.h&gt;                              /* For snprintf declaration */
 
 Q_DEFINE_THIS_FILE;
 

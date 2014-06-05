@@ -22,6 +22,7 @@
 #include <string.h>
 #include "stm32f2xx_dma.h"
 #include "misc.h"
+#include "mem_datacopy.h"
 
 /* Maximum Timeout values for flags and events waiting loops. These timeouts are
    not based on accurate values, they just guarantee that the application will
@@ -145,8 +146,13 @@ void Serial_DMAConfig(
 {
    assert(wBufferLen <= MAX_MSG_LEN);
 
+   debug_printf("Enter\n");
+
    s_USART_Port[serial_port].index = wBufferLen;
-   MEMCPY( s_USART_Port[serial_port].buffer, pBuffer, s_USART_Port[serial_port].index );
+   printf("2\n");
+   MEMCPY( s_USART_Port[serial_port].buffer, pBuffer, wBufferLen );
+   printf("3\n");
+   debug_printf("Buffer contains %d bytes: %s\n", s_USART_Port[serial_port].index, s_USART_Port[serial_port].buffer);
 
    DMA_InitTypeDef  DMA_InitStructure;
 

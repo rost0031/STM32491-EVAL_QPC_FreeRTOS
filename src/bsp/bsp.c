@@ -88,16 +88,16 @@ void BSP_init( void ) {
 
 	/* Initialize the Serial for printfs to the serial port */
 	Serial_Init( SYSTEM_SERIAL );
-	printf("START: Testing DMA serial output\n");
-	BSP_Delay(64);
-	char *tmp = "TESTING DMA USART!\n";
-	Serial_DMAConfig( SYSTEM_SERIAL, tmp, strlen(tmp) );
-	Serial_DMAStartXfer( SYSTEM_SERIAL );
-	BSP_Delay(51200);
-	Serial_DMAConfig( SYSTEM_SERIAL, tmp, strlen(tmp) );
-	Serial_DMAStartXfer( SYSTEM_SERIAL );
-	BSP_Delay(64);
-	printf("FINISH: Testing DMA serial output\n");
+//	printf("START: Testing DMA serial output\n");
+//	BSP_Delay(64);
+//	char *tmp = "TESTING DMA USART!\n";
+//	Serial_DMAConfig( SYSTEM_SERIAL, tmp, strlen(tmp) );
+//	Serial_DMAStartXfer( SYSTEM_SERIAL );
+//	BSP_Delay(51200);
+//	Serial_DMAConfig( SYSTEM_SERIAL, tmp, strlen(tmp) );
+//	Serial_DMAStartXfer( SYSTEM_SERIAL );
+//	BSP_Delay(64);
+//	printf("FINISH: Testing DMA serial output\n");
 
 
 

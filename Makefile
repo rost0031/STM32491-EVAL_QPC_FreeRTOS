@@ -269,7 +269,7 @@ CPPFLAGS 	= -mcpu=$(ARM_CORE) -mthumb \
 			  -Wall -fno-rtti -fno-exceptions \
 			  -Os $(INCLUDES) $(DEFINES)
 
-LINKFLAGS 	= nodefaultlibs -Xlinker --gc-sections -Wl,-Map,$(BIN_DIR)/$(PROJECT_NAME).map -mcpu=$(ARM_CORE) -mthumb
+LINKFLAGS 	= -nodefaultlibs -Xlinker --gc-sections -Wl,-Map,$(BIN_DIR)/$(PROJECT_NAME).map -mcpu=$(ARM_CORE) -mthumb
 
 else ifeq (spy, $(CONF))  # Spy configuration ................................
 
@@ -284,7 +284,7 @@ CPPFLAGS 	= -mcpu=$(ARM_CORE) -mthumb \
 			  -Wall -fno-rtti -fno-exceptions \
 			  -g -O $(INCLUDES) $(DEFINES)
 
-LINKFLAGS 	= nodefaultlibs -Xlinker --gc-sections -Wl,-Map,$(BIN_DIR)/$(PROJECT_NAME).map -mcpu=$(ARM_CORE) -mthumb -g3 -gdwarf-2
+LINKFLAGS 	= -nodefaultlibs -Xlinker --gc-sections -Wl,-Map,$(BIN_DIR)/$(PROJECT_NAME).map -mcpu=$(ARM_CORE) -mthumb -g3 -gdwarf-2
 
 else                     # default Debug configuration .......................
 
@@ -298,7 +298,7 @@ CPPFLAGS 	= -mcpu=$(ARM_CORE) -mthumb \
 			  -Wall -fno-rtti -fno-exceptions \
 			  -g -O $(INCLUDES) $(DEFINES)
 	
-LINKFLAGS 	= nodefaultlibs -Xlinker --gc-sections -Wl,-Map,$(BIN_DIR)/$(PROJECT_NAME).map -mcpu=$(ARM_CORE) -mthumb -g3 -gdwarf-2
+LINKFLAGS 	= -nodefaultlibs -Xlinker --gc-sections -Wl,-Map,$(BIN_DIR)/$(PROJECT_NAME).map -mcpu=$(ARM_CORE) -mthumb -g3 -gdwarf-2
 
 endif
 
@@ -387,7 +387,7 @@ $(TARGET_BIN): $(TARGET_ELF)
 
 $(TARGET_ELF) : $(ASM_OBJS_EXT) $(C_OBJS_EXT) $(CPP_OBJS_EXT)
 	@echo --- Linking libraries   ---
-	$(TRACE_FLAG)$(LINK) -T$(LD_SCRIPT) -$(LINKFLAGS) -L$(QP_PORT_DIR)/$(BIN_DIR) -L$(LWIP_DIR)/$(BIN_DIR) -o $@ $^ $(LIBS)
+	$(TRACE_FLAG)$(LINK) -T$(LD_SCRIPT) $(LINKFLAGS) -L$(QP_PORT_DIR)/$(BIN_DIR) -L$(LWIP_DIR)/$(BIN_DIR) -o $@ $^ $(LIBS)
 	
 build_libs: build_qpc build_lwip
 
