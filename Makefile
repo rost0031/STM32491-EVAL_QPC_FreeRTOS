@@ -189,6 +189,7 @@ C_SRCS 					:= \
 			      		stm32f2x7_eth.c \
 						\
 			      		bsp.c \
+			      		time.c \
 			      		lwip.c \
 			      		serial.c \
 			      		crc32compat.c \
@@ -206,11 +207,15 @@ C_SRCS 					:= \
 			      		misc.c  \
 			      		stm32f2xx_crc.c \
 			      		stm32f2xx_dma.c \
-			      		stm32f2xx_gpio.c \
-			      		stm32f2xx_usart.c \
+			      		stm32f2xx_exti.c \
 			      		stm32f2xx_flash.c \
+						stm32f2xx_gpio.c \
+			      		stm32f2xx_pwr.c \
+			      		stm32f2xx_rcc.c \
+			      		stm32f2xx_rtc.c \
 			      		stm32f2xx_syscfg.c \
-			      		stm32f2xx_rcc.c
+			      		stm32f2xx_tim.c \
+			      		stm32f2xx_usart.c
 			      		
 			      		
 # Temporarily not compiled files.  These will need to be added back in before
@@ -225,7 +230,6 @@ C_SRCS 					:= \
 #			      		stm32f2xx_cryp_des.c \
 #			      		stm32f2xx_cryp_tdes.c \
 #			      		stm32f2xx_dac.c \
-#			      		stm32f2xx_exti.c \
 #			      		stm32f2xx_dbgmcu.c \
 #			      		stm32f2xx_fsmc.c \
 #			      		stm32f2xx_hash.c \
@@ -233,12 +237,9 @@ C_SRCS 					:= \
 #			      		stm32f2xx_hash_sha1.c \
 #			      		stm32f2xx_i2c.c \
 #			      		stm32f2xx_iwdg.c \
-#			      		stm32f2xx_pwr.c \
 #			      		stm32f2xx_rng.c \
-#			      		stm32f2xx_rtc.c \
 #			      		stm32f2xx_sdio.c \
 #			      		stm32f2xx_spi.c \
-#			      		stm32f2xx_tim.c \
 #			      		stm32f2xx_wwdg.c
 						
 

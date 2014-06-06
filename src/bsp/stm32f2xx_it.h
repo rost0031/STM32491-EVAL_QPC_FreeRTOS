@@ -36,7 +36,30 @@ void SVC_Handler(void);
 void DebugMon_Handler(void);
 void PendSV_Handler(void);
 void SysTick_Handler(void);
-//void ETH_IRQHandler(void);
+
+/**
+ * This ISR function handles DMA1_Stream4 global interrupt requests.
+ * @param     None
+ * @retval    None
+ */
+void DMA1_Stream4_IRQHandler( void ) __attribute__((__interrupt__));
+
+
+/**
+ * This ISR function handles TIM5 global interrupt requests.
+ * @param     None
+ * @retval    None
+ */
+void TIM5_IRQHandler(void) __attribute__((__interrupt__));
+
+/**
+ * This ISR function handles RTC Wakeup global interrupt request.  Specifically,
+ * it fires once a second and resets the timer counter that is used to track the
+ * subsecond time.
+ * @param  None
+ * @retval None
+ */
+void RTC_WKUP_IRQHandler(void) __attribute__((__interrupt__));
 
 #ifdef __cplusplus
 }

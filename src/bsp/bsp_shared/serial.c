@@ -146,18 +146,12 @@ void Serial_DMAConfig(
 {
    assert(wBufferLen <= MAX_MSG_LEN);
 
-   debug_printf("Enter\n");
-
    s_USART_Port[serial_port].index = wBufferLen;
-   printf("2\n");
    MEMCPY( s_USART_Port[serial_port].buffer, pBuffer, wBufferLen );
-   printf("3\n");
-   debug_printf("Buffer contains %d bytes: %s\n", s_USART_Port[serial_port].index, s_USART_Port[serial_port].buffer);
-
-   DMA_InitTypeDef  DMA_InitStructure;
 
    DMA_DeInit(DMA1_Stream4);
 
+   DMA_InitTypeDef  DMA_InitStructure;
    DMA_InitStructure.DMA_Channel             = DMA_Channel_4;
    DMA_InitStructure.DMA_DIR                 = DMA_DIR_MemoryToPeripheral; // Transmit
    DMA_InitStructure.DMA_Memory0BaseAddr     = (uint32_t)s_USART_Port[serial_port].buffer;

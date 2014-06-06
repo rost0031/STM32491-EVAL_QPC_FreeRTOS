@@ -19,6 +19,7 @@
 
 #include "qp_port.h"                                        /* for QP support */
 #include "project_includes.h"
+#include "time.h"                          /* for processor date/time support */
 
 Q_DEFINE_THIS_FILE;
 
@@ -52,13 +53,13 @@ void BSP_init( void ) {
 	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE);
 	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOC, ENABLE);
 	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOD, ENABLE);
-//	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOE, ENABLE);
-//	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOF, ENABLE);
-//	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOG, ENABLE);
+	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOE, ENABLE);
+	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOF, ENABLE);
+	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOG, ENABLE);
 	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOH, ENABLE);
 	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOI, ENABLE);
-//
-//	/* DMA clock enable */
+
+	/* DMA clock enable */
 	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA1 , ENABLE);
 	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA2 , ENABLE);
 
@@ -66,40 +67,28 @@ void BSP_init( void ) {
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
 
 	/* Enable TIM clocks on APB2 bus */
-//	RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM1, ENABLE);
-//	RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM8, ENABLE);
-//	RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM9, ENABLE);
-//	RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM10, ENABLE);
-//	RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM11, ENABLE);
-//
-//	/* Enable TIM clocks on APB1 bus */
-//	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
-//	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
-//	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4, ENABLE);
-//	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM5, ENABLE);
-//	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM6, ENABLE);
-//	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM7, ENABLE);
-//	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM12, ENABLE);
-//	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM13, ENABLE);
-//	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM14, ENABLE);
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM1, ENABLE);
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM8, ENABLE);
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM9, ENABLE);
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM10, ENABLE);
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM11, ENABLE);
+
+	/* Enable TIM clocks on APB1 bus */
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4, ENABLE);
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM5, ENABLE);
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM6, ENABLE);
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM7, ENABLE);
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM12, ENABLE);
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM13, ENABLE);
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM14, ENABLE);
 
 	/* Enable CRC clock */
 	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_CRC, ENABLE);
 
 	/* Initialize the Serial for printfs to the serial port */
 	Serial_Init( SYSTEM_SERIAL );
-//	printf("START: Testing DMA serial output\n");
-//	BSP_Delay(64);
-//	char *tmp = "TESTING DMA USART!\n";
-//	Serial_DMAConfig( SYSTEM_SERIAL, tmp, strlen(tmp) );
-//	Serial_DMAStartXfer( SYSTEM_SERIAL );
-//	BSP_Delay(51200);
-//	Serial_DMAConfig( SYSTEM_SERIAL, tmp, strlen(tmp) );
-//	Serial_DMAStartXfer( SYSTEM_SERIAL );
-//	BSP_Delay(64);
-//	printf("FINISH: Testing DMA serial output\n");
-
-
 
 	/* Start Ethernet configuration */
 	/* Assert a reset on the ETH_RST line.  This should only be released
@@ -116,6 +105,10 @@ void BSP_init( void ) {
 	 * configuration is done. */
 	GPIO_SetBits(GPIOA, GPIO_Pin_8);
 	/* End Ethernet configuration */
+
+	/* Initialize the time (RTC and a subsecond timer). */
+   TIME_Init();
+   TIME_printTime();
 
 }
 

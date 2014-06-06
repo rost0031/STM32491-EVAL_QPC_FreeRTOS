@@ -173,28 +173,18 @@ static QState SerialMgr_Idle(SerialMgr * const me, QEvt const * const e) {
                 (QActive *)me,
                 &me->deferredEvtQueue
             );
-
-            /* This IF/ELSE is for debug printing only.  You can remove this */
-            if (rq != (SerialDataEvt *)0) {
-                /* recall posted an event? */
-                debug_printf("Request recalled\n");
-            } else {
-                debug_printf("No deferred requests\n");
-            }
             status = Q_HANDLED();
             break;
         }
         /* @(/2/0/3/1/0/0) */
         case UART_DMA_START_SIG: {
-            debug_printf("Got UART_DMA_START with data of length:%d\n", ((SerialDataEvt const *) e)->wBufferLen);
-            printf("%s\n", (char *)((SerialDataEvt const *) e)->buffer);
-            /* Set up the DMA buffer here */
+            /* Set up the DMA buffer here.  This copies the data from the event to the UART's
+             * private buffer as well to avoid someone overwriting it */
             Serial_DMAConfig(
                 SYSTEM_SERIAL,
                 (char *)((SerialDataEvt const *) e)->buffer,
                 ((SerialDataEvt const *) e)->wBufferLen
             );
-            debug_printf("Returned from Serial_DMAConfig\n");
             status = Q_TRAN(&SerialMgr_Busy);
             break;
         }
@@ -230,7 +220,6 @@ static QState SerialMgr_Busy(SerialMgr * const me, QEvt const * const e) {
         }
         /* @(/2/0/3/1/1/0) */
         case UART_DMA_DONE_SIG: {
-            debug_printf("Got UART_DMA_DONE");
             status = Q_TRAN(&SerialMgr_Idle);
             break;
         }

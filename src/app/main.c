@@ -16,7 +16,7 @@
 #include "CommStackMgr.h"                     /* for starting CommStackMgr AO */
 #include "SerialMgr.h"                           /* for starting SerialMgr AO */
 
-//#include "project_includes.h"
+#include "project_includes.h"
 #include "Shared.h"
 #include "version.h"
 
@@ -53,20 +53,20 @@ int main(void) {
     debug_printf("Initialized BSP\n");
     log_printf("Starting Bootloader version %s built on %s\n", FW_VER, BUILD_DATE);
 
-    /* Memcpy test */
-    char temp1[64] = "Some data here";
-    char temp2[64];
-    memset(temp2, 0, sizeof(temp2));
+//    /* Memcpy test */
+//    char temp1[64] = "Some data here";
+//    char temp2[64];
+//    memset(temp2, 0, sizeof(temp2));
+//
+//    debug_printf("Testing regular memcpy\n");
+//    memcpy(temp2, temp1, sizeof(temp1));
+//    debug_printf("Finished\n");
+//
+//    debug_printf("Testing FAST memcpy\n");
+//    MEMCPY(temp2, temp1, sizeof(temp1));
+//    debug_printf("Finished\n");
 
-    debug_printf("Testing regular memcpy\n");
-    memcpy(temp2, temp1, sizeof(temp1));
-    debug_printf("Finished\n");
-
-    debug_printf("Testing FAST memcpy\n");
-    MEMCPY(temp2, temp1, sizeof(temp1));
-    debug_printf("Finished\n");
-
-	/* Instantiate the Active objects by calling their "constructors"          */
+    /* Instantiate the Active objects by calling their "constructors"          */
     debug_printf("Initializing AO constructors\n");
     SerialMgr_ctor();
     CommStackMgr_ctor();
@@ -90,22 +90,22 @@ int main(void) {
     debug_printf("Initializing event storage pools\n");
     QF_poolInit(l_smlPoolSto, sizeof(l_smlPoolSto), sizeof(l_smlPoolSto[0]));
     QF_poolInit(l_medPoolSto, sizeof(l_medPoolSto), sizeof(l_medPoolSto[0]));
-//    QF_poolInit(l_lrgPoolSto, sizeof(l_lrgPoolSto), sizeof(l_lrgPoolSto[0]));
+    //    QF_poolInit(l_lrgPoolSto, sizeof(l_lrgPoolSto), sizeof(l_lrgPoolSto[0]));
 
     /* Start Active objects */
     debug_printf("Starting Active Objects\n");
 
     QActive_start(AO_SerialMgr, SERIAL_MGR_PRIORITY,
-                  l_SerialMgrQueueSto, Q_DIM(l_SerialMgrQueueSto),
-                  (void *)0, 0, (QEvent *)0);
+          l_SerialMgrQueueSto, Q_DIM(l_SerialMgrQueueSto),
+          (void *)0, 0, (QEvent *)0);
 
     QActive_start(AO_CommStackMgr, COMM_STACK_PRIORITY,
-                  l_CommStackMgrQueueSto, Q_DIM(l_CommStackMgrQueueSto),
-                  (void *)0, 0, (QEvent *)0);
+          l_CommStackMgrQueueSto, Q_DIM(l_CommStackMgrQueueSto),
+          (void *)0, 0, (QEvent *)0);
 
     QActive_start(AO_LWIPMgr, ETH_PRIORITY,
-    			  l_LWIPMgrQueueSto, Q_DIM(l_LWIPMgrQueueSto),
-                  (void *)0, 0, (QEvent *)0);
+          l_LWIPMgrQueueSto, Q_DIM(l_LWIPMgrQueueSto),
+          (void *)0, 0, (QEvent *)0);
 
     log_printf("Bootloader started successfully\n");
 

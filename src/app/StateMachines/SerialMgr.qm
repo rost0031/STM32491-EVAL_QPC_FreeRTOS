@@ -78,18 +78,10 @@ machine is going next.
 SerialDataEvt const *rq = (SerialDataEvt const *) (uint32_t) QActive_recall(
     (QActive *)me,
     &amp;me-&gt;deferredEvtQueue
-);
-
-/* This IF/ELSE is for debug printing only.  You can remove this */
-if (rq != (SerialDataEvt *)0) {
-    /* recall posted an event? */
-    debug_printf(&quot;Request recalled\n&quot;);
-} else {
-    debug_printf(&quot;No deferred requests\n&quot;);
-}</entry>
+);</entry>
       <tran trig="UART_DMA_START" target="../../1">
-       <action>debug_printf(&quot;Got UART_DMA_START\n&quot;);
-/* Set up the DMA buffer here */
+       <action>/* Set up the DMA buffer here.  This copies the data from the event to the UART's
+ * private buffer as well to avoid someone overwriting it */
 Serial_DMAConfig(
     SYSTEM_SERIAL,
     (char *)((SerialDataEvt const *) e)-&gt;buffer,
@@ -123,7 +115,6 @@ QTimeEvt_rearm(
 Serial_DMAStartXfer( SYSTEM_SERIAL );</entry>
       <exit>QTimeEvt_disarm( &amp;me-&gt;serialTimerEvt ); /* Disarm timer on exit */</exit>
       <tran trig="UART_DMA_DONE" target="../../0">
-       <action>debug_printf(&quot;Got UART_DMA_DONE&quot;);</action>
        <tran_glyph conn="42,18,3,1,-17">
         <action box="-14,-2,14,2"/>
        </tran_glyph>

@@ -25,6 +25,8 @@
 #include "CommStackMgr.h"
 #include "CBSignals.h"                              /* Signal declarations. */
 #include "SerialMgr.h"                     /* For SerialDataEvt declaration */
+#include "bsp.h"                            /* For time to ticks conversion */
+#include "time.h"                                 /* For time functionality */
 #include <stdio.h>                              /* For snprintf declaration */
 
 Q_DEFINE_THIS_FILE;
@@ -48,6 +50,10 @@ uint32_t JumpAddress;
 typedef struct CommStackMgrTag {
 /* protected: */
     QActive super;
+    /** 
+    * Used to timeout for testing the clock.
+    */
+    QTimeEvt timeTestTimerEvt;
 } CommStackMgr;
 
 /* protected: */
@@ -77,10 +83,11 @@ QActive * const AO_CommStackMgr = (QActive *)&l_CommStackMgr;  /* "opaque" AO po
 void CommStackMgr_ctor(void) {
     CommStackMgr *me = &l_CommStackMgr;
     QActive_ctor(&me->super, (QStateHandler)&CommStackMgr_initial);
+    QTimeEvt_ctor(&me->timeTestTimerEvt, TIME_TEST_SIG);
 }
 /* @(/2/0) .................................................................*/
-/* @(/2/0/0) ...............................................................*/
-/* @(/2/0/0/0) */
+/* @(/2/0/1) ...............................................................*/
+/* @(/2/0/1/0) */
 static QState CommStackMgr_initial(CommStackMgr * const me, QEvt const * const e) {
     (void)e;        /* suppress the compiler warning about unused parameter */
 
@@ -91,13 +98,14 @@ static QState CommStackMgr_initial(CommStackMgr * const me, QEvt const * const e
 
     QActive_subscribe((QActive *)me, MSG_SEND_OUT_SIG);
     QActive_subscribe((QActive *)me, MSG_RECEIVED_SIG);
+    QActive_subscribe((QActive *)me, TIME_TEST_SIG);
     return Q_TRAN(&CommStackMgr_Active);
 }
-/* @(/2/0/0/1) .............................................................*/
+/* @(/2/0/1/1) .............................................................*/
 static QState CommStackMgr_Active(CommStackMgr * const me, QEvt const * const e) {
     QState status;
     switch (e->sig) {
-        /* @(/2/0/0/1) */
+        /* @(/2/0/1/1) */
         case Q_ENTRY_SIG: {
             /* Send a test debug msg */
             /* 1. Construct a new msg event indicating that a msg has been received */
@@ -109,18 +117,58 @@ static QState CommStackMgr_Active(CommStackMgr * const me, QEvt const * const e)
                 MAX_MSG_LEN,
                 "Test debug msg from CommStackMgr\n"
             );
-            debug_printf("snprintf got %d bytes\n", serDataEvt->wBufferLen);
+
             QF_PUBLISH((QEvent *)serDataEvt, AO_CommStackMgr);
+
+            SerialDataEvt *serDataEvt1 = Q_NEW(SerialDataEvt, UART_DMA_START_SIG);
+
+            /* 2. Fill the msg payload and get the msg source and length */
+            serDataEvt1->wBufferLen = snprintf(
+                serDataEvt1->buffer,
+                MAX_MSG_LEN,
+                "Another Test debug msg from CommStackMgr\n"
+            );
+
+            QF_PUBLISH((QEvent *)serDataEvt1, AO_CommStackMgr);
+
+            /* Every 2 seconds, post an event to print time */
+            QTimeEvt_postEvery(
+                &me->timeTestTimerEvt,
+                (QActive *)me,
+                SEC_TO_TICKS( 2 )
+            );
             status = Q_HANDLED();
             break;
         }
-        /* @(/2/0/0/1/0) */
+        /* @(/2/0/1/1/0) */
         case MSG_SEND_OUT_SIG: {
             status = Q_HANDLED();
             break;
         }
-        /* @(/2/0/0/1/1) */
+        /* @(/2/0/1/1/1) */
         case MSG_RECEIVED_SIG: {
+            status = Q_HANDLED();
+            break;
+        }
+        /* @(/2/0/1/1/2) */
+        case TIME_TEST_SIG: {
+            /* 1. Construct a new msg event indicating that a msg has been received */
+            SerialDataEvt *serDataEvt = Q_NEW(SerialDataEvt, UART_DMA_START_SIG);
+
+            t_Time time = TIME_getTime();
+
+            /* 2. Fill the msg payload and get the msg source and length */
+            serDataEvt->wBufferLen = snprintf(
+                serDataEvt->buffer,
+                MAX_MSG_LEN,
+                "Time is now %02d:%02d:%02d:%d\n",
+                time.hour_min_sec.RTC_Hours,
+                time.hour_min_sec.RTC_Minutes,
+                time.hour_min_sec.RTC_Seconds,
+                (int)time.sub_sec
+            );
+
+            QF_PUBLISH((QEvent *)serDataEvt, AO_CommStackMgr);
             status = Q_HANDLED();
             break;
         }

@@ -21,6 +21,9 @@ back to the sender.</documentation>
  <package name="AOs" stereotype="0x02">
   <class name="CommStackMgr" superclass="qpc::QActive">
    <documentation>MtrDiag Active Object</documentation>
+   <attribute name="timeTestTimerEvt" type="QTimeEvt" visibility="0x01" properties="0x00">
+    <documentation>Used to timeout for testing the clock.</documentation>
+   </attribute>
    <statechart>
     <initial target="../1">
      <action>(void)e;        /* suppress the compiler warning about unused parameter */
@@ -31,7 +34,8 @@ QS_FUN_DICTIONARY(&amp;CommStackMgr_initial);
 QS_FUN_DICTIONARY(&amp;CommStackMgr_Running);
 
 QActive_subscribe((QActive *)me, MSG_SEND_OUT_SIG);
-QActive_subscribe((QActive *)me, MSG_RECEIVED_SIG);</action>
+QActive_subscribe((QActive *)me, MSG_RECEIVED_SIG);
+QActive_subscribe((QActive *)me, TIME_TEST_SIG);</action>
      <initial_glyph conn="1,2,4,3,4,2">
       <action box="0,-2,6,2"/>
      </initial_glyph>
@@ -57,7 +61,25 @@ serDataEvt-&gt;wBufferLen = snprintf(
     &quot;Test debug msg from CommStackMgr\n&quot;
 );
 
-QF_PUBLISH((QEvent *)serDataEvt, AO_CommStackMgr);</entry>
+QF_PUBLISH((QEvent *)serDataEvt, AO_CommStackMgr);
+
+SerialDataEvt *serDataEvt1 = Q_NEW(SerialDataEvt, UART_DMA_START_SIG);
+
+/* 2. Fill the msg payload and get the msg source and length */
+serDataEvt1-&gt;wBufferLen = snprintf(
+    serDataEvt1-&gt;buffer,
+    MAX_MSG_LEN,
+    &quot;Another Test debug msg from CommStackMgr\n&quot;
+);
+
+QF_PUBLISH((QEvent *)serDataEvt1, AO_CommStackMgr);
+
+/* Every 2 seconds, post an event to print time */
+QTimeEvt_postEvery(
+    &amp;me-&gt;timeTestTimerEvt,
+    (QActive *)me,
+    SEC_TO_TICKS( 2 )
+);</entry>
      <tran trig="MSG_SEND_OUT">
       <tran_glyph conn="3,9,3,-1,21">
        <action box="0,-2,16,2"/>
@@ -66,6 +88,28 @@ QF_PUBLISH((QEvent *)serDataEvt, AO_CommStackMgr);</entry>
      <tran trig="MSG_RECEIVED">
       <tran_glyph conn="3,14,3,-1,21">
        <action box="0,-2,17,2"/>
+      </tran_glyph>
+     </tran>
+     <tran trig="TIME_TEST">
+      <action>/* 1. Construct a new msg event indicating that a msg has been received */
+SerialDataEvt *serDataEvt = Q_NEW(SerialDataEvt, UART_DMA_START_SIG);
+
+t_Time time = TIME_getTime();
+
+/* 2. Fill the msg payload and get the msg source and length */
+serDataEvt-&gt;wBufferLen = snprintf(
+    serDataEvt-&gt;buffer,
+    MAX_MSG_LEN,
+    &quot;Time is now %02d:%02d:%02d:%d\n&quot;,
+    time.hour_min_sec.RTC_Hours,
+    time.hour_min_sec.RTC_Minutes,
+    time.hour_min_sec.RTC_Seconds,
+    (int)time.sub_sec
+);
+
+QF_PUBLISH((QEvent *)serDataEvt, AO_CommStackMgr);</action>
+      <tran_glyph conn="3,19,3,-1,21">
+       <action box="0,-2,11,2"/>
       </tran_glyph>
      </tran>
      <state_glyph node="3,3,94,82">
@@ -79,7 +123,8 @@ QF_PUBLISH((QEvent *)serDataEvt, AO_CommStackMgr);</entry>
   <operation name="CommStackMgr_ctor" type="void" visibility="0x00" properties="0x00">
    <documentation>This function is a C &quot;constructor&quot; for this active object.</documentation>
    <code>CommStackMgr *me = &amp;l_CommStackMgr;
-QActive_ctor(&amp;me-&gt;super, (QStateHandler)&amp;CommStackMgr_initial);</code>
+QActive_ctor(&amp;me-&gt;super, (QStateHandler)&amp;CommStackMgr_initial);
+QTimeEvt_ctor(&amp;me-&gt;timeTestTimerEvt, TIME_TEST_SIG);</code>
   </operation>
  </package>
  <directory name=".">
@@ -102,6 +147,8 @@ QActive_ctor(&amp;me-&gt;super, (QStateHandler)&amp;CommStackMgr_initial);</code
 #include &quot;CommStackMgr.h&quot;
 #include &quot;CBSignals.h&quot;                              /* Signal declarations. */
 #include &quot;SerialMgr.h&quot;                     /* For SerialDataEvt declaration */
+#include &quot;bsp.h&quot;                            /* For time to ticks conversion */
+#include &quot;time.h&quot;                                 /* For time functionality */
 #include &lt;stdio.h&gt;                              /* For snprintf declaration */
 
 Q_DEFINE_THIS_FILE;

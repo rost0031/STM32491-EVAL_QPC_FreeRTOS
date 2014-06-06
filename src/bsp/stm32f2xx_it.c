@@ -16,6 +16,9 @@
 
 #include "stm32f2xx_it.h"
 #include "stm32f2xx_dma.h"
+#include "stm32f2xx_tim.h"
+#include "stm32f2xx_rtc.h"
+#include "stm32f2xx_exti.h"
 #include "project_includes.h"        /* application events and active objects */
 #include "qp_port.h"                                        /* for QP support */
 #include "Shared.h"                                   /*  Common Declarations */
@@ -133,7 +136,7 @@ void DebugMon_Handler(void) {
 /******************************************************************************/
 
 /******************************************************************************/
-void DMA1_Stream4_IRQHandler(void) {
+void DMA1_Stream4_IRQHandler( void ) {
    QK_ISR_ENTRY();                         /* inform QK about entering an ISR */
 
    /* Test on DMA Stream Transfer Complete interrupt */
@@ -152,4 +155,47 @@ void DMA1_Stream4_IRQHandler(void) {
    QK_ISR_EXIT();                           /* inform QK about exiting an ISR */
 }
 
-/******** Copyright (C) 2012 Datacard. All rights reserved *****END OF FILE****/
+extern __IO unsigned long PeriodValue;
+extern __IO unsigned long CaptureNumber;
+uint16_t tmpCC4[2] = {0, 0};
+
+/******************************************************************************/
+void TIM5_IRQHandler(void) {
+    QK_ISR_ENTRY();                        /* inform QK about entering an ISR */
+
+    /* This is for measuring the LSI frequency for configuring the RTC */
+    if ( RESET != TIM_GetITStatus( TIM5, TIM_IT_CC4 ) )
+    {
+       /* Get the Input Capture value */
+       tmpCC4[CaptureNumber++] = TIM_GetCapture4(TIM5);
+
+       if (CaptureNumber >= 2)
+       {
+          /* Compute the period length */
+          PeriodValue = (uint16_t)(0xFFFF - tmpCC4[0] + tmpCC4[1] + 1);
+       }
+
+       /* Clear CC4 Interrupt pending bit */
+       TIM_ClearITPendingBit(TIM5, TIM_IT_CC4);
+    }
+
+    QK_ISR_EXIT();                          /* inform QK about exiting an ISR */
+}
+
+/******************************************************************************/
+void RTC_WKUP_IRQHandler(void) {
+   QK_ISR_ENTRY();                        /* inform QK about entering an ISR */
+
+   if( RESET != RTC_GetITStatus(RTC_IT_WUT) ) {
+      TIME_printTime();
+      /* Reset the subSecond counter on the timer used to keep track of time */
+      TIM7->CNT = 0;
+
+      /* Clear the pending bits so the interrupt fires again next time. */
+      RTC_ClearITPendingBit(RTC_IT_WUT);
+      EXTI_ClearITPendingBit(EXTI_Line22);
+   }
+
+   QK_ISR_EXIT();                          /* inform QK about exiting an ISR */
+}
+/******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/

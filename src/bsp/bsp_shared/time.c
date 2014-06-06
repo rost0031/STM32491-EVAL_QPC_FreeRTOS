@@ -1,24 +1,26 @@
-// $Id$
 /**
  * @file   time.c
  * @brief  This file contains the definitions for functions to control on the
- * Redwood L1 board time and timestamps.
+ * board time and timestamps.
  *
- * @date   10/22/2013
+ * @date   06/06/2014
  * @author Harry Rostovtsev
  * @email  Harry_Rostovtsev@datacard.com
- * Copyright (C) 2013 Datacard. All rights reserved.
+ * Copyright (C) 2014 Datacard. All rights reserved.
  */
-// $Log$
+
 #include "time.h"
 #include "stm32f2xx.h"
 #include "stm32f2xx_rcc.h"
 #include "stm32f2xx_tim.h"
+#include "stm32f2xx_pwr.h"
 #include "stm32f2xx_exti.h"
 #include "Shared.h"
+#include <stdio.h>
+#include "bsp.h"
 
 /* Private defines -----------------------------------------------------------*/
-#define DELAY_TIM_FREQUENCY 1000000
+#define DELAY_TIM_FREQUENCY 10000
 
 /* Private variables ---------------------------------------------------------*/
 RTC_InitTypeDef RTC_InitStructure;
@@ -72,12 +74,9 @@ void TIME_Init( void )
    /* Calendar Configuration */
    RTC_InitStructure.RTC_AsynchPrediv = 0x7F;
    RTC_InitStructure.RTC_SynchPrediv =  (LsiFreq/128) - 1;
-   //   RTC_InitStructure.RTC_AsynchPrediv = 0x1;
-   //   RTC_InitStructure.RTC_SynchPrediv =  0x1;
    RTC_InitStructure.RTC_HourFormat = RTC_HourFormat_24;
    /* Check on RTC init */
-   if (RTC_Init(&RTC_InitStructure) == ERROR)
-   {
+   if (RTC_Init(&RTC_InitStructure) == ERROR) {
       debug_printf("!!RTC Prescaler Config failed!!\n");
    }
 
@@ -88,8 +87,7 @@ void TIME_Init( void )
    RTC_TimeStructure.RTC_Seconds = 0;
 
    /* Configure the RTC time register */
-   if( ERROR == RTC_SetTime(RTC_Format_BIN, &RTC_TimeStructure) )
-   {
+   if( ERROR == RTC_SetTime(RTC_Format_BIN, &RTC_TimeStructure) ) {
       debug_printf("!! RTC Set Time failed. !!\n");
    }
 
@@ -101,15 +99,11 @@ void TIME_Init( void )
    EXTI_InitStructure.EXTI_LineCmd = ENABLE;
    EXTI_Init(&EXTI_InitStructure);
 
-   /* Enable the RTC Wakeup Interrupt */
-   NVIC_InitStructure.NVIC_IRQChannel = RTC_WKUP_IRQn;
-   NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
-   NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
-   NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-   NVIC_Init(&NVIC_InitStructure);
+   /* Set up Interrupt controller to handle RTC Wakeup interrupt */
+   NVIC_Config( RTC_WKUP_IRQn, RTC_WKUP_PRIO );
 
    RTC_WakeUpCmd(DISABLE);
-   debug_printf("!!!!!\n");
+
    /* Configure the RTC WakeUp Clock source: CK_SPRE (1Hz) */
    RTC_WakeUpClockConfig(RTC_WakeUpClock_CK_SPRE_16bits);
    RTC_SetWakeUpCounter(0x0);
@@ -122,14 +116,15 @@ void TIME_Init( void )
 
    /* Enable the subsecond timer */
    TIME_subSecondTimer_Init();
-
+   debug_printf("Finished configuring RTC\n");
 }
 
 /******************************************************************************/
 uint32_t TIME_getLSIFrequency( void )
 {
    /* TIM5 configuration *******************************************************/
-   /* Clock was already enabled in BSP_Init() */
+   RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM5, ENABLE);
+
    /* Connect internally the TIM5_CH4 Input Capture to the LSI clock output */
    TIM_RemapConfig(TIM5, TIM5_LSI);
 
@@ -198,8 +193,8 @@ void TIME_subSecondTimer_Init( void )
 
    /* Time base configuration */
    TIM_TimeBaseStructInit(&TIM_TimeBaseStructure);
-   TIM_TimeBaseStructure.TIM_Prescaler = (SystemCoreClock / DELAY_TIM_FREQUENCY ) - 1;
-   TIM_TimeBaseStructure.TIM_Period = 0xFFFF;
+   TIM_TimeBaseStructure.TIM_Prescaler = 10;
+   TIM_TimeBaseStructure.TIM_Period = (SystemCoreClock / DELAY_TIM_FREQUENCY ) - 1;
    TIM_TimeBaseStructure.TIM_ClockDivision = 0;
    TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
    TIM_TimeBaseInit(TIM7, &TIM_TimeBaseStructure);

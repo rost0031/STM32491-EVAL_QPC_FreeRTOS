@@ -23,6 +23,7 @@ enum FirstSignal {
 enum CommStackSignals {
    MSG_SEND_OUT_SIG = FIRST_SIG,
    MSG_RECEIVED_SIG,
+   TIME_TEST_SIG,
    MSG_MAX_SIG,
 };
 

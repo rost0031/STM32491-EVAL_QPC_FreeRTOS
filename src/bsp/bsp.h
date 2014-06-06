@@ -52,6 +52,7 @@ typedef enum ISR_Priorities {   /* ISR priorities starting from the highest urge
 	SYSTICK_PRIO,
 	USART3_PRIO,
 	UART4_PRIO,
+	RTC_WKUP_PRIO,
 	ETH_PRIO,			/* Ethernet should take the lowest priority */
 	/* ... */
 } ISR_Priority;
