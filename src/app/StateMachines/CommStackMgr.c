@@ -153,11 +153,11 @@ static QState CommStackMgr_Active(CommStackMgr * const me, QEvt const * const e)
         /* @(/2/0/1/1/2) */
         case TIME_TEST_SIG: {
             /* 1. Construct a new msg event indicating that a msg has been received */
-            SerialDataEvt *serDataEvt = Q_NEW(SerialDataEvt, UART_DMA_START_SIG);
+            /*SerialDataEvt *serDataEvt = Q_NEW(SerialDataEvt, UART_DMA_START_SIG);
 
             t_Time time = TIME_getTime();
 
-            /* 2. Fill the msg payload and get the msg source and length */
+
             serDataEvt->wBufferLen = snprintf(
                 serDataEvt->buffer,
                 MAX_MSG_LEN,
@@ -168,7 +168,7 @@ static QState CommStackMgr_Active(CommStackMgr * const me, QEvt const * const e)
                 (int)time.sub_sec
             );
 
-            QF_PUBLISH((QEvent *)serDataEvt, AO_CommStackMgr);
+            QF_PUBLISH((QEvent *)serDataEvt, AO_CommStackMgr); */
             status = Q_HANDLED();
             break;
         }

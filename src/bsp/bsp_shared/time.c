@@ -193,8 +193,8 @@ void TIME_subSecondTimer_Init( void )
 
    /* Time base configuration */
    TIM_TimeBaseStructInit(&TIM_TimeBaseStructure);
-   TIM_TimeBaseStructure.TIM_Prescaler = 10;
-   TIM_TimeBaseStructure.TIM_Period = (SystemCoreClock / DELAY_TIM_FREQUENCY ) - 1;
+   TIM_TimeBaseStructure.TIM_Prescaler = 1192 - 1;
+   TIM_TimeBaseStructure.TIM_Period = 10050 -1;
    TIM_TimeBaseStructure.TIM_ClockDivision = 0;
    TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
    TIM_TimeBaseInit(TIM7, &TIM_TimeBaseStructure);

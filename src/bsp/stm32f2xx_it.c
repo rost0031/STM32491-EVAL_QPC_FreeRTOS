@@ -24,6 +24,8 @@
 #include "Shared.h"                                   /*  Common Declarations */
 #include <stdio.h>
 #include "CBSignals.h"
+#include "SerialMgr.h"
+#include "time.h"
 
 /** @addtogroup Template_Project
  * @{
@@ -187,9 +189,28 @@ void RTC_WKUP_IRQHandler(void) {
    QK_ISR_ENTRY();                        /* inform QK about entering an ISR */
 
    if( RESET != RTC_GetITStatus(RTC_IT_WUT) ) {
-      TIME_printTime();
+
+      t_Time time = TIME_getTime();
+
       /* Reset the subSecond counter on the timer used to keep track of time */
       TIM7->CNT = 0;
+
+      /* 1. Construct a new msg event indicating that a msg has been received */
+      SerialDataEvt *serDataEvt = Q_NEW(SerialDataEvt, UART_DMA_START_SIG);
+
+
+      /* 2. Fill the msg payload and get the msg source and length */
+      serDataEvt->wBufferLen = snprintf(
+            serDataEvt->buffer,
+            MAX_MSG_LEN,
+            "Time in ISR before reset of subsecond: %02d:%02d:%02d:%d\n",
+            time.hour_min_sec.RTC_Hours,
+            time.hour_min_sec.RTC_Minutes,
+            time.hour_min_sec.RTC_Seconds,
+            (int)time.sub_sec
+      );
+
+      QF_PUBLISH((QEvent *)serDataEvt, AO_CommStackMgr);
 
       /* Clear the pending bits so the interrupt fires again next time. */
       RTC_ClearITPendingBit(RTC_IT_WUT);

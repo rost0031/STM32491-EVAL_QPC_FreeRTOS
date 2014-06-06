@@ -21,7 +21,7 @@
 typedef struct
 {
    RTC_TimeTypeDef   hour_min_sec;
-   uint16_t          sub_sec;
+   uint32_t          sub_sec;
 }t_Time;
 
 /**
