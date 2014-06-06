@@ -191,10 +191,11 @@ void TIME_subSecondTimer_Init( void )
    /* Enable timer clock  - use TIMER7 */
    RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM7, ENABLE);
 
-   /* Time base configuration */
+   /* Time base configuration - The magic numbers allow a ~10000 ticks/sec on
+    * this timer. */
    TIM_TimeBaseStructInit(&TIM_TimeBaseStructure);
-   TIM_TimeBaseStructure.TIM_Prescaler = 1192 - 1;
-   TIM_TimeBaseStructure.TIM_Period = 10050 -1;
+   TIM_TimeBaseStructure.TIM_Prescaler = 1191;
+   TIM_TimeBaseStructure.TIM_Period = 10049;
    TIM_TimeBaseStructure.TIM_ClockDivision = 0;
    TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
    TIM_TimeBaseInit(TIM7, &TIM_TimeBaseStructure);
