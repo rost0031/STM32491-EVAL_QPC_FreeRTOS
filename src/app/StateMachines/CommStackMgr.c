@@ -135,7 +135,7 @@ static QState CommStackMgr_Active(CommStackMgr * const me, QEvt const * const e)
             QTimeEvt_postEvery(
                 &me->timeTestTimerEvt,
                 (QActive *)me,
-                SEC_TO_TICKS( 2 )
+                SEC_TO_TICKS( 5 )
             );
             status = Q_HANDLED();
             break;

@@ -78,7 +78,7 @@ QF_PUBLISH((QEvent *)serDataEvt1, AO_CommStackMgr);
 QTimeEvt_postEvery(
     &amp;me-&gt;timeTestTimerEvt,
     (QActive *)me,
-    SEC_TO_TICKS( 2 )
+    SEC_TO_TICKS( 5 )
 );</entry>
      <tran trig="MSG_SEND_OUT">
       <tran_glyph conn="3,9,3,-1,21">
