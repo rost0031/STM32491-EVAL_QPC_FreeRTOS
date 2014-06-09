@@ -28,10 +28,10 @@
 #include "CommStackMgr.h"
 
 /* These are TCP defines to allow us to turn off TCP/IP but still allow compilation */
-#define LWIP_TCP           1
-#define TCP_TMR_INTERVAL   250
-#define LWIP_DHCP          1
-#define LWIP_AUTOIP        0
+//#define LWIP_TCP           1
+//#define TCP_TMR_INTERVAL   250
+//#define LWIP_DHCP          0
+//#define LWIP_AUTOIP        0
 
 typedef enum {
     FALSE = 0,
