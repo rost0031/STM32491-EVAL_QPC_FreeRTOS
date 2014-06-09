@@ -1,15 +1,13 @@
-// $Id$
 /**
- * @file        MtrTestLWIPMgr.c
- * @brief   This file contains the definition of the MtrTestLWIPMgr Active
- *                      Object and its state machine.
+ * @file    LWIPMgr.c
+ * This file contains the definition of the LWIPMgr Active Object and its state
+ * machine.
  *
  * @date        09/27/2012
  * @author      Harry Rostovtsev
  * @email       harry_rostovtsev@datacard.com
  * Copyright (C) 2012 Datacard. All rights reserved.
  */
-// $Log$
 #define LWIP_ALLOWED
 
 #include "qp_port.h"                                             /* QP-port */
@@ -134,11 +132,13 @@ QState LWIPMgr_initial(LWIPMgr *me, QEvent const *e) {
           STATIC_IPADDR0, STATIC_IPADDR1, STATIC_IPADDR2, STATIC_IPADDR3);
     debug_printf("MAC address: %2.2X:%2.2X:%2.2X:%2.2X:%2.2X:%2.2X\n",
           macaddr[0], macaddr[1],macaddr[2],macaddr[3],macaddr[4], macaddr[5]);
+
+    me->ip_addr = 0xFFFFFFFF;             /* initialize to impossible value */
                                           /* initialize the Ethernet Driver */
     me->netif = eth_driver_init((QActive *)me, macaddr);
 
-    me->ip_addr = 0xFFFFFFFF;             /* initialize to impossible value */
 
+    debug_printf("IP Address is %x\n",me->netif->ip_addr);
     me->upcb = udp_new();
     udp_bind(me->upcb, IP_ADDR_ANY, 777);           /* use port 777 for UDP */
     udp_recv(me->upcb, &udp_rx_handler, me);
@@ -210,11 +210,24 @@ QState LWIPMgr_Running(LWIPMgr *me, QEvent const *e) {
             if (me->dhcp_fine_tmr >= DHCP_FINE_TIMER_MSECS) {
                 me->dhcp_fine_tmr = 0;
                 dhcp_fine_tmr();
+                if (me->netif->dhcp->state == DHCP_BOUND) {
+                   debug_printf("DHCP BOUND to addr: %d.%d.%d.%d\n",
+                         ip4_addr1_16(&me->netif->dhcp->offered_ip_addr),
+                         ip4_addr2_16(&me->netif->dhcp->offered_ip_addr),
+                         ip4_addr3_16(&me->netif->dhcp->offered_ip_addr),
+                         ip4_addr4_16(&me->netif->dhcp->offered_ip_addr)
+                   );
+//                   me->ip_addr = me->netif->dhcp->offered_ip_addr;
+
+                } else {
+                   debug_printf("DHCP NOT BOUND!\n");
+                }
             }
             me->dhcp_coarse_tmr += LWIP_SLOW_TICK_MS;
             if (me->dhcp_coarse_tmr >= DHCP_COARSE_TIMER_MSECS) {
                 me->dhcp_coarse_tmr = 0;
                 dhcp_coarse_tmr();
+                debug_printf("2\n");
             }
 #endif
 #if LWIP_AUTOIP

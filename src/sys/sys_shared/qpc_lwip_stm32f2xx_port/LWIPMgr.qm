@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<model version="2.2.03">
+ <framework name="qpc"/>
+ <package name="Events" stereotype="0x01">
+  <class name="EthEvt" superclass="qpc::QEvt">
+   <documentation>MsgEvt types will use CommStackSignals for
+signal names.  These events are responsible
+for getting data from Eth/Serial to CommStackMgr</documentation>
+   <attribute name="msg_src" type="MsgSrc" visibility="0x01" properties="0x00">
+    <documentation>Where the msg came from so it can be routed
+back to the sender.</documentation>
+   </attribute>
+   <attribute name="msg_len" type="uint16_t" visibility="0x01" properties="0x00">
+    <documentation>Length of the msg buffer</documentation>
+   </attribute>
+   <attribute name="msg[MAX_MSG_LEN]" type="char" visibility="0x01" properties="0x00">
+    <documentation>Buffer that holds the data of the msg.</documentation>
+   </attribute>
+  </class>
+ </package>
+ <package name="AOs" stereotype="0x02">
+  <class name="LWIPMgr" superclass="qpc::QActive">
+   <documentation>LWIP Active Object</documentation>
+   <attribute name="timeTestTimerEvt" type="QTimeEvt" visibility="0x01" properties="0x00">
+    <documentation>Used to timeout for testing the clock.</documentation>
+   </attribute>
+   <statechart>
+    <initial target="../1">
+     <action>(void)e;        /* suppress the compiler warning about unused parameter */
+
+QS_OBJ_DICTIONARY(&amp;l_CommStackMgr);
+QS_FUN_DICTIONARY(&amp;QHsm_top);
+QS_FUN_DICTIONARY(&amp;CommStackMgr_initial);
+QS_FUN_DICTIONARY(&amp;CommStackMgr_Running);
+
+QActive_subscribe((QActive *)me, MSG_SEND_OUT_SIG);
+QActive_subscribe((QActive *)me, MSG_RECEIVED_SIG);
+QActive_subscribe((QActive *)me, TIME_TEST_SIG);</action>
+     <initial_glyph conn="1,2,4,3,4,2">
+      <action box="0,-2,6,2"/>
+     </initial_glyph>
+    </initial>
+    <state name="Active">
+     <documentation>This state is a catch-all Active state.  If any signals need
+to be handled that do not cause state transitions and are 
+common to the entire AO, they should be handled here.
+ 
+@param  me: Pointer to the Interstage state machine
+@param  e:  Pointer to the event being processed.
+@retval status: QState type that specifies where the state
+machine is going next.
+</documentation>
+     <tran trig="MSG_SEND_OUT">
+      <tran_glyph conn="3,9,3,-1,21">
+       <action box="0,-2,16,2"/>
+      </tran_glyph>
+     </tran>
+     <tran trig="MSG_RECEIVED">
+      <tran_glyph conn="3,14,3,-1,21">
+       <action box="0,-2,17,2"/>
+      </tran_glyph>
+     </tran>
+     <tran trig="TIME_TEST">
+      <action>/* 1. Construct a new msg event indicating that a msg has been received */
+SerialDataEvt *serDataEvt = Q_NEW(SerialDataEvt, UART_DMA_START_SIG);
+
+t_Time time = TIME_getTime();
+
+
+serDataEvt-&gt;wBufferLen = snprintf(
+    serDataEvt-&gt;buffer,
+    MAX_MSG_LEN,
+    &quot;Time is now %02d:%02d:%02d:%d\n&quot;,
+    time.hour_min_sec.RTC_Hours,
+    time.hour_min_sec.RTC_Minutes,
+    time.hour_min_sec.RTC_Seconds,
+    (int)time.sub_sec
+);
+
+QF_PUBLISH((QEvent *)serDataEvt, AO_CommStackMgr);</action>
+      <tran_glyph conn="3,19,3,-1,21">
+       <action box="0,-2,11,2"/>
+      </tran_glyph>
+     </tran>
+     <state_glyph node="3,3,94,82"/>
+    </state>
+    <state_diagram size="108,90"/>
+   </statechart>
+  </class>
+  <attribute name="AO_LWIPMgr" type="QActive * const" visibility="0x00" properties="0x00"/>
+  <operation name="LWIPMgr_ctor" type="void" visibility="0x00" properties="0x00">
+   <documentation>This function is a C &quot;constructor&quot; for this active object.</documentation>
+   <code>LWIPMgr *me = &amp;l_LWIPMgr;
+
+QActive_ctor(&amp;me-&gt;super, (QStateHandler)&amp;LWIPMgr_initial);
+QTimeEvt_ctor(&amp;me-&gt;te_LWIP_SLOW_TICK, LWIP_SLOW_TICK_SIG);</code>
+  </operation>
+ </package>
+ <directory name=".">
+  <file name="LWIPMgr_gen.c">
+   <text>/**
+ * @file     LWIPMgr.c
+ * This file contains the definition of the LWIPMgr Active Object and its
+ * state machines.
+ *
+ * Note: If editing this file, please make sure to update the LWIPMgr.qm
+ * model.  The generated code from that model should be very similar to the
+ * code in this file.
+ *
+ * @date       06/09/2014
+ * @author     Harry Rostovtsev
+ * @email      harry_rostovtsev@datacard.com
+ * Copyright (C) 2014 Datacard. All rights reserved.
+ */
+#include &quot;LWIPMgr.h&quot;
+#include &quot;CBSignals.h&quot;                              /* Signal declarations. */
+#include &quot;CBTimeouts.h&quot;                            /* Timeout declarations. */
+#include &quot;bsp.h&quot;        /* For seconds to bsp tick conversion (SEC_TO_TICK) */
+#include &quot;serial.h&quot;                             /* For serial functionality */
+
+Q_DEFINE_THIS_FILE;
+
+/* application signals cannot overlap the device-driver signals */
+Q_ASSERT_COMPILE(MAX_SHARED_SIG &lt; DEV_DRIVER_SIG);
+
+#define LWIP_ALLOWED
+
+
+/* Active object class -----------------------------------------------------*/
+$declare(AOs::LWIPMgr)
+
+/* Local objects -----------------------------------------------------------*/
+static LWIPMgr l_LWIPMgr;       /* the single instance of the active object */
+
+/* Global-scope objects ----------------------------------------------------*/
+QActive * const AO_LWIPMgr = (QActive *)&amp;l_LWIPMgr;  /* &quot;opaque&quot; AO pointer */
+
+$define(AOs::LWIPMgr_ctor)
+$define(AOs::LWIPMgr)
+
+/******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/</text>
+  </file>
+  <file name="LWIPMgr_gen.h">
+   <text>/**
+ * @file     LWIPMgr.h
+ * This file contains the declarations of the LWIPMgr Active Object and its
+ * state machines.
+ *
+ * Note: If editing this file, please make sure to update the LWIPMgr.qm
+ * model.  The generated code from that model should be very similar to the
+ * code in this file.
+ *
+ * @date       06/09/2014
+ * @author     Harry Rostovtsev
+ * @email      harry_rostovtsev@datacard.com
+ * Copyright (C) 2014 Datacard. All rights reserved.
+ */
+#ifndef LWIPMGR_H_
+#define LWIPMGR_H_
+
+#include &quot;qp_port.h&quot;                                        /* for QP support */
+#include &quot;Shared.h&quot;                                   /*  Common Declarations */
+#include &quot;CBSignals.h&quot;
+
+$declare(AOs::LWIPMgr_ctor)
+$declare(AOs::AO_LWIPMgr)
+
+/* Don't declare the MsgEvt type here since it needs to be visible to LWIP, 
+ * which is a shared port common to any ethernet project.  Instead, it's 
+ * declared in Shared.h, which is included by LWIPMgr.h */
+/* $declare(Events) */
+
+#endif                                                          /* LWIPMGR_H_ */
+/******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/</text>
+  </file>
+ </directory>
+</model>

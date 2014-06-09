@@ -261,7 +261,7 @@ The STM32F207 allows computing and verifying the IP, UDP, TCP and ICMP checksums
 // ---------- DHCP options ----------
 //
 //****************************************************************************
-//#define LWIP_DHCP                       1           // default is 0
+#define LWIP_DHCP                       1           // default is 0
 //#define DHCP_DOES_ARP_CHECK             ((LWIP_DHCP) && (LWIP_ARP))
 
 //****************************************************************************

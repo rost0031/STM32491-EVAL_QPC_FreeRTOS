@@ -1,23 +1,19 @@
-// $Id$
 /**
  * @file 	LWIPMgr.h
- * @brief   This file contains the declarations of the LWIPMgr
- * 			Active Object and their state machines.
+ * This file contains the declarations of the LWIPMgr Active Object and its
+ * state machines.
  *
- * @date   	09/28/2012
+ * @date   	06/09/2014
  * @author 	Harry Rostovtsev
  * @email  	harry_rostovtsev@datacard.com
- * Copyright (C) 2012 Datacard. All rights reserved.
+ * Copyright (C) 2014 Datacard. All rights reserved.
  */
-// $Log$
-
 #ifndef LWIPMGR_H_
 #define LWIPMGR_H_
 
 #include "qp_port.h"                                        /* for QP support */
 #include "Shared.h"
 #include "CBSignals.h"
-#include "project_includes.h"                       /* for motor enums support*/
 
 enum LWIPMgrSignals {
    ETH_SEND_SIG = MAX_SHARED_SIG,          
@@ -49,5 +45,5 @@ void LWIPMgr_ctor(void);
 void ETH_SendMsg_Handler(MsgEvt const *e);
 
 
-#endif /* LWIPMGR_H_ */
-/******** Copyright (C) 2012 Datacard. All rights reserved *****END OF FILE****/
+#endif                                                          /* LWIPMGR_H_ */
+/******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/
