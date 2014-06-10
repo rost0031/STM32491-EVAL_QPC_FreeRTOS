@@ -192,6 +192,7 @@ C_SRCS 					:= \
 			      		time.c \
 			      		lwip.c \
 			      		serial.c \
+			      		console_output.c \
 			      		crc32compat.c \
 						stm32f2xx_it.c \
 			      		system_stm32f2xx.c \

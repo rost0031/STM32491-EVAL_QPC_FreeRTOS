@@ -19,7 +19,7 @@
 
 #include <string.h>
 #include <stdio.h>
-
+#include "console_output.h"
 #include "project_includes.h"
 
 Q_DEFINE_THIS_FILE
@@ -211,14 +211,12 @@ QState LWIPMgr_Running(LWIPMgr *me, QEvent const *e) {
                 me->dhcp_fine_tmr = 0;
                 dhcp_fine_tmr();
                 if (me->netif->dhcp->state == DHCP_BOUND) {
-                   debug_printf("DHCP BOUND to addr: %d.%d.%d.%d\n",
+                   DBG_printf("DHCP BOUND to addr: %d.%d.%d.%d\n",
                          ip4_addr1_16(&me->netif->dhcp->offered_ip_addr),
                          ip4_addr2_16(&me->netif->dhcp->offered_ip_addr),
                          ip4_addr3_16(&me->netif->dhcp->offered_ip_addr),
                          ip4_addr4_16(&me->netif->dhcp->offered_ip_addr)
                    );
-//                   me->ip_addr = me->netif->dhcp->offered_ip_addr;
-
                 } else {
                    debug_printf("DHCP NOT BOUND!\n");
                 }
