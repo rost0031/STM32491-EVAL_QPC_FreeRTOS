@@ -178,20 +178,15 @@ static QState LWIPMgr_initial(LWIPMgr * const me, QEvt const * const e) {
     macaddr[4] = DEF_MAC_ADDR4;
     macaddr[5] = DEF_MAC_ADDR5;
 
-    debug_printf("Trying static address:\n");
-
-    debug_printf("IP address:\n");
-    debug_printf("%d.%d.%d.%d\n",
+    DBG_printf("Static IP address: %d.%d.%d.%d\n",
           STATIC_IPADDR0, STATIC_IPADDR1, STATIC_IPADDR2, STATIC_IPADDR3);
-    debug_printf("MAC address: %2.2X:%2.2X:%2.2X:%2.2X:%2.2X:%2.2X\n",
+    DBG_printf("MAC address: %2.2X:%2.2X:%2.2X:%2.2X:%2.2X:%2.2X\n",
           macaddr[0], macaddr[1],macaddr[2],macaddr[3],macaddr[4], macaddr[5]);
 
     me->ip_addr = 0xFFFFFFFF;             /* initialize to impossible value */
                                           /* initialize the Ethernet Driver */
     me->netif = eth_driver_init((QActive *)me, macaddr);
 
-
-    debug_printf("IP Address is %x\n",me->netif->ip_addr);
     me->upcb = udp_new();
     udp_bind(me->upcb, IP_ADDR_ANY, 777);           /* use port 777 for UDP */
     udp_recv(me->upcb, &udp_rx_handler, me);

@@ -85,20 +85,15 @@ macaddr[3] = DEF_MAC_ADDR3;
 macaddr[4] = DEF_MAC_ADDR4;
 macaddr[5] = DEF_MAC_ADDR5;
 
-debug_printf(&quot;Trying static address:\n&quot;);
-
-debug_printf(&quot;IP address:\n&quot;);
-debug_printf(&quot;%d.%d.%d.%d\n&quot;,
+DBG_printf(&quot;Static IP address: %d.%d.%d.%d\n&quot;,
       STATIC_IPADDR0, STATIC_IPADDR1, STATIC_IPADDR2, STATIC_IPADDR3);
-debug_printf(&quot;MAC address: %2.2X:%2.2X:%2.2X:%2.2X:%2.2X:%2.2X\n&quot;,
+DBG_printf(&quot;MAC address: %2.2X:%2.2X:%2.2X:%2.2X:%2.2X:%2.2X\n&quot;,
       macaddr[0], macaddr[1],macaddr[2],macaddr[3],macaddr[4], macaddr[5]);
 
 me-&gt;ip_addr = 0xFFFFFFFF;             /* initialize to impossible value */
                                       /* initialize the Ethernet Driver */
 me-&gt;netif = eth_driver_init((QActive *)me, macaddr);
 
-
-debug_printf(&quot;IP Address is %x\n&quot;,me-&gt;netif-&gt;ip_addr);
 me-&gt;upcb = udp_new();
 udp_bind(me-&gt;upcb, IP_ADDR_ANY, 777);           /* use port 777 for UDP */
 udp_recv(me-&gt;upcb, &amp;udp_rx_handler, me);
