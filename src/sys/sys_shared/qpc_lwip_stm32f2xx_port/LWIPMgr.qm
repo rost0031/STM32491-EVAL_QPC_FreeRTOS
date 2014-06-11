@@ -3,9 +3,7 @@
  <framework name="qpc"/>
  <package name="Events" stereotype="0x01">
   <class name="EthEvt" superclass="qpc::QEvt">
-   <documentation>MsgEvt types will use CommStackSignals for
-signal names.  These events are responsible
-for getting data from Eth/Serial to CommStackMgr</documentation>
+   <documentation>These events types are responsible for getting data from Eth driver to LWIPMgr.</documentation>
    <attribute name="msg_src" type="MsgSrc" visibility="0x01" properties="0x00">
     <documentation>Where the msg came from so it can be routed
 back to the sender.</documentation>
@@ -21,22 +19,92 @@ back to the sender.</documentation>
  <package name="AOs" stereotype="0x02">
   <class name="LWIPMgr" superclass="qpc::QActive">
    <documentation>LWIP Active Object</documentation>
-   <attribute name="timeTestTimerEvt" type="QTimeEvt" visibility="0x01" properties="0x00">
-    <documentation>Used to timeout for testing the clock.</documentation>
+   <attribute name="te_LWIP_SLOW_TICK" type="QTimeEvt" visibility="0x01" properties="0x00">
+    <documentation>Local timer for LWIP slow tick.</documentation>
+   </attribute>
+   <attribute name="*netif" type="struct netif" visibility="0x01" properties="0x00">
+    <documentation>Pointer to netif structure.</documentation>
+   </attribute>
+   <attribute name="*upcb" type="struct udp_pcb" visibility="0x01" properties="0x00">
+    <documentation>Pointer to upcb structure.</documentation>
+   </attribute>
+   <attribute name="ip_addr" type="uint32_t" visibility="0x01" properties="0x00">
+    <documentation>IP address in the native host byte order</documentation>
+   </attribute>
+   <attribute name="tcp_tmr;&#10;    #endif" type="#if LWIP_TCP&#10;    uint32_t " visibility="0x01" properties="0x00">
+    <documentation>TCP timer.  Only exists if LWIP_TCP is defined.</documentation>
+   </attribute>
+   <attribute name="arp_tmr;&#10;    #endif" type="#if LWIP_ARP&#10;    uint32_t " visibility="0x01" properties="0x00">
+    <documentation>ARP timer.  Only exists if LWIP_ARP is defined.</documentation>
+   </attribute>
+   <attribute name="dhcp_fine_tmr;&#10;    #endif" type="#if LWIP_DHCP&#10;    uint32_t " visibility="0x01" properties="0x00">
+    <documentation>DHCP fine timer.  Only exists if LWIP_DHCP is defined.</documentation>
+   </attribute>
+   <attribute name="dhcp_coarse_tmr;&#10;    #endif" type="#if LWIP_DHCP&#10;    uint32_t " visibility="0x01" properties="0x00">
+    <documentation>DHCP coarse timer.  Only exists if LWIP_DHCP is defined.</documentation>
+   </attribute>
+   <attribute name="auto_ip_tmr;&#10;    #endif" type="#if LWIP_AUTOIP&#10;    uint32_t " visibility="0x01" properties="0x00">
+    <documentation>AUTO IP timer.  Only exists if LWIP_AUTOIP is defined.</documentation>
    </attribute>
    <statechart>
     <initial target="../1">
      <action>(void)e;        /* suppress the compiler warning about unused parameter */
 
-QS_OBJ_DICTIONARY(&amp;l_CommStackMgr);
-QS_FUN_DICTIONARY(&amp;QHsm_top);
-QS_FUN_DICTIONARY(&amp;CommStackMgr_initial);
-QS_FUN_DICTIONARY(&amp;CommStackMgr_Running);
+uint8_t  macaddr[NETIF_MAX_HWADDR_LEN];
 
-QActive_subscribe((QActive *)me, MSG_SEND_OUT_SIG);
-QActive_subscribe((QActive *)me, MSG_RECEIVED_SIG);
-QActive_subscribe((QActive *)me, TIME_TEST_SIG);</action>
-     <initial_glyph conn="1,2,4,3,4,2">
+QS_OBJ_DICTIONARY(&amp;l_LWIPMgr);
+QS_OBJ_DICTIONARY(&amp;l_LWIPMgr.te_LWIP_SLOW_TICK);
+
+QS_FUN_DICTIONARY(&amp;QHsm_top);
+QS_FUN_DICTIONARY(&amp;LWIPMgr_initial);
+QS_FUN_DICTIONARY(&amp;LWIPMgr_Running);
+QS_FUN_DICTIONARY(&amp;udp_rx_handler);
+QS_FUN_DICTIONARY(&amp;ETH_SendMsg_Handler);
+
+QS_FILTER_SM_OBJ(0);                  /* Turn off all tracing for this SM */
+QS_FILTER_AO_OBJ(0);                  /* Turn off all tracing for this AO */
+QS_FILTER_TE_OBJ(0);           /* Turn off time event tracing for this AO */
+
+/* Configure the hardware MAC address for the Ethernet Controller */
+
+/*
+ * Set up the MAC address and make sure it's not all FF values
+ * TODO: This will evetually be read somewhere
+ */
+
+/* the MAC address must have been programmed! */
+Q_ASSERT((STATIC_IPADDR0 != 0xFF) &amp;&amp;
+        (STATIC_IPADDR1 != 0xFF) &amp;&amp;
+        (STATIC_IPADDR2 != 0xFF) &amp;&amp;
+        (STATIC_IPADDR3 != 0xFF));
+
+macaddr[0] = DEF_MAC_ADDR0;
+macaddr[1] = DEF_MAC_ADDR1;
+macaddr[2] = DEF_MAC_ADDR2;
+macaddr[3] = DEF_MAC_ADDR3;
+macaddr[4] = DEF_MAC_ADDR4;
+macaddr[5] = DEF_MAC_ADDR5;
+
+debug_printf(&quot;Trying static address:\n&quot;);
+
+debug_printf(&quot;IP address:\n&quot;);
+debug_printf(&quot;%d.%d.%d.%d\n&quot;,
+      STATIC_IPADDR0, STATIC_IPADDR1, STATIC_IPADDR2, STATIC_IPADDR3);
+debug_printf(&quot;MAC address: %2.2X:%2.2X:%2.2X:%2.2X:%2.2X:%2.2X\n&quot;,
+      macaddr[0], macaddr[1],macaddr[2],macaddr[3],macaddr[4], macaddr[5]);
+
+me-&gt;ip_addr = 0xFFFFFFFF;             /* initialize to impossible value */
+                                      /* initialize the Ethernet Driver */
+me-&gt;netif = eth_driver_init((QActive *)me, macaddr);
+
+
+debug_printf(&quot;IP Address is %x\n&quot;,me-&gt;netif-&gt;ip_addr);
+me-&gt;upcb = udp_new();
+udp_bind(me-&gt;upcb, IP_ADDR_ANY, 777);           /* use port 777 for UDP */
+udp_recv(me-&gt;upcb, &amp;udp_rx_handler, me);
+
+QActive_subscribe((QActive *)me, ETH_SEND_SIG);</action>
+     <initial_glyph conn="1,2,4,3,3,2">
       <action box="0,-2,6,2"/>
      </initial_glyph>
     </initial>
@@ -45,49 +113,121 @@ QActive_subscribe((QActive *)me, TIME_TEST_SIG);</action>
 to be handled that do not cause state transitions and are 
 common to the entire AO, they should be handled here.
  
-@param  me: Pointer to the Interstage state machine
+@param  me: Pointer to the state machine
 @param  e:  Pointer to the event being processed.
 @retval status: QState type that specifies where the state
 machine is going next.
 </documentation>
-     <tran trig="MSG_SEND_OUT">
-      <tran_glyph conn="3,9,3,-1,21">
+     <entry>QTimeEvt_postEvery(
+    &amp;me-&gt;te_LWIP_SLOW_TICK,
+    (QActive *)me,
+    (LWIP_SLOW_TICK_MS * BSP_TICKS_PER_SEC) / 1000
+);</entry>
+     <exit>QTimeEvt_disarm(&amp;me-&gt;te_LWIP_SLOW_TICK);</exit>
+     <tran trig="ETH_SEND">
+      <action>/* Event posted that will include (inside it) a msg to send */
+if (me-&gt;upcb-&gt;remote_port != (uint16_t)0) {
+    struct pbuf *p = pbuf_new(
+        (u8_t *)((EthEvt const *)e)-&gt;msg,
+        ((EthEvt const *)e)-&gt;msg_len
+    );
+    if (p != (struct pbuf *)0) {
+        udp_send(me-&gt;upcb, p);
+        pbuf_free(p);                   /* don't leak the pbuf! */
+    }
+}</action>
+      <tran_glyph conn="3,10,3,-1,21">
        <action box="0,-2,16,2"/>
       </tran_glyph>
      </tran>
-     <tran trig="MSG_RECEIVED">
-      <tran_glyph conn="3,14,3,-1,21">
+     <tran trig="LWIP_RX_READY">
+      <action>eth_driver_read();</action>
+      <tran_glyph conn="3,13,3,-1,21">
        <action box="0,-2,17,2"/>
       </tran_glyph>
      </tran>
-     <tran trig="TIME_TEST">
-      <action>/* 1. Construct a new msg event indicating that a msg has been received */
-SerialDataEvt *serDataEvt = Q_NEW(SerialDataEvt, UART_DMA_START_SIG);
-
-t_Time time = TIME_getTime();
-
-
-serDataEvt-&gt;wBufferLen = snprintf(
-    serDataEvt-&gt;buffer,
-    MAX_MSG_LEN,
-    &quot;Time is now %02d:%02d:%02d:%d\n&quot;,
-    time.hour_min_sec.RTC_Hours,
-    time.hour_min_sec.RTC_Minutes,
-    time.hour_min_sec.RTC_Seconds,
-    (int)time.sub_sec
-);
-
-QF_PUBLISH((QEvent *)serDataEvt, AO_CommStackMgr);</action>
-      <tran_glyph conn="3,19,3,-1,21">
-       <action box="0,-2,11,2"/>
+     <tran trig="LWIP_TX_READY">
+      <action>eth_driver_write();</action>
+      <tran_glyph conn="3,18,3,-1,21">
+       <action box="0,-2,13,2"/>
       </tran_glyph>
      </tran>
-     <state_glyph node="3,3,94,82"/>
+     <tran trig="LWIP_SLOW_TICK">
+      <action>/* has IP address changed? */
+if (me-&gt;ip_addr != me-&gt;netif-&gt;ip_addr.addr) {
+    uint32_t ip_net;    /* IP address in the network byte order */
+    me-&gt;ip_addr = me-&gt;netif-&gt;ip_addr.addr; /* save the IP addr. */
+    ip_net  = ntohl(me-&gt;ip_addr);
+}
+
+#if LWIP_TCP
+me-&gt;tcp_tmr += LWIP_SLOW_TICK_MS;
+if (me-&gt;tcp_tmr &gt;= TCP_TMR_INTERVAL) {
+    me-&gt;tcp_tmr = 0;
+    tcp_tmr();
+}
+#endif
+
+#if LWIP_ARP
+me-&gt;arp_tmr += LWIP_SLOW_TICK_MS;
+if (me-&gt;arp_tmr &gt;= ARP_TMR_INTERVAL) {
+    me-&gt;arp_tmr = 0;
+    etharp_tmr();
+}
+#endif
+
+#if LWIP_DHCP
+me-&gt;dhcp_fine_tmr += LWIP_SLOW_TICK_MS;
+if (me-&gt;dhcp_fine_tmr &gt;= DHCP_FINE_TIMER_MSECS) {
+    me-&gt;dhcp_fine_tmr = 0;
+    dhcp_fine_tmr();
+    if (me-&gt;netif-&gt;dhcp-&gt;state == DHCP_BOUND) {
+       DBG_printf(&quot;DHCP BOUND to addr: %d.%d.%d.%d\n&quot;,
+             ip4_addr1_16(&amp;me-&gt;netif-&gt;dhcp-&gt;offered_ip_addr),
+             ip4_addr2_16(&amp;me-&gt;netif-&gt;dhcp-&gt;offered_ip_addr),
+             ip4_addr3_16(&amp;me-&gt;netif-&gt;dhcp-&gt;offered_ip_addr),
+             ip4_addr4_16(&amp;me-&gt;netif-&gt;dhcp-&gt;offered_ip_addr)
+       );
+    } else {
+       debug_printf(&quot;DHCP NOT BOUND!\n&quot;);
+    }
+}
+me-&gt;dhcp_coarse_tmr += LWIP_SLOW_TICK_MS;
+if (me-&gt;dhcp_coarse_tmr &gt;= DHCP_COARSE_TIMER_MSECS) {
+    me-&gt;dhcp_coarse_tmr = 0;
+    dhcp_coarse_tmr();
+    debug_printf(&quot;2\n&quot;);
+}
+#endif
+
+#if LWIP_AUTOIP
+me-&gt;auto_ip_tmr += LWIP_SLOW_TICK_MS;
+if (me-&gt;auto_ip_tmr &gt;= AUTOIP_TMR_INTERVAL) {
+    me-&gt;auto_ip_tmr = 0;
+    autoip_tmr();
+}
+#endif</action>
+      <tran_glyph conn="3,22,3,-1,21">
+       <action box="0,-2,15,2"/>
+      </tran_glyph>
+     </tran>
+     <tran trig="LWIP_RX_OVERRUN">
+      <action>LINK_STATS_INC(link.err);</action>
+      <tran_glyph conn="3,26,3,-1,21">
+       <action box="0,-2,16,2"/>
+      </tran_glyph>
+     </tran>
+     <state_glyph node="3,2,94,82">
+      <entry box="1,2,5,2"/>
+      <exit box="1,4,5,2"/>
+     </state_glyph>
     </state>
     <state_diagram size="108,90"/>
    </statechart>
   </class>
-  <attribute name="AO_LWIPMgr" type="QActive * const" visibility="0x00" properties="0x00"/>
+  <attribute name="AO_LWIPMgr" type="QActive * const" visibility="0x00" properties="0x00">
+   <documentation>&quot;opaque&quot; pointer to the Active Object</documentation>
+  </attribute>
   <operation name="LWIPMgr_ctor" type="void" visibility="0x00" properties="0x00">
    <documentation>This function is a C &quot;constructor&quot; for this active object.</documentation>
    <code>LWIPMgr *me = &amp;l_LWIPMgr;
@@ -112,21 +252,24 @@ QTimeEvt_ctor(&amp;me-&gt;te_LWIP_SLOW_TICK, LWIP_SLOW_TICK_SIG);</code>
  * @email      harry_rostovtsev@datacard.com
  * Copyright (C) 2014 Datacard. All rights reserved.
  */
+
+#define LWIP_ALLOWED
+
 #include &quot;LWIPMgr.h&quot;
 #include &quot;CBSignals.h&quot;                              /* Signal declarations. */
 #include &quot;CBTimeouts.h&quot;                            /* Timeout declarations. */
 #include &quot;bsp.h&quot;        /* For seconds to bsp tick conversion (SEC_TO_TICK) */
-#include &quot;serial.h&quot;                             /* For serial functionality */
+#include &quot;console_output.h&quot;                         /* For debug capability */
+#include &quot;lwip.h&quot;                                             /* lwIP stack */
+
+
+#define LWIP_SLOW_TICK_MS       TCP_TMR_INTERVAL
 
 Q_DEFINE_THIS_FILE;
 
 /* application signals cannot overlap the device-driver signals */
 Q_ASSERT_COMPILE(MAX_SHARED_SIG &lt; DEV_DRIVER_SIG);
 
-#define LWIP_ALLOWED
-
-
-/* Active object class -----------------------------------------------------*/
 $declare(AOs::LWIPMgr)
 
 /* Local objects -----------------------------------------------------------*/
@@ -135,8 +278,61 @@ static LWIPMgr l_LWIPMgr;       /* the single instance of the active object */
 /* Global-scope objects ----------------------------------------------------*/
 QActive * const AO_LWIPMgr = (QActive *)&amp;l_LWIPMgr;  /* &quot;opaque&quot; AO pointer */
 
+/**
+  * @brief  This function is the UDP handler callback. It is automatically
+  *             called by the LWIP stack when a new UDP message arrives.  It
+  *             creates a new MsgEvt event (for CommStack) and publishes it to
+  *             the shared CommStackMgr AO. IT SHOULD NOT BE CALLED DIRECTLY.
+  *
+  * @param  arg: a pointer to arg.  (Not currently used but in the original
+  *             implementation of the callback.
+  * @param  upcb: a pointer to the udb structure containing UDP connect data.
+  * @param  p:  a pointer to the pbuf containing the received data.
+  * @param  addr: a pointer to struct containing the IP data.
+  * @param  part: a u16_t type containing the port number used to connect.
+  * @retval None
+  */
+static void udp_rx_handler(void *arg, struct udp_pcb *upcb,
+                           struct pbuf *p, struct ip_addr *addr, u16_t port);
+
 $define(AOs::LWIPMgr_ctor)
 $define(AOs::LWIPMgr)
+
+/* Ethernet message sender ...................................................*/
+void ETH_SendMsg_Handler(MsgEvt const *e) {
+
+        /* 1. Construct a new msg event indicating that a msg has been received */
+        EthEvt *ethEvt = Q_NEW(EthEvt, ETH_SEND_SIG);
+
+        /* 2. Fill the msg payload with the message */
+        MEMCPY(ethEvt-&gt;msg, e-&gt;msg, e-&gt;msg_len);
+        ethEvt-&gt;msg_len = e-&gt;msg_len;
+
+        /* 3. Publish the newly created EthEvt event to LWIPMgr AO */
+        QF_PUBLISH((QEvent *)ethEvt, AO_LWIPMgr);
+}
+
+/* UDP handler ...............................................................*/
+static void udp_rx_handler(void *arg, struct udp_pcb *upcb,
+                           struct pbuf *p, struct ip_addr *addr, u16_t port) {
+
+    /* 1. Construct a new msg event indicating that a msg has been received */
+    MsgEvt *msgEvt = Q_NEW(MsgEvt, MSG_RECEIVED_SIG);
+
+    /* 2. Fill the msg payload and get the msg source and length */
+    MEMCPY(msgEvt-&gt;msg, p-&gt;payload, p-&gt;len);
+    msgEvt-&gt;msg_len = p-&gt;len;
+
+    /* 3. Don't bother publishing locally.  Instead, publish the newly created
+     * MsgEvt event to CommStackMgr AO */
+    QF_PUBLISH((QEvent *)msgEvt, AO_LWIPMgr);
+
+    /* 4. connect to the remote host */
+    udp_connect(upcb, addr, port);
+
+    /* 5. Free up the pbuf */
+    pbuf_free(p);
+}
 
 /******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/</text>
   </file>
@@ -162,13 +358,31 @@ $define(AOs::LWIPMgr)
 #include &quot;Shared.h&quot;                                   /*  Common Declarations */
 #include &quot;CBSignals.h&quot;
 
+/*! \enum LWIPMgrSignals
+ * Signals used by LWIPMgr.  These should start from MAX_SHARED_SIG
+ */
+enum LWIPMgrSignals {
+   ETH_SEND_SIG = MAX_SHARED_SIG,
+   MAX_PUB_SIG,                                  /* the last published signal */
+};
+
+$declare(Events)
+
 $declare(AOs::LWIPMgr_ctor)
 $declare(AOs::AO_LWIPMgr)
 
-/* Don't declare the MsgEvt type here since it needs to be visible to LWIP, 
- * which is a shared port common to any ethernet project.  Instead, it's 
- * declared in Shared.h, which is included by LWIPMgr.h */
-/* $declare(Events) */
+/**
+  * This function is the implementation of a stub function in CommStackMgr.  It
+  * is used to do the actual sending of data over ethernet on the embedded side.
+  * The simulator will have its own implementation of this function due to the
+  * use of totally different ip stacks and threading paradigms.
+  *
+  * @param  e: a MsgEvt const event pointer to the MsgEvt that contains the
+  * length and message to be sent.
+  *
+  * @return None
+  */
+void ETH_SendMsg_Handler(MsgEvt const *e);
 
 #endif                                                          /* LWIPMGR_H_ */
 /******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/</text>

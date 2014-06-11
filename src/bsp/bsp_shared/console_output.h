@@ -14,6 +14,9 @@
 
 #include <stdint.h>
 #include <stdarg.h>
+#include <stdio.h>
+#include <string.h>
+#include "serial.h"
 
 /* These two macros are handy for debugging and will be disabled if NDEBUG is not set */
 /* This is the regular debug print function which includes more info */

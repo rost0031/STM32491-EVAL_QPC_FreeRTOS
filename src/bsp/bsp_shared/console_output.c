@@ -9,12 +9,9 @@
  * Copyright (C) 2014 Datacard. All rights reserved.
  */
 #include "console_output.h"
-#include "serial.h"
 #include "qp_port.h"                                        /* for QP support */
 #include "CBSignals.h"
 #include "CBErrors.h"
-#include <stdio.h>
-#include <string.h>
 #include "Shared.h"
 #include "time.h"
 #include "SerialMgr.h"

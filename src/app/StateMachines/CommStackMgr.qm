@@ -45,7 +45,7 @@ QActive_subscribe((QActive *)me, TIME_TEST_SIG);</action>
 to be handled that do not cause state transitions and are 
 common to the entire AO, they should be handled here.
  
-@param  me: Pointer to the Interstage state machine
+@param  me: Pointer to the state machine
 @param  e:  Pointer to the event being processed.
 @retval status: QState type that specifies where the state
 machine is going next.
