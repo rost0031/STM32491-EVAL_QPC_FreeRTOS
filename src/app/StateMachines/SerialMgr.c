@@ -22,11 +22,8 @@
  * Copyright (C) 2014 Datacard. All rights reserved.
  */
 #include "SerialMgr.h"
-#include "CBSignals.h"                              /* Signal declarations. */
-#include "CBTimeouts.h"                            /* Timeout declarations. */
+#include "project_includes.h"         /* Includes common to entire project. */
 #include "bsp.h"        /* For seconds to bsp tick conversion (SEC_TO_TICK) */
-#include "serial.h"                             /* For serial functionality */
-#include <stdio.h>
 
 Q_DEFINE_THIS_FILE;
 

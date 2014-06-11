@@ -25,10 +25,6 @@
 #define LWIP_ALLOWED
 
 #include "LWIPMgr.h"
-#include "CBSignals.h"                              /* Signal declarations. */
-#include "CBTimeouts.h"                            /* Timeout declarations. */
-#include "bsp.h"        /* For seconds to bsp tick conversion (SEC_TO_TICK) */
-#include "console_output.h"                         /* For debug capability */
 #include "lwip.h"                                             /* lwIP stack */
 
 

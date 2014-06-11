@@ -62,10 +62,6 @@ typedef enum DEBUG_LEVEL {
   *   Release builds.
   *   @arg ERR: Errors. Enabled in all builds.
   *
-  * @param [in] *pFilePath: pointer to the file and path from the macro where
-  * this is called.  Since this currently includes the path and filename, it is
-  * not printed due to being too long.
-  *
   * @param [in] *pFuncName: pointer to the function name where the macro was
   * called from.
   *
@@ -80,10 +76,9 @@ typedef enum DEBUG_LEVEL {
   */
 void CON_output(
       DEBUG_LEVEL_T dbgLvl,
-      char *pFilePath,
-      char *pFuncName,
+      const char *pFuncName,
       uint16_t wLineNumber,
-      const char *fmt,
+      char *fmt,
       ...
 );
 
@@ -126,7 +121,7 @@ void CON_output(
  * @return None
  */
 #define DBG_printf(fmt, ...) \
-      do { if (DEBUG) CON_output(DBG, __FILE__, __func__, __LINE__, fmt, \
+      do { if (DEBUG) CON_output(DBG, __func__, __LINE__, fmt, \
             ##__VA_ARGS__); \
       } while (0)
 
@@ -143,7 +138,7 @@ void CON_output(
  * @return None
  */
 #define LOG_printf(fmt, ...) \
-      do { if (DEBUG) CON_output(LOG, __FILE__, __func__, __LINE__, fmt, \
+      do { if (DEBUG) CON_output(LOG, __func__, __LINE__, fmt, \
             ##__VA_ARGS__); \
       } while (0)
 
@@ -162,7 +157,7 @@ void CON_output(
  * @return None
  */
 #define WRN_printf(fmt, ...) \
-      do { CON_output(WRN, __FILE__, __func__, __LINE__, fmt, \
+      do { CON_output(WRN, __func__, __LINE__, fmt, \
             ##__VA_ARGS__); \
       } while (0)
 
@@ -181,7 +176,7 @@ void CON_output(
  * @return None
  */
 #define ERR_printf(fmt, ...) \
-      do { CON_output(ERR, __FILE__, __func__, __LINE__, fmt, \
+      do { CON_output(ERR, __func__, __LINE__, fmt, \
             ##__VA_ARGS__); \
       } while (0)
 
@@ -202,7 +197,66 @@ void CON_output(
  * @return None
  */
 #define MENU_printf(fmt, ...) \
-      do { CON_output(CON, __FILE__, __func__, __LINE__, fmt, \
+      do { CON_output(CON, __func__, __LINE__, fmt, \
+            ##__VA_ARGS__); \
+      } while (0)
+
+
+/* These two macros are handy for debugging and will be disabled if NDEBUG is not set */
+/* This is the regular debug print function which includes more info */
+#ifndef NDEBUG
+#define DEBUG 1
+#else
+#define DEBUG 0
+#endif
+
+/**
+ * Use the following functions for printf style debugging only before the AOs of
+ * the QPC have been started.  These output directly to the serial console
+ * without using DMA and will adversely affect the performance of the system.
+ * These will be automatically disabled via macros when a "rel" build is done
+ * (as opposed to a dbg or a spy build). debug_printf will print a lot more info
+ * than isr_debug_printf
+ * Examples of how to use:
+ * @code
+ * int i = 0;
+ *
+ * debug_printf("Debug print test\n");
+ * debug_printf("Debug print test %d\n",i);
+ * @endcode
+ *
+ * will output:
+ * DEBUG: ../src/main.c:78:main(): Debug print test
+ * DEBUG: ../src/main.c:78:main(): Debug print test 0
+ *
+ * @code
+ * isr_debug_printf("ISR Debug print test\n");
+ * isr_debug_printf("ISR Debug print test %d\n", i);
+ * @endcode
+ *
+ * will output:
+ * D ISR Debug print test
+ * D ISR Debug print test 0
+ */
+#define debug_printf(fmt, ...) \
+      do { if (DEBUG) fprintf(stderr, "DBG: %d:%s(): " fmt, \
+            __LINE__, __func__, ##__VA_ARGS__); } while (0)
+
+/* This is the isr debug print function which is more concise */
+#define isr_debug_printf(fmt, ...) \
+      do { if (DEBUG) fprintf(stderr, "D:" fmt, ##__VA_ARGS__); } while (0)
+
+/* This is just like debug_printf but it doesn't get compiled out if NDEBUG is
+ * not set.  It should be used for logging errors only*/
+#define err_printf(fmt, ...) \
+      do { fprintf(stderr, "ERR: %d:%s(): " fmt, \
+            __LINE__, __func__, ##__VA_ARGS__); \
+      } while (0)
+
+/* This is just like debug_printf but it doesn't get compiled out if NDEBUG is
+ * not set.  It should be used for general info logging */
+#define log_printf(fmt, ...) \
+      do { fprintf(stderr, "LOG: " fmt, \
             ##__VA_ARGS__); \
       } while (0)
 

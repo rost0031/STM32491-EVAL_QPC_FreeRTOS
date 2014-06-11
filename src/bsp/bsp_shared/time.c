@@ -18,6 +18,7 @@
 #include "Shared.h"
 #include <stdio.h>
 #include "bsp.h"
+#include "project_includes.h"
 
 /* Private defines -----------------------------------------------------------*/
 #define DELAY_TIM_FREQUENCY 10000

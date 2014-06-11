@@ -23,11 +23,8 @@
  * Copyright (C) 2014 Datacard. All rights reserved.
  */
 #include "CommStackMgr.h"
-#include "CBSignals.h"                              /* Signal declarations. */
-#include "SerialMgr.h"                     /* For SerialDataEvt declaration */
+#include "project_includes.h"         /* Includes common to entire project. */
 #include "bsp.h"                            /* For time to ticks conversion */
-#include "time.h"                                 /* For time functionality */
-#include <stdio.h>                              /* For snprintf declaration */
 
 Q_DEFINE_THIS_FILE;
 
@@ -107,30 +104,6 @@ static QState CommStackMgr_Active(CommStackMgr * const me, QEvt const * const e)
     switch (e->sig) {
         /* @(/2/0/1/1) */
         case Q_ENTRY_SIG: {
-            /* Send a test debug msg */
-            /* 1. Construct a new msg event indicating that a msg has been received */
-            SerialDataEvt *serDataEvt = Q_NEW(SerialDataEvt, UART_DMA_START_SIG);
-
-            /* 2. Fill the msg payload and get the msg source and length */
-            serDataEvt->wBufferLen = snprintf(
-                serDataEvt->buffer,
-                MAX_MSG_LEN,
-                "Test debug msg from CommStackMgr\n"
-            );
-
-            QF_PUBLISH((QEvent *)serDataEvt, AO_CommStackMgr);
-
-            SerialDataEvt *serDataEvt1 = Q_NEW(SerialDataEvt, UART_DMA_START_SIG);
-
-            /* 2. Fill the msg payload and get the msg source and length */
-            serDataEvt1->wBufferLen = snprintf(
-                serDataEvt1->buffer,
-                MAX_MSG_LEN,
-                "Another Test debug msg from CommStackMgr\n"
-            );
-
-            QF_PUBLISH((QEvent *)serDataEvt1, AO_CommStackMgr);
-
             /* Every 2 seconds, post an event to print time */
             QTimeEvt_postEvery(
                 &me->timeTestTimerEvt,
@@ -152,23 +125,7 @@ static QState CommStackMgr_Active(CommStackMgr * const me, QEvt const * const e)
         }
         /* @(/2/0/1/1/2) */
         case TIME_TEST_SIG: {
-            /* 1. Construct a new msg event indicating that a msg has been received */
-            SerialDataEvt *serDataEvt = Q_NEW(SerialDataEvt, UART_DMA_START_SIG);
-
-            t_Time time = TIME_getTime();
-
-
-            serDataEvt->wBufferLen = snprintf(
-                serDataEvt->buffer,
-                MAX_MSG_LEN,
-                "Time is now %02d:%02d:%02d:%d\n",
-                time.hour_min_sec.RTC_Hours,
-                time.hour_min_sec.RTC_Minutes,
-                time.hour_min_sec.RTC_Seconds,
-                (int)time.sub_sec
-            );
-
-            QF_PUBLISH((QEvent *)serDataEvt, AO_CommStackMgr);
+            DBG_printf("Test msg from CommStackMgr\n");
             status = Q_HANDLED();
             break;
         }

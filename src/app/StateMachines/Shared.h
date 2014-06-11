@@ -26,62 +26,6 @@
 #define MEMCPY(dst,src,len)            MEM_DataCopy(dst,src,len)
 #define SMEMCPY(dst,src,len)           MEM_DataCopy(dst,src,len)
 
-/* These two macros are handy for debugging and will be disabled if NDEBUG is not set */
-/* This is the regular debug print function which includes more info */
-#ifndef NDEBUG
-#define DEBUG 1
-#else
-#define DEBUG 0
-#endif
-
-/**
- * Use the following functions for printf style debugging.  They will be
- * automatically disabled via macros when a "rel" build is done (as opposed to
- * a dbg or a spy build). debug_printf will print a lot more info than
- * isr_debug_printf
- * Examples of how to use:
- * @code
- * int i = 0;
- *
- * debug_printf("Debug print test\n");
- * debug_printf("Debug print test %d\n",i);
- * @endcode
- *
- * will output:
- * DEBUG: ../src/main.c:78:main(): Debug print test
- * DEBUG: ../src/main.c:78:main(): Debug print test 0
- *
- * @code
- * isr_debug_printf("ISR Debug print test\n");
- * isr_debug_printf("ISR Debug print test %d\n", i);
- * @endcode
- *
- * will output:
- * D ISR Debug print test
- * D ISR Debug print test 0
- */
-#define debug_printf(fmt, ...) \
-      do { if (DEBUG) fprintf(stderr, "DBG: %d:%s(): " fmt, \
-            __LINE__, __func__, ##__VA_ARGS__); } while (0)
-
-/* This is the isr debug print function which is more concise */
-#define isr_debug_printf(fmt, ...) \
-      do { if (DEBUG) fprintf(stderr, "D:" fmt, ##__VA_ARGS__); } while (0)
-
-/* This is just like debug_printf but it doesn't get compiled out if NDEBUG is
- * not set.  It should be used for logging errors only*/
-#define err_printf(fmt, ...) \
-      do { fprintf(stderr, "ERR: %d:%s(): " fmt, \
-            __LINE__, __func__, ##__VA_ARGS__); \
-      } while (0)
-
-/* This is just like debug_printf but it doesn't get compiled out if NDEBUG is
- * not set.  It should be used for general info logging */
-#define log_printf(fmt, ...) \
-      do { fprintf(stderr, "LOG: " fmt, \
-            ##__VA_ARGS__); \
-      } while (0)
-
 /* These are the priorities of all the Shared Active Objects.  The priorities are lowest at zero. */
 enum AO_Priorities {
    NEVER_USE_ZERO_PRIORITY	= 0,  // Never use this.  It breaks everything

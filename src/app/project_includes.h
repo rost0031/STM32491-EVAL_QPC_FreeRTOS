@@ -17,21 +17,11 @@
 #ifndef PROJECT_INCLUDES_H_
 #define PROJECT_INCLUDES_H_
 
-
-#include "stm32f2xx_it.h"
-#include "stm32f2xx.h"
-#include "bsp.h"                                     /* Board Support Package */
-#include "serial.h"                                   /* Serial Debug Support */
-
-#include "mem_datacopy.h"
-#include "Shared.h"
-#include "CommStackMgr.h"
-
-/* These are TCP defines to allow us to turn off TCP/IP but still allow compilation */
-//#define LWIP_TCP           1
-//#define TCP_TMR_INTERVAL   250
-//#define LWIP_DHCP          0
-//#define LWIP_AUTOIP        0
+#include "mem_datacopy.h"      /* Very fast STM32 specific MEMCPY declaration */
+#include "CBSignals.h"                                /* Signal declarations. */
+#include "CBTimeouts.h"                             /* Timeouts declarations. */
+#include "console_output.h"         /* For debug/console output declarations. */
+#include "time.h"                                   /* For time functionality */
 
 typedef enum {
     FALSE = 0,

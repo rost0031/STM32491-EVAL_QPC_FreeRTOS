@@ -25,8 +25,7 @@
 #define LWIPMGR_H_
 
 #include "qp_port.h"                                        /* for QP support */
-#include "Shared.h"                                   /*  Common Declarations */
-#include "CBSignals.h"
+#include "project_includes.h"           /* Includes common to entire project. */
 
 /*! \enum LWIPMgrSignals
  * Signals used by LWIPMgr.  These should start from MAX_SHARED_SIG

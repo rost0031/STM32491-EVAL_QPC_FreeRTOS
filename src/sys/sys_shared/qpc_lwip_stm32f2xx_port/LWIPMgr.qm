@@ -256,10 +256,6 @@ QTimeEvt_ctor(&amp;me-&gt;te_LWIP_SLOW_TICK, LWIP_SLOW_TICK_SIG);</code>
 #define LWIP_ALLOWED
 
 #include &quot;LWIPMgr.h&quot;
-#include &quot;CBSignals.h&quot;                              /* Signal declarations. */
-#include &quot;CBTimeouts.h&quot;                            /* Timeout declarations. */
-#include &quot;bsp.h&quot;        /* For seconds to bsp tick conversion (SEC_TO_TICK) */
-#include &quot;console_output.h&quot;                         /* For debug capability */
 #include &quot;lwip.h&quot;                                             /* lwIP stack */
 
 
@@ -355,8 +351,7 @@ static void udp_rx_handler(void *arg, struct udp_pcb *upcb,
 #define LWIPMGR_H_
 
 #include &quot;qp_port.h&quot;                                        /* for QP support */
-#include &quot;Shared.h&quot;                                   /*  Common Declarations */
-#include &quot;CBSignals.h&quot;
+#include &quot;project_includes.h&quot;           /* Includes common to entire project. */
 
 /*! \enum LWIPMgrSignals
  * Signals used by LWIPMgr.  These should start from MAX_SHARED_SIG

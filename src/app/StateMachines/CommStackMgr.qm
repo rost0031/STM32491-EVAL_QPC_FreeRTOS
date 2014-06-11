@@ -50,31 +50,7 @@ common to the entire AO, they should be handled here.
 @retval status: QState type that specifies where the state
 machine is going next.
 </documentation>
-     <entry>/* Send a test debug msg */
-/* 1. Construct a new msg event indicating that a msg has been received */
-SerialDataEvt *serDataEvt = Q_NEW(SerialDataEvt, UART_DMA_START_SIG);
-
-/* 2. Fill the msg payload and get the msg source and length */
-serDataEvt-&gt;wBufferLen = snprintf(
-    serDataEvt-&gt;buffer,
-    MAX_MSG_LEN,
-    &quot;Test debug msg from CommStackMgr\n&quot;
-);
-
-QF_PUBLISH((QEvent *)serDataEvt, AO_CommStackMgr);
-
-SerialDataEvt *serDataEvt1 = Q_NEW(SerialDataEvt, UART_DMA_START_SIG);
-
-/* 2. Fill the msg payload and get the msg source and length */
-serDataEvt1-&gt;wBufferLen = snprintf(
-    serDataEvt1-&gt;buffer,
-    MAX_MSG_LEN,
-    &quot;Another Test debug msg from CommStackMgr\n&quot;
-);
-
-QF_PUBLISH((QEvent *)serDataEvt1, AO_CommStackMgr);
-
-/* Every 2 seconds, post an event to print time */
+     <entry>/* Every 2 seconds, post an event to print time */
 QTimeEvt_postEvery(
     &amp;me-&gt;timeTestTimerEvt,
     (QActive *)me,
@@ -91,23 +67,7 @@ QTimeEvt_postEvery(
       </tran_glyph>
      </tran>
      <tran trig="TIME_TEST">
-      <action>/* 1. Construct a new msg event indicating that a msg has been received */
-SerialDataEvt *serDataEvt = Q_NEW(SerialDataEvt, UART_DMA_START_SIG);
-
-t_Time time = TIME_getTime();
-
-
-serDataEvt-&gt;wBufferLen = snprintf(
-    serDataEvt-&gt;buffer,
-    MAX_MSG_LEN,
-    &quot;Time is now %02d:%02d:%02d:%d\n&quot;,
-    time.hour_min_sec.RTC_Hours,
-    time.hour_min_sec.RTC_Minutes,
-    time.hour_min_sec.RTC_Seconds,
-    (int)time.sub_sec
-);
-
-QF_PUBLISH((QEvent *)serDataEvt, AO_CommStackMgr);</action>
+      <action>DBG_printf(&quot;Test msg from CommStackMgr\n&quot;);</action>
       <tran_glyph conn="3,19,3,-1,21">
        <action box="0,-2,11,2"/>
       </tran_glyph>
@@ -145,11 +105,8 @@ QTimeEvt_ctor(&amp;me-&gt;timeTestTimerEvt, TIME_TEST_SIG);</code>
  * Copyright (C) 2014 Datacard. All rights reserved.
  */
 #include &quot;CommStackMgr.h&quot;
-#include &quot;CBSignals.h&quot;                              /* Signal declarations. */
-#include &quot;SerialMgr.h&quot;                     /* For SerialDataEvt declaration */
+#include &quot;project_includes.h&quot;         /* Includes common to entire project. */
 #include &quot;bsp.h&quot;                            /* For time to ticks conversion */
-#include &quot;time.h&quot;                                 /* For time functionality */
-#include &lt;stdio.h&gt;                              /* For snprintf declaration */
 
 Q_DEFINE_THIS_FILE;
 
@@ -198,7 +155,6 @@ $define(AOs::CommStackMgr)
 #define COMMSTACKMGR_H_
 
 #include &quot;qp_port.h&quot;                                        /* for QP support */
-#include &quot;Shared.h&quot;                                   /*  Common Declarations */
 
 $declare(AOs::CommStackMgr_ctor)
 $declare(AOs::AO_CommStackMgr)

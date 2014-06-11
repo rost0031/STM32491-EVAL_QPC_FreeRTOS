@@ -19,10 +19,9 @@
 /******************************************************************************/
 void CON_output(
       DEBUG_LEVEL_T dbgLvl,
-      char *pFilePath,
-      char *pFuncName,
+      const char *pFuncName,
       uint16_t wLineNumber,
-      const char *fmt,
+      char *fmt,
       ...
 )
 {
@@ -102,7 +101,7 @@ void CON_output(
    /* 5. Print the actual user supplied data to the buffer and set the length */
    serDataEvt->wBufferLen += vsnprintf(
          &serDataEvt->buffer[serDataEvt->wBufferLen],
-         MAX_MSG_LEN,
+         MAX_MSG_LEN - serDataEvt->wBufferLen, // Account for the part of the buffer that was already written.
          fmt,
          args
    );

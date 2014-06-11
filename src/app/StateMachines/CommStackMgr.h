@@ -26,7 +26,6 @@
 #define COMMSTACKMGR_H_
 
 #include "qp_port.h"                                        /* for QP support */
-#include "Shared.h"                                   /*  Common Declarations */
 
 /* @(/2/2) .................................................................*/
 /** 

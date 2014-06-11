@@ -182,11 +182,8 @@ QEQueue_init(
  * Copyright (C) 2014 Datacard. All rights reserved.
  */
 #include &quot;SerialMgr.h&quot;
-#include &quot;CBSignals.h&quot;                              /* Signal declarations. */
-#include &quot;CBTimeouts.h&quot;                            /* Timeout declarations. */
+#include &quot;project_includes.h&quot;         /* Includes common to entire project. */
 #include &quot;bsp.h&quot;        /* For seconds to bsp tick conversion (SEC_TO_TICK) */
-#include &quot;serial.h&quot;                             /* For serial functionality */
-#include &lt;stdio.h&gt;
 
 Q_DEFINE_THIS_FILE;
 
