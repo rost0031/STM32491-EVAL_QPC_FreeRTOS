@@ -1,22 +1,19 @@
-// $Id$
 /**
  * @file 	main.c
- * @brief   Main for starting up the Laminator
+ * @brief   Main for starting up the QPC RTOS.
  *
- * @date   	09/27/2012
+ * @date   	06/11/2014
  * @author 	Harry Rostovtsev
  * @email  	harry_rostovtsev@datacard.com
- * Copyright (C) 2012 Datacard. All rights reserved.
+ * Copyright (C) 2014 Datacard. All rights reserved.
  */
-// $Log$
-#include <stdio.h>
 #include "qp_port.h"                                        /* for QP support */
 
 #include "LWIPMgr.h"                               /* for starting LWIPMgr AO */
 #include "CommStackMgr.h"                     /* for starting CommStackMgr AO */
 #include "SerialMgr.h"                           /* for starting SerialMgr AO */
 
-#include "project_includes.h"
+#include "project_includes.h"           /* Includes common to entire project. */
 #include "Shared.h"
 #include "version.h"
 

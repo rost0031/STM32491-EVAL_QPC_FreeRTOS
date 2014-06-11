@@ -125,7 +125,38 @@ static QState CommStackMgr_Active(CommStackMgr * const me, QEvt const * const e)
         }
         /* @(/2/0/1/1/2) */
         case TIME_TEST_SIG: {
-            DBG_printf("Test msg from CommStackMgr\n");
+            DBG_printf("Time test\n");
+
+            /*
+            t_Time fast_print_start_time = TIME_getTime();
+            DBG_printf("Fast DBG_printf() test message from CommStackMgr\n");
+            t_Time fast_print_finish_time = TIME_getTime();
+
+            t_Time slow_print_start_time = TIME_getTime();
+            dbg_slow_printf("Slow dbg_slow_printf() test message from CommStackMgr\n");
+            t_Time slow_print_finish_time = TIME_getTime();
+
+            DBG_printf("DBG_printf() start: %02d:%02d:%02d:%d stop: %02d:%02d:%02d:%d\n",
+                 fast_print_start_time.hour_min_sec.RTC_Hours,
+                 fast_print_start_time.hour_min_sec.RTC_Minutes,
+                 fast_print_start_time.hour_min_sec.RTC_Seconds,
+                 (int)fast_print_start_time.sub_sec,
+                 fast_print_finish_time.hour_min_sec.RTC_Hours,
+                 fast_print_finish_time.hour_min_sec.RTC_Minutes,
+                 fast_print_finish_time.hour_min_sec.RTC_Seconds,
+                 (int)fast_print_finish_time.sub_sec
+            );
+            DBG_printf("dbg_slow_printf() start: %02d:%02d:%02d:%d stop: %02d:%02d:%02d:%d\n",
+                 slow_print_start_time.hour_min_sec.RTC_Hours,
+                 slow_print_start_time.hour_min_sec.RTC_Minutes,
+                 slow_print_start_time.hour_min_sec.RTC_Seconds,
+                 (int)slow_print_start_time.sub_sec,
+                 slow_print_finish_time.hour_min_sec.RTC_Hours,
+                 slow_print_finish_time.hour_min_sec.RTC_Minutes,
+                 slow_print_finish_time.hour_min_sec.RTC_Seconds,
+                 (int)slow_print_finish_time.sub_sec
+            );
+            */
             status = Q_HANDLED();
             break;
         }

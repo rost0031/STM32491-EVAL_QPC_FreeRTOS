@@ -67,7 +67,38 @@ QTimeEvt_postEvery(
       </tran_glyph>
      </tran>
      <tran trig="TIME_TEST">
-      <action>DBG_printf(&quot;Test msg from CommStackMgr\n&quot;);</action>
+      <action>DBG_printf(&quot;Time test\n&quot;);
+
+/*
+t_Time fast_print_start_time = TIME_getTime();
+DBG_printf(&quot;Fast DBG_printf() test message from CommStackMgr\n&quot;);
+t_Time fast_print_finish_time = TIME_getTime();
+
+t_Time slow_print_start_time = TIME_getTime();
+dbg_slow_printf(&quot;Slow dbg_slow_printf() test message from CommStackMgr\n&quot;);
+t_Time slow_print_finish_time = TIME_getTime();
+
+DBG_printf(&quot;DBG_printf() start: %02d:%02d:%02d:%d stop: %02d:%02d:%02d:%d\n&quot;,
+     fast_print_start_time.hour_min_sec.RTC_Hours,
+     fast_print_start_time.hour_min_sec.RTC_Minutes,
+     fast_print_start_time.hour_min_sec.RTC_Seconds,
+     (int)fast_print_start_time.sub_sec,
+     fast_print_finish_time.hour_min_sec.RTC_Hours,
+     fast_print_finish_time.hour_min_sec.RTC_Minutes,
+     fast_print_finish_time.hour_min_sec.RTC_Seconds,
+     (int)fast_print_finish_time.sub_sec
+);
+DBG_printf(&quot;dbg_slow_printf() start: %02d:%02d:%02d:%d stop: %02d:%02d:%02d:%d\n&quot;,
+     slow_print_start_time.hour_min_sec.RTC_Hours,
+     slow_print_start_time.hour_min_sec.RTC_Minutes,
+     slow_print_start_time.hour_min_sec.RTC_Seconds,
+     (int)slow_print_start_time.sub_sec,
+     slow_print_finish_time.hour_min_sec.RTC_Hours,
+     slow_print_finish_time.hour_min_sec.RTC_Minutes,
+     slow_print_finish_time.hour_min_sec.RTC_Seconds,
+     (int)slow_print_finish_time.sub_sec
+);
+*/</action>
       <tran_glyph conn="3,19,3,-1,21">
        <action box="0,-2,11,2"/>
       </tran_glyph>
