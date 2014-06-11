@@ -197,7 +197,7 @@ uint32_t Serial_send_base64_enc_msg( USART_Port serial_port, char *message, uint
 
    if(encoded_sz < 1)
    {
-      debug_printf("Encoding failed\n");
+      err_slow_printf("Encoding failed\n");
       return ERR_SERIAL_MSG_BASE64_ENC_FAILED;
    }
 
@@ -226,7 +226,7 @@ uint32_t Serial_send_raw_msg( USART_Port serial_port, char *message, uint16_t le
       {
          if( (timeout--) <= 0 )
          {
-            debug_printf("!!! - Hardware not responding while trying to send a serial msg\n");
+            err_slow_printf("!!! - Hardware not responding while trying to send a serial msg\n");
             return ERR_SERIAL_HW_TIMEOUT;
          }
       }
@@ -280,7 +280,7 @@ void UART4_IRQHandler(void)
         //This check serves as the timeout for the While loop and also protects serial_index from running over
         if ( s_USART_Port[SYSTEM_SERIAL].index >= MAX_MSG_LEN )
         {
-           debug_printf("Attempting to send a serial msg over %d bytes which will overrun the buffer.", MAX_MSG_LEN);
+           err_slow_printf("Attempting to send a serial msg over %d bytes which will overrun the buffer.", MAX_MSG_LEN);
            assert( s_USART_Port[SYSTEM_SERIAL].index >= MAX_MSG_LEN );
         }
     }

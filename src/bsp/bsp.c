@@ -108,8 +108,6 @@ void BSP_init( void ) {
 
 	/* Initialize the time (RTC and a subsecond timer). */
    TIME_Init();
-   TIME_printTime();
-
 }
 
 /**

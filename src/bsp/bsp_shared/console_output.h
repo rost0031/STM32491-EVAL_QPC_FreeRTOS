@@ -202,15 +202,58 @@ void CON_output(
       } while (0)
 
 
-/* These two macros are handy for debugging and will be disabled if NDEBUG is not set */
-/* This is the regular debug print function which includes more info */
-#ifndef NDEBUG
-#define DEBUG 1
-#else
-#define DEBUG 0
-#endif
 
 /**
+  * Basic console output function which should be called by the various macro
+  * functions to do the actual output to serial.  Takes in parameters that allow
+  * easy logging level specification, file, function name, line number, etc.
+  * These are prepended in front of the data that was actually sent in to be
+  * printed.
+  *
+  * Note: when printing to a @CON debug level, nothing is output.
+  *
+  * Note: This function prints directly printing to the serial console and is
+  * fairly slow.  Use the XXX_printf macros instead.  This function is only
+  * called by the slow macros which have to be called in the initializations
+  * before the QPC RTOS is running and should not be used after.
+  *
+  * @param  [in] dbgLvl: a DEBUG_LEVEL_T variable that specifies the logging
+  * level to use.
+  *   @arg DBG: Lowest level of debugging.  Everything above this level is
+  *   printed.  Disabled in Release builds.
+  *   @arg LOG: Basic logging. Everything above this level is printed.
+  *   Disabled in Release builds.
+  *   @arg WRN: Warnings.  Everything above this level is printed. Enabled in
+  *   Release builds.
+  *   @arg ERR: Errors. Enabled in all builds.
+  *
+  * @param [in] *pFuncName: pointer to the function name where the macro was
+  * called from.
+  *
+  * @param [in] wLineNumber: line number where the macro was called from.
+  *
+  * @param [in] *fmt: const char pointer to the data to be printed using the
+  * va_args type argument list.
+  *
+  * @param [in] ... : the variable list of arguments from above.  This allows
+  * the function to be called like any xprintf() type function.
+  * @return None
+  */
+void CON_slow_output(
+      DEBUG_LEVEL_T dbgLvl,
+      const char *pFuncName,
+      uint16_t wLineNumber,
+      char *fmt,
+      ...
+);
+
+/**
+ *
+ * Note: These macros print printing directly to the serial console and are
+ * fairly slow.  Use the DBG/LOG/WRN/ERR_printf macros instead.  This macros
+ * should only in the initializations before the QPC RTOS is running and should
+ * not be used after.
+ *
  * Use the following functions for printf style debugging only before the AOs of
  * the QPC have been started.  These output directly to the serial console
  * without using DMA and will adversely affect the performance of the system.
@@ -221,44 +264,56 @@ void CON_output(
  * @code
  * int i = 0;
  *
- * debug_printf("Debug print test\n");
- * debug_printf("Debug print test %d\n",i);
+ * dbg_slow_printf("Debug print test\n");
+ * dbg_slow_printf("Debug print test %d\n",i);
+ * log_slow_printf("Logging print test %d\n",i);
+ * wrn_slow_printf("Warning print test %d\n",i);
+ * err_slow_printf("Error print test %d\n",i);
  * @endcode
  *
  * will output:
- * DEBUG: ../src/main.c:78:main(): Debug print test
- * DEBUG: ../src/main.c:78:main(): Debug print test 0
+ * DBG-SLOW!-00:04:09:00459-LWIPMgr_Running():219: Debug print test
+ * DBG-SLOW!-00:04:09:00459-LWIPMgr_Running():219: Debug print test 0
+ * LOG-SLOW!-00:04:09:00459-LWIPMgr_Running():219: Logging print test 0
+ * WRN-SLOW!-00:04:09:00459-LWIPMgr_Running():219: Warning print test 0
+ * ERR-SLOW!-00:04:09:00459-LWIPMgr_Running():219: Error print test 0
  *
  * @code
- * isr_debug_printf("ISR Debug print test\n");
- * isr_debug_printf("ISR Debug print test %d\n", i);
+ * isr_debug_slow_printf("ISR Debug print test\n");
+ * isr_debug_slow_printf("ISR Debug print test %d\n", i);
  * @endcode
  *
  * will output:
  * D ISR Debug print test
  * D ISR Debug print test 0
  */
-#define debug_printf(fmt, ...) \
-      do { if (DEBUG) fprintf(stderr, "DBG: %d:%s(): " fmt, \
-            __LINE__, __func__, ##__VA_ARGS__); } while (0)
-
-/* This is the isr debug print function which is more concise */
-#define isr_debug_printf(fmt, ...) \
-      do { if (DEBUG) fprintf(stderr, "D:" fmt, ##__VA_ARGS__); } while (0)
-
-/* This is just like debug_printf but it doesn't get compiled out if NDEBUG is
- * not set.  It should be used for logging errors only*/
-#define err_printf(fmt, ...) \
-      do { fprintf(stderr, "ERR: %d:%s(): " fmt, \
-            __LINE__, __func__, ##__VA_ARGS__); \
+#define dbg_slow_printf(fmt, ...) \
+      do { if (DEBUG) CON_slow_output(DBG, __func__, __LINE__, fmt, \
+            ##__VA_ARGS__); \
       } while (0)
 
 /* This is just like debug_printf but it doesn't get compiled out if NDEBUG is
  * not set.  It should be used for general info logging */
-#define log_printf(fmt, ...) \
-      do { fprintf(stderr, "LOG: " fmt, \
+#define log_slow_printf(fmt, ...) \
+      do { if (DEBUG) CON_slow_output(LOG, __func__, __LINE__, fmt, \
             ##__VA_ARGS__); \
       } while (0)
+
+#define wrn_slow_printf(fmt, ...) \
+      do { CON_slow_output(WRN, __func__, __LINE__, fmt, \
+            ##__VA_ARGS__); \
+      } while (0)
+
+/* This is just like debug_printf but it doesn't get compiled out if NDEBUG is
+ * not set.  It should be used for logging errors only*/
+#define err_slow_printf(fmt, ...) \
+      do { CON_slow_output(ERR, __func__, __LINE__, fmt, \
+            ##__VA_ARGS__); \
+      } while (0)
+
+/* This is the isr debug print function which is more concise */
+#define isr_debug_slow_printf(fmt, ...) \
+      do { if (DEBUG) fprintf(stderr, "D:" fmt, ##__VA_ARGS__); } while (0)
 
 #endif                                                   /* CONSOLE_OUTPUT_H_ */
 /******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/

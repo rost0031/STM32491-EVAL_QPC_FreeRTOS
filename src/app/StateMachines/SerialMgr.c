@@ -222,7 +222,7 @@ static QState SerialMgr_Busy(SerialMgr * const me, QEvt const * const e) {
         }
         /* @(/2/0/3/1/1/1) */
         case UART_DMA_TIMEOUT_SIG: {
-            err_printf("UART DMA timeout occurred\n");
+            err_slow_printf("UART DMA timeout occurred\n");
             status = Q_TRAN(&SerialMgr_Idle);
             break;
         }
@@ -234,7 +234,7 @@ static QState SerialMgr_Busy(SerialMgr * const me, QEvt const * const e) {
                QActive_defer((QActive *)me, &me->deferredEvtQueue, e);
             } else {
                /* notify the request sender that the request was ignored.. */
-               log_printf("Unable to defer UART_DMA_START request\n");
+               err_slow_printf("Unable to defer UART_DMA_START request\n");
             }
             status = Q_HANDLED();
             break;

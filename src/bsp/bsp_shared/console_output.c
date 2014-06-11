@@ -110,3 +110,98 @@ void CON_output(
    /* 6. Publish the event*/
    QF_PUBLISH((QEvent *)serDataEvt, 0);
 }
+
+/******************************************************************************/
+void CON_slow_output(
+      DEBUG_LEVEL_T dbgLvl,
+      const char *pFuncName,
+      uint16_t wLineNumber,
+      char *fmt,
+      ...
+)
+{
+   /* 1. Get the time first so the printout of the event is as close as possible
+    * to when it actually occurred */
+   t_Time time = TIME_getTime();
+
+   /* Temporary local buffer and index to compose the msg */
+   char tmpBuffer[MAX_MSG_LEN];
+   uint8_t tmpBufferIndex = 0;
+
+   /* 2. Based on the debug level specified by the calling macro, decide what to
+    * prepend (if anything). */
+   switch (dbgLvl) {
+      case DBG:
+         tmpBufferIndex += snprintf(
+               tmpBuffer,
+               MAX_MSG_LEN,
+               "DBG-SLOW!-%02d:%02d:%02d:%05d-%s():%d:",
+               time.hour_min_sec.RTC_Hours,
+               time.hour_min_sec.RTC_Minutes,
+               time.hour_min_sec.RTC_Seconds,
+               (int)time.sub_sec,
+               pFuncName,
+               wLineNumber
+         );
+         break;
+      case LOG:
+         tmpBufferIndex += snprintf(
+               tmpBuffer,
+               MAX_MSG_LEN,
+               "LOG-SLOW!-%02d:%02d:%02d:%05d-%s():%d:",
+               time.hour_min_sec.RTC_Hours,
+               time.hour_min_sec.RTC_Minutes,
+               time.hour_min_sec.RTC_Seconds,
+               (int)time.sub_sec,
+               pFuncName,
+               wLineNumber
+         );
+         break;
+      case WRN:
+         tmpBufferIndex += snprintf(
+               tmpBuffer,
+               MAX_MSG_LEN,
+               "WRN-SLOW!-%02d:%02d:%02d:%05d-%s():%d:",
+               time.hour_min_sec.RTC_Hours,
+               time.hour_min_sec.RTC_Minutes,
+               time.hour_min_sec.RTC_Seconds,
+               (int)time.sub_sec,
+               pFuncName,
+               wLineNumber
+         );
+         break;
+      case ERR:
+         tmpBufferIndex += snprintf(
+               tmpBuffer,
+               MAX_MSG_LEN,
+               "ERR-SLOW!-%02d:%02d:%02d:%05d-%s():%d:",
+               time.hour_min_sec.RTC_Hours,
+               time.hour_min_sec.RTC_Minutes,
+               time.hour_min_sec.RTC_Seconds,
+               (int)time.sub_sec,
+               pFuncName,
+               wLineNumber
+         );
+         break;
+      case CON: // This is used to print menu so don't prepend anything
+      default:
+         break;
+   }
+
+   /* 3. Pass the va args list to get output to a buffer, making sure to not
+    * overwrite the prepended data. */
+   va_list args;
+   va_start(args, fmt);
+
+   tmpBufferIndex += vsnprintf(
+         &tmpBuffer[tmpBufferIndex],
+         MAX_MSG_LEN - tmpBufferIndex, // Account for the part of the buffer that was already written.
+         fmt,
+         args
+   );
+   va_end(args);
+
+   /* 4. Print directly to the console now. THIS IS A SLOW OPERATION! */
+//   fprintf(stderr, "%s", tmpBuffer);
+   fwrite(tmpBuffer, tmpBufferIndex, 1, stderr);
+}

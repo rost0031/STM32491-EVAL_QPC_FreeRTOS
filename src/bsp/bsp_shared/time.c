@@ -78,7 +78,7 @@ void TIME_Init( void )
    RTC_InitStructure.RTC_HourFormat = RTC_HourFormat_24;
    /* Check on RTC init */
    if (RTC_Init(&RTC_InitStructure) == ERROR) {
-      debug_printf("!!RTC Prescaler Config failed!!\n");
+      err_slow_printf("!!RTC Prescaler Config failed!!\n");
    }
 
    /* Initialize the clock to zero */
@@ -89,7 +89,7 @@ void TIME_Init( void )
 
    /* Configure the RTC time register */
    if( ERROR == RTC_SetTime(RTC_Format_BIN, &RTC_TimeStructure) ) {
-      debug_printf("!! RTC Set Time failed. !!\n");
+      err_slow_printf("!! RTC Set Time failed. !!\n");
    }
 
    /* EXTI configuration ******************************************************/
@@ -117,7 +117,6 @@ void TIME_Init( void )
 
    /* Enable the subsecond timer */
    TIME_subSecondTimer_Init();
-   debug_printf("Finished configuring RTC\n");
 }
 
 /******************************************************************************/

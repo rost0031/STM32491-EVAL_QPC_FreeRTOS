@@ -120,7 +120,7 @@ Serial_DMAStartXfer( SYSTEM_SERIAL );</entry>
        </tran_glyph>
       </tran>
       <tran trig="UART_DMA_TIMEOUT" target="../../0">
-       <action>err_printf(&quot;UART DMA timeout occurred\n&quot;);</action>
+       <action>err_slow_printf(&quot;UART DMA timeout occurred\n&quot;);</action>
        <tran_glyph conn="42,21,3,1,-17">
         <action box="-16,-2,16,2"/>
        </tran_glyph>
@@ -132,7 +132,7 @@ Serial_DMAStartXfer( SYSTEM_SERIAL );</entry>
    QActive_defer((QActive *)me, &amp;me-&gt;deferredEvtQueue, e);
 } else {
    /* notify the request sender that the request was ignored.. */
-   log_printf(&quot;Unable to defer UART_DMA_START request\n&quot;);
+   err_slow_printf(&quot;Unable to defer UART_DMA_START request\n&quot;);
 }</action>
        <tran_glyph conn="42,44,3,-1,17">
         <action box="0,-2,15,2"/>
