@@ -49,6 +49,9 @@ back to the sender.</documentation>
    <attribute name="*tpcb" type="struct tcp_pcb" visibility="0x01" properties="0x00">
     <documentation>Pointer to tcp_pcb structure used to keep track of TCP connection.</documentation>
    </attribute>
+   <attribute name="*tpcb1" type="struct tcp_pcb" visibility="0x01" properties="0x00">
+    <documentation>Pointer to tcp_pcb structure used to keep track of TCP connection.</documentation>
+   </attribute>
    <statechart>
     <initial target="../1">
      <action>(void)e;        /* suppress the compiler warning about unused parameter */
@@ -114,6 +117,19 @@ if (ERR_OK != err ) {
 
 me-&gt;tpcb = tcp_listen(me-&gt;tpcb);
 tcp_accept(me-&gt;tpcb, echo_accept);
+
+/* Second connection */
+me-&gt;tpcb1 = tcp_new();
+if (me-&gt;tpcb1 == NULL) {
+   ERR_printf(&quot;Unable to allocate LWIP memory for TCP1\n&quot;);
+}
+err = tcp_bind(me-&gt;tpcb1, IP_ADDR_ANY, 7779);   /* port 7779 for TCP */
+if (ERR_OK != err ) {
+   ERR_printf(&quot;Unable to bind TCP to port 7779\n&quot;);
+}
+
+me-&gt;tpcb1 = tcp_listen(me-&gt;tpcb1);
+tcp_accept(me-&gt;tpcb1, echo_accept);
 
 QActive_subscribe((QActive *)me, ETH_SEND_SIG);</action>
      <initial_glyph conn="1,2,4,3,7,2">
@@ -366,9 +382,7 @@ if (es != NULL) {
    <documentation>Some other docs</documentation>
    <parameter name="arg" type="void *"/>
    <parameter name="tpcb" type="struct tcp_pcb *"/>
-   <code>DBG_printf(&quot;Test\n&quot;);
-
-err_t ret_err;
+   <code>err_t ret_err;
 struct echo_state *es;
 es = (struct echo_state *)arg;
 if (es != NULL) {
@@ -500,23 +514,19 @@ Q_DEFINE_THIS_FILE;
 /* application signals cannot overlap the device-driver signals */
 Q_ASSERT_COMPILE(MAX_SHARED_SIG &lt; DEV_DRIVER_SIG);
 
-static struct tcp_pcb *echo_pcb;
-
-enum echo_states
-{
-  ES_NONE = 0,
-  ES_ACCEPTED,
-  ES_RECEIVED,
-  ES_CLOSING
+enum echo_states {
+    ES_NONE = 0,
+    ES_ACCEPTED,
+    ES_RECEIVED,
+    ES_CLOSING
 };
 
-struct echo_state
-{
-  uint8_t state;
-  uint8_t retries;
-  struct tcp_pcb *pcb;
-  /* pbuf (chain) to recycle */
-  struct pbuf *p;
+struct echo_state {
+    uint8_t state;
+    uint8_t retries;
+    struct tcp_pcb *pcb;
+    /* pbuf (chain) to recycle */
+    struct pbuf *p;
 };
 
 $declare(AOs::LWIPMgr)

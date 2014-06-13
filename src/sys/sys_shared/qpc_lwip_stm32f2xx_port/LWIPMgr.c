@@ -35,23 +35,19 @@ Q_DEFINE_THIS_FILE;
 /* application signals cannot overlap the device-driver signals */
 Q_ASSERT_COMPILE(MAX_SHARED_SIG < DEV_DRIVER_SIG);
 
-static struct tcp_pcb *echo_pcb;
-
-enum echo_states
-{
-  ES_NONE = 0,
-  ES_ACCEPTED,
-  ES_RECEIVED,
-  ES_CLOSING
+enum echo_states {
+    ES_NONE = 0,
+    ES_ACCEPTED,
+    ES_RECEIVED,
+    ES_CLOSING
 };
 
-struct echo_state
-{
-  uint8_t state;
-  uint8_t retries;
-  struct tcp_pcb *pcb;
-  /* pbuf (chain) to recycle */
-  struct pbuf *p;
+struct echo_state {
+    uint8_t state;
+    uint8_t retries;
+    struct tcp_pcb *pcb;
+    /* pbuf (chain) to recycle */
+    struct pbuf *p;
 };
 
 /* @(/2/0) .................................................................*/
@@ -111,6 +107,10 @@ typedef struct LWIPMgrTag {
     * Pointer to tcp_pcb structure used to keep track of TCP connection.
     */
     struct tcp_pcb *tpcb;
+    /** 
+    * Pointer to tcp_pcb structure used to keep track of TCP connection.
+    */
+    struct tcp_pcb *tpcb1;
 } LWIPMgr;
 
 /* protected: */
@@ -214,8 +214,8 @@ void LWIPMgr_ctor(void) {
     QTimeEvt_ctor(&me->te_LWIP_SLOW_TICK, LWIP_SLOW_TICK_SIG);
 }
 /* @(/2/0) .................................................................*/
-/* @(/2/0/10) ..............................................................*/
-/* @(/2/0/10/0) */
+/* @(/2/0/11) ..............................................................*/
+/* @(/2/0/11/0) */
 static QState LWIPMgr_initial(LWIPMgr * const me, QEvt const * const e) {
     (void)e;        /* suppress the compiler warning about unused parameter */
 
@@ -281,14 +281,27 @@ static QState LWIPMgr_initial(LWIPMgr * const me, QEvt const * const e) {
     me->tpcb = tcp_listen(me->tpcb);
     tcp_accept(me->tpcb, echo_accept);
 
+    /* Second connection */
+    me->tpcb1 = tcp_new();
+    if (me->tpcb1 == NULL) {
+       ERR_printf("Unable to allocate LWIP memory for TCP1\n");
+    }
+    err = tcp_bind(me->tpcb1, IP_ADDR_ANY, 7779);   /* port 7779 for TCP */
+    if (ERR_OK != err ) {
+       ERR_printf("Unable to bind TCP to port 7779\n");
+    }
+
+    me->tpcb1 = tcp_listen(me->tpcb1);
+    tcp_accept(me->tpcb1, echo_accept);
+
     QActive_subscribe((QActive *)me, ETH_SEND_SIG);
     return Q_TRAN(&LWIPMgr_Active);
 }
-/* @(/2/0/10/1) ............................................................*/
+/* @(/2/0/11/1) ............................................................*/
 static QState LWIPMgr_Active(LWIPMgr * const me, QEvt const * const e) {
     QState status;
     switch (e->sig) {
-        /* @(/2/0/10/1) */
+        /* @(/2/0/11/1) */
         case Q_ENTRY_SIG: {
             QTimeEvt_postEvery(
                 &me->te_LWIP_SLOW_TICK,
@@ -298,13 +311,13 @@ static QState LWIPMgr_Active(LWIPMgr * const me, QEvt const * const e) {
             status = Q_HANDLED();
             break;
         }
-        /* @(/2/0/10/1) */
+        /* @(/2/0/11/1) */
         case Q_EXIT_SIG: {
             QTimeEvt_disarm(&me->te_LWIP_SLOW_TICK);
             status = Q_HANDLED();
             break;
         }
-        /* @(/2/0/10/1/0) */
+        /* @(/2/0/11/1/0) */
         case ETH_SEND_SIG: {
             /* Event posted that will include (inside it) a msg to send */
             if (me->upcb->remote_port != (uint16_t)0) {
@@ -320,19 +333,19 @@ static QState LWIPMgr_Active(LWIPMgr * const me, QEvt const * const e) {
             status = Q_HANDLED();
             break;
         }
-        /* @(/2/0/10/1/1) */
+        /* @(/2/0/11/1/1) */
         case LWIP_RX_READY_SIG: {
             eth_driver_read();
             status = Q_HANDLED();
             break;
         }
-        /* @(/2/0/10/1/2) */
+        /* @(/2/0/11/1/2) */
         case LWIP_TX_READY_SIG: {
             eth_driver_write();
             status = Q_HANDLED();
             break;
         }
-        /* @(/2/0/10/1/3) */
+        /* @(/2/0/11/1/3) */
         case LWIP_SLOW_TICK_SIG: {
             /* has IP address changed? */
             if (me->ip_addr != me->netif->ip_addr.addr) {
@@ -390,7 +403,7 @@ static QState LWIPMgr_Active(LWIPMgr * const me, QEvt const * const e) {
             status = Q_HANDLED();
             break;
         }
-        /* @(/2/0/10/1/4) */
+        /* @(/2/0/11/1/4) */
         case LWIP_RX_OVERRUN_SIG: {
             LINK_STATS_INC(link.err);
             status = Q_HANDLED();
@@ -524,8 +537,6 @@ static void echo_error(void * arg, err_t err) {
 }
 /* @(/2/6) .................................................................*/
 static err_t echo_poll(void * arg, struct tcp_pcb * tpcb) {
-    DBG_printf("Test\n");
-
     err_t ret_err;
     struct echo_state *es;
     es = (struct echo_state *)arg;
