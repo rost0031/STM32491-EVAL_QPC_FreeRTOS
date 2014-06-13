@@ -46,6 +46,9 @@ back to the sender.</documentation>
    <attribute name="auto_ip_tmr;&#10;    #endif" type="#if LWIP_AUTOIP&#10;    uint32_t " visibility="0x01" properties="0x00">
     <documentation>AUTO IP timer.  Only exists if LWIP_AUTOIP is defined.</documentation>
    </attribute>
+   <attribute name="*tpcb" type="struct tcp_pcb" visibility="0x01" properties="0x00">
+    <documentation>Pointer to tcp_pcb structure used to keep track of TCP connection.</documentation>
+   </attribute>
    <statechart>
     <initial target="../1">
      <action>(void)e;        /* suppress the compiler warning about unused parameter */
@@ -90,16 +93,30 @@ DBG_printf(&quot;Static IP address: %d.%d.%d.%d\n&quot;,
 DBG_printf(&quot;MAC address: %2.2X:%2.2X:%2.2X:%2.2X:%2.2X:%2.2X\n&quot;,
       macaddr[0], macaddr[1],macaddr[2],macaddr[3],macaddr[4], macaddr[5]);
 
-me-&gt;ip_addr = 0xFFFFFFFF;             /* initialize to impossible value */
-                                      /* initialize the Ethernet Driver */
+me-&gt;ip_addr = 0xFFFFFFFF;               /* initialize to impossible value */
+                                        /* initialize the Ethernet Driver */
 me-&gt;netif = eth_driver_init((QActive *)me, macaddr);
 
+/* Set up UDP related PCB */
 me-&gt;upcb = udp_new();
-udp_bind(me-&gt;upcb, IP_ADDR_ANY, 777);           /* use port 777 for UDP */
+udp_bind(me-&gt;upcb, IP_ADDR_ANY, 777);             /* use port 777 for UDP */
 udp_recv(me-&gt;upcb, &amp;udp_rx_handler, me);
 
+/* Set up TCP related PCB */
+me-&gt;tpcb = tcp_new();
+if (me-&gt;tpcb == NULL) {
+   ERR_printf(&quot;Unable to allocate LWIP memory for TCP\n&quot;);
+}
+err_t err = tcp_bind(me-&gt;tpcb, IP_ADDR_ANY, 7778);   /* port 7778 for TCP */
+if (ERR_OK != err ) {
+   ERR_printf(&quot;Unable to bind TCP to port 7778\n&quot;);
+}
+
+me-&gt;tpcb = tcp_listen(me-&gt;tpcb);
+tcp_accept(me-&gt;tpcb, echo_accept);
+
 QActive_subscribe((QActive *)me, ETH_SEND_SIG);</action>
-     <initial_glyph conn="1,2,4,3,3,2">
+     <initial_glyph conn="1,2,4,3,7,2">
       <action box="0,-2,6,2"/>
      </initial_glyph>
     </initial>
@@ -131,19 +148,19 @@ if (me-&gt;upcb-&gt;remote_port != (uint16_t)0) {
         pbuf_free(p);                   /* don't leak the pbuf! */
     }
 }</action>
-      <tran_glyph conn="3,10,3,-1,21">
-       <action box="0,-2,16,2"/>
+      <tran_glyph conn="3,18,3,-1,14">
+       <action box="0,-2,13,2"/>
       </tran_glyph>
      </tran>
      <tran trig="LWIP_RX_READY">
       <action>eth_driver_read();</action>
-      <tran_glyph conn="3,13,3,-1,21">
+      <tran_glyph conn="3,21,3,-1,14">
        <action box="0,-2,17,2"/>
       </tran_glyph>
      </tran>
      <tran trig="LWIP_TX_READY">
       <action>eth_driver_write();</action>
-      <tran_glyph conn="3,18,3,-1,21">
+      <tran_glyph conn="3,24,3,-1,14">
        <action box="0,-2,13,2"/>
       </tran_glyph>
      </tran>
@@ -184,14 +201,13 @@ if (me-&gt;dhcp_fine_tmr &gt;= DHCP_FINE_TIMER_MSECS) {
              ip4_addr4_16(&amp;me-&gt;netif-&gt;dhcp-&gt;offered_ip_addr)
        );
     } else {
-       debug_printf(&quot;DHCP NOT BOUND!\n&quot;);
+       WRN_printf(&quot;DHCP NOT BOUND!\n&quot;);
     }
 }
 me-&gt;dhcp_coarse_tmr += LWIP_SLOW_TICK_MS;
 if (me-&gt;dhcp_coarse_tmr &gt;= DHCP_COARSE_TIMER_MSECS) {
     me-&gt;dhcp_coarse_tmr = 0;
     dhcp_coarse_tmr();
-    debug_printf(&quot;2\n&quot;);
 }
 #endif
 
@@ -202,14 +218,14 @@ if (me-&gt;auto_ip_tmr &gt;= AUTOIP_TMR_INTERVAL) {
     autoip_tmr();
 }
 #endif</action>
-      <tran_glyph conn="3,22,3,-1,21">
+      <tran_glyph conn="3,27,3,-1,14">
        <action box="0,-2,15,2"/>
       </tran_glyph>
      </tran>
      <tran trig="LWIP_RX_OVERRUN">
       <action>LINK_STATS_INC(link.err);</action>
-      <tran_glyph conn="3,26,3,-1,21">
-       <action box="0,-2,16,2"/>
+      <tran_glyph conn="3,30,3,-1,14">
+       <action box="0,-2,15,2"/>
       </tran_glyph>
      </tran>
      <state_glyph node="3,2,94,82">
@@ -229,6 +245,229 @@ if (me-&gt;auto_ip_tmr &gt;= AUTOIP_TMR_INTERVAL) {
 
 QActive_ctor(&amp;me-&gt;super, (QStateHandler)&amp;LWIPMgr_initial);
 QTimeEvt_ctor(&amp;me-&gt;te_LWIP_SLOW_TICK, LWIP_SLOW_TICK_SIG);</code>
+  </operation>
+  <operation name="echo_accept" type="err_t" visibility="0x02" properties="0x00">
+   <documentation>Some docs</documentation>
+   <parameter name="arg" type="void *"/>
+   <parameter name="newpcb" type="struct tcp_pcb *"/>
+   <parameter name="err&#10;    " type="err_t"/>
+   <code>DBG_printf(&quot;Test\n&quot;);
+
+err_t ret_err;
+struct echo_state *es;
+
+LWIP_UNUSED_ARG(arg);
+LWIP_UNUSED_ARG(err);
+
+/* commonly observed practive to call tcp_setprio(), why? */
+tcp_setprio(newpcb, TCP_PRIO_MIN);
+
+es = (struct echo_state *)mem_malloc(sizeof(struct echo_state));
+if ( es != NULL ) {
+    es-&gt;state = ES_ACCEPTED;
+    es-&gt;pcb = newpcb;
+    es-&gt;retries = 0;
+    es-&gt;p = NULL;
+    /* pass newly allocated es to our callbacks */
+    tcp_arg(newpcb, es);
+    tcp_recv(newpcb, echo_recv);
+    tcp_err(newpcb, echo_error);
+    tcp_poll(newpcb, echo_poll, 0);
+    ret_err = ERR_OK;
+} else {
+    ret_err = ERR_MEM;
+}
+return ret_err;</code>
+  </operation>
+  <operation name="echo_recv" type="err_t" visibility="0x02" properties="0x00">
+   <documentation>Some other docs</documentation>
+   <parameter name="arg" type="void *"/>
+   <parameter name="tpcb" type="struct tcp_pcb *"/>
+   <parameter name="p" type="struct pbuf *"/>
+   <parameter name="err" type="err_t"/>
+   <code>DBG_printf(&quot;Test\n&quot;);
+
+struct echo_state *es;
+err_t ret_err;
+
+LWIP_ASSERT(&quot;arg != NULL&quot;,arg != NULL);
+es = (struct echo_state *)arg;
+if (p == NULL) {
+    /* remote host closed connection */
+    es-&gt;state = ES_CLOSING;
+    if(es-&gt;p == NULL) {
+        /* we're done sending, close it */
+        echo_close(tpcb, es);
+    } else {
+        /* we're not done yet */
+        tcp_sent(tpcb, echo_sent);
+        echo_send(tpcb, es);
+    }
+    ret_err = ERR_OK;
+
+} else if(err != ERR_OK) {
+    /* cleanup, for unkown reason */
+    if (p != NULL) {
+        es-&gt;p = NULL;
+        pbuf_free(p);
+    }
+    ret_err = err;
+} else if(es-&gt;state == ES_ACCEPTED) {
+    /* first data chunk in p-&gt;payload */
+    es-&gt;state = ES_RECEIVED;
+    /* store reference to incoming pbuf (chain) */
+    es-&gt;p = p;
+    /* install send completion notifier */
+    tcp_sent(tpcb, echo_sent);
+    echo_send(tpcb, es);
+    ret_err = ERR_OK;
+} else if (es-&gt;state == ES_RECEIVED) {
+    /* read some more data */
+    if(es-&gt;p == NULL) {
+        es-&gt;p = p;
+        tcp_sent(tpcb, echo_sent);
+        echo_send(tpcb, es);
+    } else {
+        struct pbuf *ptr;
+         /* chain pbufs to the end of what we recv'ed previously  */
+        ptr = es-&gt;p;
+        pbuf_chain(ptr,p);
+    }
+    ret_err = ERR_OK;
+} else if(es-&gt;state == ES_CLOSING) {
+    /* odd case, remote side closing twice, trash data */
+    tcp_recved(tpcb, p-&gt;tot_len);
+    es-&gt;p = NULL;
+    pbuf_free(p);
+    ret_err = ERR_OK;
+} else {
+    /* unkown es-&gt;state, trash data  */
+    tcp_recved(tpcb, p-&gt;tot_len);
+    es-&gt;p = NULL;
+    pbuf_free(p);
+    ret_err = ERR_OK;
+}
+return ret_err;</code>
+  </operation>
+  <operation name="echo_error" type="void" visibility="0x02" properties="0x00">
+   <documentation>Some other docs</documentation>
+   <parameter name="arg" type="void *"/>
+   <parameter name="err" type="err_t"/>
+   <code>DBG_printf(&quot;Test\n&quot;);
+
+struct echo_state *es;
+LWIP_UNUSED_ARG(err);
+es = (struct echo_state *)arg;
+if (es != NULL) {
+    mem_free(es);
+}</code>
+  </operation>
+  <operation name="echo_poll" type="err_t" visibility="0x02" properties="0x00">
+   <documentation>Some other docs</documentation>
+   <parameter name="arg" type="void *"/>
+   <parameter name="tpcb" type="struct tcp_pcb *"/>
+   <code>DBG_printf(&quot;Test\n&quot;);
+
+err_t ret_err;
+struct echo_state *es;
+es = (struct echo_state *)arg;
+if (es != NULL) {
+    if (es-&gt;p != NULL) {
+        /* there is a remaining pbuf (chain)  */
+        tcp_sent(tpcb, echo_sent);
+        echo_send(tpcb, es);
+    } else {
+        /* no remaining pbuf (chain)  */
+        if(es-&gt;state == ES_CLOSING) {
+            echo_close(tpcb, es);
+        }
+    }
+    ret_err = ERR_OK;
+} else {
+    /* nothing to be done */
+    tcp_abort(tpcb);
+    ret_err = ERR_ABRT;
+}
+return ret_err;</code>
+  </operation>
+  <operation name="echo_sent" type="err_t" visibility="0x02" properties="0x00">
+   <documentation>Some other docs</documentation>
+   <parameter name="arg" type="void *"/>
+   <parameter name="tpcb" type="struct tcp_pcb *"/>
+   <parameter name="len" type="uint16_t"/>
+   <code>DBG_printf(&quot;Test\n&quot;);
+
+struct echo_state *es;
+LWIP_UNUSED_ARG(len);
+es = (struct echo_state *)arg;
+es-&gt;retries = 0;
+if(es-&gt;p != NULL) {
+    /* still got pbufs to send */
+    tcp_sent(tpcb, echo_sent);
+    echo_send(tpcb, es);
+} else {
+    /* no more pbufs to send */
+    if(es-&gt;state == ES_CLOSING) {
+        echo_close(tpcb, es);
+    }
+}
+return ERR_OK;</code>
+  </operation>
+  <operation name="echo_send" type="void" visibility="0x02" properties="0x00">
+   <documentation>Some other docs</documentation>
+   <parameter name="tpcb" type="struct tcp_pcb *"/>
+   <parameter name="es" type="struct echo_state *"/>
+   <code>DBG_printf(&quot;Test\n&quot;);
+struct pbuf *ptr;
+err_t wr_err = ERR_OK;
+while ((wr_err == ERR_OK) &amp;&amp; (es-&gt;p != NULL) &amp;&amp; (es-&gt;p-&gt;len &lt;= tcp_sndbuf(tpcb))) {
+    ptr = es-&gt;p;
+    /* enqueue data for transmission */
+    wr_err = tcp_write(tpcb, ptr-&gt;payload, ptr-&gt;len, 1);
+    if (wr_err == ERR_OK) {
+        uint16_t plen;
+        uint8_t freed;
+        plen = ptr-&gt;len;
+
+        /* continue with next pbuf in chain (if any) */
+        es-&gt;p = ptr-&gt;next;
+        if(es-&gt;p != NULL) {
+            /* new reference! */
+            pbuf_ref(es-&gt;p);
+        }
+        /* chop first pbuf from chain */
+        do {
+            /* try hard to free pbuf */
+            freed = pbuf_free(ptr);
+        } while(freed == 0);
+
+        /* we can read more data now */
+        tcp_recved(tpcb, plen);
+    } else if(wr_err == ERR_MEM) {
+        /* we are low on memory, try later / harder, defer to poll */
+        es-&gt;p = ptr;
+    } else {
+        /* other problem ?? */
+    }
+}</code>
+  </operation>
+  <operation name="echo_close" type="void" visibility="0x02" properties="0x00">
+   <documentation>Some other docs</documentation>
+   <parameter name="tpcb" type="struct tcp_pcb *"/>
+   <parameter name="es" type="struct echo_state *"/>
+   <code>DBG_printf(&quot;Test\n&quot;);
+
+tcp_arg(tpcb, NULL);
+tcp_sent(tpcb, NULL);
+tcp_recv(tpcb, NULL);
+tcp_err(tpcb, NULL);
+tcp_poll(tpcb, NULL, 0);
+
+if (es != NULL) {
+    mem_free(es);
+}
+
+tcp_close(tpcb);</code>
   </operation>
  </package>
  <directory name=".">
@@ -261,7 +500,33 @@ Q_DEFINE_THIS_FILE;
 /* application signals cannot overlap the device-driver signals */
 Q_ASSERT_COMPILE(MAX_SHARED_SIG &lt; DEV_DRIVER_SIG);
 
+static struct tcp_pcb *echo_pcb;
+
+enum echo_states
+{
+  ES_NONE = 0,
+  ES_ACCEPTED,
+  ES_RECEIVED,
+  ES_CLOSING
+};
+
+struct echo_state
+{
+  uint8_t state;
+  uint8_t retries;
+  struct tcp_pcb *pcb;
+  /* pbuf (chain) to recycle */
+  struct pbuf *p;
+};
+
 $declare(AOs::LWIPMgr)
+$declare(AOs::echo_accept)
+$declare(AOs::echo_recv)
+$declare(AOs::echo_error)
+$declare(AOs::echo_poll)
+$declare(AOs::echo_sent)
+$declare(AOs::echo_send)
+$declare(AOs::echo_close)
 
 /* Local objects -----------------------------------------------------------*/
 static LWIPMgr l_LWIPMgr;       /* the single instance of the active object */
@@ -288,6 +553,14 @@ static void udp_rx_handler(void *arg, struct udp_pcb *upcb,
 
 $define(AOs::LWIPMgr_ctor)
 $define(AOs::LWIPMgr)
+
+$define(AOs::echo_accept)
+$define(AOs::echo_recv)
+$define(AOs::echo_error)
+$define(AOs::echo_poll)
+$define(AOs::echo_sent)
+$define(AOs::echo_send)
+$define(AOs::echo_close)
 
 /* Ethernet message sender ...................................................*/
 void ETH_SendMsg_Handler(MsgEvt const *e) {

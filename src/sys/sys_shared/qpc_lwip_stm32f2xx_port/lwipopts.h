@@ -337,7 +337,7 @@ The STM32F207 allows computing and verifying the IP, UDP, TCP and ICMP checksums
 // ---------- TCP options ----------
 //
 //****************************************************************************
-//#define LWIP_TCP                        1
+#define LWIP_TCP                        1
 #define TCP_TTL                         (IP_DEFAULT_TTL)
 //#define TCP_WND                         (4 * TCP_MSS)
 //#define TCP_MAXRTX                      12
@@ -359,8 +359,8 @@ The STM32F207 allows computing and verifying the IP, UDP, TCP and ICMP checksums
 // ---------- API options ----------
 //
 //****************************************************************************
-//#define LWIP_EVENT_API                  0
-//#define LWIP_CALLBACK_API               1
+//#define LWIP_EVENT_API                  1
+#define LWIP_CALLBACK_API               1
 
 //****************************************************************************
 //
@@ -454,9 +454,9 @@ The STM32F207 allows computing and verifying the IP, UDP, TCP and ICMP checksums
 // ---------- Statistics options ----------
 //
 //****************************************************************************
-#define LWIP_STATS						0
+#define LWIP_STATS						      0
 //#define LWIP_STATS_DISPLAY              0
-#define LINK_STATS                      0
+#define LINK_STATS                        0
 //#define ETHARP_STATS                    (LWIP_ARP)
 //#define IP_STATS                        1
 //#define IPFRAG_STATS                    (IP_REASSEMBLY || IP_FRAG)
@@ -520,8 +520,8 @@ The STM32F207 allows computing and verifying the IP, UDP, TCP and ICMP checksums
 // ---------- Debugging options ----------
 //
 //****************************************************************************
-//#define LWIP_DBG_MIN_LEVEL              LWIP_DBG_LEVEL_OFF // LWIP_DBG_LEVEL_ALL
-#define LWIP_DBG_MIN_LEVEL                LWIP_DBG_LEVEL_ALL
+#define LWIP_DBG_MIN_LEVEL              LWIP_DBG_LEVEL_OFF // LWIP_DBG_LEVEL_ALL
+//#define LWIP_DBG_MIN_LEVEL                LWIP_DBG_LEVEL_ALL
 //#define LWIP_DBG_MIN_LEVEL              LWIP_DBG_LEVEL_WARNING
 //#define LWIP_DBG_MIN_LEVEL              LWIP_DBG_LEVEL_SERIOUS
 //#define LWIP_DBG_MIN_LEVEL              LWIP_DBG_LEVEL_SEVERE
