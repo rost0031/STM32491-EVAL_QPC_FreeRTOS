@@ -18,22 +18,22 @@
 #include "version.h"
 
 /* Local-scope objects -----------------------------------------------------*/
-static QEvent const *l_CommStackMgrQueueSto[10];
-static QEvent const *l_LWIPMgrQueueSto[10];
-static QEvent const *l_SerialMgrQueueSto[10];
+static QEvent const *l_CommStackMgrQueueSto[50];
+static QEvent const *l_LWIPMgrQueueSto[50];
+static QEvent const *l_SerialMgrQueueSto[50];
 static QSubscrList   l_subscrSto[MAX_PUB_SIG];
 
 static union SmallEvents {
     void   *e0;                                       /* minimum event size */
     uint8_t e1[sizeof(QEvent)];
-} l_smlPoolSto[10];                     /* storage for the small event pool */
+} l_smlPoolSto[20];                     /* storage for the small event pool */
 
 static union MediumEvents {
     void   *e0;                                       /* minimum event size */
     uint8_t e1[sizeof(MsgEvt)];
     uint8_t e2[sizeof(EthEvt)];
     uint8_t e3[sizeof(SerialDataEvt)];
-} l_medPoolSto[10];                    /* storage for the medium event pool */
+} l_medPoolSto[100];                    /* storage for the medium event pool */
 
 //static union LargeEvents {
 //    void   *e0;                                       /* minimum event size */
