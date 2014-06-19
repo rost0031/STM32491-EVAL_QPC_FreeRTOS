@@ -23,6 +23,7 @@
 #include "stm32f2xx_dma.h"
 #include "misc.h"
 #include "mem_datacopy.h"
+#include "SerialMgr.h"
 
 /* Maximum Timeout values for flags and events waiting loops. These timeouts are
    not based on accurate values, they just guarantee that the application will
@@ -271,7 +272,7 @@ void UART4_IRQHandler(void)
             msgEvt->msg_src = SERIAL;
 
             /* 3. Publish the newly created event to current AO */
-            QF_PUBLISH( (QEvent *)msgEvt, AO_CommStackMgr );
+            QF_PUBLISH( (QEvent *)msgEvt, AO_SerialMgr );
 
             // Reset the serial receive buffer
             s_USART_Port[SYSTEM_SERIAL].index = 0;

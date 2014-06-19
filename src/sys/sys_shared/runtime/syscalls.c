@@ -58,7 +58,6 @@ caddr_t _sbrk(int incr) {
 }
 
 void _exit(int status) {
-	printf("_exit called with parameter %d\n", status);
 	while(1) {;} // Prevent the processor from faulting
 }
 

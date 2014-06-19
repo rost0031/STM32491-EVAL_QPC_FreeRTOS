@@ -1,58 +1,64 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<model version="2.2.03">
+<model version="3.1.3">
+ <documentation>/**
+ * LWIPMgr Active Object which.  This AO handles any ethernet work
+ */</documentation>
  <framework name="qpc"/>
  <package name="Events" stereotype="0x01">
   <class name="EthEvt" superclass="qpc::QEvt">
-   <documentation>These events types are responsible for getting data from Eth driver to LWIPMgr.</documentation>
+   <documentation>/**
+ * \struct Event struct type for getting data from Eth driver to LWIPMgr.
+ */</documentation>
    <attribute name="msg_src" type="MsgSrc" visibility="0x01" properties="0x00">
-    <documentation>Where the msg came from so it can be routed
-back to the sender.</documentation>
+    <documentation>/**&lt; Where the msg came from so it can be routed back to the sender. */</documentation>
    </attribute>
    <attribute name="msg_len" type="uint16_t" visibility="0x01" properties="0x00">
-    <documentation>Length of the msg buffer</documentation>
+    <documentation>/**&lt; Length of the msg buffer. */</documentation>
    </attribute>
    <attribute name="msg[MAX_MSG_LEN]" type="char" visibility="0x01" properties="0x00">
-    <documentation>Buffer that holds the data of the msg.</documentation>
+    <documentation>/**&lt; Buffer that holds the data of the msg. */</documentation>
    </attribute>
   </class>
  </package>
  <package name="AOs" stereotype="0x02">
   <class name="LWIPMgr" superclass="qpc::QActive">
-   <documentation>LWIP Active Object</documentation>
+   <documentation>/**
+ * \brief LWIPMgr &quot;class&quot;
+ */</documentation>
    <attribute name="te_LWIP_SLOW_TICK" type="QTimeEvt" visibility="0x01" properties="0x00">
-    <documentation>Local timer for LWIP slow tick.</documentation>
+    <documentation>/**&lt; Local timer for LWIP slow tick. */</documentation>
    </attribute>
    <attribute name="*netif" type="struct netif" visibility="0x01" properties="0x00">
-    <documentation>Pointer to netif structure.</documentation>
+    <documentation>/**&lt; Pointer to LWIP netif struct. */</documentation>
    </attribute>
    <attribute name="*upcb" type="struct udp_pcb" visibility="0x01" properties="0x00">
-    <documentation>Pointer to upcb structure.</documentation>
+    <documentation>/**&lt; Pointer to LWIP udp pcb struct. */</documentation>
    </attribute>
    <attribute name="ip_addr" type="uint32_t" visibility="0x01" properties="0x00">
-    <documentation>IP address in the native host byte order</documentation>
+    <documentation>/**&lt; IP address in the native host byte order. */</documentation>
    </attribute>
    <attribute name="tcp_tmr;&#10;    #endif" type="#if LWIP_TCP&#10;    uint32_t " visibility="0x01" properties="0x00">
-    <documentation>TCP timer.  Only exists if LWIP_TCP is defined.</documentation>
+    <documentation>/**&lt; LWIP native TCP timer.  Only exists if LWIP_TCP is defined. */</documentation>
    </attribute>
    <attribute name="arp_tmr;&#10;    #endif" type="#if LWIP_ARP&#10;    uint32_t " visibility="0x01" properties="0x00">
-    <documentation>ARP timer.  Only exists if LWIP_ARP is defined.</documentation>
+    <documentation>/**&lt; LWIP native ARP timer.  Only exists if LWIP_ARP is defined. */</documentation>
    </attribute>
    <attribute name="dhcp_fine_tmr;&#10;    #endif" type="#if LWIP_DHCP&#10;    uint32_t " visibility="0x01" properties="0x00">
-    <documentation>DHCP fine timer.  Only exists if LWIP_DHCP is defined.</documentation>
+    <documentation>/**&lt; LWIP native DHCP fine timer.  Only exists if LWIP_DHCP is defined. */</documentation>
    </attribute>
    <attribute name="dhcp_coarse_tmr;&#10;    #endif" type="#if LWIP_DHCP&#10;    uint32_t " visibility="0x01" properties="0x00">
-    <documentation>DHCP coarse timer.  Only exists if LWIP_DHCP is defined.</documentation>
+    <documentation>/**&lt; LWIP native DHCP coarse timer.  Only exists if LWIP_DHCP is defined. */</documentation>
    </attribute>
    <attribute name="auto_ip_tmr;&#10;    #endif" type="#if LWIP_AUTOIP&#10;    uint32_t " visibility="0x01" properties="0x00">
-    <documentation>AUTO IP timer.  Only exists if LWIP_AUTOIP is defined.</documentation>
+    <documentation>/**&lt; LWIP native AUTOIP coarse timer.  Only exists if LWIP_AUTOIP is defined. */</documentation>
    </attribute>
    <attribute name="*tpcb_sys" type="struct tcp_pcb" visibility="0x01" properties="0x00">
-    <documentation>Pointer to tcp_pcb structure used to keep track of TCP connection to the 
-system for commands and replies.</documentation>
+    <documentation>/**&lt; Pointer to LWIP tcp pcb struct used to keep track of TCP connection to the
+     system for commands and replies. */</documentation>
    </attribute>
    <attribute name="*tpcb_log" type="struct tcp_pcb" visibility="0x01" properties="0x00">
-    <documentation>Pointer to tcp_pcb structure used to keep track of TCP connection to the 
-system for logging.</documentation>
+    <documentation>/**&lt; Pointer to LWIP tcp pcb struct used to keep track of TCP connection to the
+     system for logging. */</documentation>
    </attribute>
    <statechart>
     <initial target="../1">
@@ -65,7 +71,7 @@ QS_OBJ_DICTIONARY(&amp;l_LWIPMgr.te_LWIP_SLOW_TICK);
 
 QS_FUN_DICTIONARY(&amp;QHsm_top);
 QS_FUN_DICTIONARY(&amp;LWIPMgr_initial);
-QS_FUN_DICTIONARY(&amp;LWIPMgr_Running);
+QS_FUN_DICTIONARY(&amp;LWIPMgr_Active);
 QS_FUN_DICTIONARY(&amp;udp_rx_handler);
 QS_FUN_DICTIONARY(&amp;ETH_SendMsg_Handler);
 
@@ -139,15 +145,16 @@ QActive_subscribe((QActive *)me, ETH_SEND_SIG);</action>
      </initial_glyph>
     </initial>
     <state name="Active">
-     <documentation>This state is a catch-all Active state.  If any signals need
-to be handled that do not cause state transitions and are 
-common to the entire AO, they should be handled here.
- 
-@param  me: Pointer to the state machine
-@param  e:  Pointer to the event being processed.
-@retval status: QState type that specifies where the state
-machine is going next.
-</documentation>
+     <documentation>/**
+ * This state is a catch-all Active state.  If any signals need
+ * to be handled that do not cause state transitions and are
+ * common to the entire AO, they should be handled here.
+ *
+ * @param  [in|out] me: Pointer to the state machine
+ * @param  [in|out]  e:  Pointer to the event being processed.
+ * @return status: QState type that specifies where the state
+ * machine is going next.
+ */</documentation>
      <entry>QTimeEvt_postEvery(
     &amp;me-&gt;te_LWIP_SLOW_TICK,
     (QActive *)me,
@@ -255,32 +262,37 @@ if (me-&gt;auto_ip_tmr &gt;= AUTOIP_TMR_INTERVAL) {
    </statechart>
   </class>
   <attribute name="AO_LWIPMgr" type="QActive * const" visibility="0x00" properties="0x00">
-   <documentation>&quot;opaque&quot; pointer to the Active Object</documentation>
+   <documentation>/**&lt; &quot;opaque&quot; pointer to the Active Object */</documentation>
   </attribute>
   <operation name="LWIPMgr_ctor" type="void" visibility="0x00" properties="0x00">
-   <documentation>This function is a C &quot;constructor&quot; for this active object. It initializes all
-the timers and queues used by the AO.
-
-@param  None
-@return None
-</documentation>
+   <documentation>/**
+ * @brief C &quot;constructor&quot; for LWIP &quot;class&quot;.
+ * Initializes all the timers and queues used by the AO and sets of the
+ * first state.
+ * @param  None
+ * @param  None
+ * @retval None
+ */</documentation>
    <code>LWIPMgr *me = &amp;l_LWIPMgr;
 
 QActive_ctor(&amp;me-&gt;super, (QStateHandler)&amp;LWIPMgr_initial);
 QTimeEvt_ctor(&amp;me-&gt;te_LWIP_SLOW_TICK, LWIP_SLOW_TICK_SIG);</code>
   </operation>
   <operation name="echo_accept" type="err_t" visibility="0x02" properties="0x00">
-   <documentation>A callback function that handles acceptance of a connection on an echo 
-TCP socket.  This function is passed in as a callback to tcp_accept().
-
-@param [in] *arg: void pointer to an argument list (unused)
-@param [in] *newpcb: struct tcp_pcb pointer to the pcb that is handling the 
-context for this connection.
-@param [in] err: err_t passed in from the caller. (unused)
-
-@return err: err_t indicating error that may have occurred during accept.
-  @arg ERR_OK: no error
-  @arg ERR_MEM: memory allocation error</documentation>
+   <documentation>/**
+ * @brief: A callback function that handles acceptance of a connection 
+ * on an echo TCP socket.
+ * This function is passed in as a callback to tcp_accept().
+ *
+ * @param [in] *arg: void pointer to an argument list (unused)
+ * @param [in] *newpcb: struct tcp_pcb pointer to the pcb that is handling the 
+ * context for this connection.
+ * @param [in] err: err_t passed in from the caller. (unused)
+ *
+ * @return err: err_t indicating error that may have occurred.
+ *   @arg ERR_OK: no error
+ *   @arg ERR_MEM: memory allocation error
+ */</documentation>
    <parameter name="arg" type="void *"/>
    <parameter name="newpcb" type="struct tcp_pcb *"/>
    <parameter name="err&#10;    " type="err_t"/>
@@ -313,19 +325,22 @@ if ( es != NULL ) {
 return ret_err;</code>
   </operation>
   <operation name="echo_recv" type="err_t" visibility="0x02" properties="0x00">
-   <documentation>A callback function that handles the start of a RECV on the echo TCP socket.
-This function is passed in as a callback to tcp_recv().
-
-@param [in] *arg: void pointer to an argument list (unused)
-@param [in] *newpcb: struct tcp_pcb pointer to the pcb that is handling the 
-context for this connection.
-@param [in] *p: struct pbuf pointer to the LWIP pbuf that actually contains the 
-data received.
-@param [in] err: err_t passed in from the caller. (unused)
-
-@return err: err_t indicating error that may have occurred during accept.
-  @arg ERR_OK: no error
-  @arg ERR_MEM: memory allocation error</documentation>
+   <documentation>/**
+ * @brief: A callback function that handles the start of a RECV on the echo 
+ * TCP socket.
+ * This function is passed in as a callback to tcp_recv().
+ *
+ * @param [in] *arg: void pointer to an argument list (unused)
+ * @param [in] *newpcb: struct tcp_pcb pointer to the pcb that is handling the
+ * context for this connection.
+ * @param [in] *p: struct pbuf pointer to the LWIP pbuf that actually
+ * contains the data received.
+ * @param [in] err: err_t passed in from the caller. (unused)
+ *
+ * @return err: err_t indicating error that may have occurred.
+ *   @arg ERR_OK: no error
+ *   @arg ERR_MEM: memory allocation error
+ */</documentation>
    <parameter name="arg" type="void *"/>
    <parameter name="tpcb" type="struct tcp_pcb *"/>
    <parameter name="p" type="struct pbuf *"/>
@@ -395,7 +410,15 @@ if (p == NULL) {
 return ret_err;</code>
   </operation>
   <operation name="echo_error" type="void" visibility="0x02" properties="0x00">
-   <documentation>Some other docs</documentation>
+   <documentation>/**
+ * @brief: A callback function that handles the errors on the echo TCP socket.
+ * This function is passed in as a callback to tcp_recv().
+ *
+ * @param [in] *arg: void pointer to an argument list (unused)
+ * @param [in] err: err_t passed in from the caller. (unused)
+ *
+ * @return None
+ */</documentation>
    <parameter name="arg" type="void *"/>
    <parameter name="err" type="err_t"/>
    <code>struct echo_state *es;
@@ -407,7 +430,19 @@ if (es != NULL) {
 ERR_printf(&quot;Handling error, freeing memory\n&quot;);</code>
   </operation>
   <operation name="echo_poll" type="err_t" visibility="0x02" properties="0x00">
-   <documentation>Some other docs</documentation>
+   <documentation>/**
+ * @brief: A callback function that handles the start of a RECV on the echo 
+ * TCP socket.
+ * This function is passed in as a callback to tcp_recv().
+ *
+ * @param [in] *arg: void pointer to an argument list (unused)
+ * @param [in|out] *tpcb: struct tcp_pcb pointer to the pcb that is handling the
+ * context for this connection.
+ *
+ * @return err: err_t indicating error that may have occurred.
+ *   @arg ERR_OK: no error
+ *   @arg ERR_MEM: memory allocation error
+ */</documentation>
    <parameter name="arg" type="void *"/>
    <parameter name="tpcb" type="struct tcp_pcb *"/>
    <code>err_t ret_err;
@@ -433,7 +468,20 @@ if (es != NULL) {
 return ret_err;</code>
   </operation>
   <operation name="echo_sent" type="err_t" visibility="0x02" properties="0x00">
-   <documentation>Some other docs</documentation>
+   <documentation>/**
+ * @brief: A callback function that handles the start of a RECV on the echo 
+ * TCP socket.
+ * This function is passed in as a callback to tcp_recv().
+ *
+ * @param [in] *arg: void pointer to an argument list (unused)
+ * @param [in|out] *tpcb: struct tcp_pcb pointer to the pcb that is handling the
+ * context for this connection.
+ * @param [in] len: uint16_t length of data sent.
+ *
+ * @return err: err_t indicating error that may have occurred.
+ *   @arg ERR_OK: no error
+ *   @arg ERR_MEM: memory allocation error
+ */</documentation>
    <parameter name="arg" type="void *"/>
    <parameter name="tpcb" type="struct tcp_pcb *"/>
    <parameter name="len" type="uint16_t"/>
@@ -454,7 +502,17 @@ if(es-&gt;p != NULL) {
 return ERR_OK;</code>
   </operation>
   <operation name="echo_send" type="void" visibility="0x02" properties="0x00">
-   <documentation>Some other docs</documentation>
+   <documentation>/**
+ * @brief: A callback function that handles the actual sending of data
+ * on an echo TCP socket.
+ * This function is passed in as a callback to tcp_accept().
+ *
+ * @param [in|out] *tpcb: struct tcp_pcb pointer to the pcb that is handling the
+ * context for this connection.
+ * @param [in|out] *es: echo_state struct to keep track of the socket state.
+ *
+ * @return None
+ */</documentation>
    <parameter name="tpcb" type="struct tcp_pcb *"/>
    <parameter name="es" type="struct echo_state *"/>
    <code>struct pbuf *ptr;
@@ -493,7 +551,16 @@ while ((wr_err == ERR_OK) &amp;&amp; (es-&gt;p != NULL) &amp;&amp; (es-&gt;p-&gt
 }</code>
   </operation>
   <operation name="echo_close" type="void" visibility="0x02" properties="0x00">
-   <documentation>Some other docs</documentation>
+   <documentation>/**
+ * @brief: A callback function that handles the closing the TCP socket.
+ * This function is passed in as a callback to tcp_accept().
+ *
+ * @param [in|out] *tpcb: struct tcp_pcb pointer to the pcb that is handling the
+ * context for this connection.
+ * @param [in|out] *es: echo_state struct to keep track of the socket state.
+ *
+ * @return None
+ */</documentation>
    <parameter name="tpcb" type="struct tcp_pcb *"/>
    <parameter name="es" type="struct echo_state *"/>
    <code>tcp_arg(tpcb, NULL);

@@ -23,10 +23,10 @@
 #include "console_output.h"         /* For debug/console output declarations. */
 #include "time.h"                                   /* For time functionality */
 
-typedef enum {
-    FALSE = 0,
-    TRUE = !FALSE
-} bool;
+//typedef enum {
+//    FALSE = 0,
+//    TRUE = !FALSE
+//} bool;
 
 /* This define allows functions to be placed into RAM by the linker and startup
  * code.  */

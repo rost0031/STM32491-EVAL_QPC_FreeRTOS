@@ -1,17 +1,23 @@
-/*****************************************************************************
+/**
+* \file
+* \brief Dummy definitions of the QS macros that avoid code generation from
+* the QS instrumentation.
+* \ingroup qs
+* \cond
+******************************************************************************
 * Product: QP/C
-* Last Updated for Version: 4.5.02
-* Date of the Last Update:  Jul 08, 2012
+* Last updated for version 5.3.0
+* Last updated on  2014-02-24
 *
 *                    Q u a n t u m     L e a P s
 *                    ---------------------------
 *                    innovating embedded systems
 *
-* Copyright (C) 2002-2012 Quantum Leaps, LLC. All rights reserved.
+* Copyright (C) Quantum Leaps, www.state-machine.com.
 *
 * This program is open source software: you can redistribute it and/or
 * modify it under the terms of the GNU General Public License as published
-* by the Free Software Foundation, either version 2 of the License, or
+* by the Free Software Foundation, either version 3 of the License, or
 * (at your option) any later version.
 *
 * Alternatively, this program may be distributed and modified under the
@@ -28,19 +34,13 @@
 * along with this program. If not, see <http://www.gnu.org/licenses/>.
 *
 * Contact information:
-* Quantum Leaps Web sites: http://www.quantum-leaps.com
-*                          http://www.state-machine.com
-* e-mail:                  info@quantum-leaps.com
-*****************************************************************************/
+* Web:   www.state-machine.com
+* Email: info@state-machine.com
+******************************************************************************
+* \endcond
+*/
 #ifndef qs_dummy_h
 #define qs_dummy_h
-
-/**
-* \file
-* \ingroup qep qf qk
-* \brief Dummy definitions of the QS macros that avoid code generation from
-* the QS instrumentation.
-*/
 
 #ifdef Q_SPY
     #error "Q_SPY must NOT be defined to include qs_dummy.h"
@@ -49,7 +49,6 @@
 #define QS_INIT(arg_)                   (0 == 0)
 #define QS_EXIT()                       ((void)0)
 #define QS_DUMP()                       ((void)0)
-#define QS_RESET()                      ((void)0)
 #define QS_FILTER_ON(rec_)              ((void)0)
 #define QS_FILTER_OFF(rec_)             ((void)0)
 #define QS_FILTER_SM_OBJ(obj_)          ((void)0)
@@ -89,15 +88,19 @@
 #define QS_FUN_DICTIONARY(fun_)         ((void)0)
 #define QS_USR_DICTIONARY(rec_)         ((void)0)
 #define QS_ASSERTION(module_, loc_)     ((void)0)
+#define QS_TEST_ASSERTION(file_, loc_)  ((void)0)
+#define QS_TEST(file_, test_)           ((void)0)
 #define QS_FLUSH()                      ((void)0)
 
-/* internal QS macros used only in the QP components .......................*/
+/****************************************************************************/
+/* internal QS macros used only in the QP components */
 #define QS_CRIT_STAT_
 #define QS_BEGIN_(rec_, refObj_, obj_)  if (0) {
 #define QS_END_()                       }
 #define QS_BEGIN_NOCRIT_(rec_, refObj_, obj_) if (0) {
 #define QS_END_NOCRIT_()                }
 #define QS_U8_(data_)                   ((void)0)
+#define QS_2U8_(data1_, data2_)         ((void)0)
 #define QS_U16_(data_)                  ((void)0)
 #define QS_U32_(data_)                  ((void)0)
 #define QS_U64_(data_)                  ((void)0)
@@ -117,4 +120,4 @@
 #define QF_QS_ISR_EXIT(isrnest_, prio_) ((void)0)
 #define QF_QS_ACTION(act_)              ((void)0)
 
-#endif                                                        /* qs_dummy_h */
+#endif /* qs_dummy_h */

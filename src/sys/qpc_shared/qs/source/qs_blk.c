@@ -1,17 +1,22 @@
-/*****************************************************************************
-* Product:  QS/C
-* Last Updated for Version: 4.4.02
-* Date of the Last Update:  Apr 13, 2012
+/**
+* \file
+* \brief QS_getBlock() implementation
+* \ingroup qs
+* \cond
+******************************************************************************
+* Product: QS/C
+* Last updated for version 5.3.0
+* Last updated on  2014-03-01
 *
 *                    Q u a n t u m     L e a P s
 *                    ---------------------------
 *                    innovating embedded systems
 *
-* Copyright (C) 2002-2012 Quantum Leaps, LLC. All rights reserved.
+* Copyright (C) Quantum Leaps, www.state-machine.com.
 *
 * This program is open source software: you can redistribute it and/or
 * modify it under the terms of the GNU General Public License as published
-* by the Free Software Foundation, either version 2 of the License, or
+* by the Free Software Foundation, either version 3 of the License, or
 * (at your option) any later version.
 *
 * Alternatively, this program may be distributed and modified under the
@@ -28,43 +33,67 @@
 * along with this program. If not, see <http://www.gnu.org/licenses/>.
 *
 * Contact information:
-* Quantum Leaps Web sites: http://www.quantum-leaps.com
-*                          http://www.state-machine.com
-* e-mail:                  info@quantum-leaps.com
-*****************************************************************************/
+* Web:   www.state-machine.com
+* Email: info@state-machine.com
+******************************************************************************
+* \endcond
+*/
+#include "qs_port.h" /* QS port */
 #include "qs_pkg.h"
 
+/****************************************************************************/
 /**
-* \file
-* \ingroup qs
-* \brief QS_getBlock() implementation
+* \description
+* This function delivers a contiguous block of data from the QS data buffer.
+* The function returns the pointer to the beginning of the block, and writes
+* the number of bytes in the block to the location pointed to by \a pNbytes.
+* The argument \a pNbytes is also used as input to provide the maximum size of
+* the data block that the caller can accept.
+*
+* \returns if data is available, the function returns pointer to the
+* contiguous block of data and sets the value pointed to by \c pNbytes
+* to the # available bytes. If data is available at the time the function is
+* called, the function returns NULL pointer and sets the value pointed to by
+* \c pNbytes to zero.
+*
+* \note Only the NULL return from QS_getBlock() indicates that the QS buffer
+* is empty at the time of the call. The non-NULL return often means that
+* the block is at the end of the buffer and you need to call QS_getBlock()
+* again to obtain the rest of the data that "wrapped around" to the beginning
+* of the QS data buffer.
+*
+* \note QS_getBlock() is NOT protected with a critical section.
 */
-
-/*..........................................................................*/
-/* get up to *pn bytes of contiguous memory */
 uint8_t const *QS_getBlock(uint16_t *pNbytes) {
-    uint8_t *block;
-    if (QS_used_ == (QSCtr)0) {
-        *pNbytes = (uint16_t)0;
-        block = (uint8_t *)0;               /* no bytes to return right now */
-    }
-    else {
-        QSCtr t;
-        QSCtr n = (QSCtr)(QS_end_ - QS_tail_);
-        if (n > QS_used_) {
-            n = QS_used_;
+    QSCtr used = QS_priv_.used; /* put in a temporary (register) */
+    uint8_t *buf;
+
+    /* any bytes used in the ring buffer? */
+    if (used != (QSCtr)0) {
+        QSCtr tail = QS_priv_.tail;  /* put in a temporary (register) */
+        QSCtr end  = QS_priv_.end;   /* put in a temporary (register) */
+        QSCtr n = (QSCtr)(end - tail);
+        if (n > used) {
+            n = used;
         }
         if (n > (QSCtr)(*pNbytes)) {
             n = (QSCtr)(*pNbytes);
         }
-        *pNbytes = (uint16_t)n;
-        QS_used_ = (QSCtr)(QS_used_ - n);
-        t = QS_tail_;
-        QS_tail_ = (QSCtr)(QS_tail_ + n);
-        if (QS_tail_ == QS_end_) {
-            QS_tail_ = (QSCtr)0;
+        *pNbytes = (uint16_t)n;      /* n-bytes available */
+        buf = QS_priv_.buf;
+        buf = QS_PTR_AT_(tail);      /* the bytes are at the tail */
+
+        QS_priv_.used = (QSCtr)(used - n);
+        tail += n;
+        if (tail == end) {
+            tail = (QSCtr)0;
         }
-        block = &QS_PTR_AT_(t);
+        QS_priv_.tail = tail;
     }
-    return block;
+
+    else { /* no bytes available */
+        *pNbytes = (uint16_t)0;  /* no bytes available right now */
+        buf      = (uint8_t *)0; /* no bytes available right now */
+    }
+    return buf;
 }

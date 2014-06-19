@@ -24,3 +24,4 @@ cscope.out
 *.bak
 env.mk
 version.h
+doc/

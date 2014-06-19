@@ -1,17 +1,22 @@
-/*****************************************************************************
-* Product:  QS/C
-* Last Updated for Version: 4.4.02
-* Date of the Last Update:  Apr 13, 2012
+/**
+* \file
+* \brief QS_getByte() implementation
+* \ingroup qs
+* \cond
+******************************************************************************
+* Product: QS/C
+* Last updated for version 5.3.0
+* Last updated on  2014-04-09
 *
 *                    Q u a n t u m     L e a P s
 *                    ---------------------------
 *                    innovating embedded systems
 *
-* Copyright (C) 2002-2012 Quantum Leaps, LLC. All rights reserved.
+* Copyright (C) Quantum Leaps, www.state-machine.com.
 *
 * This program is open source software: you can redistribute it and/or
 * modify it under the terms of the GNU General Public License as published
-* by the Free Software Foundation, either version 2 of the License, or
+* by the Free Software Foundation, either version 3 of the License, or
 * (at your option) any later version.
 *
 * Alternatively, this program may be distributed and modified under the
@@ -28,31 +33,40 @@
 * along with this program. If not, see <http://www.gnu.org/licenses/>.
 *
 * Contact information:
-* Quantum Leaps Web sites: http://www.quantum-leaps.com
-*                          http://www.state-machine.com
-* e-mail:                  info@quantum-leaps.com
-*****************************************************************************/
+* Web:   www.state-machine.com
+* Email: info@state-machine.com
+******************************************************************************
+* \endcond
+*/
+#include "qs_port.h" /* QS port */
 #include "qs_pkg.h"
 
+/****************************************************************************/
 /**
-* \file
-* \ingroup qs
-* \brief QS_getByte() implementation
+* \description
+* This function delivers one byte at a time from the QS data buffer.
+*
+* \returns the byte in the least-significant 8-bits of the 16-bit return
+* value if the byte is available. If no more data is available at the time,
+* the function returns ::QS_EOD (End-Of-Data).
+*
+* \note QS_getByte() is __not__ protected with a critical section.
 */
-
-/*..........................................................................*/
 uint16_t QS_getByte(void) {
     uint16_t ret;
-    if (QS_used_ == (QSCtr)0) {
-        ret = QS_EOD;                                    /* set End-Of-Data */
+    if (QS_priv_.used == (QSCtr)0) {
+        ret = QS_EOD; /* set End-Of-Data */
     }
     else {
-        ret = (uint16_t)QS_PTR_AT_(QS_tail_);     /* set the byte to return */
-        ++QS_tail_;                                     /* advance the tail */
-        if (QS_tail_ == QS_end_) {                     /* tail wrap around? */
-            QS_tail_ = (QSCtr)0;
+        uint8_t *buf = QS_priv_.buf;  /* put in a temporary (register) */
+        QSCtr tail   = QS_priv_.tail; /* put in a temporary (register) */
+        ret = (uint16_t)(*QS_PTR_AT_(tail)); /* set the byte to return */
+        ++tail; /* advance the tail */
+        if (tail == QS_priv_.end) { /* tail wrap around? */
+            tail = (QSCtr)0;
         }
-        --QS_used_;                                   /* one less byte used */
+        QS_priv_.tail = tail; /* update the tail */
+        --QS_priv_.used;      /* one less byte used */
     }
-    return ret;                                   /* return the byte or EOD */
+    return ret; /* return the byte or EOD */
 }

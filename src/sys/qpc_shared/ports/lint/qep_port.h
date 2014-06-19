@@ -1,17 +1,22 @@
-/*****************************************************************************
-* Product:  QEP/C port for Lint, Generic C compiler
-* Last Updated for Version: 4.5.00
-* Date of the Last Update:  May 18, 2012
+/**
+* \file
+* \brief QEP/C port example for a "generic" C compiler.
+* \ingroup qep
+* \cond
+******************************************************************************
+* Product: QEP/C
+* Last updated for version 5.3.0
+* Last updated on  2014-03-01
 *
 *                    Q u a n t u m     L e a P s
 *                    ---------------------------
 *                    innovating embedded systems
 *
-* Copyright (C) 2002-2012 Quantum Leaps, LLC. All rights reserved.
+* Copyright (C) Quantum Leaps, www.state-machine.com.
 *
 * This program is open source software: you can redistribute it and/or
 * modify it under the terms of the GNU General Public License as published
-* by the Free Software Foundation, either version 2 of the License, or
+* by the Free Software Foundation, either version 3 of the License, or
 * (at your option) any later version.
 *
 * Alternatively, this program may be distributed and modified under the
@@ -28,45 +33,18 @@
 * along with this program. If not, see <http://www.gnu.org/licenses/>.
 *
 * Contact information:
-* Quantum Leaps Web sites: http://www.quantum-leaps.com
-*                          http://www.state-machine.com
-* e-mail:                  info@quantum-leaps.com
-*****************************************************************************/
+* Web:   www.state-machine.com
+* Email: info@state-machine.com
+******************************************************************************
+* \endcond
+*/
 #ifndef qep_port_h
 #define qep_port_h
 
-/**
-* \file
-* \ingroup qep qf qk qs
-* \brief QEP/C port to QK for a "generic" C compiler.
-*
-* \note This is just an example of a QEP port used for "linting" the QEP.
-*/
+#include <stdint.h>   /* Exact-width types. WG14/N843 C99 Standard */
+#include <stdbool.h>  /* Boolean type.      WG14/N843 C99 Standard */
 
-/****************************************************************************/
-/** \brief The size (in bytes) of the signal of an event. Valid values:
-* 1, 2, or 4; default 2
-*
-* This macro can be defined in the QEP ports to configure the ::QSignal type.
-* If the macro is not defined, the default of 1 byte will be chosen in qep.h.
-* The valid #Q_SIGNAL_SIZE values of 1, 2, or 4, correspond to ::QSignal of
-* uint8_t, uint16_t, and uint32_t, respectively. The ::QSingal data type
-* determines the dynamic range of numerical values of signals you your
-* application.
-* \sa ::QEvt
-*
-* \note Once you choose a certain value of #Q_SIGNAL_SIZE, you must
-* consistently use the same value in building all the QP component libraries
-* and your own application code. The consistency is guaranteed if you define
-* this macro only once in the qep_port.h header file and henceforth include
-* this header file in all builds.
-*/
-#define Q_SIGNAL_SIZE  2
+#include "qep.h"      /* QEP platform-independent public interface */
 
-             /* Exact-width types. WG14/N843 C99 Standard, Section 7.18.1.1 */
-#include <stdint.h>
-
-#include "qep.h"               /* QEP platform-independent public interface */
-
-#endif                                                        /* qep_port_h */
+#endif /* qep_port_h */
 

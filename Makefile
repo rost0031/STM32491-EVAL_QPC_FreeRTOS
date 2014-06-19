@@ -88,7 +88,7 @@ QP_LWIP_PORT_DIR		= $(SYS_DIR)/sys_shared/qpc_lwip_stm32f2xx_port
 
 # QPC directories
 QPC 					= $(SYS_DIR)/qpc_shared
-QP_PORT_DIR 			= $(QPC)/ports/arm-cortex/qk/gnu
+QP_PORT_DIR 			= $(QPC)/ports/arm-cm/qk/gnu
 
 # STM32 Drivers
 STM32F2XX_STD_PERIPH	= $(BSP_DIR)/bsp_shared/STM32F2xx_StdPeriph_Driver_shared
@@ -271,7 +271,7 @@ CPPFLAGS 	= -mcpu=$(ARM_CORE) -mthumb \
 			  -Wall -fno-rtti -fno-exceptions \
 			  -Os $(INCLUDES) $(DEFINES)
 
-LINKFLAGS 	= -nodefaultlibs -Xlinker --gc-sections -Wl,-Map,$(BIN_DIR)/$(PROJECT_NAME).map -mcpu=$(ARM_CORE) -mthumb
+LINKFLAGS 	= -nodefaultlibs -Xlinker --gc-sections -Wl,--strip-all -Wl,-Map,$(BIN_DIR)/$(PROJECT_NAME).map -mcpu=$(ARM_CORE) -mthumb
 
 else ifeq (spy, $(CONF))  # Spy configuration ................................
 
@@ -286,21 +286,21 @@ CPPFLAGS 	= -mcpu=$(ARM_CORE) -mthumb \
 			  -Wall -fno-rtti -fno-exceptions \
 			  -g -O $(INCLUDES) $(DEFINES)
 
-LINKFLAGS 	= -nodefaultlibs -Xlinker --gc-sections -Wl,-Map,$(BIN_DIR)/$(PROJECT_NAME).map -mcpu=$(ARM_CORE) -mthumb -g3 -gdwarf-2
+LINKFLAGS 	= -nodefaultlibs -Xlinker --gc-sections -Wl,--strip-all -Wl,-Map,$(BIN_DIR)/$(PROJECT_NAME).map -mcpu=$(ARM_CORE) -mthumb -g3 -gdwarf-2
 
 else                     # default Debug configuration .......................
 
 BIN_DIR 	:= dbg
 LIBS    	:= -lqp_$(ARM_CORE)_cs -llwip_$(ARM_CORE)_cs
 ASFLAGS 	= -g -mthumb -mcpu=$(ARM_CORE)
-CFLAGS 		= -mcpu=$(ARM_CORE) -std=gnu99 -mthumb -Wall -ffunction-sections -fdata-sections \
+CFLAGS 		= -mcpu=$(ARM_CORE) -std=gnu99 -mthumb -Wall -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,--strip-all \
 			  -g -Os $(INCLUDES) $(DEFINES)
 
 CPPFLAGS 	= -mcpu=$(ARM_CORE) -mthumb \
 			  -Wall -fno-rtti -fno-exceptions \
 			  -g -O $(INCLUDES) $(DEFINES)
 	
-LINKFLAGS 	= -nodefaultlibs -Xlinker --gc-sections -Wl,-Map,$(BIN_DIR)/$(PROJECT_NAME).map -mcpu=$(ARM_CORE) -mthumb -g3 -gdwarf-2
+LINKFLAGS 	= -nodefaultlibs -Xlinker --gc-sections -Wl,--strip-all -Wl,-Map,$(BIN_DIR)/$(PROJECT_NAME).map -mcpu=$(ARM_CORE) -mthumb -g3 -gdwarf-2 
 
 endif
 

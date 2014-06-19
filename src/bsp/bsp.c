@@ -12,7 +12,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "stm32f2xx.h"
 #include "stm32f2xx_rcc.h"
 #include "stm32f2xx_gpio.h"
 #include "stm32f2x7_eth_bsp.h"
@@ -123,8 +122,8 @@ void NVIC_Config(uint8_t irq, uint8_t priority) {
 	NVIC_InitTypeDef nvic_init;
 
 	nvic_init.NVIC_IRQChannel                   = irq;
-	nvic_init.NVIC_IRQChannelPreemptionPriority = 0xF;
-	nvic_init.NVIC_IRQChannelSubPriority        = 0xF;
+	nvic_init.NVIC_IRQChannelPreemptionPriority = 0x0;
+	nvic_init.NVIC_IRQChannelSubPriority        = 0x0;
 	nvic_init.NVIC_IRQChannelCmd                = ENABLE;
 	NVIC_Init(&nvic_init);/* enables the device and sets interrupt priority */
 	NVIC_ClearPendingIRQ(irq);
@@ -142,6 +141,16 @@ void QF_onStartup(void) {
 	 */
 	SysTick_Config(SystemCoreClock / BSP_TICKS_PER_SEC);
 
+	/* assing all priority bits for preemption-prio. and none to sub-prio. */
+	NVIC_SetPriorityGrouping(0U);
+
+	/* set priorities of ALL ISRs used in the system, see NOTE00
+	 *
+	 * !!!!!!!!!!!!!!!!!!!!!!!!!!!! CAUTION !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	 * Assign a priority to EVERY ISR explicitly by calling NVIC_SetPriority().
+	 * DO NOT LEAVE THE ISR PRIORITIES AT THE DEFAULT VALUE!
+	 */
+	NVIC_SetPriority(SysTick_IRQn,   SYSTICK_PRIO);
 	NVIC_Config(ETH_IRQn, ETH_PRIO);
 
 

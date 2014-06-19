@@ -1,17 +1,22 @@
-/*****************************************************************************
-* Product: QP/C
-* Last Updated for Version: 4.5.02
-* Date of the Last Update:  Jul 08, 2012
+/**
+* \file
+* \brief QS/C platform-independent public interface.
+* \ingroup qs
+* \cond
+******************************************************************************
+* Product: QS/C
+* Last updated for version 5.3.0
+* Last updated on  2014-04-09
 *
 *                    Q u a n t u m     L e a P s
 *                    ---------------------------
 *                    innovating embedded systems
 *
-* Copyright (C) 2002-2012 Quantum Leaps, LLC. All rights reserved.
+* Copyright (C) Quantum Leaps, www.state-machine.com.
 *
 * This program is open source software: you can redistribute it and/or
 * modify it under the terms of the GNU General Public License as published
-* by the Free Software Foundation, either version 2 of the License, or
+* by the Free Software Foundation, either version 3 of the License, or
 * (at your option) any later version.
 *
 * Alternatively, this program may be distributed and modified under the
@@ -28,137 +33,123 @@
 * along with this program. If not, see <http://www.gnu.org/licenses/>.
 *
 * Contact information:
-* Quantum Leaps Web sites: http://www.quantum-leaps.com
-*                          http://www.state-machine.com
-* e-mail:                  info@quantum-leaps.com
-*****************************************************************************/
+* Web:   www.state-machine.com
+* Email: info@state-machine.com
+******************************************************************************
+* \endcond
+*/
 #ifndef qs_h
 #define qs_h
-
-/**
-* \file
-* \ingroup qep qf qk qs
-* \brief QS/C platform-independent public interface.
-*
-* This header file must be included directly or indirectly
-* in all modules (*.c files) that use QS/C.
-*/
 
 #ifndef Q_SPY
     #error "Q_SPY must be defined to include qs.h"
 #endif
 
 /****************************************************************************/
-/** \brief Quantum Spy record types.
-*
+/*! Quantum Spy record types. */
+/**
+* \description
 * This enumeration specifies the record types used in the QP components.
 * You can specify your own record types starting from ::QS_USER offset.
 * Currently, the maximum of all records cannot exceed 256.
 * \sa QS_filterIn()/QS_FILTER_ON and QS_filterOut()/QS_FILTER_OFF
 */
 enum QSpyRecords {
-    QS_QP_RESET,              /**< reset the QP (start of a new QS session) */
+    QS_QP_RESET,          /*!< reset the QP (start of a new QS session) */
 
-    /* QEP records */
-    QS_QEP_STATE_ENTRY,                            /**< a state was entered */
-    QS_QEP_STATE_EXIT,                              /**< a state was exited */
-    QS_QEP_STATE_INIT,       /**< an intial transition was taken in a state */
-    QS_QEP_INIT_TRAN,        /**< the top-most initial transition was taken */
-    QS_QEP_INTERN_TRAN,               /**< an internal transition was taken */
-    QS_QEP_TRAN,                        /**< a regular transition was taken */
-    QS_QEP_IGNORED,          /**< an event was ignored (silently discarded) */
-    QS_QEP_DISPATCH,       /**< an event was dispatched (begin of RTC step) */
-    QS_QEP_UNHANDLED,            /**< an event was unhandled due to a guard */
+    /* [1] QEP records */
+    QS_QEP_STATE_ENTRY,   /*!< a state was entered */
+    QS_QEP_STATE_EXIT,    /*!< a state was exited */
+    QS_QEP_STATE_INIT,    /*!< an initial transition was taken in a state */
+    QS_QEP_INIT_TRAN,     /*!< the top-most initial transition was taken */
+    QS_QEP_INTERN_TRAN,   /*!< an internal transition was taken */
+    QS_QEP_TRAN,          /*!< a regular transition was taken */
+    QS_QEP_IGNORED,       /*!< an event was ignored (silently discarded) */
+    QS_QEP_DISPATCH,      /*!< an event was dispatched (begin of RTC step) */
+    QS_QEP_UNHANDLED,     /*!< an event was unhandled due to a guard */
 
-    /* QF records */
-    QS_QF_ACTIVE_ADD,             /**< an AO has been added to QF (started) */
-    QS_QF_ACTIVE_REMOVE,      /**< an AO has been removed from QF (stopped) */
-    QS_QF_ACTIVE_SUBSCRIBE,               /**< an AO subscribed to an event */
-    QS_QF_ACTIVE_UNSUBSCRIBE,           /**< an AO unsubscribed to an event */
-    QS_QF_ACTIVE_POST_FIFO,  /**< an event was posted (FIFO) directly to AO */
-    QS_QF_ACTIVE_POST_LIFO,  /**< an event was posted (LIFO) directly to AO */
-    QS_QF_ACTIVE_GET, /**< AO got an event and its queue is still not empty */
-    QS_QF_ACTIVE_GET_LAST,      /**< AO got an event and its queue is empty */
-    QS_QF_EQUEUE_INIT,                  /**< an event queue was initialized */
-    QS_QF_EQUEUE_POST_FIFO,  /**< an event was posted (FIFO) to a raw queue */
-    QS_QF_EQUEUE_POST_LIFO,  /**< an event was posted (LIFO) to a raw queue */
-    QS_QF_EQUEUE_GET,           /**< get an event and queue still not empty */
-    QS_QF_EQUEUE_GET_LAST,           /**< get the last event from the queue */
-    QS_QF_MPOOL_INIT,                    /**< a memory pool was initialized */
-    QS_QF_MPOOL_GET,     /**< a memory block was removed from a memory pool */
-    QS_QF_MPOOL_PUT,      /**< a memory block was returned to a memory pool */
-    QS_QF_PUBLISH,                              /**< an event was published */
+    /* [10] QF records */
+    QS_QF_ACTIVE_ADD,     /*!< an AO has been added to QF (started) */
+    QS_QF_ACTIVE_REMOVE,  /*!< an AO has been removed from QF (stopped) */
+    QS_QF_ACTIVE_SUBSCRIBE, /*!< an AO subscribed to an event */
+    QS_QF_ACTIVE_UNSUBSCRIBE, /*!< an AO unsubscribed to an event */
+    QS_QF_ACTIVE_POST_FIFO, /*!< an event was posted (FIFO) directly to AO */
+    QS_QF_ACTIVE_POST_LIFO, /*!< an event was posted (LIFO) directly to AO */
+    QS_QF_ACTIVE_GET, /*!< AO got an event and its queue is still not empty */
+    QS_QF_ACTIVE_GET_LAST,  /*!< AO got an event and its queue is empty */
+    QS_QF_EQUEUE_INIT,    /*!< an event queue was initialized */
+    QS_QF_EQUEUE_POST_FIFO, /*!< an event was posted (FIFO) to a raw queue */
+    QS_QF_EQUEUE_POST_LIFO, /*!< an event was posted (LIFO) to a raw queue */
+    QS_QF_EQUEUE_GET,     /*!< get an event and queue still not empty */
+    QS_QF_EQUEUE_GET_LAST,  /*!< get the last event from the queue */
+    QS_QF_MPOOL_INIT,     /*!< a memory pool was initialized */
+    QS_QF_MPOOL_GET,      /*!< a memory block was removed from memory pool */
+    QS_QF_MPOOL_PUT,      /*!< a memory block was returned to memory pool */
+    QS_QF_PUBLISH,        /*!< an event was published */
     QS_QF_RESERVED8,
-    QS_QF_NEW,                                      /**< new event creation */
-    QS_QF_GC_ATTEMPT,                       /**< garbage collection attempt */
-    QS_QF_GC,                                       /**< garbage collection */
-    QS_QF_TICK,                                   /**< QF_tick() was called */
-    QS_QF_TIMEEVT_ARM,                          /**< a time event was armed */
-    QS_QF_TIMEEVT_AUTO_DISARM,   /**< a time event expired and was disarmed */
-    QS_QF_TIMEEVT_DISARM_ATTEMPT,/**< attempt to disarmed a disarmed tevent */
-    QS_QF_TIMEEVT_DISARM,        /**< true disarming of an armed time event */
-    QS_QF_TIMEEVT_REARM,                      /**< rearming of a time event */
-    QS_QF_TIMEEVT_POST,   /**< a time event posted itself directly to an AO */
-    QS_QF_TIMEEVT_CTR,              /**< a time event counter was requested */
-    QS_QF_CRIT_ENTRY,                     /**< critical section was entered */
-    QS_QF_CRIT_EXIT,                       /**< critical section was exited */
-    QS_QF_ISR_ENTRY,                                /**< an ISR was entered */
-    QS_QF_ISR_EXIT,                                  /**< an ISR was exited */
-    QS_QF_INT_DISABLE,                        /**< interrupts were disabled */
-    QS_QF_INT_ENABLE,                          /**< interrupts were enabled */
-    QS_QF_RESERVED4,
-    QS_QF_RESERVED3,
-    QS_QF_RESERVED2,
+    QS_QF_NEW,            /*!< new event creation */
+    QS_QF_GC_ATTEMPT,     /*!< garbage collection attempt */
+    QS_QF_GC,             /*!< garbage collection */
+    QS_QF_TICK,           /*!< QF_tickX() was called */
+    QS_QF_TIMEEVT_ARM,    /*!< a time event was armed */
+    QS_QF_TIMEEVT_AUTO_DISARM, /*!< a time event expired and was disarmed */
+    QS_QF_TIMEEVT_DISARM_ATTEMPT,/*!< attempt to disarm a disarmed QTimeEvt */
+    QS_QF_TIMEEVT_DISARM, /*!< true disarming of an armed time event */
+    QS_QF_TIMEEVT_REARM,  /*!< rearming of a time event */
+    QS_QF_TIMEEVT_POST,   /*!< a time event posted itself directly to an AO */
+    QS_QF_TIMEEVT_CTR,    /*!< a time event counter was requested */
+    QS_QF_CRIT_ENTRY,     /*!< critical section was entered */
+    QS_QF_CRIT_EXIT,      /*!< critical section was exited */
+    QS_QF_ISR_ENTRY,      /*!< an ISR was entered */
+    QS_QF_ISR_EXIT,       /*!< an ISR was exited */
+    QS_QF_INT_DISABLE,    /*!< interrupts were disabled */
+    QS_QF_INT_ENABLE,     /*!< interrupts were enabled */
+    QS_QF_ACTIVE_POST_ATTEMPT,/*!< attempt to post an evt to AO failed */
+    QS_QF_EQUEUE_POST_ATTEMPT,/*!< attempt to post an evt to QEQueue failed */
+    QS_QF_MPOOL_GET_ATTEMPT,  /*!< attempt to get a memory block failed */
     QS_QF_RESERVED1,
     QS_QF_RESERVED0,
 
-    /* QK records */
-    QS_QK_MUTEX_LOCK,                          /**< the QK mutex was locked */
-    QS_QK_MUTEX_UNLOCK,                      /**< the QK mutex was unlocked */
-    QS_QK_SCHEDULE,             /**< the QK scheduled a new task to execute */
-    QS_QK_RESERVED6,
-    QS_QK_RESERVED5,
-    QS_QK_RESERVED4,
-    QS_QK_RESERVED3,
-    QS_QK_RESERVED2,
+    /* [50] QK records */
+    QS_QK_MUTEX_LOCK,     /*!< the QK mutex was locked */
+    QS_QK_MUTEX_UNLOCK,   /*!< the QK mutex was unlocked */
+    QS_QK_SCHEDULE,       /*!< the QK scheduled a new task to execute */
     QS_QK_RESERVED1,
     QS_QK_RESERVED0,
 
-    /* Miscellaneous QS records */
-    QS_SIG_DIC,                                /**< signal dictionary entry */
-    QS_OBJ_DIC,                                /**< object dictionary entry */
-    QS_FUN_DIC,                              /**< function dictionary entry */
-    QS_USR_DIC,                        /**< user QS record dictionary entry */
-    QS_RESERVED4,
+    /* [55] Additional QEP records */
+    QS_QEP_TRAN_HIST,     /*!< a transition to history was taken */
+    QS_QEP_TRAN_EP,   /*!< a transition to entry point into a submachine */
+    QS_QEP_TRAN_XP,   /*!< a transition to exit  point out of a submachine */
+    QS_QEP_RESERVED1,
+    QS_QEP_RESERVED0,
+
+    /* [60] Miscellaneous QS records */
+    QS_SIG_DICT,          /*!< signal dictionary entry */
+    QS_OBJ_DICT,          /*!< object dictionary entry */
+    QS_FUN_DICT,          /*!< function dictionary entry */
+    QS_USR_DICT,          /*!< user QS record dictionary entry */
+    QS_EMPTY,             /*!< QS record for cleanly starting a session */
     QS_RESERVED3,
     QS_RESERVED2,
-    QS_RESERVED1,
-    QS_RESERVED0,
-    QS_ASSERT,                             /**< assertion fired in the code */
+    QS_TEST_RUN,          /*!< a given test is being run */
+    QS_TEST_FAIL,         /*!< a test assertion failed */
+    QS_ASSERT_FAIL,       /*!< assertion failed in the code */
 
-    /* User records */
-    QS_USER             /**< the first record available for user QS records */
+    /* [70] Application-specific QS records */
+    QS_USER               /*!< the first record available for QS user */
 };
 
-/* Global and Local QS filters .............................................*/
-extern uint8_t QS_glbFilter_[32];              /**< global on/off QS filter */
-extern void const *QS_smObj_;       /**< state machine for QEP local filter */
-extern void const *QS_aoObj_;        /**< active object for QF local filter */
-extern void const *QS_mpObj_;          /**<  event pool for QF local filter */
-extern void const *QS_eqObj_;           /**<  raw queue for QF local filter */
-extern void const *QS_teObj_;          /**<  time event for QF local filter */
-extern void const *QS_apObj_; /**<  generic object Application local filter */
-
-/** \brief Specification of all QS records for  QS_FILTER_ON() and
-* QS_FILTER_OFF()
-*/
-#define QS_ALL_RECORDS          ((uint8_t)0xFF)
+/*! Specification of all QS records for  QS_FILTER_ON() and QS_FILTER_OFF() */
+#define QS_ALL_RECORDS          ((uint_fast8_t)0xFF)
 
 #ifndef QS_TIME_SIZE
 
-    /** \brief The size (in bytes) of the QS time stamp. Valid values: 1, 2,
-    * or 4; default 4.
-    *
+    /*! The size (in bytes) of the QS time stamp. Valid values: 1, 2, or 4;
+    * default 4.
+    */
+    /**
+    * \description
     * This macro can be defined in the QS port file (qs_port.h) to
     * configure the ::QSTimeCtr type. Here the macro is not defined so the
     * default of 4 byte is chosen.
@@ -168,252 +159,134 @@ extern void const *QS_apObj_; /**<  generic object Application local filter */
 
 #if (QS_TIME_SIZE == 1)
     typedef uint8_t QSTimeCtr;
-    #define QS_TIME_()          QS_u8_(QS_onGetTime())
+    #define QS_TIME_()          (QS_u8_(QS_onGetTime()))
 #elif (QS_TIME_SIZE == 2)
     typedef uint16_t QSTimeCtr;
-    #define QS_TIME_()          QS_u16_(QS_onGetTime())
+    #define QS_TIME_()          (QS_u16_(QS_onGetTime()))
 #elif (QS_TIME_SIZE == 4)
-    /** \brief The type of the QS time stamp
-    *
-    * This type determines the dynamic range of QS time stamps
+    /*! The type of the QS time stamp. This type determines the dynamic
+    * range of QS time stamps
     */
     typedef uint32_t QSTimeCtr;
-    /** \brief Internal macro to output time stamp to a QS record
-    */
-    #define QS_TIME_()          QS_u32_(QS_onGetTime())
+
+    /*! Internal macro to output time stamp to a QS record */
+    #define QS_TIME_()          (QS_u32_(QS_onGetTime()))
 #else
     #error "QS_TIME_SIZE defined incorrectly, expected 1, 2, or 4"
 #endif
 
-                                 /** tick counter for the QS_QF_TICK record */
-extern QSTimeCtr QS_tickCtr_;
-
-#ifndef Q_ROM                   /* provide the default if Q_ROM NOT defined */
+#ifndef Q_ROM      /* provide the default if Q_ROM NOT defined */
     #define Q_ROM
 #endif
-#ifndef Q_ROM_VAR           /* provide the default if Q_ROM_VAR NOT defined */
-    #define Q_ROM_VAR
-#endif
-#ifndef Q_ROM_BYTE         /* provide the default if Q_ROM_BYTE NOT defined */
+#ifndef Q_ROM_BYTE /* provide the default if Q_ROM_BYTE NOT defined */
     #define Q_ROM_BYTE(rom_var_)   (rom_var_)
 #endif
 
-/*****************************************************************************
-* QS services.
-*/
-/* public methods */
-/** \brief Get the current version of QS
-*
-* \return version of the QS as a constant 6-character string of the form
-* x.y.zz, where x is a 1-digit major version number, y is a 1-digit minor
-* version number, and zz is a 2-digit release number.
-*/
-char_t const Q_ROM * Q_ROM_VAR QS_getVersion(void);
+/****************************************************************************/
+/* QS services. */
 
-/** \brief Initialize the QS data buffer.
-*
-* This function should be called from QS_onStartup() to provide QS with
-* the data buffer. The first argument \a sto[] is the address of the memory
-* block, and the second argument \a stoSize is the size of this block
-* in bytes. Currently the size of the QS buffer cannot exceed 64KB.
-*
-* QS can work with quite small data buffers, but you will start losing data
-* if the buffer is too small for the bursts of logging activity.
-* The right size of the buffer depends on the data production rate and
-* the data output rate. QS offers flexible filtering to reduce the data
-* production rate.
-*
-* \note If the data output rate cannot keep up with the production rate,
-* QS will start overwriting the older data with newer data. This is
-* consistent with the "last-is-best" QS policy. The record sequence counters
-* and checksums on each record allow to easily detect data loss.
-*/
-void QS_initBuf(uint8_t sto[], uint32_t stoSize);
+/*! Initialize the QS data buffer. */
+void QS_initBuf(uint8_t sto[], uint_fast16_t stoSize);
 
-/** \brief Turn the global Filter on for a given record type \a rec.
-*
-* This function sets up the QS filter to enable the record type \a rec.
-* The argument #QS_ALL_RECORDS specifies to filter-in all records.
-* This function should be called indirectly through the macro QS_FILTER_ON.
-*
-* \note Filtering based on the record-type is only the first layer of
-* filtering. The second layer is based on the object-type. Both filter
-* layers must be enabled for the QS record to be inserted into the QS buffer.
-* \sa QS_filterOff(), QS_FILTER_SM_OBJ, QS_FILTER_AO_OBJ, QS_FILTER_MP_OBJ,
-* QS_FILTER_EQ_OBJ, and QS_FILTER_TE_OBJ.
-*/
-void QS_filterOn(uint8_t rec);
+/*! Turn the global Filter on for a given record type \a rec. */
+void QS_filterOn(uint_fast8_t rec);
 
-/** \brief Turn the global Filter off for a given record type \a rec.
-*
-* This function sets up the QS filter to disable the record type \a rec.
-* The argument #QS_ALL_RECORDS specifies to suppress all records.
-* This function should be called indirectly through the macro QS_FILTER_OFF.
-*
-* \note Filtering records based on the record-type is only the first layer of
-* filtering. The second layer is based on the object-type. Both filter
-* layers must be enabled for the QS record to be inserted into the QS buffer.
-* \sa
-*/
-void QS_filterOff(uint8_t rec);
+/*! Turn the global Filter off for a given record type \a rec. */
+void QS_filterOff(uint_fast8_t rec);
 
-/** \brief Mark the begin of a QS record \a rec
-*
-* This function must be called at the beginning of each QS record.
-* This function should be called indirectly through the macro #QS_BEGIN,
-* or #QS_BEGIN_NOCRIT, depending if it's called in a normal code or from
-* a critical section.
-*/
-void QS_begin(uint8_t rec);
+/*! Mark the begin of a QS record \a rec */
+void QS_beginRec(uint_fast8_t rec);
 
-/** \brief Mark the end of a QS record \a rec
-*
-* This function must be called at the end of each QS record.
-* This function should be called indirectly through the macro #QS_END,
-* or #QS_END_NOCRIT, depending if it's called in a normal code or from
-* a critical section.
-*/
-void QS_end(void);
+/*! Mark the end of a QS record \a rec */
+void QS_endRec(void);
 
 /* unformatted data elements output ........................................*/
-/** \brief output uint8_t data element without format information
-* \note This function is only to be used through macros, never in the
-* client code directly.
-*/
 void QS_u8_(uint8_t d);
 
-/** \brief Output uint16_t data element without format information
-* \note This function is only to be used through macros, never in the
-* client code directly.
-*/
+/*! output two uint8_t data elements without format information */
+void QS_u8u8_(uint8_t d1, uint8_t d2);
+
+/*! Output uint16_t data element without format information */
 void QS_u16_(uint16_t d);
 
-/** \brief Output uint32_t data element without format information
-* \note This function is only to be used through macros, never in the
-* client code directly.
-*/
+/*! Output uint32_t data element without format information */
 void QS_u32_(uint32_t d);
 
-/** \brief Output zero-terminated ASCII string element without format
-* information
-* \note This function is only to be used through macros, never in the
-* client code directly.
-*/
+/*! Output zero-terminated ASCII string element without format information */
 void QS_str_(char_t const *s);
 
-/** \brief Output zero-terminated ASCII string element allocated in ROM
+/*! Output zero-terminated ASCII string element allocated in ROM
 * without format information
-* \note This function is only to be used through macros, never in the
-* client code directly.
 */
-void QS_str_ROM_(char_t const Q_ROM * Q_ROM_VAR s);
+void QS_str_ROM_(char_t const Q_ROM *s);
 
 /* formatted data elements output ..........................................*/
-/** \brief Output uint8_t data element with format information
-* \note This function is only to be used through macros, never in the
-* client code directly.
-*/
+/*! Output uint8_t data element with format information */
 void QS_u8(uint8_t format, uint8_t d);
 
-/** \brief output uint16_t data element with format information
-* \note This function is only to be used through macros, never in the
-* client code directly.
-*/
+/*! output uint16_t data element with format information */
 void QS_u16(uint8_t format, uint16_t d);
 
-/** \brief Output uint32_t data element with format information
-* \note This function is only to be used through macros, never in the
-* client code directly.
-*/
+/*! Output uint32_t data element with format information */
 void QS_u32(uint8_t format, uint32_t d);
 
-/** \brief Output 32-bit floating point data element with format information
-* \note This function is only to be used through macros, never in the
-* client code directly.
-*/
+/*! Output 32-bit floating point data element with format information */
 void QS_f32(uint8_t format, float32_t f);
 
-/** \brief Output 64-bit floating point data element with format information
-* \note This function is only to be used through macros, never in the
-* client code directly.
-*/
+/*! Output 64-bit floating point data element with format information */
 void QS_f64(uint8_t format, float64_t d);
 
-/** \brief Output zero-terminated ASCII string element with format information
-* \note This function is only to be used through macros, never in the
-* client code directly.
-*/
+/*! Output zero-terminated ASCII string element with format information */
 void QS_str(char_t const *s);
 
-/** \brief Output zero-terminated ASCII string element allocated in ROM
+/*! Output zero-terminated ASCII string element allocated in ROM
 * with format information
-* \note This function is only to be used through macros, never in the
-* client code directly.
 */
-void QS_str_ROM(char_t const Q_ROM * Q_ROM_VAR s);
+void QS_str_ROM(char_t const Q_ROM *s);
 
-/** \brief Output memory block of up to 255-bytes with format information
-* \note This function is only to be used through macros, never in the
-* client code directly.
-*/
+/*! Output memory block of up to 255-bytes with format information */
 void QS_mem(uint8_t const *blk, uint8_t size);
 
 #if (QS_OBJ_PTR_SIZE == 8) || (QS_FUN_PTR_SIZE == 8)
-    /** \brief Output uint64_t data element without format information
-    * \note This function is only to be used through macros, never in the
-    * client code directly.
-    */
+    /*! Output uint64_t data element without format information */
     void QS_u64_(uint64_t d);
 
-    /** \brief Output uint64_t data element with format information
-    * \note This function is only to be used through macros, never in the
-    * client code directly.
-    */
+    /*! Output uint64_t data element with format information */
     void QS_u64(uint8_t format, uint64_t d);
 #endif
 
-/* QS buffer access ........................................................*/
-/** \brief Byte-oriented interface to the QS data buffer.
-*
-* This function delivers one byte at a time from the QS data buffer.
-* The function returns the byte in the least-significant 8-bits of the
-* 16-bit return value if the byte is available. If no more data is
-* available at the time, the function returns QS_EOD (End-Of-Data).
-*
-* \note QS_getByte() is NOT protected with a critical section.
-*/
+/*! Output signal dictionary record */
+void QS_sig_dict(enum_t const sig, void const * const obj,
+                 char_t const Q_ROM * const name);
+
+/*! Output object dictionary record */
+void QS_obj_dict(void const * const obj,
+                 char_t const Q_ROM * const name);
+
+/*! Output function dictionary record */
+void QS_fun_dict(void (* const fun)(void),
+                 char_t const Q_ROM *const name);
+
+/*! Output user dictionary record */
+void QS_usr_dict(enum_t const rec,
+                 char_t const Q_ROM * const name);
+
+/* QS buffer access *********************************************************/
+/*! Byte-oriented interface to the QS data buffer. */
 uint16_t QS_getByte(void);
 
-/** \brief Constant representing End-Of-Data condition returned from the
-* QS_getByte() function.
-*/
+/*! Constant for End-Of-Data condition returned from QS_getByte() */
 #define QS_EOD ((uint16_t)0xFFFF)
 
-/** \brief Block-oriented interface to the QS data buffer.
-*
-* This function delivers a contiguous block of data from the QS data buffer.
-* The function returns the pointer to the beginning of the block, and writes
-* the number of bytes in the block to the location pointed to by \a pNbytes.
-* The argument \a pNbytes is also used as input to provide the maximum size of
-* the data block that the caller can accept.
-*
-* If no bytes are available in the QS buffer when the function is called,
-* the function returns a NULL pointer and sets the value pointed to by
-* \a pNbytes to zero.
-*
-* \note Only the NULL return from QS_getBlock() indicates that the QS buffer
-* is empty at the time of the call. The non-NULL return often means that
-* the block is at the end of the buffer and you need to call QS_getBlock()
-* again to obtain the rest of the data that "wrapped around" to the beginning
-* of the QS data buffer.
-*
-* \note QS_getBlock() is NOT protected with a critical section.
-*/
+/*! Block-oriented interface to the QS data buffer. */
 uint8_t const *QS_getBlock(uint16_t *pNbytes);
 
-/* platform-specific callback functions, need to be implemented by clients  */
-/** \brief Callback to startup the QS facility
-*
+
+/* platform-specific callback functions, need to be implemented by clients */
+
+/*! Callback to startup the QS facility */
+/**
+* \description
 * This is a platform-dependent "callback" function invoked through the macro
 * #QS_INIT. You need to implement this function in your application.
 * At a minimum, the function must configure the QS buffer by calling
@@ -421,16 +294,18 @@ uint8_t const *QS_getBlock(uint16_t *pNbytes);
 * channel, such as a serial port, or a data file. The void* argument \a arg
 * can be used to pass parameter(s) needed to configure the output channel.
 *
-* The function returns TRUE (1) if the QS initialization was successful,
-* or FALSE (0) if it failed.
+* \returns the staus of initialization. Typically 1 (true) when the QS
+* initialization was successful, or 0 (false) when it failed.
 *
+* \usage
 * The following example illustrates an implementation of QS_onStartup():
 * \include qs_startup.c
 */
 uint8_t QS_onStartup(void const *arg);
 
-/** \brief Callback to cleanup the QS facility
-*
+/*! Callback to cleanup the QS facility */
+/**
+* \description
 * This is a platform-dependent "callback" function invoked through the macro
 * #QS_EXIT. You need to implement this function in your application.
 * The main purpose of this function is to close the QS output channel, if
@@ -438,8 +313,9 @@ uint8_t QS_onStartup(void const *arg);
 */
 void QS_onCleanup(void);
 
-/** \brief Callback to flush the QS trace data to the host
-*
+/*! Callback to flush the QS trace data to the host */
+/**
+* \description
 * This is a platform-dependent "callback" function to flush the QS trace
 * buffer to the host. The function typically busy-waits until all the data
 * in the buffer is sent to the host. This is acceptable only in the initial
@@ -447,88 +323,99 @@ void QS_onCleanup(void);
 */
 void QS_onFlush(void);
 
-/** \brief Callback to obtain a timestamp for a QS record.
-*
+/*! Callback to obtain a timestamp for a QS record. */
+/**
+* \description
 * This is a platform-dependent "callback" function invoked from the macro
 * #QS_TIME_ to add the time stamp to a QS record.
 *
-* \note Some of the pre-defined QS records from QP do not output the time
+* \note Some of the predefined QS records from QP do not output the time
 * stamp. However, ALL user records do output the time stamp.
 * \note QS_onGetTime() is called in a critical section and should not
 * exit the critical section.
 *
+* \returns the current timestamp.
+*
+* \usage
 * The following example shows using a system call to implement QS
 * time stamping:
 * \include qs_onGetTime.c
 */
 QSTimeCtr QS_onGetTime(void);
 
+/****************************************************************************/
+/* Macros for adding QS instrumentation to the client code */
 
-/* Macros for adding QS instrumentation to the client code .................*/
-
-/** \brief Initialize the QS facility.
-*
+/*! Initialize the QS facility. */
+/**
+* \description
 * This macro provides an indirection layer to invoke the QS initialization
 * routine if #Q_SPY is defined, or do nothing if #Q_SPY is not defined.
 * \sa QS_onStartup(), example of setting up a QS filter in QS_FILTER_ON
 */
 #define QS_INIT(arg_)           (QS_onStartup(arg_) != (uint8_t)0)
 
-/** \brief Cleanup the QS facility.
-*
+/*! Cleanup the QS facility. */
+/**
+* \description
 * This macro provides an indirection layer to invoke the QS cleanup
 * routine if #Q_SPY is defined, or do nothing if #Q_SPY is not defined.
 * \sa QS_exit()
 */
-#define QS_EXIT()               QS_onCleanup()
+#define QS_EXIT()               (QS_onCleanup())
 
-/** \brief Global Filter ON for a given record type \a rec.
-*
+/*! Global Filter ON for a given record type \a rec. */
+/**
+* \description
 * This macro provides an indirection layer to call QS_filterOn() if #Q_SPY
 * is defined, or do nothing if #Q_SPY is not defined.
 *
 * The following example shows how to use QS filters:
 * \include qs_filter.c
 */
-#define QS_FILTER_ON(rec_)      QS_filterOn((uint8_t)(rec_))
+#define QS_FILTER_ON(rec_)      (QS_filterOn((uint_fast8_t)(rec_)))
 
-/** \brief Global filter OFF for a given record type \a rec.
-*
+/*! Global filter OFF for a given record type \a rec. */
+/**
+* \description
 * This macro provides an indirection layer to call QS_filterOff() if #Q_SPY
 * is defined, or do nothing if #Q_SPY is not defined.
 *
 * \sa Example of using QS filters in #QS_FILTER_ON documentation
 */
-#define QS_FILTER_OFF(rec_)     QS_filterOff((uint8_t)(rec_))
+#define QS_FILTER_OFF(rec_)     (QS_filterOff((uint_fast8_t)(rec_)))
 
-/** \brief Local Filter for a given state machine object \a obj_.
-*
+/*! Local Filter for a given state machine object \a obj_. */
+/**
+* \description
 * This macro sets up the state machine object local filter if #Q_SPY is
 * defined, or does nothing if #Q_SPY is not defined. The argument \a obj_
-* is the pointer to the state machine object that you want to monitor.
-*
+* is the pointer to the state machine object that you want to monitor.\n
+* \n
 * The state machine object filter allows you to filter QS records pertaining
 * only to a given state machine object. With this filter disabled, QS will
 * output records from all state machines in your application. The object
-* filter is disabled by setting the state machine pointer to NULL.
-*
+* filter is disabled by setting the state machine pointer to NULL.\n
+* \n
 * The state machine filter affects the following QS records:
 * ::QS_QEP_STATE_ENTRY, ::QS_QEP_STATE_EXIT, ::QS_QEP_STATE_INIT,
-* ::QS_QEP_INIT_TRAN, ::QS_QEP_INTERN_TRAN, ::QS_QEP_TRAN,
-* and ::QS_QEP_IGNORED.
+* ::QS_QEP_INTERN_TRAN, ::QS_QEP_TRAN, ::QS_QEP_IGNORED,
+* ::QS_QEP_TRAN_HIST, ::Q_RET_TRAN_EP, ::Q_RET_TRAN_XP
 *
-* \note Because active objects are state machines at the same time,
-* the state machine filter (QS_FILTER_SM_OBJ) pertains to active
-* objects as well. However, the state machine filter is more general,
-* because it can be used only for state machines that are not active objects,
-* such as "Orthogonal Components".
+* \note
+* Because active objects are state machines at the same time, the state
+* machine filter (QS_FILTER_SM_OBJ) pertains to active objects as well.
+* However, the state machine filter is more general, because it can be
+* used only for state machines that are not active objects, such as
+* "Orthogonal Components".
 *
 * \sa Example of using QS filters in #QS_FILTER_ON documentation
 */
-#define QS_FILTER_SM_OBJ(obj_)  (QS_smObj_ = (obj_))
+#define QS_FILTER_SM_OBJ(obj_)  (QS_priv_.smObjFilter = (obj_))
 
-/** \brief Local Filter for a given active object \a obj_.
-*
+/*! Local Filter for a given active object \a obj_. */
+/**
+* \description
 * This macro sets up the active object local filter if #Q_SPY is defined,
 * or does nothing if #Q_SPY is not defined. The argument \a obj_ is the
 * pointer to the active object that you want to monitor.
@@ -540,15 +427,16 @@ QSTimeCtr QS_onGetTime(void);
 *
 * The active object filter affects the following QS records:
 * ::QS_QF_ACTIVE_ADD, ::QS_QF_ACTIVE_REMOVE, ::QS_QF_ACTIVE_SUBSCRIBE,
-* ::QS_QF_ACTIVE_UNSUBSCRIBE, ::QS_QF_ACTIVE_POST_FIFO,
-* ::QS_QF_ACTIVE_POST_LIFO, ::QS_QF_ACTIVE_GET, and ::QS_QF_ACTIVE_GET_LAST.
+* ::QS_QF_ACTIVE_UNSUBSCRIBE, ::QS_QF_ACTIVE_POST, ::QS_QF_ACTIVE_POST_LIFO,
+* ::QS_QF_ACTIVE_GET, and ::QS_QF_ACTIVE_GET_LAST.
 *
 * \sa Example of using QS filters in #QS_FILTER_ON documentation
 */
-#define QS_FILTER_AO_OBJ(obj_)  (QS_aoObj_ = (obj_))
+#define QS_FILTER_AO_OBJ(obj_)  (QS_priv_.aoObjFilter = (obj_))
 
-/** \brief Local Filter for a given memory pool object \a obj_.
-*
+/*! Local Filter for a given memory pool object \a obj_. */
+/**
+* \description
 * This macro sets up the memory pool local object filter if #Q_SPY is
 * defined, or does nothing if #Q_SPY is not defined. The argument \a obj_
 * is the pointer to the memory buffer used during the initialization of
@@ -564,10 +452,11 @@ QSTimeCtr QS_onGetTime(void);
 *
 * \sa Example of using QS filters in #QS_FILTER_ON documentation
 */
-#define QS_FILTER_MP_OBJ(obj_)  (QS_mpObj_ = (obj_))
+#define QS_FILTER_MP_OBJ(obj_)  (QS_priv_.mpObjFilter = (obj_))
 
-/** \brief Local Filter for a given event queue object \a obj_.
-*
+/*! Local Filter for a given event queue object \a obj_. */
+/**
+* \description
 * This macro sets up the event queue object local filter if #Q_SPY is
 * defined, or does nothing if #Q_SPY is not defined. The argument \a obj_
 * is the pointer to the "raw" thread-safe queue object you want to monitor.
@@ -578,15 +467,16 @@ QSTimeCtr QS_onGetTime(void);
 * filter is disabled by setting the event queue pointer \a obj_ to NULL.
 *
 * The event queue filter affects the following QS records:
-* ::QS_QF_EQUEUE_INIT, ::QS_QF_EQUEUE_POST_FIFO, ::QS_QF_EQUEUE_POST_LIFO,
+* ::QS_QF_EQUEUE_INIT, ::QS_QF_EQUEUE_POST, ::QS_QF_EQUEUE_POST_LIFO,
 * ::QS_QF_EQUEUE_GET, and ::QS_QF_EQUEUE_GET_LAST.
 *
 * \sa Example of using QS filters in #QS_FILTER_ON documentation
 */
-#define QS_FILTER_EQ_OBJ(obj_)  (QS_eqObj_ = (obj_))
+#define QS_FILTER_EQ_OBJ(obj_)  (QS_priv_.eqObjFilter = (obj_))
 
-/** \brief Local Filter for a given time event object \a obj_.
-*
+/*! Local Filter for a given time event object \a obj_. */
+/**
+* \description
 * This macro sets up the time event object local filter if #Q_SPY is defined,
 * or does nothing if #Q_SPY is not defined. The argument \a obj_ is the
 * pointer to the time event object you want to monitor.
@@ -603,10 +493,11 @@ QSTimeCtr QS_onGetTime(void);
 *
 * \sa Example of using QS filters in #QS_FILTER_ON documentation
 */
-#define QS_FILTER_TE_OBJ(obj_)  (QS_teObj_ = (obj_))
+#define QS_FILTER_TE_OBJ(obj_)  (QS_priv_.teObjFilter = (obj_))
 
-/** \brief Local Filter for a generic application object \a obj_.
-*
+/*! Local Filter for a generic application object \a obj_. */
+/**
+* \description
 * This macro sets up the application object local filter if #Q_SPY is
 * defined, or does nothing if #Q_SPY is not defined. The argument \a obj_
 * is the pointer to the application object you want to monitor.
@@ -619,32 +510,48 @@ QSTimeCtr QS_onGetTime(void);
 *
 * \sa Example of using QS filters in #QS_FILTER_ON documentation
 */
-#define QS_FILTER_AP_OBJ(obj_)  (QS_apObj_ = (obj_))
+#define QS_FILTER_AP_OBJ(obj_)  (QS_priv_.apObjFilter = (obj_))
 
-/* Macros to generate user QS records ......................................*/
+/****************************************************************************/
+/* Macros to generate user QS records */
 
-/** \brief Begin a QS user record without entering critical section.
-*/
+/*! Begin a QS user record without entering critical section. */
 #define QS_BEGIN_NOCRIT(rec_, obj_) \
-    if (((QS_glbFilter_[(rec_) >> 3] \
-          & (uint8_t)(1U << ((uint8_t)(rec_) & (uint8_t)7))) != (uint8_t)0) \
-        && ((QS_apObj_ == (void *)0) || (QS_apObj_ == (obj_)))) \
+    if ((((uint_fast8_t)QS_priv_.glbFilter[(uint8_t)(rec_) >> 3] \
+          & (uint8_fast8_t)(1U << ((uint8_t)(rec_) & (uint8_t)7))) \
+            != (uint_fast8_t)0) \
+        && ((QS_priv_.apObjFilter == (void *)0) \
+           || (QS_priv_.apObjFilter == (obj_)))) \
     { \
-        QS_begin((uint8_t)(rec_)); \
+        QS_beginRec((uint_fast8_t)(rec_)); \
         QS_TIME_(); {
 
-/** \brief End a QS user record without exiting critical section.
-*/
+/*! End a QS user record without exiting critical section. */
 #define QS_END_NOCRIT() } \
     QS_END_NOCRIT_()
 
-                                            /* QS-specific critical section */
+/* QS-specific critical section *********************************************/
+#ifdef QS_CRIT_ENTRY /* separate QS critical section defined? */
+
+#ifndef QS_CRIT_STAT_TYPE
+    #define QS_CRIT_STAT_
+    #define QS_CRIT_ENTRY_()    QS_CRIT_ENTRY(dummy)
+    #define QS_CRIT_EXIT_()     QS_CRIT_EXIT(dummy)
+#else
+    #define QS_CRIT_STAT_       QS_CRIT_STAT_TYPE critStat_;
+    #define QS_CRIT_ENTRY_()    QS_CRIT_ENTRY(critStat_)
+    #define QS_CRIT_EXIT_()     QS_CRIT_EXIT(critStat_)
+#endif
+
+#else /* separate QS critical section not defined--use the QF definition */
+
 #ifndef QF_CRIT_STAT_TYPE
-    /** \brief This is an internal macro for defining the critical section
-    * status type.
-    *
+    /*! This is an internal macro for defining the critical section
+    * status type. */
+    /**
+    * \description
     * The purpose of this macro is to enable writing the same code for the
-    * case when critical sectgion status type is defined and when it is not.
+    * case when critical section status type is defined and when it is not.
     * If the macro #QF_CRIT_STAT_TYPE is defined, this internal macro
     * provides the definition of the critical section status variable.
     * Otherwise this macro is empty.
@@ -652,10 +559,11 @@ QSTimeCtr QS_onGetTime(void);
     */
     #define QS_CRIT_STAT_
 
-    /** \brief This is an internal macro for entering a critical section.
-    *
+    /*! This is an internal macro for entering a critical section. */
+    /**
+    * \description
     * The purpose of this macro is to enable writing the same code for the
-    * case when critical sectgion status type is defined and when it is not.
+    * case when critical section status type is defined and when it is not.
     * If the macro #QF_CRIT_STAT_TYPE is defined, this internal macro
     * invokes #QF_CRIT_ENTRY passing the key variable as the parameter.
     * Otherwise #QF_CRIT_ENTRY is invoked with a dummy parameter.
@@ -663,10 +571,11 @@ QSTimeCtr QS_onGetTime(void);
     */
     #define QS_CRIT_ENTRY_()    QF_CRIT_ENTRY(dummy)
 
-    /** \brief This is an internal macro for exiting a cricial section.
-    *
+    /*! This is an internal macro for exiting a critical section. */
+    /**
+    * \description
     * The purpose of this macro is to enable writing the same code for the
-    * case when critical sectgion status type is defined and when it is not.
+    * case when critical section status type is defined and when it is not.
     * If the macro #QF_CRIT_STAT_TYPE is defined, this internal macro
     * invokes #QF_CRIT_EXIT passing the key variable as the parameter.
     * Otherwise #QF_CRIT_EXIT is invoked with a dummy parameter.
@@ -677,11 +586,15 @@ QSTimeCtr QS_onGetTime(void);
 #else
     #define QS_CRIT_STAT_       QF_CRIT_STAT_TYPE critStat_;
     #define QS_CRIT_ENTRY_()    QF_CRIT_ENTRY(critStat_)
+
     #define QS_CRIT_EXIT_()     QF_CRIT_EXIT(critStat_)
 #endif
 
-/** \brief Begin a user QS record with entering cricital section.
-*
+#endif /* QS_CRIT_ENTRY */
+
+/*! Begin a user QS record with entering critical section. */
+/**
+* \usage
 * The following example shows how to build a user QS record using the
 * macros #QS_BEGIN, #QS_END, and the formatted output macros: #QS_U8 and
 * #QS_STR.
@@ -689,262 +602,259 @@ QSTimeCtr QS_onGetTime(void);
 * \note Must always be used in pair with #QS_END
 */
 #define QS_BEGIN(rec_, obj_) \
-    if (((QS_glbFilter_[(uint8_t)(rec_) >> 3] \
-          & (uint8_t)(1U << ((uint8_t)(rec_) & (uint8_t)7))) != (uint8_t)0) \
-        && ((QS_apObj_ == (void *)0) || (QS_apObj_ == (obj_)))) \
+    if ((((uint_fast8_t)QS_priv_.glbFilter[(uint8_t)(rec_) >> 3] \
+        & (uint_fast8_t)((uint_fast8_t)1 << ((uint8_t)(rec_) & (uint8_t)7))) \
+            != (uint_fast8_t)0) \
+        && ((QS_priv_.apObjFilter == (void *)0) \
+            || (QS_priv_.apObjFilter == (obj_)))) \
     { \
         QS_CRIT_STAT_ \
         QS_CRIT_ENTRY_(); \
-        QS_begin((uint8_t)(rec_)); \
+        QS_beginRec((uint_fast8_t)(rec_)); \
         QS_TIME_(); {
 
-/** \brief End a QS record with exiting critical section.
-* \sa example for #QS_BEGIN
+/*! End a QS record with exiting critical section. */
+/** \sa example for #QS_BEGIN
 * \note Must always be used in pair with #QS_BEGIN
 */
 #define QS_END() } \
     QS_END_()
 
+/****************************************************************************/
 
-/*****************************************************************************
-* Macros for use inside other macros or internally in the QP code
-*/
-
-/** \brief Internal QS macro to begin a QS record with entering critical
-* section.
-*
+/*! Internal QS macro to begin a QS record with entering critical section. */
+/**
 * \note This macro is intended to use only inside QP components and NOT
 * at the application level. \sa #QS_BEGIN
 */
 #define QS_BEGIN_(rec_, objFilter_, obj_) \
-    if (((QS_glbFilter_[(uint8_t)(rec_) >> 3] \
-          & (uint8_t)(1U << ((uint8_t)(rec_) & (uint8_t)7))) != (uint8_t)0) \
-        && (((objFilter_) == (void *)0) || ((objFilter_) == (obj_)))) \
+    if ((((uint_fast8_t)QS_priv_.glbFilter[(uint8_t)(rec_) >> 3] \
+        & (uint_fast8_t)((uint_fast8_t)1 << ((uint8_t)(rec_) & (uint8_t)7))) \
+            != (uint_fast8_t)0) \
+        && (((objFilter_) == (void *)0) \
+            || ((objFilter_) == (obj_)))) \
     { \
         QS_CRIT_ENTRY_(); \
-        QS_begin((uint8_t)(rec_));
+        QS_beginRec((uint_fast8_t)(rec_));
 
-/** \brief  Internal QS macro to end a QS record with exiting critical
-* section.
-*
+/*!  Internal QS macro to end a QS record with exiting critical section. */
+/**
 * \note This macro is intended to use only inside QP components and NOT
 * at the application level. \sa #QS_END
 */
 #define QS_END_() \
-        QS_end(); \
+        QS_endRec(); \
         QS_CRIT_EXIT_(); \
     }
 
-/** \brief Internal QS macro to begin a QS record without entering critical
-* section.
-*
+/*! Internal macro to begin a QS record without entering critical section. */
+/**
 * \note This macro is intended to use only inside QP components and NOT
 * at the application level. \sa #QS_BEGIN_NOCRIT
 */
 #define QS_BEGIN_NOCRIT_(rec_, objFilter_, obj_) \
-    if (((QS_glbFilter_[(uint8_t)(rec_) >> 3] \
-          & (uint8_t)(1U << ((uint8_t)(rec_) & (uint8_t)7))) != (uint8_t)0) \
-        && (((objFilter_) == (void *)0) || ((objFilter_) == (obj_)))) \
+    if ((((uint_fast8_t)QS_priv_.glbFilter[(uint8_t)(rec_) >> 3] \
+        & (uint_fast8_t)((uint_fast8_t)1 << ((uint8_t)(rec_) & (uint8_t)7))) \
+             != (uint_fast8_t)0) \
+        && (((objFilter_) == (void *)0) \
+            || ((objFilter_) == (obj_)))) \
     { \
-        QS_begin((uint8_t)(rec_));
+        QS_beginRec((uint_fast8_t)(rec_));
 
-/** \brief Internal QS macro to end a QS record without exiting critical
-* section.
+/*! Internal QS macro to end a QS record without exiting critical section. */
+/**
 * \note This macro is intended to use only inside QP components and NOT
 * at the application level. \sa #QS_END_NOCRIT
 */
 #define QS_END_NOCRIT_() \
-        QS_end(); \
+        QS_endRec(); \
     }
 
-/** \brief Internal QS macro to output an unformatted uint8_t data element */
-#define QS_U8_(data_)           QS_u8_(data_)
+/*! Internal QS macro to output an unformatted uint8_t data element */
+#define QS_U8_(data_)           (QS_u8_((uint8_t)(data_)))
 
-/** \brief Internal QS macro to output an unformatted uint16_t data element */
-#define QS_U16_(data_)          QS_u16_(data_)
+/*! Internal QS macro to output 2 unformatted uint8_t data elements */
+#define QS_2U8_(data1_, data2_) (QS_u8u8_((data1_), (data2_)))
 
-/** \brief Internal QS macro to output an unformatted uint32_t data element */
-#define QS_U32_(data_)          QS_u32_(data_)
+/*! Internal QS macro to output an unformatted uint16_t data element */
+#define QS_U16_(data_)          (QS_u16_((uint16_t)(data_)))
+
+/*! Internal QS macro to output an unformatted uint32_t data element */
+#define QS_U32_(data_)          (QS_u32_((uint32_t)(data_)))
 
 
 #if (Q_SIGNAL_SIZE == 1)
-    /** \brief Internal QS macro to output an unformatted event signal
-    * data element
+    /*! Internal macro to output an unformatted event signal data element */
+    /**
     * \note the size of the pointer depends on the macro #Q_SIGNAL_SIZE.
     */
-    #define QS_SIG_(sig_)       QS_u8_(sig_)
+    #define QS_SIG_(sig_)       (QS_u8_(sig_))
 #elif (Q_SIGNAL_SIZE == 2)
-    #define QS_SIG_(sig_)       QS_u16_(sig_)
+    #define QS_SIG_(sig_)       (QS_u16_(sig_))
 #elif (Q_SIGNAL_SIZE == 4)
-    #define QS_SIG_(sig_)       QS_u32_(sig_)
+    #define QS_SIG_(sig_)       (QS_u32_(sig_))
 #endif
 
 
 #if (QS_OBJ_PTR_SIZE == 1)
-    #define QS_OBJ_(obj_)       QS_u8_((uint8_t)(obj_))
+    #define QS_OBJ_(obj_)       (QS_u8_((uint8_t)(obj_)))
 #elif (QS_OBJ_PTR_SIZE == 2)
-    #define QS_OBJ_(obj_)       QS_u16_((uint16_t)(obj_))
+    #define QS_OBJ_(obj_)       (QS_u16_((uint16_t)(obj_)))
 #elif (QS_OBJ_PTR_SIZE == 4)
-    #define QS_OBJ_(obj_)       QS_u32_((uint32_t)(obj_))
+    #define QS_OBJ_(obj_)       (QS_u32_((uint32_t)(obj_)))
 #elif (QS_OBJ_PTR_SIZE == 8)
-    #define QS_OBJ_(obj_)       QS_u64_((uint64_t)(obj_))
+    #define QS_OBJ_(obj_)       (QS_u64_((uint64_t)(obj_)))
 #else
 
-    /** \brief Internal QS macro to output an unformatted object pointer
-    * data element
-    * \note the size of the pointer depends on the macro #QS_OBJ_PTR_SIZE.
+    /*! Internal macro to output an unformatted object pointer data element */
+    /** \note the size of the pointer depends on the macro #QS_OBJ_PTR_SIZE.
     * If the size is not defined the size of pointer is assumed 4-bytes.
     */
-    #define QS_OBJ_(obj_)       QS_u32_((uint32_t)(obj_))
+    #define QS_OBJ_(obj_)       (QS_u32_((uint32_t)(obj_))
 #endif
 
 
 #if (QS_FUN_PTR_SIZE == 1)
-    #define QS_FUN_(fun_)       QS_u8_((uint8_t)(fun_))
+    #define QS_FUN_(fun_)       (QS_u8_((uint8_t)(fun_)))
 #elif (QS_FUN_PTR_SIZE == 2)
-    #define QS_FUN_(fun_)       QS_u16_((uint16_t)(fun_))
+    #define QS_FUN_(fun_)       (QS_u16_((uint16_t)(fun_)))
 #elif (QS_FUN_PTR_SIZE == 4)
-    #define QS_FUN_(fun_)       QS_u32_((uint32_t)(fun_))
+    #define QS_FUN_(fun_)       (QS_u32_((uint32_t)(fun_)))
 #elif (QS_FUN_PTR_SIZE == 8)
-    #define QS_FUN_(fun_)       QS_u64_((uint64_t)(fun_))
+    #define QS_FUN_(fun_)       (QS_u64_((uint64_t)(fun_)))
 #else
 
-    /** \brief Internal QS macro to output an unformatted function pointer
-    * data element
-    * \note the size of the pointer depends on the macro #QS_FUN_PTR_SIZE.
+    /*! Internal macro to output an unformatted function pointer */
+    /** \note the size of the pointer depends on the macro #QS_FUN_PTR_SIZE.
     * If the size is not defined the size of pointer is assumed 4-bytes.
     */
-    #define QS_FUN_(fun_)       QS_u32_((uint32_t)(fun_))
+    #define QS_FUN_(fun_)       (QS_u32_((uint32_t)(fun_)))
 #endif
 
 
-/** \brief Internal QS macro to output a zero-terminated ASCII string
-* data element
-*/
-#define QS_STR_(msg_)           QS_str_(msg_)
+/*! Internal QS macro to output a zero-terminated ASCII string element */
+#define QS_STR_(msg_)           (QS_str_((msg_)))
 
-/** \brief Internal QS macro to output a zero-terminated ASCII string
-* allocated in ROM data element
+/*! Internal QS macro to output a zero-terminated ASCII string allocated
+in ROM data element
 */
-#define QS_STR_ROM_(msg_)       QS_str_ROM_(msg_)
+#define QS_STR_ROM_(msg_)       (QS_str_ROM_((msg_)))
 
-/*****************************************************************************
-* Macros for use in the client code
-*/
+/* Macros for use in the client code .......................................*/
 
-/** \brief Enumerates data formats recognized by QS
-*
+/*! Enumerates data formats recognized by QS */
+/**
+* \description
 * QS uses this enumeration is used only internally for the formatted user
 * data elements.
 */
-enum QSType {
-    QS_I8_T,                               /**< signed 8-bit integer format */
-    QS_U8_T,                             /**< unsigned 8-bit integer format */
-    QS_I16_T,                             /**< signed 16-bit integer format */
-    QS_U16_T,                           /**< unsigned 16-bit integer format */
-    QS_I32_T,                             /**< signed 32-bit integer format */
-    QS_U32_T,                           /**< unsigned 32-bit integer format */
-    QS_F32_T,                             /**< 32-bit floating point format */
-    QS_F64_T,                             /**< 64-bit floating point format */
-    QS_STR_T,                      /**< zero-terminated ASCII string format */
-    QS_MEM_T,                      /**< up to 255-bytes memory block format */
-    QS_SIG_T,                                      /**< event signal format */
-    QS_OBJ_T,                                    /**< object pointer format */
-    QS_FUN_T,                                  /**< function pointer format */
-    QS_I64_T,                             /**< signed 64-bit integer format */
-    QS_U64_T,                           /**< unsigned 64-bit integer format */
-    QS_U32_HEX_T                 /**< unsigned 32-bit integer in hex format */
+enum {
+    QS_I8_T,              /*!< signed 8-bit integer format */
+    QS_U8_T,              /*!< unsigned 8-bit integer format */
+    QS_I16_T,             /*!< signed 16-bit integer format */
+    QS_U16_T,             /*!< unsigned 16-bit integer format */
+    QS_I32_T,             /*!< signed 32-bit integer format */
+    QS_U32_T,             /*!< unsigned 32-bit integer format */
+    QS_F32_T,             /*!< 32-bit floating point format */
+    QS_F64_T,             /*!< 64-bit floating point format */
+    QS_STR_T,             /*!< zero-terminated ASCII string format */
+    QS_MEM_T,             /*!< up to 255-bytes memory block format */
+    QS_SIG_T,             /*!< event signal format */
+    QS_OBJ_T,             /*!< object pointer format */
+    QS_FUN_T,             /*!< function pointer format */
+    QS_I64_T,             /*!< signed 64-bit integer format */
+    QS_U64_T,             /*!< unsigned 64-bit integer format */
+    QS_U32_HEX_T          /*!< unsigned 32-bit integer in hex format */
 };
 
-/** \brief Output formatted int8_t to the QS record */
+/*! Output formatted int8_t to the QS record */
 #define QS_I8(width_, data_) \
-    QS_u8((uint8_t)(((width_) << 4)) | (uint8_t)QS_I8_T, (data_))
+    (QS_u8((uint8_t)(((width_) << 4)) | (uint8_t)QS_I8_T, (data_)))
 
-/** \brief Output formatted uint8_t to the QS record */
+/*! Output formatted uint8_t to the QS record */
 #define QS_U8(width_, data_) \
-    QS_u8((uint8_t)(((width_) << 4)) | (uint8_t)QS_U8_T, (data_))
+    (QS_u8((uint8_t)(((width_) << 4)) | (uint8_t)QS_U8_T, (data_)))
 
-/** \brief Output formatted int16_t to the QS record */
+/*! Output formatted int16_t to the QS record */
 #define QS_I16(width_, data_) \
-    QS_u16((uint8_t)(((width_) << 4)) | (uint8_t)QS_I16_T, (data_))
+    (QS_u16((uint8_t)(((width_) << 4)) | (uint8_t)QS_I16_T, (data_)))
 
-/** \brief Output formatted uint16_t to the QS record */
+/*! Output formatted uint16_t to the QS record */
 #define QS_U16(width_, data_) \
-    QS_u16((uint8_t)(((width_) << 4)) | (uint8_t)QS_U16_T, (data_))
+    (QS_u16((uint8_t)(((width_) << 4)) | (uint8_t)QS_U16_T, (data_)))
 
-/** \brief Output formatted int32_t to the QS record */
+/*! Output formatted int32_t to the QS record */
 #define QS_I32(width_, data_) \
-    QS_u32((uint8_t)(((width_) << 4)) | (uint8_t)QS_I32_T, (data_))
+    (QS_u32((uint8_t)(((width_) << 4)) | (uint8_t)QS_I32_T, (data_)))
 
-/** \brief Output formatted uint32_t to the QS record */
+/*! Output formatted uint32_t to the QS record */
 #define QS_U32(width_, data_) \
-    QS_u32((uint8_t)(((width_) << 4)) | (uint8_t)QS_U32_T, (data_))
+    (QS_u32((uint8_t)(((width_) << 4)) | (uint8_t)QS_U32_T, (data_)))
 
-/** \brief Output formatted 32-bit floating point number to the QS record */
+/*! Output formatted 32-bit floating point number to the QS record */
 #define QS_F32(width_, data_) \
-    QS_f32((uint8_t)(((width_) << 4)) | (uint8_t)QS_F32_T, (data_))
+    (QS_f32((uint8_t)(((width_) << 4)) | (uint8_t)QS_F32_T, (data_)))
 
-/** \brief Output formatted 64-bit floating point number to the QS record */
+/*! Output formatted 64-bit floating point number to the QS record */
 #define QS_F64(width_, data_) \
-    QS_f64((uint8_t)(((width_) << 4)) | (uint8_t)QS_F64_T, (data_))
+    (QS_f64((uint8_t)(((width_) << 4)) | (uint8_t)QS_F64_T, (data_)))
 
-/** \brief Output formatted int64_t to the QS record */
+/*! Output formatted int64_t to the QS record */
 #define QS_I64(width_, data_) \
-    QS_u64((uint8_t)(((width_) << 4)) | (uint8_t)QS_I64_T, (data_))
+    (QS_u64((uint8_t)(((width_) << 4)) | (uint8_t)QS_I64_T, (data_)))
 
-/** \brief Output formatted uint64_t to the QS record */
+/*! Output formatted uint64_t to the QS record */
 #define QS_U64(width_, data_) \
-    QS_u64((uint8_t)(((width_) << 4)) | (uint8_t)QS_U64_T, (data_))
+    (QS_u64((uint8_t)(((width_) << 4)) | (uint8_t)QS_U64_T, (data_)))
 
-/** \brief Output formatted uint32_t to the QS record */
+/*! Output formatted uint32_t to the QS record */
 #define QS_U32_HEX(width_, data_) \
-    QS_u32((uint8_t)(((width_) << 4)) | (uint8_t)QS_U32_HEX_T, (data_))
+    (QS_u32((uint8_t)(((width_) << 4)) | (uint8_t)QS_U32_HEX_T, (data_)))
 
-/** \brief Output formatted zero-terminated ASCII string to the QS record */
-#define QS_STR(str_)            QS_str(str_)
+/*! Output formatted zero-terminated ASCII string to the QS record */
+#define QS_STR(str_)            (QS_str((str_)))
 
-/** \brief Output formatted zero-terminated ASCII string from ROM
+/*! Output formatted zero-terminated ASCII string from ROM
 * to the QS record
 */
-#define QS_STR_ROM(str_)        QS_str_ROM(str_)
+#define QS_STR_ROM(str_)        (QS_str_ROM((str_)))
 
-/** \brief Output formatted memory block of up to 255 bytes to the QS
-* record
-*/
-#define QS_MEM(mem_, size_)     QS_mem((mem_), (size_))
+/*! Output formatted memory block of up to 255 bytes to the QS record */
+#define QS_MEM(mem_, size_)     (QS_mem((mem_), (size_)))
 
 
 #if (QS_OBJ_PTR_SIZE == 1)
-    #define QS_OBJ(obj_)        QS_u8(QS_OBJ_T, (uint8_t)(obj_))
+    #define QS_OBJ(obj_)        (QS_u8(QS_OBJ_T, (uint8_t)(obj_)))
 #elif (QS_OBJ_PTR_SIZE == 2)
-    #define QS_OBJ(obj_)        QS_u16(QS_OBJ_T, (uint16_t)(obj_))
+    #define QS_OBJ(obj_)        (QS_u16(QS_OBJ_T, (uint16_t)(obj_)))
 #elif (QS_OBJ_PTR_SIZE == 4)
-    #define QS_OBJ(obj_)        QS_u32(QS_OBJ_T, (uint32_t)(obj_))
+    #define QS_OBJ(obj_)        (QS_u32(QS_OBJ_T, (uint32_t)(obj_)))
 #elif (QS_OBJ_PTR_SIZE == 8)
-    #define QS_OBJ(obj_)        QS_u64(QS_OBJ_T, (uint64_t)(obj_))
+    #define QS_OBJ(obj_)        (QS_u64(QS_OBJ_T, (uint64_t)(obj_)))
 #else
-    /** \brief Output formatted object pointer to the QS record */
-    #define QS_OBJ(obj_)        QS_u32(QS_OBJ_T, (uint32_t)(obj_))
+    /*! Output formatted object pointer to the QS record */
+    #define QS_OBJ(obj_)        (QS_u32(QS_OBJ_T, (uint32_t)(obj_)))
 #endif
 
 
 #if (QS_FUN_PTR_SIZE == 1)
-    #define QS_FUN(fun_)        QS_u8(QS_FUN_T, (uint8_t)(fun_))
+    #define QS_FUN(fun_)        (QS_u8(QS_FUN_T, (uint8_t)(fun_)))
 #elif (QS_FUN_PTR_SIZE == 2)
-    #define QS_FUN(fun_)        QS_u16(QS_FUN_T, (uint16_t)(fun_))
+    #define QS_FUN(fun_)        (QS_u16(QS_FUN_T, (uint16_t)(fun_)))
 #elif (QS_FUN_PTR_SIZE == 4)
-    #define QS_FUN(fun_)        QS_u32(QS_FUN_T, (uint32_t)(fun_))
+    #define QS_FUN(fun_)        (QS_u32(QS_FUN_T, (uint32_t)(fun_)))
 #elif (QS_FUN_PTR_SIZE == 8)
-    #define QS_FUN(fun_)        QS_u64(QS_FUN_T, (uint64_t)(fun_))
+    #define QS_FUN(fun_)        (QS_u64(QS_FUN_T, (uint64_t)(fun_)))
 #else
-    /** \brief Output formatted function pointer to the QS record */
-    #define QS_FUN(fun_)        QS_u32(QS_FUN_T, (uint32_t)(fun_))
+
+    /*! Output formatted function pointer to the QS record */
+    #define QS_FUN(fun_)        (QS_u32(QS_FUN_T, (uint32_t)(fun_)))
 #endif
 
 
 #if (Q_SIGNAL_SIZE == 1)
 
-    /** \brief Output formatted event signal (of type ::QSignal) and
+    /*! Output formatted event signal (of type ::QSignal) and
     * the state machine object to the user QS record
     */
     #define QS_SIG(sig_, obj_) \
@@ -960,27 +870,12 @@ enum QSType {
         QS_OBJ_(obj_)
 #endif
 
+/****************************************************************************/
+/* Dictionary records */
 
-/** \brief Reset the QS session.
-*
-* This trace record should be generated at the beginning of the QS session.
-* It informs the QSPY host application that the new session has been started.
-*/
-#define QS_RESET() do { \
-    if (((QS_glbFilter_[(uint8_t)QS_QP_RESET >> 3] \
-      & (uint8_t)(1U << ((uint8_t)QS_QP_RESET & (uint8_t)7))) != (uint8_t)0))\
-    { \
-        QS_CRIT_STAT_ \
-        QS_CRIT_ENTRY_(); \
-        QS_begin((uint8_t)QS_QP_RESET); \
-        QS_end(); \
-        QS_CRIT_EXIT_(); \
-        QS_onFlush(); \
-    } \
-} while (0)
-
-/** \brief Output signal dictionary record
-*
+/*! Output signal dictionary record */
+/**
+* \description
 * A signal dictionary record associates the numerical value of the signal
 * and the binary address of the state machine that consumes that signal
 * with the human-readable name of the signal.
@@ -1020,24 +915,17 @@ enum QSType {
 * \include qs_sigLog0.txt
 */
 #define QS_SIG_DICTIONARY(sig_, obj_) do { \
-    if (((QS_glbFilter_[(uint8_t)QS_SIG_DIC >> 3] \
-      & (uint8_t)(1U << ((uint8_t)QS_SIG_DIC & (uint8_t)7))) != (uint8_t)0)) \
+    if (((QS_priv_.glbFilter[(uint8_t)QS_SIG_DICT >> 3] \
+      & (uint8_t)(1U << ((uint8_t)QS_SIG_DICT & (uint8_t)7))) != (uint8_t)0))\
     { \
-        static char_t const Q_ROM Q_ROM_VAR sig_name__[] = #sig_; \
-        QS_CRIT_STAT_ \
-        QS_CRIT_ENTRY_(); \
-        QS_begin((uint8_t)QS_SIG_DIC); \
-        QS_SIG_((QSignal)sig_); \
-        QS_OBJ_(obj_); \
-        QS_STR_ROM_(&sig_name__[0]); \
-        QS_end(); \
-        QS_CRIT_EXIT_(); \
-        QS_onFlush(); \
+        static char_t const Q_ROM sig_name_[] = #sig_; \
+        QS_sig_dict((sig_), (obj_), &sig_name_[0]); \
     } \
 } while (0)
 
-/** \brief Output object dictionary record
-*
+/*! Output object dictionary record */
+/**
+* \description
 * An object dictionary record associates the binary address of an object
 * in the target's memory with the human-readable name of the object.
 *
@@ -1050,23 +938,17 @@ enum QSType {
 * \include qs_objDic.c
 */
 #define QS_OBJ_DICTIONARY(obj_) do { \
-    if (((QS_glbFilter_[(uint8_t)QS_OBJ_DIC >> 3] \
-      & (uint8_t)(1U << ((uint8_t)QS_OBJ_DIC & (uint8_t)7))) != (uint8_t)0)) \
+    if (((QS_priv_.glbFilter[(uint8_t)QS_OBJ_DICT >> 3] \
+      & (uint8_t)(1U << ((uint8_t)QS_OBJ_DICT & (uint8_t)7))) != (uint8_t)0))\
     { \
-        static char_t const Q_ROM Q_ROM_VAR obj_name__[] = #obj_; \
-        QS_CRIT_STAT_ \
-        QS_CRIT_ENTRY_(); \
-        QS_begin((uint8_t)QS_OBJ_DIC); \
-        QS_OBJ_(obj_); \
-        QS_STR_ROM_(&obj_name__[0]); \
-        QS_end(); \
-        QS_CRIT_EXIT_(); \
-        QS_onFlush(); \
+        static char_t const Q_ROM obj_name_[] = #obj_; \
+        QS_obj_dict((obj_), &obj_name_[0]); \
     } \
 } while (0)
 
-/** \brief Output function dictionary record
-*
+/*! Output function dictionary record */
+/**
+* \description
 * A function dictionary record associates the binary address of a function
 * in the target's memory with the human-readable name of the function.
 *
@@ -1078,45 +960,36 @@ enum QSType {
 * dictionary.
 */
 #define QS_FUN_DICTIONARY(fun_) do { \
-    if (((QS_glbFilter_[(uint8_t)QS_FUN_DIC >> 3] \
-      & (uint8_t)(1U << ((uint8_t)QS_FUN_DIC & (uint8_t)7))) != (uint8_t)0)) \
+    if (((QS_priv_.glbFilter[(uint8_t)QS_FUN_DICT >> 3] \
+      & (uint8_t)(1U << ((uint8_t)QS_FUN_DICT & (uint8_t)7))) != (uint8_t)0))\
     { \
-        static char_t const Q_ROM Q_ROM_VAR fun_name__[] = #fun_; \
-        QS_CRIT_STAT_ \
-        QS_CRIT_ENTRY_(); \
-        QS_begin((uint8_t)QS_FUN_DIC); \
-        QS_FUN_(fun_); \
-        QS_STR_ROM_(&fun_name__[0]); \
-        QS_end(); \
-        QS_CRIT_EXIT_(); \
-        QS_onFlush(); \
+        static char_t const Q_ROM fun_name_[] = #fun_; \
+        QS_fun_dict((void (*)(void))(fun_), &fun_name_[0]); \
     } \
 } while (0)
 
-/** \brief Output user QS rectord dictionary record
-*
+/*! Output user QS rectord dictionary record */
+/**
+* \description
 * A user QS record dictionary record associates the numerical value of a
 * user record with the human-readable identifier.
 */
 #define QS_USR_DICTIONARY(rec_) do { \
-    if (((QS_glbFilter_[(uint8_t)QS_USR_DIC >> 3] \
-      & (uint8_t)(1U << ((uint8_t)QS_USR_DIC & (uint8_t)7))) != (uint8_t)0)) \
+    if (((QS_priv_.glbFilter[(uint8_t)QS_USR_DICT >> 3] \
+      & (uint8_t)(1U << ((uint8_t)QS_USR_DICT & (uint8_t)7))) != (uint8_t)0))\
     { \
-        static char_t const Q_ROM Q_ROM_VAR usr_name__[] = #rec_; \
-        QS_CRIT_STAT_ \
-        QS_CRIT_ENTRY_(); \
-        QS_begin((uint8_t)QS_USR_DIC); \
-        QS_U8_((uint8_t)(rec_)); \
-        QS_STR_ROM_(&usr_name__[0]); \
-        QS_end(); \
-        QS_CRIT_EXIT_(); \
-        QS_onFlush(); \
+        static char_t const Q_ROM usr_name_[] = #rec_; \
+        QS_usr_dict((rec_), &usr_name_[0]); \
     } \
 } while (0)
 
-/** \brief Output the assertion violation */
+/*! Output the assertion failure trace record */
+/**
+* \description
+* This trace record is intended to use from the Q_onAssert() callback.
+*/
 #define QS_ASSERTION(module_, loc_) do { \
-    QS_BEGIN_NOCRIT_(QS_ASSERT, (void *)0, (void *)0) \
+    QS_BEGIN_NOCRIT_(QS_ASSERT_FAIL, (void *)0, (void *)0) \
         QS_TIME_(); \
         QS_U16_((uint16_t)(loc_)); \
         QS_STR_ROM_(module_); \
@@ -1124,53 +997,83 @@ enum QSType {
     QS_onFlush(); \
 } while (0)
 
-/** \brief Flush the QS trace data to the host
-*
+/*! Flush the QS trace data to the host */
+/**
+* \description
 * This macro invokes the QS_flush() platform-dependent callback function
 * to flush the QS trace buffer to the host. The function typically
 * busy-waits until all the data in the buffer is sent to the host.
 * This is acceptable only in the initial transient.
 */
-#define QS_FLUSH()   QS_onFlush()
+#define QS_FLUSH()   (QS_onFlush())
 
-/** \brief Output the critical section entry */
+/*! Output the critical section entry */
 #define QF_QS_CRIT_ENTRY() \
     QS_BEGIN_NOCRIT_(QS_QF_CRIT_ENTRY, (void *)0, (void *)0) \
         QS_TIME_(); \
-        QS_U8_((uint8_t)(++QF_critNest_)); \
+        QS_U8_(++QS_priv_.critNest); \
     QS_END_NOCRIT_()
 
-/** \brief Output the critical section exit */
+/*! Output the critical section exit */
 #define QF_QS_CRIT_EXIT() \
     QS_BEGIN_NOCRIT_(QS_QF_CRIT_EXIT, (void *)0, (void *)0) \
         QS_TIME_(); \
-        QS_U8_((uint8_t)(QF_critNest_--)); \
+        QS_U8_(QS_priv_.critNest--); \
     QS_END_NOCRIT_()
 
-/** \brief Output the interrupt entry record */
+/*! Output the interrupt entry record */
 #define QF_QS_ISR_ENTRY(isrnest_, prio_) \
     QS_BEGIN_NOCRIT_(QS_QF_ISR_ENTRY, (void *)0, (void *)0) \
         QS_TIME_(); \
-        QS_U8_(isrnest_); \
-        QS_U8_(prio_); \
+        QS_2U8_(isrnest_, prio_); \
     QS_END_NOCRIT_()
 
-/** \brief Output the interrupt exit record */
+/*! Output the interrupt exit record */
 #define QF_QS_ISR_EXIT(isrnest_, prio_) \
     QS_BEGIN_NOCRIT_(QS_QF_ISR_EXIT, (void *)0, (void *)0) \
         QS_TIME_(); \
-        QS_U8_(isrnest_); \
-        QS_U8_(prio_); \
+        QS_2U8_(isrnest_, prio_); \
     QS_END_NOCRIT_()
 
-/** \brief Execute an action that is only necessary for QS output */
+/*! Execute an action that is only necessary for QS output */
 #define QF_QS_ACTION(act_)      (act_)
 
-/** \brief critical section nesting level
-*
-* \note Not to be used by Clients directly, only in ports of QF
+/*! obtain the current QS version number string */
+/**
+* \description
+* version of QS as a constant 5-character string of the form X.Y.Z,
+* where X is a 1-digit major version number, Y is a 1-digit minor
+* version number, and Z is a 1-digit release number.
 */
-extern uint8_t QF_critNest_;
+#define QS_getVersion() (QP_VERSION_STR)
 
-#endif                                                             /* qs_h  */
+/****************************************************************************/
+/* QS private data */
+typedef uint_fast16_t QSCtr;  /*!< QS ring buffer counter and offset type */
+
+/*! Private QS data to keep track of the filters and the trace buffer. */
+typedef struct {
+    uint8_t    glbFilter[16]; /*!< global on/off QS filter */
+    void const *smObjFilter;  /*!< state machine for QEP local filter */
+    void const *aoObjFilter;  /*!< active object for QF local filter */
+    void const *mpObjFilter;  /*!<  event pool for QF local filter */
+    void const *eqObjFilter;  /*!<  raw queue for QF local filter */
+    void const *teObjFilter;  /*!<  time event for QF local filter */
+    void const *apObjFilter;  /*!<  generic object Application local filter */
+
+    uint8_t *buf;         /*!< pointer to the start of the ring buffer */
+    QSCtr    end;         /*!< offset of the end of the ring buffer */
+    QSCtr    head;        /*!< offset to where next byte will be inserted */
+    QSCtr    tail;        /*!< offset of where next event will be extracted */
+    QSCtr    used;        /*!< number of bytes currently in the ring buffer */
+    uint8_t  seq;         /*!< the record sequence number */
+    uint8_t  chksum;      /*!< the checksum of the current record */
+
+    uint_fast8_t critNest; /*!< critical section nesting level */
+} QSPriv;
+
+extern QSPriv QS_priv_;
+
+#endif /* qs_h  */
+
 

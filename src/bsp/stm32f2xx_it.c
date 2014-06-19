@@ -186,7 +186,7 @@ void TIM5_IRQHandler(void) {
 
 /******************************************************************************/
 void RTC_WKUP_IRQHandler(void) {
-   QK_ISR_ENTRY();                        /* inform QK about entering an ISR */
+//   QK_ISR_ENTRY();                        /* inform QK about entering an ISR */
 
    if( RESET != RTC_GetITStatus(RTC_IT_WUT) ) {
 
@@ -217,6 +217,6 @@ void RTC_WKUP_IRQHandler(void) {
       EXTI_ClearITPendingBit(EXTI_Line22);
    }
 
-   QK_ISR_EXIT();                          /* inform QK about exiting an ISR */
+//   QK_ISR_EXIT();                          /* inform QK about exiting an ISR */
 }
 /******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/
