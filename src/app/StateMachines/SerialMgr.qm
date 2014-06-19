@@ -162,7 +162,7 @@ Serial_DMAStartXfer( SYSTEM_SERIAL );</entry>
   <operation name="SerialMgr_ctor" type="void" visibility="0x00" properties="0x00">
    <documentation>/**
  * @brief C &quot;constructor&quot; for SerialMgr &quot;class&quot;.
- * Initializes all the timers and queues used by the AO, sets up a deferral 
+ * Initializes all the timers and queues used by the AO, sets up a deferral
  * queue, and sets of the first state.
  * @param  None
  * @param  None
@@ -196,21 +196,28 @@ QEQueue_init(
  * @email   harry_rostovtsev@datacard.com
  * Copyright (C) 2014 Datacard. All rights reserved.
  */
+
+/* Includes ------------------------------------------------------------------*/
 #include &quot;SerialMgr.h&quot;
 #include &quot;project_includes.h&quot;         /* Includes common to entire project. */
 #include &quot;bsp.h&quot;        /* For seconds to bsp tick conversion (SEC_TO_TICK) */
 
-Q_DEFINE_THIS_FILE;
+/* Compile-time called macros ------------------------------------------------*/
+Q_DEFINE_THIS_FILE;                 /* For QSPY to know the name of this file */
 
-/* Active object class -----------------------------------------------------*/
+/* Private typedef -----------------------------------------------------------*/
 $declare(AOs::SerialMgr)
 
-/* Local objects -----------------------------------------------------------*/
+/* Private defines -----------------------------------------------------------*/
+/* Private macros ------------------------------------------------------------*/
+/* Private variables and Local objects ---------------------------------------*/
 static SerialMgr l_SerialMgr; /* the single instance of the active object */
 
 /* Global-scope objects ----------------------------------------------------*/
 QActive * const AO_SerialMgr = (QActive *)&amp;l_SerialMgr;  /* &quot;opaque&quot; AO pointer */
 
+/* Private function prototypes -----------------------------------------------*/
+/* Private functions ---------------------------------------------------------*/
 $define(AOs::SerialMgr_ctor)
 $define(AOs::SerialMgr)
 
@@ -231,15 +238,22 @@ $define(AOs::SerialMgr)
  * @email   harry_rostovtsev@datacard.com
  * Copyright (C) 2014 Datacard. All rights reserved.
  */
+/* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef SERIALMGR_H_
 #define SERIALMGR_H_
 
+/* Includes ------------------------------------------------------------------*/
 #include &quot;qp_port.h&quot;                                        /* for QP support */
 #include &quot;Shared.h&quot;                                   /*  Common Declarations */
 
+/* Exported types ------------------------------------------------------------*/
+$declare(Events)
+
+/* Exported constants --------------------------------------------------------*/
+/* Exported macro ------------------------------------------------------------*/
+/* Exported functions --------------------------------------------------------*/
 $declare(AOs::SerialMgr_ctor)
 $declare(AOs::AO_SerialMgr)
-$declare(Events)
 
 #endif                                                        /* SERIALMGR_H_ */
 /******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/</text>

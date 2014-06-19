@@ -594,35 +594,50 @@ LOG_printf(&quot;Connection closed\n&quot;);</code>
  * Copyright (C) 2014 Datacard. All rights reserved.
  */
 
-#define LWIP_ALLOWED
+#define LWIP_ALLOWED     /* This must be set before the include to allow LWIP */
 
+/* Includes ------------------------------------------------------------------*/
 #include &quot;LWIPMgr.h&quot;
 #include &quot;lwip.h&quot;                                             /* lwIP stack */
 
+/* Compile-time called macros ------------------------------------------------*/
+Q_DEFINE_THIS_FILE;                 /* For QSPY to know the name of this file */
+Q_ASSERT_COMPILE(MAX_SHARED_SIG &lt; DEV_DRIVER_SIG);/* app signal overlap check */
 
-#define LWIP_SLOW_TICK_MS       TCP_TMR_INTERVAL
-
-Q_DEFINE_THIS_FILE;
-
-/* application signals cannot overlap the device-driver signals */
-Q_ASSERT_COMPILE(MAX_SHARED_SIG &lt; DEV_DRIVER_SIG);
-
+/* Private typedef -----------------------------------------------------------*/
+/**
+ * \enum TCP socket states.
+ */
 enum echo_states {
-    ES_NONE = 0,
-    ES_ACCEPTED,
-    ES_RECEIVED,
-    ES_CLOSING
+    ES_NONE = 0,                                        /**&lt; Default no state */
+    ES_ACCEPTED,                                     /**&lt; Connection accepted */
+    ES_RECEIVED,                             /**&lt; Data received on the socket */
+    ES_CLOSING                                        /**&lt; Connection closing */
 };
 
+/**
+ * \struct Keep track of TCP socket states.
+ */
 struct echo_state {
-    uint8_t state;
-    uint8_t retries;
-    struct tcp_pcb *pcb;
-    /* pbuf (chain) to recycle */
-    struct pbuf *p;
+    uint8_t state;                              /**&lt; echo_states socket state */
+    uint8_t retries;                         /**&lt; Number of retries attempted */
+    struct tcp_pcb *pcb;                              /**&lt; Connection context */
+    struct pbuf *p;                              /**&lt; pbuf (chain) to recycle */
 };
 
 $declare(AOs::LWIPMgr)
+
+/* Private defines -----------------------------------------------------------*/
+#define LWIP_SLOW_TICK_MS       TCP_TMR_INTERVAL
+
+/* Private macros ------------------------------------------------------------*/
+/* Private variables and Local objects ---------------------------------------*/
+static LWIPMgr l_LWIPMgr;       /* the single instance of the active object */
+
+/* Global-scope objects ----------------------------------------------------*/
+QActive * const AO_LWIPMgr = (QActive *)&amp;l_LWIPMgr;  /* &quot;opaque&quot; AO pointer */
+
+/* Private function prototypes -----------------------------------------------*/
 $declare(AOs::echo_accept)
 $declare(AOs::echo_recv)
 $declare(AOs::echo_error)
@@ -631,12 +646,8 @@ $declare(AOs::echo_sent)
 $declare(AOs::echo_send)
 $declare(AOs::echo_close)
 
-/* Local objects -----------------------------------------------------------*/
-static LWIPMgr l_LWIPMgr;       /* the single instance of the active object */
 
-/* Global-scope objects ----------------------------------------------------*/
-QActive * const AO_LWIPMgr = (QActive *)&amp;l_LWIPMgr;  /* &quot;opaque&quot; AO pointer */
-
+/* Private functions ---------------------------------------------------------*/
 /**
   * @brief  This function is the UDP handler callback. It is automatically
   *             called by the LWIP stack when a new UDP message arrives.  It
@@ -718,12 +729,15 @@ static void udp_rx_handler(void *arg, struct udp_pcb *upcb,
  * @email      harry_rostovtsev@datacard.com
  * Copyright (C) 2014 Datacard. All rights reserved.
  */
+/* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef LWIPMGR_H_
 #define LWIPMGR_H_
 
+/* Includes ------------------------------------------------------------------*/
 #include &quot;qp_port.h&quot;                                        /* for QP support */
 #include &quot;project_includes.h&quot;           /* Includes common to entire project. */
 
+/* Exported types ------------------------------------------------------------*/
 /*! \enum LWIPMgrSignals
  * Signals used by LWIPMgr.  These should start from MAX_SHARED_SIG
  */
@@ -734,6 +748,9 @@ enum LWIPMgrSignals {
 
 $declare(Events)
 
+/* Exported constants --------------------------------------------------------*/
+/* Exported macro ------------------------------------------------------------*/
+/* Exported functions --------------------------------------------------------*/
 $declare(AOs::LWIPMgr_ctor)
 $declare(AOs::AO_LWIPMgr)
 
@@ -743,7 +760,7 @@ $declare(AOs::AO_LWIPMgr)
   * The simulator will have its own implementation of this function due to the
   * use of totally different ip stacks and threading paradigms.
   *
-  * @param  e: a MsgEvt const event pointer to the MsgEvt that contains the
+  * @param [in|out] e: a MsgEvt const event pointer to the MsgEvt that contains the
   * length and message to be sent.
   *
   * @return None

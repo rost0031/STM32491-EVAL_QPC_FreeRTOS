@@ -29,28 +29,15 @@
  * @email   harry_rostovtsev@datacard.com
  * Copyright (C) 2014 Datacard. All rights reserved.
  */
+/* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef SERIALMGR_H_
 #define SERIALMGR_H_
 
+/* Includes ------------------------------------------------------------------*/
 #include "qp_port.h"                                        /* for QP support */
 #include "Shared.h"                                   /*  Common Declarations */
 
-
-/**
- * @brief C "constructor" for SerialMgr "class".
- * Initializes all the timers and queues used by the AO, sets up a deferral
- * queue, and sets of the first state.
- * @param  None
- * @param  None
- * @retval None
- */
-/*${AOs::SerialMgr_ctor} ...................................................*/
-void SerialMgr_ctor(void);
-
-
-/**< "opaque" pointer to the Active Object */
-extern QActive * const AO_SerialMgr;
-
+/* Exported types ------------------------------------------------------------*/
 
 /**
  * \struct Event struct type for transporting serial data.
@@ -66,6 +53,26 @@ typedef struct {
     /**< Length of data in the buffer. */
     uint16_t wBufferLen;
 } SerialDataEvt;
+
+
+/* Exported constants --------------------------------------------------------*/
+/* Exported macro ------------------------------------------------------------*/
+/* Exported functions --------------------------------------------------------*/
+
+/**
+ * @brief C "constructor" for SerialMgr "class".
+ * Initializes all the timers and queues used by the AO, sets up a deferral
+ * queue, and sets of the first state.
+ * @param  None
+ * @param  None
+ * @retval None
+ */
+/*${AOs::SerialMgr_ctor} ...................................................*/
+void SerialMgr_ctor(void);
+
+
+/**< "opaque" pointer to the Active Object */
+extern QActive * const AO_SerialMgr;
 
 
 #endif                                                        /* SERIALMGR_H_ */

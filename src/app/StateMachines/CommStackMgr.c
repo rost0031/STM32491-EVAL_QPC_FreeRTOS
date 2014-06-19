@@ -30,21 +30,18 @@
  * @email   harry_rostovtsev@datacard.com
  * Copyright (C) 2014 Datacard. All rights reserved.
  */
+
+/* Includes ------------------------------------------------------------------*/
 #include "CommStackMgr.h"
 #include "project_includes.h"         /* Includes common to entire project. */
 #include "bsp.h"                            /* For time to ticks conversion */
 
-Q_DEFINE_THIS_FILE;
+/* Compile-time called macros ------------------------------------------------*/
+Q_DEFINE_THIS_FILE;                 /* For QSPY to know the name of this file */
 
-#define LWIP_ALLOWED
-#define USER_FLASH_FIRST_PAGE_ADDRESS                              0x08020000
-#define BOOT_APP_TIMEOUT                                           30000
-
+/* Private typedef -----------------------------------------------------------*/
 typedef void (*pFunction)(void);
-pFunction Jump_To_Application;
-uint32_t JumpAddress;
 
-/* Active object class -----------------------------------------------------*/
 
 /**
  * \brief CommStackMgr "class"
@@ -74,12 +71,23 @@ static QState CommStackMgr_initial(CommStackMgr * const me, QEvt const * const e
 static QState CommStackMgr_Active(CommStackMgr * const me, QEvt const * const e);
 
 
-/* Local objects -----------------------------------------------------------*/
+/* Private defines -----------------------------------------------------------*/
+#define LWIP_ALLOWED
+#define USER_FLASH_FIRST_PAGE_ADDRESS                              0x08020000
+#define BOOT_APP_TIMEOUT                                           30000
+
+/* Private macros ------------------------------------------------------------*/
+/* Private variables and Local objects ---------------------------------------*/
+pFunction Jump_To_Application;
+uint32_t JumpAddress;
+
 static CommStackMgr l_CommStackMgr; /* the single instance of the Interstage active object */
 
 /* Global-scope objects ----------------------------------------------------*/
 QActive * const AO_CommStackMgr = (QActive *)&l_CommStackMgr;  /* "opaque" AO pointer */
 
+/* Private function prototypes -----------------------------------------------*/
+/* Private functions ---------------------------------------------------------*/
 
 /**
  * @brief C "constructor" for CommStackMgr "class".

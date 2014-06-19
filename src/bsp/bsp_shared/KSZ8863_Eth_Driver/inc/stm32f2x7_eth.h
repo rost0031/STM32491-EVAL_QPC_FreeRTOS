@@ -1,4 +1,3 @@
-// $Id$
 /**
  * @file   stm32f2x7_eth.h
  * @brief  This file contains all the functions prototypes for the Ethernet MAC
@@ -10,7 +9,6 @@
  * @email  harry_rostovtsev@datacard.com
  * Copyright (C) 2012 Datacard. All rights reserved.
  */
-// $Log$
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef __STM32F2x7_ETH_H
 #define __STM32F2x7_ETH_H
@@ -33,7 +31,7 @@
 /** 
   * @brief  ETH MAC Init structure definition
   * @note   The user should not configure all the ETH_InitTypeDef structure's fields. 
-  *   By calling the ETH_StructInit function the structure’s fields are set to their default values.
+  *   By calling the ETH_StructInit function the structureï¿½s fields are set to their default values.
   *   Only the parameters that will be set to a non-default value should be configured.  
   */ 
 typedef struct {

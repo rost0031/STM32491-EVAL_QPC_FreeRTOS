@@ -29,13 +29,16 @@
  * @email   harry_rostovtsev@datacard.com
  * Copyright (C) 2014 Datacard. All rights reserved.
  */
+
+/* Includes ------------------------------------------------------------------*/
 #include "SerialMgr.h"
 #include "project_includes.h"         /* Includes common to entire project. */
 #include "bsp.h"        /* For seconds to bsp tick conversion (SEC_TO_TICK) */
 
-Q_DEFINE_THIS_FILE;
+/* Compile-time called macros ------------------------------------------------*/
+Q_DEFINE_THIS_FILE;                 /* For QSPY to know the name of this file */
 
-/* Active object class -----------------------------------------------------*/
+/* Private typedef -----------------------------------------------------------*/
 
 /**
  * \brief SerialMgr Active Object (AO) "class" that manages the debug serial port.
@@ -98,12 +101,16 @@ static QState SerialMgr_Idle(SerialMgr * const me, QEvt const * const e);
 static QState SerialMgr_Busy(SerialMgr * const me, QEvt const * const e);
 
 
-/* Local objects -----------------------------------------------------------*/
+/* Private defines -----------------------------------------------------------*/
+/* Private macros ------------------------------------------------------------*/
+/* Private variables and Local objects ---------------------------------------*/
 static SerialMgr l_SerialMgr; /* the single instance of the active object */
 
 /* Global-scope objects ----------------------------------------------------*/
 QActive * const AO_SerialMgr = (QActive *)&l_SerialMgr;  /* "opaque" AO pointer */
 
+/* Private function prototypes -----------------------------------------------*/
+/* Private functions ---------------------------------------------------------*/
 
 /**
  * @brief C "constructor" for SerialMgr "class".

@@ -30,32 +30,35 @@
  * Copyright (C) 2014 Datacard. All rights reserved.
  */
 
-#define LWIP_ALLOWED
+#define LWIP_ALLOWED     /* This must be set before the include to allow LWIP */
 
+/* Includes ------------------------------------------------------------------*/
 #include "LWIPMgr.h"
 #include "lwip.h"                                             /* lwIP stack */
 
+/* Compile-time called macros ------------------------------------------------*/
+Q_DEFINE_THIS_FILE;                 /* For QSPY to know the name of this file */
+Q_ASSERT_COMPILE(MAX_SHARED_SIG < DEV_DRIVER_SIG);/* app signal overlap check */
 
-#define LWIP_SLOW_TICK_MS       TCP_TMR_INTERVAL
-
-Q_DEFINE_THIS_FILE;
-
-/* application signals cannot overlap the device-driver signals */
-Q_ASSERT_COMPILE(MAX_SHARED_SIG < DEV_DRIVER_SIG);
-
+/* Private typedef -----------------------------------------------------------*/
+/**
+ * \enum TCP socket states.
+ */
 enum echo_states {
-    ES_NONE = 0,
-    ES_ACCEPTED,
-    ES_RECEIVED,
-    ES_CLOSING
+    ES_NONE = 0,                                        /**< Default no state */
+    ES_ACCEPTED,                                     /**< Connection accepted */
+    ES_RECEIVED,                             /**< Data received on the socket */
+    ES_CLOSING                                        /**< Connection closing */
 };
 
+/**
+ * \struct Keep track of TCP socket states.
+ */
 struct echo_state {
-    uint8_t state;
-    uint8_t retries;
-    struct tcp_pcb *pcb;
-    /* pbuf (chain) to recycle */
-    struct pbuf *p;
+    uint8_t state;                              /**< echo_states socket state */
+    uint8_t retries;                         /**< Number of retries attempted */
+    struct tcp_pcb *pcb;                              /**< Connection context */
+    struct pbuf *p;                              /**< pbuf (chain) to recycle */
 };
 
 
@@ -128,6 +131,18 @@ static QState LWIPMgr_initial(LWIPMgr * const me, QEvt const * const e);
  */
 static QState LWIPMgr_Active(LWIPMgr * const me, QEvt const * const e);
 
+
+/* Private defines -----------------------------------------------------------*/
+#define LWIP_SLOW_TICK_MS       TCP_TMR_INTERVAL
+
+/* Private macros ------------------------------------------------------------*/
+/* Private variables and Local objects ---------------------------------------*/
+static LWIPMgr l_LWIPMgr;       /* the single instance of the active object */
+
+/* Global-scope objects ----------------------------------------------------*/
+QActive * const AO_LWIPMgr = (QActive *)&l_LWIPMgr;  /* "opaque" AO pointer */
+
+/* Private function prototypes -----------------------------------------------*/
 
 /**
  * @brief: A callback function that handles acceptance of a connection
@@ -255,12 +270,8 @@ static void echo_send(struct tcp_pcb * tpcb, struct echo_state * es);
 static void echo_close(struct tcp_pcb * tpcb, struct echo_state * es);
 
 
-/* Local objects -----------------------------------------------------------*/
-static LWIPMgr l_LWIPMgr;       /* the single instance of the active object */
 
-/* Global-scope objects ----------------------------------------------------*/
-QActive * const AO_LWIPMgr = (QActive *)&l_LWIPMgr;  /* "opaque" AO pointer */
-
+/* Private functions ---------------------------------------------------------*/
 /**
   * @brief  This function is the UDP handler callback. It is automatically
   *             called by the LWIP stack when a new UDP message arrives.  It

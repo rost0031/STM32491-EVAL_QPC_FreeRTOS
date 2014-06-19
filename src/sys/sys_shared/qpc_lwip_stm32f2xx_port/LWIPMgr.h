@@ -29,12 +29,15 @@
  * @email      harry_rostovtsev@datacard.com
  * Copyright (C) 2014 Datacard. All rights reserved.
  */
+/* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef LWIPMGR_H_
 #define LWIPMGR_H_
 
+/* Includes ------------------------------------------------------------------*/
 #include "qp_port.h"                                        /* for QP support */
 #include "project_includes.h"           /* Includes common to entire project. */
 
+/* Exported types ------------------------------------------------------------*/
 /*! \enum LWIPMgrSignals
  * Signals used by LWIPMgr.  These should start from MAX_SHARED_SIG
  */
@@ -63,6 +66,9 @@ typedef struct {
 } EthEvt;
 
 
+/* Exported constants --------------------------------------------------------*/
+/* Exported macro ------------------------------------------------------------*/
+/* Exported functions --------------------------------------------------------*/
 
 /**
  * @brief C "constructor" for LWIP "class".
@@ -86,7 +92,7 @@ extern QActive * const AO_LWIPMgr;
   * The simulator will have its own implementation of this function due to the
   * use of totally different ip stacks and threading paradigms.
   *
-  * @param  e: a MsgEvt const event pointer to the MsgEvt that contains the
+  * @param [in|out] e: a MsgEvt const event pointer to the MsgEvt that contains the
   * length and message to be sent.
   *
   * @return None
