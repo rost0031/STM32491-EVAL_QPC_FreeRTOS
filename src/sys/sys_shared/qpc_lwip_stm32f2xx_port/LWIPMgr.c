@@ -40,7 +40,7 @@
 Q_DEFINE_THIS_FILE;                 /* For QSPY to know the name of this file */
 Q_ASSERT_COMPILE(MAX_SHARED_SIG < DEV_DRIVER_SIG);/* app signal overlap check */
 
-/* Private typedef -----------------------------------------------------------*/
+/* Private typedefs ----------------------------------------------------------*/
 /**
  * \enum TCP socket states.
  */

@@ -7,6 +7,8 @@
  * @email  	harry_rostovtsev@datacard.com
  * Copyright (C) 2014 Datacard. All rights reserved.
  */
+
+/* Includes ------------------------------------------------------------------*/
 #include "qp_port.h"                                        /* for QP support */
 
 #include "LWIPMgr.h"                               /* for starting LWIPMgr AO */
@@ -17,17 +19,32 @@
 #include "Shared.h"
 #include "version.h"
 
-/* Local-scope objects -----------------------------------------------------*/
-static QEvt const    *l_CommStackMgrQueueSto[50];
-static QEvt const    *l_LWIPMgrQueueSto[50];
-static QEvt const    *l_SerialMgrQueueSto[50];
-static QSubscrList   l_subscrSto[MAX_PUB_SIG];
+/* Compile-time called macros ------------------------------------------------*/
+Q_DEFINE_THIS_FILE;                 /* For QSPY to know the name of this file */
 
+/* Private typedefs ----------------------------------------------------------*/
+
+/* Private defines -----------------------------------------------------------*/
+/* Private macros ------------------------------------------------------------*/
+/* Private variables and Local objects ---------------------------------------*/
+static QEvt const    *l_CommStackMgrQueueSto[50];  /**< Storage for CommStackMgr event Queue */
+static QEvt const    *l_LWIPMgrQueueSto[50];       /**< Storage for LWIPMgr event Queue */
+static QEvt const    *l_SerialMgrQueueSto[50];     /**< Storage for SerialMgr event Queue */
+static QSubscrList   l_subscrSto[MAX_PUB_SIG];     /**< Storage for subscribe/publish event Queue */
+
+/**
+ * \union Small Events.
+ * This union is a storage for small sized events.
+ */
 static union SmallEvents {
     void   *e0;                                       /* minimum event size */
-    uint8_t e1[sizeof(QEvent)];
+    uint8_t e1[sizeof(QEvt)];
 } l_smlPoolSto[20];                     /* storage for the small event pool */
 
+/**
+ * \union Medium Events.
+ * This union is a storage for medium sized events.
+ */
 static union MediumEvents {
     void   *e0;                                       /* minimum event size */
     uint8_t e1[sizeof(MsgEvt)];
@@ -35,6 +52,10 @@ static union MediumEvents {
     uint8_t e3[sizeof(SerialDataEvt)];
 } l_medPoolSto[100];                    /* storage for the medium event pool */
 
+/**
+ * \union Large Events.
+ * This union is a storage for large sized events.
+ */
 //static union LargeEvents {
 //    void   *e0;                                       /* minimum event size */
 //    uint8_t e1[sizeof(MsgEvt)];
@@ -42,6 +63,8 @@ static union MediumEvents {
 //    uint8_t e3[sizeof(SerialDataEvt)];
 //} l_lrgPoolSto[10];                    /* storage for the large event pool */
 
+/* Private function prototypes -----------------------------------------------*/
+/* Private functions ---------------------------------------------------------*/
 /*..........................................................................*/
 int main(void) {
 

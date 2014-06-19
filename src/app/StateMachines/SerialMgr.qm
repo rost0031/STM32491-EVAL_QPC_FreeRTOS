@@ -205,7 +205,7 @@ QEQueue_init(
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE;                 /* For QSPY to know the name of this file */
 
-/* Private typedef -----------------------------------------------------------*/
+/* Private typedefs ----------------------------------------------------------*/
 $declare(AOs::SerialMgr)
 
 /* Private defines -----------------------------------------------------------*/
@@ -238,6 +238,7 @@ $define(AOs::SerialMgr)
  * @email   harry_rostovtsev@datacard.com
  * Copyright (C) 2014 Datacard. All rights reserved.
  */
+
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef SERIALMGR_H_
 #define SERIALMGR_H_
@@ -246,11 +247,12 @@ $define(AOs::SerialMgr)
 #include &quot;qp_port.h&quot;                                        /* for QP support */
 #include &quot;Shared.h&quot;                                   /*  Common Declarations */
 
+/* Exported defines ----------------------------------------------------------*/
+/* Exported macros -----------------------------------------------------------*/
 /* Exported types ------------------------------------------------------------*/
 $declare(Events)
 
 /* Exported constants --------------------------------------------------------*/
-/* Exported macro ------------------------------------------------------------*/
 /* Exported functions --------------------------------------------------------*/
 $declare(AOs::SerialMgr_ctor)
 $declare(AOs::AO_SerialMgr)

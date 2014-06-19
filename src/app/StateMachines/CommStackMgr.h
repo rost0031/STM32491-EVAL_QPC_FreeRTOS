@@ -30,6 +30,7 @@
  * @email   harry_rostovtsev@datacard.com
  * Copyright (C) 2014 Datacard. All rights reserved.
  */
+
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef COMMSTACKMGR_H_
 #define COMMSTACKMGR_H_
@@ -37,9 +38,10 @@
 /* Includes ------------------------------------------------------------------*/
 #include "qp_port.h"                                        /* for QP support */
 
+/* Exported defines ----------------------------------------------------------*/
+/* Exported macros -----------------------------------------------------------*/
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
-/* Exported macro ------------------------------------------------------------*/
 /* Exported functions --------------------------------------------------------*/
 
 /**

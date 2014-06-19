@@ -29,6 +29,7 @@
  * @email      harry_rostovtsev@datacard.com
  * Copyright (C) 2014 Datacard. All rights reserved.
  */
+
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef LWIPMGR_H_
 #define LWIPMGR_H_
@@ -37,8 +38,10 @@
 #include "qp_port.h"                                        /* for QP support */
 #include "project_includes.h"           /* Includes common to entire project. */
 
+/* Exported defines ----------------------------------------------------------*/
+/* Exported macros -----------------------------------------------------------*/
 /* Exported types ------------------------------------------------------------*/
-/*! \enum LWIPMgrSignals
+/*! \enum LWIPMgr Signals
  * Signals used by LWIPMgr.  These should start from MAX_SHARED_SIG
  */
 enum LWIPMgrSignals {
@@ -67,7 +70,6 @@ typedef struct {
 
 
 /* Exported constants --------------------------------------------------------*/
-/* Exported macro ------------------------------------------------------------*/
 /* Exported functions --------------------------------------------------------*/
 
 /**

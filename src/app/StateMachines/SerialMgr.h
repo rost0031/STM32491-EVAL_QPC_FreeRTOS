@@ -29,6 +29,7 @@
  * @email   harry_rostovtsev@datacard.com
  * Copyright (C) 2014 Datacard. All rights reserved.
  */
+
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef SERIALMGR_H_
 #define SERIALMGR_H_
@@ -37,6 +38,8 @@
 #include "qp_port.h"                                        /* for QP support */
 #include "Shared.h"                                   /*  Common Declarations */
 
+/* Exported defines ----------------------------------------------------------*/
+/* Exported macros -----------------------------------------------------------*/
 /* Exported types ------------------------------------------------------------*/
 
 /**
@@ -56,7 +59,6 @@ typedef struct {
 
 
 /* Exported constants --------------------------------------------------------*/
-/* Exported macro ------------------------------------------------------------*/
 /* Exported functions --------------------------------------------------------*/
 
 /**

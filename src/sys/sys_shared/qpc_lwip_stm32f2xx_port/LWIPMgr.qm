@@ -604,7 +604,7 @@ LOG_printf(&quot;Connection closed\n&quot;);</code>
 Q_DEFINE_THIS_FILE;                 /* For QSPY to know the name of this file */
 Q_ASSERT_COMPILE(MAX_SHARED_SIG &lt; DEV_DRIVER_SIG);/* app signal overlap check */
 
-/* Private typedef -----------------------------------------------------------*/
+/* Private typedefs ----------------------------------------------------------*/
 /**
  * \enum TCP socket states.
  */
@@ -729,6 +729,7 @@ static void udp_rx_handler(void *arg, struct udp_pcb *upcb,
  * @email      harry_rostovtsev@datacard.com
  * Copyright (C) 2014 Datacard. All rights reserved.
  */
+
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef LWIPMGR_H_
 #define LWIPMGR_H_
@@ -737,8 +738,10 @@ static void udp_rx_handler(void *arg, struct udp_pcb *upcb,
 #include &quot;qp_port.h&quot;                                        /* for QP support */
 #include &quot;project_includes.h&quot;           /* Includes common to entire project. */
 
+/* Exported defines ----------------------------------------------------------*/
+/* Exported macros -----------------------------------------------------------*/
 /* Exported types ------------------------------------------------------------*/
-/*! \enum LWIPMgrSignals
+/*! \enum LWIPMgr Signals
  * Signals used by LWIPMgr.  These should start from MAX_SHARED_SIG
  */
 enum LWIPMgrSignals {
@@ -749,7 +752,6 @@ enum LWIPMgrSignals {
 $declare(Events)
 
 /* Exported constants --------------------------------------------------------*/
-/* Exported macro ------------------------------------------------------------*/
 /* Exported functions --------------------------------------------------------*/
 $declare(AOs::LWIPMgr_ctor)
 $declare(AOs::AO_LWIPMgr)

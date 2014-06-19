@@ -160,7 +160,7 @@ QTimeEvt_ctor(&amp;me-&gt;timeTestTimerEvt, TIME_TEST_SIG);</code>
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE;                 /* For QSPY to know the name of this file */
 
-/* Private typedef -----------------------------------------------------------*/
+/* Private typedefs ----------------------------------------------------------*/
 typedef void (*pFunction)(void);
 
 $declare(AOs::CommStackMgr)
@@ -203,6 +203,7 @@ $define(AOs::CommStackMgr)
  * @email   harry_rostovtsev@datacard.com
  * Copyright (C) 2014 Datacard. All rights reserved.
  */
+
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef COMMSTACKMGR_H_
 #define COMMSTACKMGR_H_
@@ -210,9 +211,10 @@ $define(AOs::CommStackMgr)
 /* Includes ------------------------------------------------------------------*/
 #include &quot;qp_port.h&quot;                                        /* for QP support */
 
+/* Exported defines ----------------------------------------------------------*/
+/* Exported macros -----------------------------------------------------------*/
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
-/* Exported macro ------------------------------------------------------------*/
 /* Exported functions --------------------------------------------------------*/
 $declare(AOs::CommStackMgr_ctor)
 $declare(AOs::AO_CommStackMgr)

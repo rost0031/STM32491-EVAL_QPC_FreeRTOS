@@ -38,7 +38,7 @@
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE;                 /* For QSPY to know the name of this file */
 
-/* Private typedef -----------------------------------------------------------*/
+/* Private typedefs ----------------------------------------------------------*/
 
 /**
  * \brief SerialMgr Active Object (AO) "class" that manages the debug serial port.
