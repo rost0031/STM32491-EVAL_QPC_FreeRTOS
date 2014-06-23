@@ -1,7 +1,12 @@
 /**
- * @file   console_output.c
+ * @file    console_output.c
+ * @brief   Non blocking, DMA output over UART.
+ *
  * This file contains the definitions for debug and output functions over the
- * serial dma console.
+ * serial DMA console.
+ *
+ * Note 1: In order to use these DMA UART output functions, there needs to exist
+ * an Active Object that manages access to the UART and DMA HW.
  *
  * @date   06/09/2014
  * @author Harry Rostovtsev
@@ -202,6 +207,5 @@ void CON_slow_output(
    va_end(args);
 
    /* 4. Print directly to the console now. THIS IS A SLOW OPERATION! */
-//   fprintf(stderr, "%s", tmpBuffer);
    fwrite(tmpBuffer, tmpBufferIndex, 1, stderr);
 }
