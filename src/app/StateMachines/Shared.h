@@ -1,14 +1,14 @@
 /**
  * @file 	Shared.h
  * @brief   Contains all the Shared Events, Priorities, and any other needed
- * 			declarations for the Shared Laminator state machines.  This is
- * 			necessary to make sure there is no overlap in enumerations between
- * 			the shared code and the code pulling the shared code in.
+ * 			declarations for the Shared state machines.  This is necessary to
+ * 			make sure there is no overlap in enumerations between	the shared
+ * 			code and the code pulling the shared code in.
  *
- * @date   	10/01/2012
+ * @date   	06/23/2014
  * @author 	Harry Rostovtsev
  * @email  	harry_rostovtsev@datacard.com
- * Copyright (C) 2012 Datacard. All rights reserved.
+ * Copyright (C) 2014 Datacard. All rights reserved.
  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
@@ -41,10 +41,10 @@
  * Note: Never use priority 0.
  */
 enum AO_Priorities {
-   NEVER_USE_ZERO_PRIORITY = 0,    /**< Never use this.  It breaks everything */
-   SERIAL_MGR_PRIORITY,                         /**< Priority of SerialMgr AO */
-   COMM_STACK_PRIORITY,                      /**< Priority of CommStackMgr AO */
-   ETH_PRIORITY, /**< Priority of LWIP AO which handles ethernet comms.  It should always be almost the lowest priority */
+   NEVER_USE_ZERO_PRIORITY = 0,   /**< Never use this.  It breaks everything. */
+   SERIAL_MGR_PRIORITY,                        /**< Priority of SerialMgr AO. */
+   COMM_STACK_PRIORITY,                     /**< Priority of CommStackMgr AO. */
+   ETH_PRIORITY,       /**< Priority of LWIP AO which handles ethernet comms. */
    /* Insert new priorities here ... */
    MAX_SHARED_PRIORITY     /**< This should always be at the end of this list */
 };
@@ -75,4 +75,4 @@ typedef struct MsgEvtTag {
 /* Exported constants --------------------------------------------------------*/
 /* Exported functions --------------------------------------------------------*/
 #endif                                                           /* SHARED_H_ */
-/******** Copyright (C) 2012 Datacard. All rights reserved *****END OF FILE****/
+/******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/

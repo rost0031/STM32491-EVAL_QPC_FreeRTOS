@@ -1,33 +1,30 @@
-// $Id$
 /**
  * @file   stm32f2xx_it.c
  * @brief  This file contains all interrupts for motors and associated sensors
  * 		   for the Redwood_H1 board. This file is derived from the original
  * 		   version distributed by ST Micro.
  *
- * @date   09/27/2012
+ * @date   06/23/2014
  * @author Harry Rostovtsev
  * @email  harry_rostovtsev@datacard.com
- * Copyright (C) 2012 Datacard. All rights reserved.
+ * Copyright (C) 2014 Datacard. All rights reserved.
  */
-// $Log$
 
 /* Includes ------------------------------------------------------------------*/
-
 #include "stm32f2xx_it.h"
-#include "stm32f2xx_dma.h"
-#include "stm32f2xx_tim.h"
-#include "stm32f2xx_rtc.h"
-#include "stm32f2xx_exti.h"
+#include "stm32f2xx_dma.h"                                 /* for DMA support */
+#include "stm32f2xx_tim.h"                                 /* for TIM support */
+#include "stm32f2xx_rtc.h"                                 /* for RTC support */
+#include "stm32f2xx_exti.h"                               /* for EXTI support */
 #include "project_includes.h"        /* application events and active objects */
 #include "qp_port.h"                                        /* for QP support */
 #include "Shared.h"                                   /*  Common Declarations */
-#include <stdio.h>
-#include "CBSignals.h"
-#include "SerialMgr.h"
+#include <stdio.h>                                    /* for printf() support */
+#include "CBSignals.h"                            /*  For signal declarations */
+#include "SerialMgr.h"                                 /* for SerialMgr types */
 #include "time.h"
 
-/** @addtogroup Template_Project
+/** @addtogroup groupISR
  * @{
  */
 
@@ -219,4 +216,8 @@ void RTC_WKUP_IRQHandler(void) {
 
 //   QK_ISR_EXIT();                          /* inform QK about exiting an ISR */
 }
+
+/**
+ * @} end addtogroup groupBSP
+ */
 /******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/

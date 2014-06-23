@@ -16,9 +16,15 @@
 *****************************************************************************/
 /*${.::LWIPMgr_gen.h} ......................................................*/
 /**
- * @file     LWIPMgr.h
- * This file contains the declarations of the LWIPMgr Active Object and its
- * state machines.
+ * @file  LWIPMgr.h
+ * @brief This file contains the declarations of the LWIPMgr Active Object and
+ * its state machines.
+ *
+ * LWIPMgr is responsible for handling all communications with the ethernet
+ * driver.  It is the only state machine that has exclusive access to the
+ * ethernet hardware and facilitates sharing by allowing other state machines
+ * to publish events to the QPC RTOS.  QPC queues the events to be handled by
+ * the LWIPMgr state machine in the FIFO order.
  *
  * Note: If editing this file, please make sure to update the LWIPMgr.qm
  * model.  The generated code from that model should be very similar to the

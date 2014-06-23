@@ -17,7 +17,7 @@
 #include "stm32f2xx_rcc.h"
 #include <string.h>
 
-/** @addtogroup STM32F2x7_ETH_Driver
+/** @addtogroup groupKSZ8863
  * @brief ETH driver modules
  * @{
  */

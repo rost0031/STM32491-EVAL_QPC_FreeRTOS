@@ -17,8 +17,14 @@
 /*${.::LWIPMgr_gen.c} ......................................................*/
 /**
  * @file     LWIPMgr.c
- * This file contains the definition of the LWIPMgr Active Object and its
- * state machines.
+ * @brief This file contains the definitions of the LWIPMgr Active Object and
+ * its state machines.
+ *
+ * LWIPMgr is responsible for handling all communications with the ethernet
+ * driver.  It is the only state machine that has exclusive access to the
+ * ethernet hardware and facilitates sharing by allowing other state machines
+ * to publish events to the QPC RTOS.  QPC queues the events to be handled by
+ * the LWIPMgr state machine in the FIFO order.
  *
  * Note: If editing this file, please make sure to update the LWIPMgr.qm
  * model.  The generated code from that model should be very similar to the
@@ -37,7 +43,7 @@
 #include "lwip.h"                                             /* lwIP stack */
 
 /* Compile-time called macros ------------------------------------------------*/
-Q_DEFINE_THIS_FILE;                 /* For QSPY to know the name of this file */
+Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */
 Q_ASSERT_COMPILE(MAX_SHARED_SIG < DEV_DRIVER_SIG);/* app signal overlap check */
 
 /* Private typedefs ----------------------------------------------------------*/

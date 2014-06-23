@@ -1,15 +1,17 @@
-// $Id$
 /**
  * @file   stm32f2xx_it.h
- * @brief  This file contains the headers of the interrupt handlers. This file
- *         is derived from the original version distributed by ST Micro.
+ * @brief  This file contains the declarations of the interrupt handlers.
  *
- * @date   09/27/2012
+ * This file is derived from the original version distributed by ST Micro. THis
+ * is not strictly necessary since the ISRs are "weak" linked to the assembly
+ * code that calls them but this provides a good place to document the ISRs in
+ * a header file.
+ *
+ * @date   06/23/2014
  * @author Harry Rostovtsev
  * @email  harry_rostovtsev@datacard.com
- * Copyright (C) 2012 Datacard. All rights reserved.
+ * Copyright (C) 2014 Datacard. All rights reserved.
  */
-// $Log$
 
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef __STM32F2xx_IT_H
@@ -65,5 +67,5 @@ void RTC_WKUP_IRQHandler(void) __attribute__((__interrupt__));
 }
 #endif
 
-#endif /* __STM32F2xx_IT_H */
-/*********** Copyright (C) 2012 Datacard. All rights reserved *****END OF FILE****/
+#endif                                                    /* __STM32F2xx_IT_H */
+/******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/

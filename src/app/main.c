@@ -20,10 +20,9 @@
 #include "version.h"
 
 /* Compile-time called macros ------------------------------------------------*/
-Q_DEFINE_THIS_FILE;                 /* For QSPY to know the name of this file */
+Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */
 
 /* Private typedefs ----------------------------------------------------------*/
-
 /* Private defines -----------------------------------------------------------*/
 /* Private macros ------------------------------------------------------------*/
 /* Private variables and Local objects ---------------------------------------*/
@@ -65,7 +64,7 @@ static union MediumEvents {
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
-/*..........................................................................*/
+/*............................................................................*/
 int main(void) {
 
     /* initialize the Board Support Package */

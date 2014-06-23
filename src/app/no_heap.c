@@ -1,4 +1,3 @@
-// $Id$
 /**
  * @file no_heap.c
  *
@@ -10,7 +9,6 @@
  * @email  harry_rostovtsev@datacard.com
  * Copyright (C) 2012 Datacard. All rights reserved.
  */
-// $Log$
 /*****************************************************************************
 * Product: Dummy heap management to reduce the codesize
 * Date of the Last Update:  Apr 07, 2008
@@ -37,11 +35,20 @@
 * Quantum Leaps Web site:  http://www.quantum-leaps.com
 * e-mail:                  info@quantum-leaps.com
 *****************************************************************************/
-#include "qp_port.h"
-#include <stdlib.h>                /* for prototypes of malloc() and free() */
 
-Q_DEFINE_THIS_FILE
+/* Includes ------------------------------------------------------------------*/
+#include "qp_port.h"                                        /* for QP support */
+#include <stdlib.h>                  /* for prototypes of malloc() and free() */
 
+/* Compile-time called macros ------------------------------------------------*/
+Q_DEFINE_THIS_FILE;                 /* For QSPY to know the name of this file */
+
+/* Private typedefs ----------------------------------------------------------*/
+/* Private defines -----------------------------------------------------------*/
+/* Private macros ------------------------------------------------------------*/
+/* Private variables and Local objects ---------------------------------------*/
+/* Private function prototypes -----------------------------------------------*/
+/* Private functions ---------------------------------------------------------*/
 /*..........................................................................*/
 void *malloc(size_t size) {
     Q_ERROR();
@@ -60,4 +67,4 @@ void *calloc(size_t nelements, size_t elementSize) {
     (void)elementSize;
     return ((void *)0);
 }
-
+/******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/

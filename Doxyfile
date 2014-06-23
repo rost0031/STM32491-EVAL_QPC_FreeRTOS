@@ -414,7 +414,7 @@ EXTRACT_ALL            = YES
 # be included in the documentation.
 # The default value is: NO.
 
-EXTRACT_PRIVATE        = NO
+EXTRACT_PRIVATE        = YES
 
 # If the EXTRACT_PACKAGE tag is set to YES all members with package or internal
 # scope will be included in the documentation.
@@ -426,7 +426,7 @@ EXTRACT_PACKAGE        = NO
 # included in the documentation.
 # The default value is: NO.
 
-EXTRACT_STATIC         = NO
+EXTRACT_STATIC         = YES
 
 # If the EXTRACT_LOCAL_CLASSES tag is set to YES classes (and structs) defined
 # locally in source files will be included in the documentation. If set to NO
@@ -442,7 +442,7 @@ EXTRACT_LOCAL_CLASSES  = YES
 # included.
 # The default value is: NO.
 
-EXTRACT_LOCAL_METHODS  = NO
+EXTRACT_LOCAL_METHODS  = YES
 
 # If this flag is set to YES, the members of anonymous namespaces will be
 # extracted and appear in the documentation as a namespace called
@@ -840,7 +840,21 @@ EXCLUDE                = /home/developer/workspace/CouplerBoardProto_L1/src/sys/
                          /home/developer/workspace/CouplerBoardProto_L1/src/sys/qpc_shared/ports/arm-cm/vanilla \
                          /home/developer/workspace/CouplerBoardProto_L1/src/sys/qpc_shared/ports/arm-cm/qk/arm_keil \
                          /home/developer/workspace/CouplerBoardProto_L1/src/sys/qpc_shared/ports/arm-cm/qk/iar \
-                         /home/developer/workspace/CouplerBoardProto_L1/src/sys/qpc_shared/ports/arm-cm/qk/iar
+                         /home/developer/workspace/CouplerBoardProto_L1/src/sys/qpc_shared/ports/arm-cm/qk/iar \
+                         src/sys/qpc_shared/examples \
+                         src/sys/qpc_shared/ports/80x86 \
+                         src/sys/qpc_shared/ports/arm-cm/cmsis \
+                         src/sys/qpc_shared/ports/arm-cm/qk/arm_keil \
+                         src/sys/qpc_shared/ports/arm-cm/qk/iar \
+                         src/sys/qpc_shared/ports/arm-cm/vanilla \
+                         src/sys/qpc_shared/ports/lint \
+                         src/sys/qpc_shared/ports/posix \
+                         src/sys/qpc_shared/ports/ucos2 \
+                         src/sys/qpc_shared/ports/win32 \
+                         src/sys/qpc_shared/ports/win32 \
+                         src/sys/qpc_shared/examples \
+                         src/bsp/bsp_shared/CMSIS_shared/Include \
+                         src/bsp/bsp_shared/CMSIS_shared/Device/ST/STM32F10x
 
 # The EXCLUDE_SYMLINKS tag can be used to select whether or not files or
 # directories that are symbolic links (a Unix file system feature) are excluded

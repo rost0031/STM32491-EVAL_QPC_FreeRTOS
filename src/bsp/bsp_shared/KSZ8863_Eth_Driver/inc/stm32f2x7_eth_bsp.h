@@ -1,15 +1,15 @@
-// $Id$
 /**
  * @file 	stm32f2x7_eth_bsp.h
- * @brief   This file contains the Board Support Package functions for the
- * 			Redwood_H1_Board and Micrel KSZ8863 Ethernet switch
+ * @brief   BSP for Ethernet.
+ * This file contains the Board Support Package functions for the Micrel KSZ8863
+ * Ethernet switch
  *
  * @date   	09/27/2012
  * @author 	Harry Rostovtsev
  * @email  	harry_rostovtsev@datacard.com
  * Copyright (C) 2012 Datacard. All rights reserved.
  */
-// $Log$
+
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef __STM32F2x7_ETH_BSP_H
 #define __STM32F2x7_ETH_BSP_H

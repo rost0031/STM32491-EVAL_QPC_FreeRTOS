@@ -20,7 +20,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f2x7_eth_conf.h"
 
-/** @addtogroup STM32F2x7_ETH_Driver
+/** @addtogroup groupKSZ8863
   * @{
   */
 
