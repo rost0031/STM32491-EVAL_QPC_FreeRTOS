@@ -84,7 +84,7 @@ SYS_DIR					= $(SRC_DIR)/sys
 
 # Ethernet Driver
 ETH_DRV_DIR				= $(BSP_DIR)/bsp_shared/KSZ8863_Eth_Driver
-QP_LWIP_PORT_DIR		= $(SYS_DIR)/sys_shared/qpc_lwip_stm32f2xx_port
+QP_LWIP_PORT_DIR		= $(BSP_DIR)/bsp_shared/qpc_lwip_port
 
 # QPC directories
 QPC 					= $(SYS_DIR)/qpc_shared
@@ -100,8 +100,8 @@ LWIP_DIR				= $(SYS_DIR)/lwip_shared
 BASE64_DIR				= $(SYS_DIR)/libb64_shared
 
 # Directories that need to be passed down to LWIP
-LWIP_PORT_FOR_LWIP		= ../sys_shared/qpc_lwip_stm32f2xx_port
-BSP_DIR_FOR_LWIP		= ../sys_shared/runtime
+LWIP_PORT_FOR_LWIP		= ../../bsp/bsp_shared/qpc_lwip_port
+BSP_DIR_FOR_LWIP		= ../../bsp/bsp_shared/runtime
 LWIP_SRC_DIR			= ../../
 
 # Common state machines directory
@@ -119,7 +119,7 @@ VPATH 					= $(APP_DIR) \
 						  $(QP_LWIP_PORT_DIR)/netif \
 						  \
 						  $(BASE64_DIR) \
-						  $(SYS_DIR)/sys_shared/runtime \
+						  $(BSP_DIR)/bsp_shared/runtime \
 						  \
 						  $(STM32F2XX_STD_PERIPH)/src
 
@@ -137,7 +137,7 @@ INCLUDES  				= -I$(SRC_DIR) \
 						  -I$(BSP_DIR)/bsp_shared \
 						  -I$(ETH_DRV_DIR)/inc \
 						  -I$(BASE64_DIR) \
-						  -I$(SYS_DIR)/sys_shared/runtime \
+						  -I$(BSP_DIR)/bsp_shared/runtime \
 						  \
 						  -I$(LWIP_DIR)/src/include \
 						  -I$(LWIP_DIR)/src/include/netif \
