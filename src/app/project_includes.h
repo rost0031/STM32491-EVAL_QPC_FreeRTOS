@@ -124,6 +124,16 @@
        * @ingroup groupSharedBSP
        */
 
+      /**
+       * @defgroup groupLWIP_QPC_Eth QPC implementation of the LWIP network driver interface
+       * @ingroup groupSharedBSP
+       */
+
+      /**
+       * @defgroup groupSTM32runtime STM32 init, runtime, and optimizations.
+       * @ingroup groupSharedBSP
+       */
+
    /**
     * @defgroup groupFlash Flash Support
     * @ingroup groupBSP
@@ -153,20 +163,6 @@
     * @ingroup groupSYS
     */
 
-   /**
-    * @defgroup groupSharedSYS Shared System
-    * @ingroup groupSYS
-    */
-
-      /**
-       * @defgroup groupLWIP_QPC_Eth QPC implementation of the LWIP network driver interface
-       * @ingroup groupSharedSYS
-       */
-
-      /**
-       * @defgroup groupSTM32Opt STM32 specific init and optimizations.
-       * @ingroup groupSharedSYS
-       */
 
 /* Includes ------------------------------------------------------------------*/
 #include "mem_datacopy.h"      /* Very fast STM32 specific MEMCPY declaration */
