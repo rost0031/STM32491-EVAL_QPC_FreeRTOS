@@ -5,22 +5,34 @@
  * This file contains the definitions for debug and output functions over the
  * serial DMA console.
  *
- * Note 1: In order to use these DMA UART output functions, there needs to exist
- * an Active Object that manages access to the UART and DMA HW.
  *
  * @date   06/09/2014
  * @author Harry Rostovtsev
  * @email  harry_rostovtsev@datacard.com
  * Copyright (C) 2014 Datacard. All rights reserved.
+ *
+ * @addtogroup groupSerial
+ * @{
  */
+
+/* Includes ------------------------------------------------------------------*/
 #include "console_output.h"
 #include "qp_port.h"                                        /* for QP support */
 #include "CBSignals.h"
 #include "CBErrors.h"
-#include "Shared.h"
+#include "Shared.h"                                   /*  Common Declarations */
 #include "time.h"
 #include "SerialMgr.h"
 
+/* Compile-time called macros ------------------------------------------------*/
+Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */
+
+/* Private typedefs ----------------------------------------------------------*/
+/* Private defines -----------------------------------------------------------*/
+/* Private macros ------------------------------------------------------------*/
+/* Private variables and Local objects ---------------------------------------*/
+/* Private function prototypes -----------------------------------------------*/
+/* Private functions ---------------------------------------------------------*/
 /******************************************************************************/
 void CON_output(
       DEBUG_LEVEL_T dbgLvl,
@@ -209,3 +221,8 @@ void CON_slow_output(
    /* 4. Print directly to the console now. THIS IS A SLOW OPERATION! */
    fwrite(tmpBuffer, tmpBufferIndex, 1, stderr);
 }
+
+/**
+ * @} end addtogroup groupSerial
+ */
+/******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/

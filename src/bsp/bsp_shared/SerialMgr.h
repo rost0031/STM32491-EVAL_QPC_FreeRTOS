@@ -17,10 +17,10 @@
 /*${.::SerialMgr_gen.h} ....................................................*/
 /**
  * @file    SerialMgr.h
- * Declarations for functions for the SerialMgr AO.  This state
- * machine handles all output to the serial port
+ * @brief   Declarations for functions for the SerialMgr AO.
+ * This state machine handles all output to the serial port
  *
- * Note: If editing this file, please make sure to update the CommStackMgr.qm
+ * @note 1: If editing this file, please make sure to update the SerialMgr.qm
  * model.  The generated code from that model should be very similar to the
  * code in this file.
  *
@@ -28,6 +28,9 @@
  * @author  Harry Rostovtsev
  * @email   harry_rostovtsev@datacard.com
  * Copyright (C) 2014 Datacard. All rights reserved.
+ *
+ * @addtogroup groupSerial
+ * @{
  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
@@ -77,5 +80,8 @@ void SerialMgr_ctor(void);
 extern QActive * const AO_SerialMgr;
 
 
+/**
+ * @} end addtogroup groupSerial
+ */
 #endif                                                        /* SERIALMGR_H_ */
 /******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/

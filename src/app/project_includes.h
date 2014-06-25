@@ -104,6 +104,16 @@
        * @ingroup groupSharedBSP
        */
 
+         /**
+          * @defgroup groupSerialFast Fast DMA Serial output functions
+          * @ingroup groupSerial
+          */
+
+         /**
+          * @defgroup groupSerialSlow Slow blocking Serial output functions
+          * @ingroup groupSerial
+          */
+
       /**
        * @defgroup groupTime Time/RTC
        * @ingroup groupSharedBSP

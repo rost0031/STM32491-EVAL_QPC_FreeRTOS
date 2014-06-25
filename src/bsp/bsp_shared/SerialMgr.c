@@ -17,10 +17,10 @@
 /*${.::SerialMgr_gen.c} ....................................................*/
 /**
  * @file    SerialMgr.c
- * Declarations for functions for the SerialMgr AO.  This state
- * machine handles all output to the serial port
+ * @brief   Declarations for functions for the SerialMgr AO.
+ * This state machine handles all output to the serial port.
  *
- * Note: If editing this file, please make sure to update the SerialMgr.qm
+ * @note 1: If editing this file, please make sure to update the SerialMgr.qm
  * model.  The generated code from that model should be very similar to the
  * code in this file.
  *
@@ -28,6 +28,9 @@
  * @author  Harry Rostovtsev
  * @email   harry_rostovtsev@datacard.com
  * Copyright (C) 2014 Datacard. All rights reserved.
+ *
+ * @addtogroup groupSerial
+ * @{
  */
 
 /* Includes ------------------------------------------------------------------*/
@@ -41,11 +44,12 @@ Q_DEFINE_THIS_FILE;                 /* For QSPY to know the name of this file */
 /* Private typedefs ----------------------------------------------------------*/
 
 /**
- * \brief SerialMgr Active Object (AO) "class" that manages the debug serial port.
+ * @brief SerialMgr Active Object (AO) "class" that manages the debug serial port.
  * Upon receiving an event it copies the data to the UART DMA buffer and activates
  * DMA to do the actual outputting to serial, freeing up the system to continue to
  * do real work. The interrupt at the end of the DMA process disables the DMA and
- * lets the AO know that the transfer has completed.
+ * lets the AO know that the transfer has completed.  See SerialMgr.qm for diagram
+ * and model.
  */
 /*${AOs::SerialMgr} ........................................................*/
 typedef struct {
@@ -66,35 +70,36 @@ typedef struct {
 static QState SerialMgr_initial(SerialMgr * const me, QEvt const * const e);
 
 /**
- * This state is a catch-all Active state.  If any signals need
- * to be handled that do not cause state transitions and are
- * common to the entire AO, they should be handled here.
+ * @brief This state is a catch-all Active state.
+ * If any signals need to be handled that do not cause state transitions and
+ * are common to the entire AO, they should be handled here.
  *
- * @param  [in|out] me: Pointer to the state machine
- * @param  [in|out] e:  Pointer to the event being processed.
- * @return status: QState type that specifies where the state
+ * @param  [in,out] me: Pointer to the state machine
+ * @param  [in,out] e:  Pointer to the event being processed.
+ * @return status_: QState type that specifies where the state
  * machine is going next.
  */
 static QState SerialMgr_Active(SerialMgr * const me, QEvt const * const e);
 
 /**
- * This state indicates that the DMA is currently idle and the incoming msg can
- * be sent out to the DMA buffer to be printed out to the serial port.
+ * @brief This state indicates that the DMA is currently idle and the
+ * incoming msg can be sent out to the DMA buffer to be printed out to the
+ * serial port.
  *
- * @param  [in|out] me: Pointer to the state machine
- * @param  [in|out] e:  Pointer to the event being processed.
+ * @param  [in,out] me: Pointer to the state machine
+ * @param  [in,out] e:  Pointer to the event being processed.
  * @return status: QState type that specifies where the state
  * machine is going next.
  */
 static QState SerialMgr_Idle(SerialMgr * const me, QEvt const * const e);
 
 /**
- * This state indicates that the DMA is currently busy outputting to the serial
- * port and cannot process incoming data.  Instead, incoming events will be
+ * @brief   This state indicates that the DMA is currently busy outputting to
+ * the serial port and cannot process incoming data; incoming events will be
  * deferred in this state and handled once the AO goes back to Idle state.
  *
- * @param  [in|out] me: Pointer to the state machine
- * @param  [in|out] e:  Pointer to the event being processed.
+ * @param  [in,out] me: Pointer to the state machine
+ * @param  [in,out] e:  Pointer to the event being processed.
  * @return status: QState type that specifies where the state
  * machine is going next.
  */
@@ -135,11 +140,12 @@ void SerialMgr_ctor(void) {
 }
 
 /**
- * \brief SerialMgr Active Object (AO) "class" that manages the debug serial port.
+ * @brief SerialMgr Active Object (AO) "class" that manages the debug serial port.
  * Upon receiving an event it copies the data to the UART DMA buffer and activates
  * DMA to do the actual outputting to serial, freeing up the system to continue to
  * do real work. The interrupt at the end of the DMA process disables the DMA and
- * lets the AO know that the transfer has completed.
+ * lets the AO know that the transfer has completed.  See SerialMgr.qm for diagram
+ * and model.
  */
 /*${AOs::SerialMgr} ........................................................*/
 /*${AOs::SerialMgr::SM} ....................................................*/
@@ -161,13 +167,13 @@ static QState SerialMgr_initial(SerialMgr * const me, QEvt const * const e) {
 }
 
 /**
- * This state is a catch-all Active state.  If any signals need
- * to be handled that do not cause state transitions and are
- * common to the entire AO, they should be handled here.
+ * @brief This state is a catch-all Active state.
+ * If any signals need to be handled that do not cause state transitions and
+ * are common to the entire AO, they should be handled here.
  *
- * @param  [in|out] me: Pointer to the state machine
- * @param  [in|out] e:  Pointer to the event being processed.
- * @return status: QState type that specifies where the state
+ * @param  [in,out] me: Pointer to the state machine
+ * @param  [in,out] e:  Pointer to the event being processed.
+ * @return status_: QState type that specifies where the state
  * machine is going next.
  */
 /*${AOs::SerialMgr::SM::Active} ............................................*/
@@ -196,11 +202,12 @@ static QState SerialMgr_Active(SerialMgr * const me, QEvt const * const e) {
 }
 
 /**
- * This state indicates that the DMA is currently idle and the incoming msg can
- * be sent out to the DMA buffer to be printed out to the serial port.
+ * @brief This state indicates that the DMA is currently idle and the
+ * incoming msg can be sent out to the DMA buffer to be printed out to the
+ * serial port.
  *
- * @param  [in|out] me: Pointer to the state machine
- * @param  [in|out] e:  Pointer to the event being processed.
+ * @param  [in,out] me: Pointer to the state machine
+ * @param  [in,out] e:  Pointer to the event being processed.
  * @return status: QState type that specifies where the state
  * machine is going next.
  */
@@ -239,12 +246,12 @@ static QState SerialMgr_Idle(SerialMgr * const me, QEvt const * const e) {
 }
 
 /**
- * This state indicates that the DMA is currently busy outputting to the serial
- * port and cannot process incoming data.  Instead, incoming events will be
+ * @brief   This state indicates that the DMA is currently busy outputting to
+ * the serial port and cannot process incoming data; incoming events will be
  * deferred in this state and handled once the AO goes back to Idle state.
  *
- * @param  [in|out] me: Pointer to the state machine
- * @param  [in|out] e:  Pointer to the event being processed.
+ * @param  [in,out] me: Pointer to the state machine
+ * @param  [in,out] e:  Pointer to the event being processed.
  * @return status: QState type that specifies where the state
  * machine is going next.
  */
@@ -304,4 +311,7 @@ static QState SerialMgr_Busy(SerialMgr * const me, QEvt const * const e) {
 }
 
 
+/**
+ * @} end addtogroup groupSerial
+ */
 /******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/

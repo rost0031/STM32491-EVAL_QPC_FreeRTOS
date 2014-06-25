@@ -1,15 +1,17 @@
-// $Id$
 /**
  * @file   serial.c
- * @brief  This file contains the definitions for serial port control.
+ * @brief  Definitions for USART/UART/serial port.
  *
  * @date   05/27/2014
  * @author Harry Rostovtsev
  * @email  harry_rostovtsev@datacard.com
  * Copyright (C) 2014 Datacard. All rights reserved.
+ *
+ * @addtogroup groupSerial
+ * @{
  */
-// $Log$
 
+/* Includes ------------------------------------------------------------------*/
 #include "serial.h"
 #include "stm32f2xx.h"
 #include "project_includes.h"
@@ -25,6 +27,11 @@
 #include "mem_datacopy.h"
 #include "SerialMgr.h"
 
+/* Compile-time called macros ------------------------------------------------*/
+Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */
+
+/* Private typedefs ----------------------------------------------------------*/
+/* Private defines -----------------------------------------------------------*/
 /* Maximum Timeout values for flags and events waiting loops. These timeouts are
    not based on accurate values, they just guarantee that the application will
    not remain stuck if the serial communication is corrupted.
@@ -33,42 +40,50 @@
 #define SERIAL_FLAG_TIMEOUT         ((uint32_t)0x1000)
 #define SERIAL_LONG_TIMEOUT         ((uint32_t)(10 * SERIAL_FLAG_TIMEOUT))
 
+/* Private macros ------------------------------------------------------------*/
+/* Private variables and Local objects ---------------------------------------*/
 /* Buffers for Serial interfaces */
 static char          system_serial_buffer[MAX_MSG_LEN];
 
 /**
- * An internal structure that holds almost all the settings for the USART ports
+ * @brief An internal structure that holds almost all the settings for the U
+ * SART ports.
  */
 static USART_Settings_t s_USART_Port[MAX_SERIAL] =
 {
       {
-            SYSTEM_SERIAL,             // port
+            SYSTEM_SERIAL,             /**< port */
 
             /* USART settings */
-            UART4,                     // usart;
-            115200,                    // usart_baud;
-            RCC_APB1Periph_UART4,      // usart_clk;
-            UART4_IRQn,                // usart_irq_num;
-            UART4_PRIO,                // usart_irq_prio;
+            UART4,                     /**< usart */
+            115200,                    /**< usart_baud */
+            RCC_APB1Periph_UART4,      /**< usart_clk */
+            UART4_IRQn,                /**< usart_irq_num */
+            UART4_PRIO,                /**< usart_irq_prio */
 
-            GPIOC,                     // tx_port;
-            GPIO_Pin_10,               // tx_pin;
-            GPIO_PinSource10,          // tx_af_pin_source;
-            GPIO_AF_UART4,             // tx_af;
+            GPIOC,                     /**< tx_port */
+            GPIO_Pin_10,               /**< tx_pin */
+            GPIO_PinSource10,          /**< tx_af_pin_source */
+            GPIO_AF_UART4,             /**< tx_af */
 
-            GPIOC,                     // rx_port;
-            GPIO_Pin_11,               // rx_pin;
-            GPIO_PinSource11,          // rx_af_pin_source;
-            GPIO_AF_UART4,             // rx_af;
+            GPIOC,                     /**< rx_port */
+            GPIO_Pin_11,               /**< rx_pin */
+            GPIO_PinSource11,          /**< rx_af_pin_source */
+            GPIO_AF_UART4,             /**< rx_af */
 
             /* Buffer management */
-            &system_serial_buffer[0],  // *buffer;
-            0,                         // index
+            &system_serial_buffer[0],  /**< *buffer */
+            0,                         /**< index */
       }
 };
 
+/* Private function prototypes -----------------------------------------------*/
+/* Private functions ---------------------------------------------------------*/
+
 /******************************************************************************/
-void Serial_Init( USART_Port serial_port )
+void Serial_Init(
+      USART_Port_T serial_port
+)
 {
     assert(serial_port < MAX_SERIAL);
 
@@ -140,7 +155,7 @@ void Serial_Init( USART_Port serial_port )
 
 /******************************************************************************/
 void Serial_DMAConfig(
-      USART_Port serial_port,
+      USART_Port_T serial_port,
       char *pBuffer,
       uint16_t wBufferLen
 )
@@ -183,7 +198,7 @@ void Serial_DMAConfig(
 
 /******************************************************************************/
 void Serial_DMAStartXfer(
-      USART_Port serial_port
+      USART_Port_T serial_port
 )
 {
    /* Enable the DMA TX Stream */
@@ -191,7 +206,11 @@ void Serial_DMAStartXfer(
 }
 
 /******************************************************************************/
-uint32_t Serial_send_base64_enc_msg( USART_Port serial_port, char *message, uint16_t len )
+uint32_t Serial_send_base64_enc_msg(
+      USART_Port_T serial_port,
+      char *message,
+      uint16_t len
+)
 {
    char encoded_serial_buf[MAX_MSG_LEN];
    int encoded_sz = base64_encode( message, len, encoded_serial_buf, MAX_MSG_LEN );
@@ -207,10 +226,13 @@ uint32_t Serial_send_base64_enc_msg( USART_Port serial_port, char *message, uint
 }
 
 /******************************************************************************/
-uint32_t Serial_send_raw_msg( USART_Port serial_port, char *message, uint16_t len )
+uint32_t Serial_send_raw_msg(
+      USART_Port_T serial_port,
+      char *message,
+      uint16_t len
+)
 {
-   if ( len >= MAX_MSG_LEN )
-   {
+   if ( len >= MAX_MSG_LEN ) {
       return ERR_SERIAL_MSG_TOO_LONG;
    }
 
@@ -219,14 +241,11 @@ uint32_t Serial_send_raw_msg( USART_Port serial_port, char *message, uint16_t le
     * terminating character.  In most cases, base64 encoded messages will be
     * sent and they use a newline to terminate.  In some cases (scanner), this
     * will not be the case */
-   for ( uint16_t i = 0; i < len; i++ )
-   {
+   for ( uint16_t i = 0; i < len; i++ ) {
       uint32_t timeout = SERIAL_LONG_TIMEOUT;   // every byte starts a new timeout count
 
-      while( RESET == USART_GetFlagStatus( s_USART_Port[ serial_port ].usart, USART_FLAG_TXE ) )
-      {
-         if( (timeout--) <= 0 )
-         {
+      while( RESET == USART_GetFlagStatus( s_USART_Port[ serial_port ].usart, USART_FLAG_TXE ) ) {
+         if( (timeout--) <= 0 ) {
             err_slow_printf("!!! - Hardware not responding while trying to send a serial msg\n");
             return ERR_SERIAL_HW_TIMEOUT;
          }
@@ -238,10 +257,14 @@ uint32_t Serial_send_raw_msg( USART_Port serial_port, char *message, uint16_t le
 }
 
 /**
- * @brief   Receives a message from through the serial port, one character at a
- *          time. The last character received is either the '\n' or '\r'
- *          character. The message gets stored in a buffer until the end-of-line
- *          character is received.
+ * @brief   ISR that handles incoming data on UART4 (debug serial) port.
+ *
+ * @ingroup groupISR
+ *
+ * Receives a message from through the serial port, one character at a
+ * time. The last character received is either the '\n' or '\r'
+ * character. The message gets stored in a buffer until the end-of-line
+ * character is received.
  * @param   None
  * @retval  None
  */
@@ -251,17 +274,13 @@ void UART4_IRQHandler(void)
     QK_ISR_ENTRY();                        /* inform QK about entering an ISR */
     uint8_t data;
 
-    while (USART_GetITStatus(UART4, USART_IT_RXNE) != RESET)
-    {
+    while (USART_GetITStatus(UART4, USART_IT_RXNE) != RESET) {
         data = (uint8_t)USART_ReceiveData(UART4);
 
         // A line feed signals the end of the data stream (message)
-        if (data != '\n')
-        {
+        if (data != '\n')  {
             s_USART_Port[SYSTEM_SERIAL].buffer[ s_USART_Port[SYSTEM_SERIAL].index++ ] = data;
-        }
-        else
-        {
+        } else {
             s_USART_Port[SYSTEM_SERIAL].buffer[ s_USART_Port[SYSTEM_SERIAL].index++ ] = data;
             /* 1. Construct a new msg event indicating that a msg has been received */
             MsgEvt *msgEvt = Q_NEW( MsgEvt, MSG_RECEIVED_SIG );
@@ -279,11 +298,15 @@ void UART4_IRQHandler(void)
         }
 
         //This check serves as the timeout for the While loop and also protects serial_index from running over
-        if ( s_USART_Port[SYSTEM_SERIAL].index >= MAX_MSG_LEN )
-        {
+        if ( s_USART_Port[SYSTEM_SERIAL].index >= MAX_MSG_LEN ) {
            err_slow_printf("Attempting to send a serial msg over %d bytes which will overrun the buffer.", MAX_MSG_LEN);
            assert( s_USART_Port[SYSTEM_SERIAL].index >= MAX_MSG_LEN );
         }
     }
     QK_ISR_EXIT();                        /* inform QK about exiting an ISR */
 }
+/**
+ * @} end addtogroup groupSerial
+ */
+
+/******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/

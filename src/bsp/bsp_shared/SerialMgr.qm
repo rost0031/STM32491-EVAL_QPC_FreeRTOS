@@ -17,11 +17,12 @@
  <package name="AOs" stereotype="0x02">
   <class name="SerialMgr" superclass="qpc::QActive">
    <documentation>/**
- * \brief SerialMgr Active Object (AO) &quot;class&quot; that manages the debug serial port.
+ * @brief SerialMgr Active Object (AO) &quot;class&quot; that manages the debug serial port.
  * Upon receiving an event it copies the data to the UART DMA buffer and activates
  * DMA to do the actual outputting to serial, freeing up the system to continue to
  * do real work. The interrupt at the end of the DMA process disables the DMA and
- * lets the AO know that the transfer has completed.
+ * lets the AO know that the transfer has completed.  See SerialMgr.qm for diagram
+ * and model.
  */</documentation>
    <attribute name="serialTimerEvt" type="QTimeEvt" visibility="0x01" properties="0x00">
     <documentation>/**&lt; QPC timer Used to timeout serial transfers if errors occur. */</documentation>
@@ -52,13 +53,13 @@ QActive_subscribe((QActive *)me, UART_DMA_TIMEOUT_SIG);</action>
     </initial>
     <state name="Active">
      <documentation>/**
- * This state is a catch-all Active state.  If any signals need
- * to be handled that do not cause state transitions and are
- * common to the entire AO, they should be handled here.
+ * @brief This state is a catch-all Active state.
+ * If any signals need to be handled that do not cause state transitions and 
+ * are common to the entire AO, they should be handled here.
  *
- * @param  [in|out] me: Pointer to the state machine
- * @param  [in|out] e:  Pointer to the event being processed.
- * @return status: QState type that specifies where the state
+ * @param  [in,out] me: Pointer to the state machine
+ * @param  [in,out] e:  Pointer to the event being processed.
+ * @return status_: QState type that specifies where the state
  * machine is going next.
  */</documentation>
      <entry>/* Post a timer and disarm it right away so it can be
@@ -71,11 +72,12 @@ QTimeEvt_postIn(
 QTimeEvt_disarm(&amp;me-&gt;serialTimerEvt);</entry>
      <state name="Idle">
       <documentation>/**
- * This state indicates that the DMA is currently idle and the incoming msg can
- * be sent out to the DMA buffer to be printed out to the serial port.
+ * @brief This state indicates that the DMA is currently idle and the
+ * incoming msg can be sent out to the DMA buffer to be printed out to the
+ * serial port.
  *
- * @param  [in|out] me: Pointer to the state machine
- * @param  [in|out] e:  Pointer to the event being processed.
+ * @param  [in,out] me: Pointer to the state machine
+ * @param  [in,out] e:  Pointer to the event being processed.
  * @return status: QState type that specifies where the state
  * machine is going next.
  */</documentation>
@@ -102,12 +104,12 @@ Serial_DMAConfig(
      </state>
      <state name="Busy">
       <documentation>/**
- * This state indicates that the DMA is currently busy outputting to the serial
- * port and cannot process incoming data.  Instead, incoming events will be
+ * @brief   This state indicates that the DMA is currently busy outputting to
+ * the serial port and cannot process incoming data; incoming events will be
  * deferred in this state and handled once the AO goes back to Idle state.
  *
- * @param  [in|out] me: Pointer to the state machine
- * @param  [in|out] e:  Pointer to the event being processed.
+ * @param  [in,out] me: Pointer to the state machine
+ * @param  [in,out] e:  Pointer to the event being processed.
  * @return status: QState type that specifies where the state
  * machine is going next.
  */</documentation>
@@ -184,10 +186,10 @@ QEQueue_init(
   <file name="SerialMgr_gen.c">
    <text>/**
  * @file    SerialMgr.c
- * Declarations for functions for the SerialMgr AO.  This state
- * machine handles all output to the serial port
+ * @brief   Declarations for functions for the SerialMgr AO.
+ * This state machine handles all output to the serial port.
  *
- * Note: If editing this file, please make sure to update the SerialMgr.qm
+ * @note 1: If editing this file, please make sure to update the SerialMgr.qm
  * model.  The generated code from that model should be very similar to the
  * code in this file.
  *
@@ -195,6 +197,9 @@ QEQueue_init(
  * @author  Harry Rostovtsev
  * @email   harry_rostovtsev@datacard.com
  * Copyright (C) 2014 Datacard. All rights reserved.
+ *
+ * @addtogroup groupSerial
+ * @{
  */
 
 /* Includes ------------------------------------------------------------------*/
@@ -221,15 +226,18 @@ QActive * const AO_SerialMgr = (QActive *)&amp;l_SerialMgr;  /* &quot;opaque&quo
 $define(AOs::SerialMgr_ctor)
 $define(AOs::SerialMgr)
 
+/**
+ * @} end addtogroup groupSerial
+ */
 /******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/</text>
   </file>
   <file name="SerialMgr_gen.h">
    <text>/**
  * @file    SerialMgr.h
- * Declarations for functions for the SerialMgr AO.  This state
- * machine handles all output to the serial port
+ * @brief   Declarations for functions for the SerialMgr AO.
+ * This state machine handles all output to the serial port
  *
- * Note: If editing this file, please make sure to update the CommStackMgr.qm
+ * @note 1: If editing this file, please make sure to update the SerialMgr.qm
  * model.  The generated code from that model should be very similar to the
  * code in this file.
  *
@@ -237,6 +245,9 @@ $define(AOs::SerialMgr)
  * @author  Harry Rostovtsev
  * @email   harry_rostovtsev@datacard.com
  * Copyright (C) 2014 Datacard. All rights reserved.
+ *
+ * @addtogroup groupSerial
+ * @{
  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
@@ -257,6 +268,9 @@ $declare(Events)
 $declare(AOs::SerialMgr_ctor)
 $declare(AOs::AO_SerialMgr)
 
+/**
+ * @} end addtogroup groupSerial
+ */
 #endif                                                        /* SERIALMGR_H_ */
 /******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/</text>
   </file>
