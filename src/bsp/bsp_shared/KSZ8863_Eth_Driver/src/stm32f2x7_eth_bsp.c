@@ -1,40 +1,46 @@
-// $Id$
 /**
  * @file 	stm32f2x7_eth_bsp.c
- * @brief   This file contains the Board Support Package functions for the
- * 			Redwood_H1_Board and Micrel KSZ8863 Ethernet switch
+ * @brief   This file contains the Board Support Package functions for any
+ * 			STM32F2xx board and Micrel KSZ8863 Ethernet switch
  *
  * @date   	09/27/2012
  * @author 	Harry Rostovtsev
  * @email  	harry_rostovtsev@datacard.com
  * Copyright (C) 2012 Datacard. All rights reserved.
+ *
+ * @addtogroup groupKSZ8863
+ * @{
  */
-// $Log$
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f2x7_eth.h"
 #include "stm32f2x7_eth_bsp.h"
-#include "lwipopts.h"
+#include "stm32f2xx_rcc.h"                           /* For STM32 rcc support */
+#include "stm32f2xx_gpio.h"                         /* For STM32 gpio support */
+#include "stm32f2xx_syscfg.h"                     /* For STM32 syscfg support */
+#include "lwipopts.h"                                     /* For LWIP options */
 
-/* Private typedef -----------------------------------------------------------*/
-/* Private define ------------------------------------------------------------*/
-/* Private macro -------------------------------------------------------------*/
-/* Private variables ---------------------------------------------------------*/
-/* Private function prototypes -----------------------------------------------*/
-
-
+/* Compile-time called macros ------------------------------------------------*/
+/* Private typedefs ----------------------------------------------------------*/
+/* Private defines -----------------------------------------------------------*/
+/**
+ * @brief   This driver uses RMII mode to interface to the processor.
+ */
 #define RMII_MODE
-/* Uncomment the define below to clock the PHY from external 25MHz crystal (only for MII mode) */
+/* Uncomment the define below to clock the PHY from external 25MHz crystal
+ * (only for MII mode) */
 #ifdef 	MII_MODE
 #define PHY_CLOCK_MCO
 #endif
+
+/* Private macro -------------------------------------------------------------*/
+/* Private variables ---------------------------------------------------------*/
+/* Private function prototypes -----------------------------------------------*/
+/* Private macros ------------------------------------------------------------*/
+/* Private variables and Local objects ---------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
 
-/**
- * @brief  Configures the Ethernet Interface
- * @param  None
- * @retval None
- */
+/******************************************************************************/
 uint32_t ETH_MACDMA_Config(void)
 {
 	/* Initialize some variables */
@@ -107,11 +113,7 @@ uint32_t ETH_MACDMA_Config(void)
 	return(ETH_Status);
 }
 
-/**
- * @brief  Configures the different GPIO ports.
- * @param  None
- * @retval None
- */
+/******************************************************************************/
 void ETH_GPIO_Config(void) {
 	GPIO_InitTypeDef GPIO_InitStructure;
 
@@ -186,5 +188,10 @@ void ETH_GPIO_Config(void) {
 	GPIO_PinAFConfig(GPIOC, GPIO_PinSource5, GPIO_AF_ETH);
 }
 
-/*********** Copyright (C) 2012 Datacard. All rights reserved *****END OF FILE****/
+/**
+ * @}
+ * end addtogroup groupKSZ8863
+ */
+
+/******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/
 

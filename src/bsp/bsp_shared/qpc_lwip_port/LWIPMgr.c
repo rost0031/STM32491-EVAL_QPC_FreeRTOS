@@ -34,6 +34,9 @@
  * @author     Harry Rostovtsev
  * @email      harry_rostovtsev@datacard.com
  * Copyright (C) 2014 Datacard. All rights reserved.
+ *
+ * @addtogroup groupLWIP_QPC_Eth
+ * @{
  */
 
 #define LWIP_ALLOWED     /* This must be set before the include to allow LWIP */
@@ -875,5 +878,10 @@ static void udp_rx_handler(void *arg, struct udp_pcb *upcb,
     /* 5. Free up the pbuf */
     pbuf_free(p);
 }
+
+/**
+ * @}
+ * end addtogroup groupLWIP_QPC_Eth
+ */
 
 /******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/

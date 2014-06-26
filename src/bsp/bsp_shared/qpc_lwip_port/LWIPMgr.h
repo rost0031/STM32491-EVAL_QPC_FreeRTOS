@@ -34,6 +34,9 @@
  * @author     Harry Rostovtsev
  * @email      harry_rostovtsev@datacard.com
  * Copyright (C) 2014 Datacard. All rights reserved.
+ *
+ * @addtogroup groupLWIP_QPC_Eth
+ * @{
  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
@@ -95,17 +98,22 @@ extern QActive * const AO_LWIPMgr;
 
 
 /**
-  * This function is the implementation of a stub function in CommStackMgr.  It
-  * is used to do the actual sending of data over ethernet on the embedded side.
-  * The simulator will have its own implementation of this function due to the
-  * use of totally different ip stacks and threading paradigms.
-  *
-  * @param [in|out] e: a MsgEvt const event pointer to the MsgEvt that contains the
-  * length and message to be sent.
-  *
-  * @return None
-  */
+ * @brief    Send UDP msg over ethernet.
+ * This function is the implementation of a stub function in CommStackMgr.  It
+ * is used to do the actual sending of data over ethernet on the embedded side.
+ * The simulator will have its own implementation of this function due to the
+ * use of totally different ip stacks and threading paradigms.
+ *
+ * @param [in,out] e: a MsgEvt const event pointer to the MsgEvt that contains the
+ * length and message to be sent.
+ *
+ * @return None
+ */
 void ETH_SendMsg_Handler(MsgEvt const *e);
 
+/**
+ * @}
+ * end addtogroup groupLWIP_QPC_Eth
+ */
 #endif                                                          /* LWIPMGR_H_ */
 /******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/

@@ -1,13 +1,14 @@
 /**
  * @file   stm32f2xx_it.c
- * @brief  This file contains all interrupts for motors and associated sensors
- * 		   for the Redwood_H1 board. This file is derived from the original
- * 		   version distributed by ST Micro.
+ * @brief  This file contains most interrupt handler functions.
  *
  * @date   06/23/2014
  * @author Harry Rostovtsev
  * @email  harry_rostovtsev@datacard.com
  * Copyright (C) 2014 Datacard. All rights reserved.
+ *
+ * @addtogroup groupISR
+ * @{
  */
 
 /* Includes ------------------------------------------------------------------*/
@@ -22,30 +23,20 @@
 #include <stdio.h>                                    /* for printf() support */
 #include "CBSignals.h"                            /*  For signal declarations */
 #include "SerialMgr.h"                                 /* for SerialMgr types */
-#include "time.h"
-
-/** @addtogroup groupISR
- * @{
- */
+#include "time.h"                          /* for processor date/time support */
 
 /******************************************************************************/
 /*            Cortex-M3 Processor Exceptions Handlers                         */
 /******************************************************************************/
 
-/**
- * @brief  This function handles NMI exception.
- * @param  None
- * @retval None
- */
-void NMI_Handler(void) {
+/******************************************************************************/
+void NMI_Handler(void)
+{
 }
 
-/**
- * @brief  This function handles Hard Fault exception.
- * @param  None
- * @retval None
- */
-void hard_fault_handler_c(unsigned int * hardfault_args) {
+/******************************************************************************/
+void hard_fault_handler_c(unsigned int * hardfault_args)
+{
    unsigned int stacked_r0;
    unsigned int stacked_r1;
    unsigned int stacked_r2;
@@ -86,45 +77,37 @@ void hard_fault_handler_c(unsigned int * hardfault_args) {
    }
 }
 
-/**
- * @brief  This function handles Memory Manage exception.
- * @param  None
- * @retval None
- */
-void MemManage_Handler(void) {
+/******************************************************************************/
+void MemManage_Handler(void)
+{
+   printf ("[MemManage_handler!]\n");
    /* Go to infinite loop when Memory Manage exception occurs */
    while (1) {
    }
 }
 
-/**
- * @brief  This function handles Bus Fault exception.
- * @param  None
- * @retval None
- */
-void BusFault_Handler(void) {
+/******************************************************************************/
+void BusFault_Handler(void)
+{
+   printf ("[BusFault_Handler!]\n");
    /* Go to infinite loop when Bus Fault exception occurs */
    while (1) {
    }
 }
 
-/**
- * @brief  This function handles Usage Fault exception.
- * @param  None
- * @retval None
- */
-void UsageFault_Handler(void) {
+/******************************************************************************/
+void UsageFault_Handler(void)
+{
+   printf ("[UsageFault_Handler!]\n");
    /* Go to infinite loop when Usage Fault exception occurs */
    while (1) {
    }
 }
 
-/**
- * @brief  This function handles Debug Monitor exception.
- * @param  None
- * @retval None
- */
-void DebugMon_Handler(void) {
+/******************************************************************************/
+void DebugMon_Handler(void)
+{
+   printf ("[DebugMon_Handler!]\n");
 }
 
 /******************************************************************************/
@@ -135,7 +118,8 @@ void DebugMon_Handler(void) {
 /******************************************************************************/
 
 /******************************************************************************/
-void DMA1_Stream4_IRQHandler( void ) {
+void DMA1_Stream4_IRQHandler( void )
+{
    QK_ISR_ENTRY();                         /* inform QK about entering an ISR */
 
    /* Test on DMA Stream Transfer Complete interrupt */
@@ -159,17 +143,14 @@ extern __IO unsigned long CaptureNumber;
 uint16_t tmpCC4[2] = {0, 0};
 
 /******************************************************************************/
-void TIM5_IRQHandler(void) {
-    QK_ISR_ENTRY();                        /* inform QK about entering an ISR */
-
+void TIM5_IRQHandler(void)
+{
     /* This is for measuring the LSI frequency for configuring the RTC */
-    if ( RESET != TIM_GetITStatus( TIM5, TIM_IT_CC4 ) )
-    {
+    if ( RESET != TIM_GetITStatus( TIM5, TIM_IT_CC4 ) ) {
        /* Get the Input Capture value */
        tmpCC4[CaptureNumber++] = TIM_GetCapture4(TIM5);
 
-       if (CaptureNumber >= 2)
-       {
+       if (CaptureNumber >= 2) {
           /* Compute the period length */
           PeriodValue = (uint16_t)(0xFFFF - tmpCC4[0] + tmpCC4[1] + 1);
        }
@@ -177,12 +158,11 @@ void TIM5_IRQHandler(void) {
        /* Clear CC4 Interrupt pending bit */
        TIM_ClearITPendingBit(TIM5, TIM_IT_CC4);
     }
-
-    QK_ISR_EXIT();                          /* inform QK about exiting an ISR */
 }
 
 /******************************************************************************/
-void RTC_WKUP_IRQHandler(void) {
+void RTC_WKUP_IRQHandler(void)
+{
 //   QK_ISR_ENTRY();                        /* inform QK about entering an ISR */
 
    if( RESET != RTC_GetITStatus(RTC_IT_WUT) ) {

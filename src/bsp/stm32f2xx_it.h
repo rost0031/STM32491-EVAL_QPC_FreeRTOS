@@ -11,6 +11,9 @@
  * @author Harry Rostovtsev
  * @email  harry_rostovtsev@datacard.com
  * Copyright (C) 2014 Datacard. All rights reserved.
+ *
+ * @addtogroup groupISR
+ * @{
  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
@@ -18,7 +21,7 @@
 #define __STM32F2xx_IT_H
 
 #ifdef __cplusplus
- extern "C" {
+extern "C" {
 #endif 
 
 /* Includes ------------------------------------------------------------------*/
@@ -29,43 +32,129 @@
 /* Exported macro ------------------------------------------------------------*/
 /* Exported functions ------------------------------------------------------- */
 
-void NMI_Handler(void);
-void HardFault_Handler(void);
-void MemManage_Handler(void);
-void BusFault_Handler(void);
-void UsageFault_Handler(void);
-void SVC_Handler(void);
-void DebugMon_Handler(void);
-void PendSV_Handler(void);
-void SysTick_Handler(void);
+/**
+ * @brief  This function handles Non-maskable interrupt (NMI) exception.
+ * @param  None
+ * @return None
+ */
+void NMI_Handler( void ) __attribute__((__interrupt__));
 
 /**
- * This ISR function handles DMA1_Stream4 global interrupt requests.
+ * @brief  This function handles Hard Fault exception.
+ *
+ * This ISR has been modified to print out the registers to the serial port if
+ * it occurs.
+ *
+ * @param  None
+ * @return None
+ */
+void HardFault_Handler( void ) __attribute__((__interrupt__));
+
+/**
+ * @brief  This function handles Memory Management exception.
+ *
+ * @param  None
+ * @return None
+ */
+void MemManage_Handler( void ) __attribute__((__interrupt__));
+
+/**
+ * @brief  This function handles Bus Fault exception.
+ * @param  None
+ * @return None
+ */
+void BusFault_Handler( void ) __attribute__((__interrupt__));
+
+/**
+ * @brief  This function handles Usage Fault exception.
+ * @param  None
+ * @return None
+ */
+void UsageFault_Handler( void ) __attribute__((__interrupt__));
+
+/**
+ * @brief  This function handles SVC exception.
+ * @param  None
+ * @return None
+ */
+void SVC_Handler( void ) __attribute__((__interrupt__));
+
+/**
+ * @brief  This function handles Debug Monitor exception.
+ * @param  None
+ * @return None
+ */
+void DebugMon_Handler( void ) __attribute__((__interrupt__));
+
+/**
+ * @brief  This function handles PendSV exception.
+ * @param  None
+ * @return None
+ */
+void PendSV_Handler( void ) __attribute__((__interrupt__));
+
+/**
+ * @brief   This ISR function handles the SysTick global interrupt request.
+ *
+ * This ISR function mostly just processes all the QPC events that are ready to
+ * be executed.  If QSPY is compiled in, it also handles its timing and clock
+ * rollover.  The SysTick interrupt is fired @def BSP_TICKS_PER_SEC / second.
+ *
+ * @param     None
+ * @retval    None
+ */
+void SysTick_Handler( void ) __attribute__((__interrupt__));
+
+/**
+ * @brief   This ISR function handles DMA1_Stream4 global interrupt requests.
  * @param     None
  * @retval    None
  */
 void DMA1_Stream4_IRQHandler( void ) __attribute__((__interrupt__));
 
-
 /**
- * This ISR function handles TIM5 global interrupt requests.
+ * @brief   This ISR function handles TIM5 global interrupt requests.
+ *
+ * This ISR is used to sample and time the clock rate of the RTC clock and is
+ * part of the (QF) kernel unaware interrupts.
+ *
+ * @note 1: Since this is a (QF) kernel unaware ISR, this handler may not access
+ * any QPC functionality.
+ *
  * @param     None
  * @retval    None
  */
-void TIM5_IRQHandler(void) __attribute__((__interrupt__));
+void TIM5_IRQHandler( void ) __attribute__((__interrupt__));
 
 /**
- * This ISR function handles RTC Wakeup global interrupt request.  Specifically,
- * it fires once a second and resets the timer counter that is used to track the
- * subsecond time.
+ * @brief   This ISR function handles RTC Wakeup global interrupt request.
+ *
+ * This ISR fires every second change of the RTC and resets TIM7 which is used
+ * for subsecond timer functionality.
+ *
+ * @note 1: Since this is a (QF) kernel unaware ISR, this handler may not access
+ * any QPC functionality.
+ *
  * @param  None
  * @retval None
  */
-void RTC_WKUP_IRQHandler(void) __attribute__((__interrupt__));
+void RTC_WKUP_IRQHandler( void ) __attribute__((__interrupt__));
+
+/**
+ * @brief   This ISR function handles Ethernet global interrupt request.
+ * See eth_driver.c for implementation.
+ * @param  None
+ * @retval None
+ */
+void ETH_IRQHandler( void ) __attribute__((__interrupt__));
 
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @} end addtogroup groupBSP
+ */
 
 #endif                                                    /* __STM32F2xx_IT_H */
 /******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/

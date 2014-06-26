@@ -27,7 +27,7 @@
 /* Exported defines ----------------------------------------------------------*/
 
 /**
- * \def Flash address of the location where the Bootloader FW version resides.
+ * @brief Flash address of the location where the Bootloader FW version resides.
  * @note 1: This value MUST match the .btldrInfo address in the linker script
  * @note 2: This value is specific to the STM32F2x7 family processors and to the
  * flash size.
@@ -35,19 +35,19 @@
 #define FLASH_BOOTLDR_FW_VER_ADDRESS      0x0801FC00
 
 /**
- * \def Number of bytes taken up by the Bootloader FW version.
+ * @brief Number of bytes taken up by the Bootloader FW version.
  */
 #define FLASH_BOOTLDR_FW_VER_SIZE         32
 
 /**
- * \def Flash address of the location where the Bootloader FW build date resides.
+ * @brief Flash address of the location where the Bootloader FW build date resides.
  * @note 1: This value MUST match the .btldrInfo address in the linker script
  */
 #define FLASH_BOOTLDR_FW_DATE_ADDRESS     ( FLASH_BOOTLDR_FW_VER_ADDRESS + \
                                             FLASH_BOOTLDR_FW_VER_SIZE )
 
 /**
- * \def Number of bytes taken up by the Bootloader FW build date.
+ * @brief Number of bytes taken up by the Bootloader FW build date.
  */
 #define FLASH_BOOTLDR_FW_DATE_SIZE        FLASH_BOOTLDR_FW_VER_SIZE
 

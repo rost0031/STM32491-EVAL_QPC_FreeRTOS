@@ -1,4 +1,3 @@
-// $Id$
 /**
  * @file   stm32f2x7_eth.c
  * @brief  This file is the low level driver for STM32F2x7 Ethernet Controller.
@@ -11,7 +10,7 @@
  * @email  harry_rostovtsev@datacard.com
  * Copyright (C) 2012 Datacard. All rights reserved.
  */
-// $Log$
+
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f2x7_eth.h"
 #include "stm32f2xx_rcc.h"
@@ -2667,4 +2666,4 @@ uint32_t ETH_GetMMCRegister(uint32_t ETH_MMCReg)
  * @}
  */
 
-/*********** Copyright (C) 2012 Datacard. All rights reserved *****END OF FILE****/
+/******** Copyright (C) 2012 Datacard. All rights reserved *****END OF FILE****/

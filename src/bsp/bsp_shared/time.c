@@ -7,8 +7,12 @@
  * @author Harry Rostovtsev
  * @email  Harry_Rostovtsev@datacard.com
  * Copyright (C) 2014 Datacard. All rights reserved.
+ *
+ * @addtogroup groupTime
+ * @{
  */
 
+/* Includes ------------------------------------------------------------------*/
 #include "time.h"
 #include "stm32f2xx.h"
 #include "stm32f2xx_rcc.h"
@@ -16,21 +20,21 @@
 #include "stm32f2xx_pwr.h"
 #include "stm32f2xx_exti.h"
 #include "Shared.h"
-#include <stdio.h>
 #include "bsp.h"
 #include "project_includes.h"
 
-/* Private defines -----------------------------------------------------------*/
-#define DELAY_TIM_FREQUENCY 10000
+/* Compile-time called macros ------------------------------------------------*/
+Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */
 
-/* Private variables ---------------------------------------------------------*/
+/* Private typedefs ----------------------------------------------------------*/
+/* Private defines -----------------------------------------------------------*/
+#define SUBSECOND_TIM_FREQUENCY                                         10049
+#define SUBSECOND_TIM_PRESCALAR                                         1191
+
+/* Private macros ------------------------------------------------------------*/
+/* Private variables and Local objects ---------------------------------------*/
 RTC_InitTypeDef RTC_InitStructure;
 RTC_TimeTypeDef RTC_TimeStructure;
-TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
-NVIC_InitTypeDef NVIC_InitStructure;
-EXTI_InitTypeDef EXTI_InitStructure;
-TIM_ICInitTypeDef  TIM_ICInitStructure;
-RCC_ClocksTypeDef  RCC_ClockFreq;
 __IO uint32_t LsiFreq = 0;
 __IO uint32_t CaptureNumber = 0, PeriodValue = 0;
 
@@ -42,6 +46,19 @@ __IO uint32_t CaptureNumber = 0, PeriodValue = 0;
  */
 static uint32_t TIME_getLSIFrequency( void );
 
+/**
+ * @brief Initializes the subsecond timer (TIM7).
+ *
+ * This init function sets up TIM7 to be used as a microsecond timer.
+ *
+ * @note 1: This function should be called only once and only in the beginning
+ * by TIME_Init().
+ * @param  None
+ * @return None
+ */
+static void TIME_subSecondTimer_Init( void );
+
+/* Private functions ---------------------------------------------------------*/
 
 /******************************************************************************/
 void TIME_Init( void )
@@ -94,6 +111,7 @@ void TIME_Init( void )
 
    /* EXTI configuration ******************************************************/
    EXTI_ClearITPendingBit(EXTI_Line22);
+   EXTI_InitTypeDef EXTI_InitStructure;
    EXTI_InitStructure.EXTI_Line = EXTI_Line22;
    EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
    EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising;
@@ -136,6 +154,7 @@ uint32_t TIME_getLSIFrequency( void )
      The Rising edge is used as active edge,
      The TIM5 CCR4 is used to compute the frequency value
   ------------------------------------------------------------ */
+   TIM_ICInitTypeDef  TIM_ICInitStructure;
    TIM_ICInitStructure.TIM_Channel = TIM_Channel_4;
    TIM_ICInitStructure.TIM_ICPolarity = TIM_ICPolarity_Rising;
    TIM_ICInitStructure.TIM_ICSelection = TIM_ICSelection_DirectTI;
@@ -144,11 +163,7 @@ uint32_t TIME_getLSIFrequency( void )
    TIM_ICInit(TIM5, &TIM_ICInitStructure);
 
    /* Enable TIM5 Interrupt channel */
-   NVIC_InitStructure.NVIC_IRQChannel = TIM5_IRQn;
-   NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
-   NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
-   NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-   NVIC_Init(&NVIC_InitStructure);
+   NVIC_Config( TIM5_IRQn, TIM5_PRIO );
 
    /* Enable TIM5 counter */
    TIM_Cmd(TIM5, ENABLE);
@@ -167,19 +182,17 @@ uint32_t TIME_getLSIFrequency( void )
    /* Deinitialize the TIM5 peripheral registers to their default reset values */
    TIM_DeInit(TIM5);
 
-
    /* Compute the LSI frequency, depending on TIM5 input clock frequency (PCLK1)*/
    /* Get SYSCLK, HCLK and PCLKx frequency */
+   RCC_ClocksTypeDef  RCC_ClockFreq;
    RCC_GetClocksFreq(&RCC_ClockFreq);
 
    /* Get PCLK1 prescaler */
-   if ((RCC->CFGR & RCC_CFGR_PPRE1) == 0)
-   {
+   if ((RCC->CFGR & RCC_CFGR_PPRE1) == 0) {
       /* PCLK1 prescaler equal to 1 => TIMCLK = PCLK1 */
       return ((RCC_ClockFreq.PCLK1_Frequency / PeriodValue) * 8);
-   }
-   else
-   { /* PCLK1 prescaler different from 1 => TIMCLK = 2 * PCLK1 */
+   } else {
+      /* PCLK1 prescaler different from 1 => TIMCLK = 2 * PCLK1 */
       return (((2 * RCC_ClockFreq.PCLK1_Frequency) / PeriodValue) * 8) ;
    }
 }
@@ -193,11 +206,12 @@ void TIME_subSecondTimer_Init( void )
 
    /* Time base configuration - The magic numbers allow a ~10000 ticks/sec on
     * this timer. */
+   TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
    TIM_TimeBaseStructInit(&TIM_TimeBaseStructure);
-   TIM_TimeBaseStructure.TIM_Prescaler = 1191;
-   TIM_TimeBaseStructure.TIM_Period = 10049;
-   TIM_TimeBaseStructure.TIM_ClockDivision = 0;
-   TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
+   TIM_TimeBaseStructure.TIM_Prescaler       = SUBSECOND_TIM_PRESCALAR;
+   TIM_TimeBaseStructure.TIM_Period          = SUBSECOND_TIM_FREQUENCY;
+   TIM_TimeBaseStructure.TIM_ClockDivision   = 0;
+   TIM_TimeBaseStructure.TIM_CounterMode     = TIM_CounterMode_Up;
    TIM_TimeBaseInit(TIM7, &TIM_TimeBaseStructure);
 
    /* Enable counter */
@@ -205,22 +219,9 @@ void TIME_subSecondTimer_Init( void )
 }
 
 /******************************************************************************/
-void TIME_printTime( void )
+time_T TIME_getTime( void )
 {
-   /* Get the current Time and Date */
-   t_Time time = TIME_getTime();
-   printf("%02d:%02d:%02d:%d\n",
-         time.hour_min_sec.RTC_Hours,
-         time.hour_min_sec.RTC_Minutes,
-         time.hour_min_sec.RTC_Seconds,
-         (int)time.sub_sec
-   );
-}
-
-/******************************************************************************/
-t_Time TIME_getTime( void )
-{
-   t_Time time;
+   time_T time;
 
    /* Get the current Time and Date */
    RTC_GetTime(RTC_Format_BIN, &RTC_TimeStructure);
@@ -233,3 +234,10 @@ t_Time TIME_getTime( void )
 
    return (time);
 }
+
+/**
+ * @}
+ * end addtogroup groupTime
+ */
+
+/******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/

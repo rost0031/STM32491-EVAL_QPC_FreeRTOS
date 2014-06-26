@@ -1,4 +1,3 @@
-// $Id$
 /**
  * @file   	mem_datacopy.h
  * @brief  	This file contains the declaration of the mem_datacopy function that
@@ -9,7 +8,7 @@
  * @email  	harry_rostovtsev@datacard.com
  * Copyright (C) 2012 Datacard. All rights reserved.
  */
-// $Log$
+
 #ifndef MEM_DATACOPY_H_
 #define MEM_DATACOPY_H_
 

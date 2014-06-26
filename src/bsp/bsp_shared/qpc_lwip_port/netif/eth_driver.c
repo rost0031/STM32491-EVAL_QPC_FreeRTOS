@@ -1,7 +1,7 @@
-// $Id$
 /**
- * @file eth_driver.c
- * @brief  his file contains QPC LWIP Ethernet layer for Redwood_H1 Board
+ * @file    eth_driver.c
+ * @brief   This file contains QPC LWIP Ethernet layer for an STM32F2xx board
+ * with a Micrel KSZ8863 Ethernet MAC-MAC switch.
  * This file is derived from the ``ethernetif.c'' skeleton Ethernet network
  * interface driver for lwIP.
  *
@@ -9,146 +9,88 @@
  * @author Harry Rostovtsev
  * @email  harry_rostovtsev@datacard.com
  * Copyright (C) 2012 Datacard. All rights reserved.
- */
-// $Log$
-
-/*
- * Copyright (c) 2001-2004 Swedish Institute of Computer Science.
- * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- * 3. The name of the author may not be used to endorse or promote products
- *    derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN
- * NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
- * TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
- * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
- * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
- * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * This file is part of the lwIP TCP/IP stack.
- *
- * Author: Adam Dunkels <adam@sics.se>
+ * @addtogroup groupLWIP_QPC_Eth
+ * @{
  */
 
+/* Includes ------------------------------------------------------------------*/
 #include "netif/eth_driver.h"
 #include "stm32f2x7_eth.h"
 #include "stm32f2x7_eth_bsp.h"
 #include "project_includes.h"
 
-/* Ethernet Rx & Tx DMA Descriptors */
+/* Compile-time called macros ------------------------------------------------*/
+/**
+ * @brief Sanity Check:  This interface driver will NOT work if the following
+ * defines are incorrect.
+ */
+#if (PBUF_LINK_HLEN != 16)
+   #error "PBUF_LINK_HLEN must be 16 for this interface driver!"
+#endif
+#if (ETH_PAD_SIZE != 2)
+   #error "ETH_PAD_SIZE must be 2 for this interface driver!"
+#endif
+
+/* Private typedefs ----------------------------------------------------------*/
+/* Private defines -----------------------------------------------------------*/
+/* Private macros ------------------------------------------------------------*/
+/* Private variables and Local objects ---------------------------------------*/
+
+/**< Ethernet Rx & Tx DMA Descriptors */
 extern ETH_DMADESCTypeDef  DMARxDscrTab[ETH_RXBUFNB], DMATxDscrTab[ETH_TXBUFNB];
 
-/* Ethernet Receive buffers  */
+/**< Ethernet Receive buffers  */
 extern uint8_t Rx_Buff[ETH_RXBUFNB][ETH_RX_BUF_SIZE];
 
-/* Ethernet Transmit buffers */
+/**< Ethernet Transmit buffers */
 extern uint8_t Tx_Buff[ETH_TXBUFNB][ETH_TX_BUF_SIZE];
 
-/* Global pointers to track current transmit and receive descriptors */
+/**< Global pointers to track current transmit and receive descriptors */
 extern ETH_DMADESCTypeDef  *DMATxDescToSet;
 extern ETH_DMADESCTypeDef  *DMARxDescToGet;
 
-/* Global pointer for last received frame infos */
+/**< Global pointer for last received frame infos */
 extern ETH_DMA_Rx_Frame_infos *DMA_RX_FRAME_infos;
-
-/**
- * Sanity Check:  This interface driver will NOT work if the following defines
- * are incorrect.
- */
-#if (PBUF_LINK_HLEN != 16)
-	#error "PBUF_LINK_HLEN must be 16 for this interface driver!"
-#endif
-#if (ETH_PAD_SIZE != 2)
-	#error "ETH_PAD_SIZE must be 2 for this interface driver!"
-#endif
 
 /****************************************************************************/
 /*                            Static variables                              */
 /****************************************************************************/
+/**< LWIP Pbuf constructor */
+static void          PbufQueue_ctor(PbufQueue *me);
 
-static void 			PbufQueue_ctor(PbufQueue *me);
-static uint8_t 			PbufQueue_put(PbufQueue *me, struct pbuf *p);
-static struct pbuf*		PbufQueue_get(PbufQueue *me);
+/**< LWIP Pbuf queue put */
+static uint8_t       PbufQueue_put(PbufQueue *me, struct pbuf *p);
 
-static struct netif 	l_netif;       /* the single network interface */
-static QActive* 		l_active;      /* active object associated with this driver */
-static PbufQueue 		l_txq;         /* queue of pbufs for transmission */
+/**< LWIP Pbuf queue get */
+static struct pbuf*  PbufQueue_get(PbufQueue *me);
 
-/*..........................................................................*/
-/* Ethernet Interrupt handler.  It is located here because it uses a lot of
- * the shared objects from QP */
-void ETH_IRQHandler(void) __attribute__((__interrupt__));
-void ETH_IRQHandler(void) {
-    QK_ISR_ENTRY();                      /* inform QK about entering an ISR */
+static struct netif 	l_netif;               /**< the single network interface */
+static QActive* 		l_active; /**< active object associated with this driver */
+static PbufQueue 		l_txq;              /**< queue of pbufs for transmission */
 
-    if ( ETH_GetDMAFlagStatus(ETH_DMA_FLAG_R) == SET) {
-    	ETH_DMAClearITPendingBit(ETH_DMA_IT_NIS | ETH_DMA_IT_R);/* clear the interrupt sources */
-    	static QEvent const evt_eth_rx = { LWIP_RX_READY_SIG, 0 };
-        QACTIVE_POST(l_active, &evt_eth_rx, &l_Ethernet_IRQHandler);
+/* Private functions ---------------------------------------------------------*/
 
-        ETH_DMAITConfig(ETH_DMA_IT_R, DISABLE);       /* disable further RX */
-    }
-
-    if ( ETH_GetDMAFlagStatus(ETH_DMA_FLAG_T) == SET) {
-    	ETH_DMAClearITPendingBit(ETH_DMA_IT_NIS | ETH_DMA_IT_T);/* clear the interrupt sources */
-        static QEvent const evt_eth_tx = { LWIP_TX_READY_SIG, 0 };
-        QACTIVE_POST(l_active, &evt_eth_tx, &l_Ethernet_IRQHandler);
-    }
-
-    /* When Rx Buffer unavailable flag is set: clear it and resume reception. Taken from:
-     * http://lists.gnu.org/archive/html/lwip-users/2012-09/msg00053.html */
-    if ((ETH->DMASR & ETH_DMASR_RBUS) != (u32)RESET) {
-    	/* Clear RBUS ETHERNET DMA flag */
-    	ETH->DMASR = ETH_DMASR_RBUS;
-
-    	/* Resume DMA reception. The register doesn't care what you write to it. */
-    	ETH->DMARPDR = 0;
-    }
-
-
-#if LINK_STATS
-    if ( ETH_GetDMAFlagStatus(ETH_DMA_FLAG_RO) == SET) {
-        static QEvent const evt_eth_er = { LWIP_RX_OVERRUN_SIG, 0 };
-        QACTIVE_POST(l_active, &evt_eth_er, &l_Ethernet_IRQHandler);
-    }
-#endif
-
-    QK_ISR_EXIT();                        /* inform QK about exiting an ISR */
-}
-
-/*..........................................................................*/
-// Called from lwipmgr.c
-struct netif *eth_driver_init(QActive *active,
-                              u8_t macaddr[NETIF_MAX_HWADDR_LEN])
+/******************************************************************************/
+struct netif *eth_driver_init(
+      QActive *active,
+      u8_t macaddr[NETIF_MAX_HWADDR_LEN]
+)
 {
     struct ip_addr ipaddr;
     struct ip_addr netmask;
     struct ip_addr gw;
 
+    lwip_init();	                               /* initialize the lwIP stack */
 
-    lwip_init();	/* initialize the lwIP stack */
-
-                             /* set MAC address in the network interface... */
+                               /* set MAC address in the network interface... */
     l_netif.hwaddr_len = NETIF_MAX_HWADDR_LEN;
     MEMCPY(&l_netif.hwaddr[0], macaddr, NETIF_MAX_HWADDR_LEN);
 
-    l_active = active; /*save the active object associated with this driver */
+    l_active = active;   /*save the active object associated with this driver */
 
 #if LWIP_NETIF_HOSTNAME
-    l_netif.hostname = "Laminator";        /* initialize interface hostname */
+    l_netif.hostname = "CB";                 /* initialize interface hostname */
 #endif
 
     /*
@@ -243,8 +185,10 @@ GET_NEXT_FRAGMENT:;
     /* re-enable the RX interrupt */
     ETH_DMAITConfig(ETH_DMA_IT_NIS | ETH_DMA_IT_R, ENABLE);
 }
-/*..........................................................................*/
-void eth_driver_write(void) {
+
+/******************************************************************************/
+void eth_driver_write(void)
+{
 	if ( ETH_GetDMAFlagStatus(ETH_DMA_FLAG_TBU) == RESET) { /* TX fifo available*/
         struct pbuf *p = PbufQueue_get(&l_txq);
         if (p != NULL) {                        /* pbuf found in the queue? */
@@ -254,22 +198,12 @@ void eth_driver_write(void) {
     }
 }
 
-/*..........................................................................*/
-/*
- * This function will either write the pbuf into the TX FIFO,
- * or will put the packet in the TX queue of pbufs for subsequent
- * transmission when the transmitter becomes idle.
- *
- * @param netif the lwip network interface structure for this ethernetif
- * @param p the pbuf to send
- * @return ERR_OK if the packet could be sent
- *         an err_t value if the packet couldn't be sent
- *
- */
-err_t ethernetif_output(struct netif *netif, struct pbuf *p) {
+/******************************************************************************/
+err_t ethernetif_output(struct netif *netif, struct pbuf *p)
+{
     if (PbufQueue_isEmpty(&l_txq) &&            /* nothing in the TX queue? */
         ETH_GetDMAFlagStatus(ETH_DMA_FLAG_TBU) == RESET) {     /* TX empty? */
-    	low_level_transmit(netif, p);                  /* send the pbuf right away */
+    	low_level_transmit(netif, p);               /* send the pbuf right away */
         /* the pbuf will be freed by the lwIP code */
     }
     else {                 /* otherwise post the pbuf to the transmit queue */
@@ -283,21 +217,9 @@ err_t ethernetif_output(struct netif *netif, struct pbuf *p) {
     return(ERR_OK);
 }
 
-/*==========================================================================*/
-
-/**
- * Should be called at the beginning of the program to set up the
- * network interface. It calls the function low_level_init() to do the
- * actual setup of the hardware.
- *
- * This function should be passed as a parameter to netif_add().
- *
- * @param netif the lwip network interface structure for this ethernetif
- * @return ERR_OK if the loopif is initialized
- *         ERR_MEM if private data couldn't be allocated
- *         any other err_t on error
- */
-err_t ethernetif_init(struct netif *netif) {
+/******************************************************************************/
+err_t ethernetif_init(struct netif *netif)
+{
 	LWIP_ASSERT("netif != NULL", (netif != NULL));
 
 
@@ -319,19 +241,9 @@ err_t ethernetif_init(struct netif *netif) {
     return(ERR_OK);
 }
 
-/*..........................................................................*/
-/*
-* This function should do the actual transmission of the packet. The packet is
-* contained in the pbuf that is passed to the function. This pbuf might be
-* chained.
-*
-* @param p the MAC packet to send (e.g. IP packet including MAC addr and type)
-* @return ERR_OK if the packet could be sent
-*         an err_t value if the packet couldn't be sent
-* @note This function MUST be called with interrupts disabled or with the
-*       Stellaris Ethernet transmit fifo protected.
-*/
-void low_level_transmit(struct netif *netif, struct pbuf *p) {
+/******************************************************************************/
+void low_level_transmit(struct netif *netif, struct pbuf *p)
+{
 	struct pbuf *q;
 	u32_t l = 0;
 	err_t res = ERR_OK;
@@ -369,15 +281,10 @@ void low_level_transmit(struct netif *netif, struct pbuf *p) {
 	LINK_STATS_INC(link.xmit);
 }
 
-/*..........................................................................*/
-/*
- * This function will read a single packet from the Stellaris ethernet
- * interface, if available, and return a pointer to a pbuf.  The timestamp
- * of the packet will be placed into the pbuf structure.
- *
- * @return pointer to pbuf packet if available, NULL otherswise.
- */
-struct pbuf *low_level_receive(void) {
+
+/******************************************************************************/
+struct pbuf *low_level_receive(void)
+{
 
 #if LWIP_PTPD
     u32_t time_s, time_ns;
@@ -395,9 +302,6 @@ struct pbuf *low_level_receive(void) {
 	/* Get received frame */
 	frame = ETH_Get_Received_Frame_interrupt();
 
-	/* TODO: investigate this. This is an attempt to fix the slowdown in network
-	 * speed after some time passes.  This was found on an ST forum here:
-	 * https://my.st.com/public/STe2ecommunities/mcu/Lists/cortex_mx_stm32/Flat.aspx?RootFolder=https%3a%2f%2fmy.st.com%2fpublic%2fSTe2ecommunities%2fmcu%2fLists%2fcortex_mx_stm32%2fSTM32F2x7%20lwip%20ping%20-l%201472%20causes%20library%20mailfunction&FolderCTID=0x01200200770978C69A1141439FE559EB459D7580009C4E14902C3CDE46A77F0FFD06506F5B&currentviews=344 */
 	/* Check if we really have something or not */
 	if (NULL == frame.descriptor) {
 		return(p);
@@ -446,9 +350,6 @@ struct pbuf *low_level_receive(void) {
 
 			} /* End else */
 		} /* End if */
-
-
-
 	} /* End - check that frame has no error */
 
 	#if LWIP_PTPD
@@ -475,7 +376,6 @@ struct pbuf *low_level_receive(void) {
 	/* Clear Segment_Count */
 	DMA_RX_FRAME_infos->Seg_Count =0;
 
-
 	/* When Rx Buffer unavailable flag is set: clear it and resume reception */
 	if ((ETH->DMASR & ETH_DMASR_RBUS) != (u32)RESET) {
 		/* Clear RBUS ETHERNET DMA flag */
@@ -488,14 +388,17 @@ struct pbuf *low_level_receive(void) {
 	return(p);
 }
 
-/*..........................................................................*/
-static void PbufQueue_ctor(PbufQueue *me) {
+/******************************************************************************/
+static void PbufQueue_ctor(PbufQueue *me)
+{
     me->qread    = 0;
     me->qwrite   = 0;
     me->overflow = 0;
 }
-/*..........................................................................*/
-static struct pbuf *PbufQueue_get(PbufQueue *me) {
+
+/******************************************************************************/
+static struct pbuf *PbufQueue_get(PbufQueue *me)
+{
     struct pbuf *pBuf;
 
     if (PbufQueue_isEmpty(me)) {
@@ -514,8 +417,10 @@ static struct pbuf *PbufQueue_get(PbufQueue *me) {
     }
     return(pBuf);
 }
-/*..........................................................................*/
-static uint8_t PbufQueue_put(PbufQueue *me, struct pbuf *p) {
+
+/******************************************************************************/
+static uint8_t PbufQueue_put(PbufQueue *me, struct pbuf *p)
+{
     uint8_t next_qwrite = me->qwrite + 1;
 
     if (next_qwrite == Q_DIM(me->ring)) {
@@ -548,6 +453,8 @@ static uint8_t PbufQueue_put(PbufQueue *me, struct pbuf *p) {
 /* Print an IP header by using LWIP_DEBUGF
  * @param p an IP packet, p->payload pointing to the IP header
  */
+
+/******************************************************************************/
 void eth_driver_debug_print(struct pbuf *p) {
     struct eth_hdr *ethhdr = (struct eth_hdr *)p->payload;
     u16_t *plen = (u16_t *)p->payload;
@@ -574,14 +481,9 @@ void eth_driver_debug_print(struct pbuf *p) {
 }
 #endif /* NETIF_DEBUG */
 
-/**
- * In this function, the hardware should be initialized.
- * Called from ethernetif_init().
- *
- * @param netif the already initialized lwip network interface structure
- *        for this ethernetif
- */
-void low_level_init(struct netif *netif) {
+/******************************************************************************/
+void low_level_init(struct netif *netif)
+{
 	uint32_t i;
 
     /* set MAC hardware address length */
@@ -626,4 +528,51 @@ void low_level_init(struct netif *netif) {
 	ETH_Start();
 }
 
-/*********** Copyright (C) 2012 Datacard. All rights reserved *****END OF FILE****/
+/**
+ * @}
+ * end addtogroup groupLWIP_QPC_Eth
+ */
+
+/******************************************************************************/
+/* Ethernet Interrupt handler.  It is located here because it uses a lot of
+ * the shared objects from QP */
+void ETH_IRQHandler(void) {
+    QK_ISR_ENTRY();                      /* inform QK about entering an ISR */
+
+    if ( ETH_GetDMAFlagStatus(ETH_DMA_FLAG_R) == SET) {
+      ETH_DMAClearITPendingBit(ETH_DMA_IT_NIS | ETH_DMA_IT_R);/* clear the interrupt sources */
+      static QEvent const evt_eth_rx = { LWIP_RX_READY_SIG, 0 };
+        QACTIVE_POST(l_active, &evt_eth_rx, &l_Ethernet_IRQHandler);
+
+        ETH_DMAITConfig(ETH_DMA_IT_R, DISABLE);       /* disable further RX */
+    }
+
+    if ( ETH_GetDMAFlagStatus(ETH_DMA_FLAG_T) == SET) {
+      ETH_DMAClearITPendingBit(ETH_DMA_IT_NIS | ETH_DMA_IT_T);/* clear the interrupt sources */
+        static QEvent const evt_eth_tx = { LWIP_TX_READY_SIG, 0 };
+        QACTIVE_POST(l_active, &evt_eth_tx, &l_Ethernet_IRQHandler);
+    }
+
+    /* When Rx Buffer unavailable flag is set: clear it and resume reception. Taken from:
+     * http://lists.gnu.org/archive/html/lwip-users/2012-09/msg00053.html */
+    if ((ETH->DMASR & ETH_DMASR_RBUS) != (u32)RESET) {
+      /* Clear RBUS ETHERNET DMA flag */
+      ETH->DMASR = ETH_DMASR_RBUS;
+
+      /* Resume DMA reception. The register doesn't care what you write to it. */
+      ETH->DMARPDR = 0;
+    }
+
+
+#if LINK_STATS
+    if ( ETH_GetDMAFlagStatus(ETH_DMA_FLAG_RO) == SET) {
+        static QEvent const evt_eth_er = { LWIP_RX_OVERRUN_SIG, 0 };
+        QACTIVE_POST(l_active, &evt_eth_er, &l_Ethernet_IRQHandler);
+    }
+#endif
+
+    QK_ISR_EXIT();                        /* inform QK about exiting an ISR */
+}
+
+
+/******** Copyright (C) 2012 Datacard. All rights reserved *****END OF FILE****/

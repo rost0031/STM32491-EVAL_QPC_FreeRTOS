@@ -32,17 +32,22 @@ Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */
 
 /* Private typedefs ----------------------------------------------------------*/
 /* Private defines -----------------------------------------------------------*/
-/* Maximum Timeout values for flags and events waiting loops. These timeouts are
-   not based on accurate values, they just guarantee that the application will
-   not remain stuck if the serial communication is corrupted.
-   You may modify these timeout values depending on CPU frequency and application
-   conditions (interrupts routines ...). */
+/**
+ * @brief Maximum Timeout values for flags and events waiting loops.
+ * These timeouts are not based on accurate values, they just guarantee that
+ * the application will not remain stuck if the serial communication is
+ * corrupted.  You may modify these timeout values depending on CPU frequency
+ * and application conditions (interrupts routines ...).
+ */
 #define SERIAL_FLAG_TIMEOUT         ((uint32_t)0x1000)
 #define SERIAL_LONG_TIMEOUT         ((uint32_t)(10 * SERIAL_FLAG_TIMEOUT))
 
 /* Private macros ------------------------------------------------------------*/
 /* Private variables and Local objects ---------------------------------------*/
-/* Buffers for Serial interfaces */
+
+/**
+ * @brief Buffers for Serial interfaces
+ */
 static char          system_serial_buffer[MAX_MSG_LEN];
 
 /**
@@ -306,7 +311,8 @@ void UART4_IRQHandler(void)
     QK_ISR_EXIT();                        /* inform QK about exiting an ISR */
 }
 /**
- * @} end addtogroup groupSerial
+ * @}
+ * end addtogroup groupSerial
  */
 
 /******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/

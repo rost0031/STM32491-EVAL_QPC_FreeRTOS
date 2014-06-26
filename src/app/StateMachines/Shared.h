@@ -20,13 +20,13 @@
 
 /* Exported defines ----------------------------------------------------------*/
 /**
- * \def Global maximum length of message buffers (serial and ethernet).
+ * @brief Global maximum length of message buffers (serial and ethernet).
  */
 #define MAX_MSG_LEN                                                        512
 
 /* Exported macros -----------------------------------------------------------*/
 /**
- * \def STM32 optimized MEMCPY.
+ * @brief STM32 optimized MEMCPY.
  * This STM32 optimized MEMCPY is much faster than the regular one provided by
  * standard libs.  It's specifically tuned for arm cortex M3 processors and
  * written in very fast assembly.  Use it instead of regular memcpy */

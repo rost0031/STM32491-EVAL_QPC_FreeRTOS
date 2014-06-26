@@ -177,7 +177,8 @@ uint32_t Serial_send_raw_msg(
 );
 
 /**
- * @} end addtogroup groupSerial
+ * @}
+ * end addtogroup groupSerial
  */
 #endif                                                           /* SERIAL_H_ */
 /******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/

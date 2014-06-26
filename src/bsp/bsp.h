@@ -1,4 +1,3 @@
-// $Id$
 /**
  * @file bsp.h
  * @brief  This file contains the Board Support Package functions for Redwood_H1 Board
@@ -7,26 +6,43 @@
  * @author Harry Rostovtsev
  * @email  harry_rostovtsev@datacard.com
  * Copyright (C) 2012 Datacard. All rights reserved.
+ *
+ * @addtogroup groupBSP
+ * @{
+ *
  */
-// $Log$
 
-#ifndef bsp_h
-#define bsp_h
+/* Define to prevent recursive inclusion -------------------------------------*/
+#ifndef BSP_H_
+#define BSP_H_
 
-#include "Shared.h"
-#include "qf_port.h"
-#include "stm32f2xx.h"
+/* Includes ------------------------------------------------------------------*/
+#include "Shared.h"                                   /*  Common Declarations */
+#include "qp_port.h"                                        /* for QP support */
+#include "stm32f2xx.h"                                   /* For STM32 support */
 
-#define BSP_TICKS_PER_SEC 10000 // Tells QPC how often to run with respect to system clock
+/* Exported defines ----------------------------------------------------------*/
+/**
+ * @brief   How many times per second that the RTOS should attempt to handle its
+ * events.  Tells QPC how often to run with respect to system clock.
+ */
+#define BSP_TICKS_PER_SEC                                                  10000
+
+/* Exported macros -----------------------------------------------------------*/
+/**
+ * @brief   This macro converts milliseconds from BSP ticks.
+ */
 #define BSP_TICKS_PER_MS  (BSP_TICKS_PER_SEC / 1000)
 
 /**
- * Convert seconds to BSP ticks used by timers in QP.
+ * @brief   Convert seconds to BSP ticks used by timers in QPC.
  *
- * @param  seconds: number of seconds that is desired
- * @retval ticks: number of ticks to actually arm the QP timer on the laminator.
+ * @param [in] seconds: number of seconds that is desired
+ * @return  ticks: number of ticks to actually arm the QP timer on the board.
  */
 #define SEC_TO_TICKS( seconds )   (uint32_t)( (1.0 * seconds) * BSP_TICKS_PER_SEC )
+
+/* Exported types ------------------------------------------------------------*/
 
 /*****************************************************************************
 * NOTE00:
@@ -59,9 +75,10 @@
 * DO NOT LEAVE THE ISR PRIORITIES AT THE DEFAULT VALUE!
 */
 enum KernelUnawareISRs {                                        /* see NOTE00 */
-    RTC_WKUP_PRIO = 0,
-    /* ... */
-    MAX_KERNEL_UNAWARE_CMSIS_PRI                          /* keep always last */
+   RTC_WKUP_PRIO = 0,
+   TIM5_PRIO,
+   /* ... */
+   MAX_KERNEL_UNAWARE_CMSIS_PRI                          /* keep always last */
 };
 /* "kernel-unaware" interrupts can't overlap "kernel-aware" interrupts */
 Q_ASSERT_COMPILE(MAX_KERNEL_UNAWARE_CMSIS_PRI <= QF_AWARE_ISR_CMSIS_PRI);
@@ -77,7 +94,6 @@ typedef enum KernelAwareISRs {   /* ISR priorities starting from the highest urg
 //	TIM1_BRK_TIM9_PRIO,
 //	TIM8_BRK_TIM12_PRIO,
 //	TIM3_PRIO,
-//	TIM5_PRIO,
 //	TIM1_UP_TIM10_PRIO,
 //	TIM8_UP_TIM13_PRIO,
 //	DMA2_Stream3_PRIO,
@@ -100,10 +116,51 @@ typedef enum KernelAwareISRs {   /* ISR priorities starting from the highest urg
 /* "kernel-aware" interrupts should not overlap the PendSV priority */
 Q_ASSERT_COMPILE(MAX_KERNEL_AWARE_CMSIS_PRI <= (0xFF >>(8-__NVIC_PRIO_BITS)));
 
-void BSP_init(void);
-void NVIC_Config(uint8_t irq, uint8_t priority);
-void BSP_busyDelay(void);               // to artificially extend RTC processing
-void BSP_Delay(uint32_t nCount);	          // Delay used for init of hardware
+/* Exported constants --------------------------------------------------------*/
+/* Exported functions --------------------------------------------------------*/
+/**
+ * @brief   Initializes the BSP for the board.
+ *
+ * This function initializes the board support package (BSP).  It initializes:
+ *    - All clocks either directly or by calling BSP modules' functions.
+ *    - All GPIO and EXTI lines
+ *    - All NVIC and associated ISRs.
+ *
+ * @note 1: Should be called only once and only in the beginning.
+ * @note 2: Most clocks (not all), and any device hardware bringup is done here.
+ * @param  None
+ * @return None
+ */
+void BSP_init( void );
 
-#endif                                                                // bsp_h
-/******** Copyright (C) 2012 Datacard. All rights reserved *****END OF FILE****/
+/**
+ * @brief  Initializes IRQ and priority in the NVIC with the provided IRQ and
+ * priority.
+ *
+ * This function is a utility wrapper around initializing NVIC and assigning
+ * IRQs priorities.  It is called by any function that wishes to initialize an
+ * interrupt.
+ *
+ * @param [in] irq: selects the irq to assign priority to
+ * @param [in] priority: selects the priority to assign to the specified irq
+ * @return None
+ */
+void NVIC_Config( uint8_t irq, uint8_t priority );
+
+/**
+ * @brief  Delay Function.
+ *
+ * This function should only be used in BSP startup and not after the BSP is
+ * running.  It simply implements a manual loop that spins down to zero.
+ *
+ * @param [in] nCount: uint32_t that specifies the delay time length.
+ * @return None
+ */
+void BSP_Delay(uint32_t nCount);
+
+/**
+ * @} end addtogroup groupBSP
+ */
+
+#endif                                                              /* BSP_H_ */
+/******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/

@@ -1,4 +1,3 @@
-// $Id$
 /**
  * @file   rtc.h
  * @brief  This file contains the definitions for functions to control on the
@@ -8,52 +7,69 @@
  * @author Harry Rostovtsev
  * @email  Harry_Rostovtsev@datacard.com
  * Copyright (C) 2013 Datacard. All rights reserved.
+ *
+ * @addtogroup groupTime
+ * @{
+ *
+ * This module is responsible for setting up the Real-time clock (RTC) for time
+ * keeping along with a subsecond timer that measures approximately 10000 ticks
+ * per second ( 1/10 of a millisecond ).
+ *
+ * This module also calibrates the prescalar to the RTC by measuring the RTC
+ * clock frequency and adjusting for any drift.  TIM5 is used for this and is
+ * disabled immediately after so it could be used later if desired.
  */
-// $Log$
 
+/* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef TIME_H__
 #define TIME_H__
 
+/* Includes ------------------------------------------------------------------*/
 #include "stm32f2xx_rtc.h"
 
-/* Basic time structure that contains the STM32 struct for hours, min, and seconds
- * and adds a subsecond counter. */
-typedef struct
-{
-   RTC_TimeTypeDef   hour_min_sec;
-   uint32_t          sub_sec;
-}t_Time;
+/* Exported defines ----------------------------------------------------------*/
+/* Exported macros -----------------------------------------------------------*/
+/* Exported types ------------------------------------------------------------*/
 
 /**
-  * Initializes the RTC and a subsecond timer. Should be called only once and
-  * only in the beginning.  This init function sets up the realtime clock to be
-  * used for timestamping.
-  * @param  None
-  * @return None
-  */
+ * \struct time_T
+ * Basic time structure that contains the STM32 struct for hours, min, and
+ * seconds and adds a subsecond counter.
+ */
+typedef struct
+{
+   RTC_TimeTypeDef   hour_min_sec;   /**< STM32 Time struct with h, m, and s. */
+   uint32_t          sub_sec;   /**< uint32_t subsecond timer from 0 - 10000. */
+}time_T;
+
+/* Exported constants --------------------------------------------------------*/
+/* Exported functions --------------------------------------------------------*/
+/**
+ * @brief  Initializes the RTC and a subsecond timer.
+ *
+ * This function:
+ *   -# initializes the RTC.
+ *   -# calibrates the RTC using TIM5 to account for clock drift.
+ *   -# initializes a subsecond timer using TIM7.
+ *
+ * @note 1: This function should be called only once and only in the beginning.
+ *
+ * @param  None
+ * @return None
+ */
 void TIME_Init( void );
 
 /**
-  * Initializes the subsecond timer (TIM7). Should be called only once and
-  * only in the beginning by TIME_Init().  This init function sets up TIM7 to
-  * be used as a microsecond timer
-  * @param  None
-  * @return None
-  */
-void TIME_subSecondTimer_Init( void );
+ * @brief   Return a structure containing the current time.
+ * @param  None
+ * @return time: a time_T structure containing the current time.
+ */
+time_T TIME_getTime( void );
 
 /**
-  * Print the current time. (hours, minutes, seconds, subseconds).
-  * @param  None
-  * @retval None
-  */
-void TIME_printTime( void );
-
-/**
-  * Return a structure containing the current time.
-  * @param  None
-  * @retval time: a t_Time structure containing the current time.
-  */
-t_Time TIME_getTime( void );
+ * @}
+ * end addtogroup groupTime
+ */
 
 #endif                                                            /* TIME_H__ */
+/******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/

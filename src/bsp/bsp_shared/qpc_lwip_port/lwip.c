@@ -1,4 +1,3 @@
-// $Id$
 /**
  * @file 	lwip.c
  * @brief   lwIP consolidated file for QP-lwIP integration.  This file is
@@ -10,10 +9,13 @@
  * @author 	Harry Rostovtsev
  * @email  	harry_rostovtsev@datacard.com
  * Copyright (C) 2012 Datacard. All rights reserved.
+ *
+ * @addtogroup groupLWIP_QPC_Eth
+ * @{
  */
-// $Log$
 
-#include "lwip/opt.h"                            /* lwIP options come first */
+/* Includes ------------------------------------------------------------------*/
+#include "lwip/opt.h"
 #include "lwip/api.h"
 #include "lwip/tcp.h"
 #include "lwip/udp.h"
@@ -67,10 +69,6 @@
 #include "core/snmp/msg_out.c"
 */
 
-/* Ethernet interface ......................................................*/
-//#include "netif/etharp.c"
-//???#include "netif/loopif.c"
-
 /* PPP .....................................................................*/
 #if PPP_SUPPORT
     #include "netif/ppp/auth.c"
@@ -88,7 +86,13 @@
     #include "netif/ppp/vj.c"
 #endif                                                       /* PPP_SUPPORT */
 
-/* utilities added by QL ...................................................*/
+
+/* Compile-time called macros ------------------------------------------------*/
+/* Private typedefs ----------------------------------------------------------*/
+/* Private defines -----------------------------------------------------------*/
+/* Private macros ------------------------------------------------------------*/
+/* Private variables and Local objects ---------------------------------------*/
+
 /**
 * Allocate a transport-layer pbuf and copies the provided data buffer 'data'
 * of length 'len' bytes into the payload(s) of the pbuf. The function takes
@@ -97,16 +101,26 @@
 * The function returns the newly created pbuf or NULL if the pbuf cannot
 * be allocated.
 */
-struct pbuf *pbuf_new(u8_t *data, u16_t len) {
-    struct pbuf *p = pbuf_alloc(PBUF_TRANSPORT, len, PBUF_RAM);
-    struct pbuf *q = p;
-    while ((q != (struct pbuf *)0) && (len >= q->len)) {
-        MEMCPY(q->payload, data, q->len);         /* copy data into payload */
-        len  -= q->len;                                 /* remaining length */
-        data += q->len;                              /* remainig data chunk */
-        q = q->next;                                       /* get next pbuf */
-    }
-    return p;
+
+/* Private functions ---------------------------------------------------------*/
+
+/******************************************************************************/
+struct pbuf *pbuf_new(u8_t *data, u16_t len)
+{
+   struct pbuf *p = pbuf_alloc(PBUF_TRANSPORT, len, PBUF_RAM);
+   struct pbuf *q = p;
+   while ((q != (struct pbuf *)0) && (len >= q->len)) {
+      MEMCPY(q->payload, data, q->len);         /* copy data into payload */
+      len  -= q->len;                                 /* remaining length */
+      data += q->len;                              /* remainig data chunk */
+      q = q->next;                                       /* get next pbuf */
+   }
+   return p;
 }
+
+/**
+ * @}
+ * end addtogroup groupLWIP_QPC_Eth
+ */
 
 /*********** Copyright (C) 2012 Datacard. All rights reserved *****END OF FILE****/

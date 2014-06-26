@@ -44,7 +44,7 @@ void CON_output(
 {
    /* 1. Get the time first so the printout of the event is as close as possible
     * to when it actually occurred */
-   t_Time time = TIME_getTime();
+   time_T time = TIME_getTime();
 
    /* 2. Construct a new msg event pointer and allocate storage in the QP event
     * pool */
@@ -139,7 +139,7 @@ void CON_slow_output(
 {
    /* 1. Get the time first so the printout of the event is as close as possible
     * to when it actually occurred */
-   t_Time time = TIME_getTime();
+   time_T time = TIME_getTime();
 
    /* Temporary local buffer and index to compose the msg */
    char tmpBuffer[MAX_MSG_LEN];
