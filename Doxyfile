@@ -830,8 +830,7 @@ RECURSIVE              = YES
 # Note that relative paths are relative to the directory from which doxygen is
 # run.
 
-EXCLUDE                = /home/developer/workspace/CouplerBoardProto_L1/src/sys/qpc_shared_4.5.02 \
-                         /home/developer/workspace/CouplerBoardProto_L1/src/sys/qpc_shared/examples \
+EXCLUDE                = /home/developer/workspace/CouplerBoardProto_L1/src/sys/qpc_shared/examples \
                          /home/developer/workspace/CouplerBoardProto_L1/src/sys/qpc_shared/ports/win32 \
                          /home/developer/workspace/CouplerBoardProto_L1/src/sys/qpc_shared/ports/ucos2 \
                          /home/developer/workspace/CouplerBoardProto_L1/src/sys/qpc_shared/ports/posix \
