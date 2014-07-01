@@ -33,7 +33,7 @@ enum FirstSignal {
  * @enum Signals used by CommStackMgr
  */
 enum CommStackSignals {
-   MSG_SEND_OUT_SIG = FIRST_SIG,
+   MSG_SEND_OUT_SIG = FIRST_SIG, /** This signal must start at the previous category max signal */
    MSG_RECEIVED_SIG,
    TIME_TEST_SIG,
    MSG_MAX_SIG,
@@ -43,10 +43,22 @@ enum CommStackSignals {
  * @enum Signals used by SerialMgr
  */
 enum SerialMgrSignals {
-   UART_DMA_START_SIG = MSG_MAX_SIG,
+   UART_DMA_START_SIG = MSG_MAX_SIG, /** This signal must start at the previous category max signal */
    UART_DMA_DONE_SIG,
    UART_DMA_TIMEOUT_SIG,
    UART_DMA_MAX_SIG
+};
+
+/**
+ * @enum Signals used by I2CMgr
+ */
+enum I2CMgrSignals {
+   I2C_READ_START_SIG = UART_DMA_MAX_SIG, /** This signal must start at the previous category max signal */
+   I2C_READ_DONE_SIG,
+   I2C_WRITE_START_SIG,
+   I2C_WRITE_DONE_SIG,
+   I2C_TIMEOUT_SIG,
+   I2C_MAX_SIG
 };
 
 /* INSERT NEW SIGNAL CATEGORIES BEFORE HERE...POINT MAX_SHARED_SIG TO LAST SIGNAL */

@@ -89,6 +89,9 @@ QP_LWIP_PORT_DIR		= $(BSP_DIR)/bsp_shared/qpc_lwip_port
 # Serial Driver and AO
 SERIAL_DIR				= $(BSP_DIR)/bsp_shared/serial
 
+# I2C Driver and AO
+I2C_DIR					= $(BSP_DIR)/bsp_shared/i2c
+
 # QPC directories
 QPC 					= $(SYS_DIR)/qpc_shared
 QP_PORT_DIR 			= $(QPC)/ports/arm-cm/qk/gnu
@@ -118,6 +121,7 @@ VPATH 					= $(APP_DIR) \
 						  $(BSP_DIR)/bsp_shared \
 						  $(ETH_DRV_DIR)/src \
 						  $(SERIAL_DIR) \
+						  $(I2C_DIR) \
 						  \
 						  $(QP_LWIP_PORT_DIR) \
 						  $(QP_LWIP_PORT_DIR)/netif \
@@ -143,6 +147,7 @@ INCLUDES  				= -I$(SRC_DIR) \
 						  -I$(BASE64_DIR) \
 						  -I$(BSP_DIR)/bsp_shared/runtime \
 						  -I$(SERIAL_DIR) \
+						  -I$(I2C_DIR) \
 						  \
 						  -I$(LWIP_DIR)/src/include \
 						  -I$(LWIP_DIR)/src/include/netif \
@@ -183,7 +188,6 @@ ASM_SRCS 				:= \
 C_SRCS 					:= \
 			      		main.c \
 			      		CommStackMgr.c \
-			      		SerialMgr.c \
 			      		stm32f2xx_it.c \
 			      		system_stm32f2xx.c \
 			      		no_heap.c \
@@ -195,8 +199,10 @@ C_SRCS 					:= \
 						\
 			      		bsp.c \
 			      		i2c.c \
+			      		I2CMgr.c \
 			      		time.c \
 			      		lwip.c \
+			      		SerialMgr.c \
 			      		serial.c \
 			      		console_output.c \
 			      		crc32compat.c \
