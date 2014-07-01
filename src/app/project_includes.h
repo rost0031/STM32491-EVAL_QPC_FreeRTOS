@@ -115,6 +115,11 @@
           */
 
       /**
+       * @defgroup groupI2C I2C Bus Driver
+       * @ingroup groupSharedBSP
+       */
+
+      /**
        * @defgroup groupTime Time/RTC
        * @ingroup groupSharedBSP
        */

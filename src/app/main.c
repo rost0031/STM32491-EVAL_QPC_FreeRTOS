@@ -109,7 +109,7 @@ int main(void) {
     );
 
     QACTIVE_START(AO_CommStackMgr,
-          COMM_STACK_PRIORITY,                                    /* priority */
+          COMM_MGR_PRIORITY,                                      /* priority */
           l_CommStackMgrQueueSto, Q_DIM(l_CommStackMgrQueueSto), /* evt queue */
           (void *)0, 0U,                               /* no per-thread stack */
           (QEvt *)0                                /* no initialization event */

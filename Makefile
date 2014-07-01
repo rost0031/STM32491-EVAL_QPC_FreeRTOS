@@ -86,6 +86,9 @@ SYS_DIR					= $(SRC_DIR)/sys
 ETH_DRV_DIR				= $(BSP_DIR)/bsp_shared/KSZ8863_Eth_Driver
 QP_LWIP_PORT_DIR		= $(BSP_DIR)/bsp_shared/qpc_lwip_port
 
+# Serial Driver and AO
+SERIAL_DIR				= $(BSP_DIR)/bsp_shared/serial
+
 # QPC directories
 QPC 					= $(SYS_DIR)/qpc_shared
 QP_PORT_DIR 			= $(QPC)/ports/arm-cm/qk/gnu
@@ -114,6 +117,7 @@ VPATH 					= $(APP_DIR) \
 						  $(BSP_DIR) \
 						  $(BSP_DIR)/bsp_shared \
 						  $(ETH_DRV_DIR)/src \
+						  $(SERIAL_DIR) \
 						  \
 						  $(QP_LWIP_PORT_DIR) \
 						  $(QP_LWIP_PORT_DIR)/netif \
@@ -138,6 +142,7 @@ INCLUDES  				= -I$(SRC_DIR) \
 						  -I$(ETH_DRV_DIR)/inc \
 						  -I$(BASE64_DIR) \
 						  -I$(BSP_DIR)/bsp_shared/runtime \
+						  -I$(SERIAL_DIR) \
 						  \
 						  -I$(LWIP_DIR)/src/include \
 						  -I$(LWIP_DIR)/src/include/netif \
@@ -189,6 +194,7 @@ C_SRCS 					:= \
 			      		stm32f2x7_eth.c \
 						\
 			      		bsp.c \
+			      		i2c.c \
 			      		time.c \
 			      		lwip.c \
 			      		serial.c \
@@ -210,6 +216,7 @@ C_SRCS 					:= \
 			      		stm32f2xx_dma.c \
 			      		stm32f2xx_exti.c \
 			      		stm32f2xx_flash.c \
+			      		stm32f2xx_i2c.c \
 						stm32f2xx_gpio.c \
 			      		stm32f2xx_pwr.c \
 			      		stm32f2xx_rcc.c \
@@ -236,7 +243,6 @@ C_SRCS 					:= \
 #			      		stm32f2xx_hash.c \
 #			      		stm32f2xx_hash_md5.c \
 #			      		stm32f2xx_hash_sha1.c \
-#			      		stm32f2xx_i2c.c \
 #			      		stm32f2xx_iwdg.c \
 #			      		stm32f2xx_rng.c \
 #			      		stm32f2xx_sdio.c \

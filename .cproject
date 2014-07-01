@@ -41,7 +41,6 @@
 						</toolChain>
 					</folderInfo>
 					<fileInfo id="org.eclipse.cdt.cross.arm.gnu.sourcery.windows.toolchain.base.272356297.900958739" name="CommStackMgr_gen.h" rcbsApplicability="disable" resourcePath="src/app/StateMachines/CommStackMgr_gen.h" toolsToInvoke=""/>
-					<fileInfo id="org.eclipse.cdt.cross.arm.gnu.sourcery.windows.toolchain.base.272356297.1465052980" name="SerialMgr_gen.h" rcbsApplicability="disable" resourcePath="src/bsp/bsp_shared/SerialMgr_gen.h" toolsToInvoke=""/>
 					<folderInfo id="org.eclipse.cdt.cross.arm.gnu.sourcery.windows.toolchain.base.272356297.1155221945" name="/" resourcePath="src/bsp/bsp_shared/CMSIS_shared/Device/ST/STM32F10x">
 						<toolChain id="cdt.managedbuild.toolchain.gnu.cross.base.269393992" name="Cross GCC" superClass="cdt.managedbuild.toolchain.gnu.cross.base" unusedChildren="">
 							<option id="cdt.managedbuild.option.gnu.cross.prefix.1786689064.1123913625" name="Prefix" superClass="cdt.managedbuild.option.gnu.cross.prefix.1786689064"/>
@@ -61,6 +60,7 @@
 							</tool>
 						</toolChain>
 					</folderInfo>
+					<fileInfo id="org.eclipse.cdt.cross.arm.gnu.sourcery.windows.toolchain.base.272356297.1465052980" name="SerialMgr_gen.h" rcbsApplicability="disable" resourcePath="src/bsp/bsp_shared/serial/SerialMgr_gen.h" toolsToInvoke=""/>
 					<sourceEntries>
 						<entry excluding="src/bsp/bsp_shared/SerialMgr_gen.c|src/app/StateMachines/CommStackMgr_gen.c|src/sys/qpc_shared/ports/pic24_dspic|doc|src/sys/qpc_shared/examples/posix|src/sys/qpc_shared/examples/ucos2|src/sys/qpc_shared/examples/80x86|src/sys/qpc_shared_4.5.02|src/sys/qpc_shared/ports/rx|src/sys/qpc_shared/ports/m16c|src/sys/qpc_shared/ports/arm-cm/qk/iar|src/sys/qpc_shared/ports/arm-cm/vanilla|src/app/StateMachines/SerialMgr_gen.h|src/bsp/bsp_shared/SerialMgr_gen.h|src/sys/qpc_shared/ports/80x86|src/sys/lwip_shared/src/include/ipv6|src/sys/qpc_shared/ports/h8|src/sys/qpc_shared/ports/pic18|src/sys/qpc_shared/ports/nios2|src/sys/qpc_shared/ports/80251|src/sys/qpc_shared/ports/posix|src/app/StateMachines/SerialMgr_gen.c|src/sys/qpc_shared/ports/arm|src/sys/lwip_shared/src/core/ipv6|src/sys/qpc_shared/ports/tms320c55x|src/sys/qpc_shared/ports/arm-cm/qk/arm_keil|src/bsp/bsp_shared/CMSIS_shared/Device/ST/STM32F10x|src/sys/qpc_shared/ports/ucos2|src/sys/qpc_shared/ports/avr-xmega|src/sys/qpc_shared/ports/win32|src/sys/qpc_shared/ports/lint|src/sys/qpc_shared/ports/coldfire|src/sys/qpc_shared/ports/msp430|src/sys/qpc_shared/examples/win32|src/sys/qpc_shared/ports/avr|src/sys/qpc_shared/ports/tms320c28x|src/app/StateMachines/CommStackMgr_gen.h" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
 					</sourceEntries>

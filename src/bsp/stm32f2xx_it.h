@@ -148,6 +148,22 @@ void RTC_WKUP_IRQHandler( void ) __attribute__((__interrupt__));
  */
 void ETH_IRQHandler( void ) __attribute__((__interrupt__));
 
+/**
+ * @brief   This ISR function handles I2C1 bus event interrupt requests.
+ * See i2c.c for implementation.
+ * @param  None
+ * @retval None
+ */
+void I2C1_EV_IRQHandler( void ) __attribute__((__interrupt__));
+
+/**
+ * @brief   This ISR function handles I2C1 bus error interrupt requests.
+ * See i2c.c for implementation.
+ * @param  None
+ * @retval None
+ */
+void I2C1_ER_IRQHandler( void ) __attribute__((__interrupt__));
+
 #ifdef __cplusplus
 }
 #endif

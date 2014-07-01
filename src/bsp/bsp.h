@@ -108,6 +108,8 @@ typedef enum KernelAwareISRs {   /* ISR priorities starting from the highest urg
 	SYSTICK_PRIO,
 //	USART3_PRIO,
 	UART4_PRIO,
+   I2C1_ER_PRIO,
+	I2C1_EV_PRIO,
 	ETH_PRIO,			             /* Ethernet should take the lowest priority */
 	/* ... */
 	MAX_KERNEL_AWARE_CMSIS_PRI                             /* keep always last */
