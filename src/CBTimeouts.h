@@ -1,17 +1,22 @@
-// $Id$
 /**
  * @file 	CBTimeouts.h
- * Contains all the timeout values for the coupler board
+ * @brief   Contains all the timeout values for the coupler board
  *
  * @date   	06/02/2014
  * @author 	Harry Rostovtsev
  * @email  	harry_rostovtsev@datacard.com
  * Copyright (C) 2014 Datacard. All rights reserved.
+ *
+ * @addtogroup groupApp
+ * @{
  */
-// $Log$
 
+/* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef CBTIMEOUTS_H_
 #define CBTIMEOUTS_H_
+
+/* Includes ------------------------------------------------------------------*/
+/* Exported defines ----------------------------------------------------------*/
 
 /**
  * Timeout naming conventions:
@@ -34,7 +39,7 @@
  * TIMEOUT: this is a timeout and not simply used to time how long something
  * takes or a polling time.
  * SEC: this timeout is using units of "seconds"
- * NAME: QUCK_HEATER_CHECK - this is the function of this timeout.  It is used
+ * NAME: QUICK_HEATER_CHECK - this is the function of this timeout.  It is used
  * to make sure that the check of temperature will not take too long.
  * */
 
@@ -42,13 +47,32 @@
  * These are the timeouts used by all the state machines in the coupler board.
  *@{*/
 
-   /** \name Serial Timeout Maximums
+   /** \name Serial Timeouts
     * These are the timeouts used by the low level SerialMgr AO.
     *@{*/
    #define LL_MAX_TIMEOUT_SERIAL_DMA_BUSY_SEC                              1.0
    /*@} Serial Timeout Maximums*/
 
+   /** \name I2C Timeouts
+    * These are the timeouts used by the low level I2CMgr AO.
+    *@{*/
+   #define LL_MAX_TIMEOUT_I2C_BUS_BUSY_RETRY_SEC                           0.01
+   #define LL_MAX_TIMEOUT_I2C_BUSY_SEC                                     3.0
+   #define LL_MAX_TIMEOUT_I2C_READ_OP_SEC                                  3.0
+   #define LL_MAX_TIMEOUT_I2C_WRITE_OP_SEC                                 3.0
+   /*@} I2C Timeouts */
+
 
 /*@} Coupler Board Timeout Maximums*/
+
+
+/* Exported macros -----------------------------------------------------------*/
+/* Exported types ------------------------------------------------------------*/
+
+/**
+ * @}
+ * end addtogroup groupApp
+ */
+
 #endif                                                       /* CBTIMEOUTS_H_ */
 /******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/

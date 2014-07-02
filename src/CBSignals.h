@@ -58,6 +58,7 @@ enum I2CMgrSignals {
    I2C_WRITE_START_SIG,
    I2C_WRITE_DONE_SIG,
    I2C_TIMEOUT_SIG,
+   I2C_BUS_RETRY_TIMEOUT_SIG,
    I2C_MAX_SIG
 };
 
@@ -67,7 +68,7 @@ enum I2CMgrSignals {
  * @enum Final signal.
  */
 enum FinalSignal {
-   MAX_SHARED_SIG = UART_DMA_MAX_SIG,  /**< Last published shared signal - should always be at the bottom of this list */
+   MAX_SHARED_SIG = I2C_MAX_SIG,  /**< Last published shared signal - should always be at the bottom of this list */
 };
 
 /* Exported constants --------------------------------------------------------*/

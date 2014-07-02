@@ -14,6 +14,7 @@
 #include "LWIPMgr.h"                               /* for starting LWIPMgr AO */
 #include "CommStackMgr.h"                     /* for starting CommStackMgr AO */
 #include "SerialMgr.h"                           /* for starting SerialMgr AO */
+#include "I2CMgr.h"                                 /* for starting I2CMgr AO */
 
 #include "project_includes.h"           /* Includes common to entire project. */
 #include "Shared.h"
@@ -29,6 +30,7 @@ Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */
 static QEvt const    *l_CommStackMgrQueueSto[50];  /**< Storage for CommStackMgr event Queue */
 static QEvt const    *l_LWIPMgrQueueSto[50];       /**< Storage for LWIPMgr event Queue */
 static QEvt const    *l_SerialMgrQueueSto[50];     /**< Storage for SerialMgr event Queue */
+static QEvt const    *l_I2CMgrQueueSto[50];        /**< Storage for I2CMgr event Queue */
 static QSubscrList   l_subscrSto[MAX_PUB_SIG];     /**< Storage for subscribe/publish event Queue */
 
 /**
@@ -49,6 +51,7 @@ static union MediumEvents {
     uint8_t e1[sizeof(MsgEvt)];
     uint8_t e2[sizeof(EthEvt)];
     uint8_t e3[sizeof(SerialDataEvt)];
+    uint8_t e4[sizeof(I2CDataEvt)];
 } l_medPoolSto[100];                    /* storage for the medium event pool */
 
 /**
@@ -75,8 +78,9 @@ int main(void) {
     /* Instantiate the Active objects by calling their "constructors"          */
     dbg_slow_printf("Initializing AO constructors\n");
     SerialMgr_ctor();
-    CommStackMgr_ctor();
     LWIPMgr_ctor();
+    I2CMgr_ctor();
+    CommStackMgr_ctor();
 
     dbg_slow_printf("Initializing QF\n");
     QF_init();       /* initialize the framework and the underlying RT kernel */
@@ -86,9 +90,10 @@ int main(void) {
     QS_OBJ_DICTIONARY(l_smlPoolSto);
     QS_OBJ_DICTIONARY(l_medPoolSto);
 //    QS_OBJ_DICTIONARY(l_lrgPoolSto);
-    QS_OBJ_DICTIONARY(l_CommStackMgrQueueSto);
-    QS_OBJ_DICTIONARY(l_LWIPMgrQueueSto);
     QS_OBJ_DICTIONARY(l_SerialMgrQueueSto);
+    QS_OBJ_DICTIONARY(l_LWIPMgrQueueSto);
+    QS_OBJ_DICTIONARY(l_I2CMgrQueueSto);
+    QS_OBJ_DICTIONARY(l_CommStackMgrQueueSto);
 
     QF_psInit(l_subscrSto, Q_DIM(l_subscrSto));     /* init publish-subscribe */
 
@@ -108,6 +113,20 @@ int main(void) {
           (QEvt *)0                                /* no initialization event */
     );
 
+    QACTIVE_START(AO_LWIPMgr,
+          ETH_PRIORITY,                                           /* priority */
+          l_LWIPMgrQueueSto, Q_DIM(l_LWIPMgrQueueSto),           /* evt queue */
+          (void *)0, 0U,                               /* no per-thread stack */
+          (QEvt *)0                                /* no initialization event */
+    );
+
+    QACTIVE_START(AO_I2CMgr,
+          I2C_MGR_PRIORITY,                                       /* priority */
+          l_I2CMgrQueueSto, Q_DIM(l_I2CMgrQueueSto),             /* evt queue */
+          (void *)0, 0U,                               /* no per-thread stack */
+          (QEvt *)0                                /* no initialization event */
+    );
+
     QACTIVE_START(AO_CommStackMgr,
           COMM_MGR_PRIORITY,                                      /* priority */
           l_CommStackMgrQueueSto, Q_DIM(l_CommStackMgrQueueSto), /* evt queue */
@@ -115,12 +134,6 @@ int main(void) {
           (QEvt *)0                                /* no initialization event */
     );
 
-    QACTIVE_START(AO_LWIPMgr,
-          ETH_PRIORITY,                                           /* priority */
-          l_LWIPMgrQueueSto, Q_DIM(l_LWIPMgrQueueSto),           /* evt queue */
-          (void *)0, 0U,                               /* no per-thread stack */
-          (QEvt *)0                                /* no initialization event */
-    );
 
     log_slow_printf("Bootloader started successfully.\n");
     log_slow_printf("Starting QPC.  All logging from here on out should not show 'SLOW'!!!\n");

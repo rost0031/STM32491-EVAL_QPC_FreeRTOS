@@ -33,8 +33,9 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "CommStackMgr.h"
-#include "project_includes.h"         /* Includes common to entire project. */
-#include "bsp.h"                            /* For time to ticks conversion */
+#include "project_includes.h"           /* Includes common to entire project. */
+#include "bsp.h"                              /* For time to ticks conversion */
+#include "I2CMgr.h"                                         /* For I2CDataEvt */
 
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE;                 /* For QSPY to know the name of this file */
@@ -161,7 +162,17 @@ static QState CommStackMgr_Active(CommStackMgr * const me, QEvt const * const e)
         }
         /* ${AOs::CommStackMgr::SM::Active::TIME_TEST} */
         case TIME_TEST_SIG: {
-            DBG_printf("Time test\n");
+            DBG_printf("I2C read test\n");
+
+            /* Create MsgEvt event to send out the message */
+            I2CDataEvt *i2cDataEvt = Q_NEW(I2CDataEvt, I2C_READ_START_SIG);
+
+            /* Set the message length and source */
+            i2cDataEvt->wBufferLen = 10;
+            memset(i2cDataEvt->buffer, 0xFF, i2cDataEvt->wBufferLen);
+
+            /* Post the msgEvt for this AO (CommStackMgr) to handle */
+            QF_PUBLISH((QEvent *)i2cDataEvt, AO_CommStackMgr);
 
             /*
             t_Time fast_print_start_time = TIME_getTime();

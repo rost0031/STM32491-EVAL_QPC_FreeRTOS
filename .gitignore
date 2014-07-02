@@ -25,3 +25,7 @@ cscope.out
 env.mk
 version.h
 doc/
+.LWIPMgr
+.I2CMgr
+.CommStackMgr
+.SerialMgr

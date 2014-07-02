@@ -32,6 +32,15 @@
    <attribute name="deferredEvtQSto[100]" type="QTimeEvt const *" visibility="0x01" properties="0x00">
     <documentation>/**&lt; Storage for deferred event queue. */</documentation>
    </attribute>
+   <attribute name="bBusBusy" type="FlagStatus" visibility="0x01" properties="0x00">
+    <documentation>/**&lt; Flag that indicates whether the bus is free or busy */</documentation>
+   </attribute>
+   <attribute name="i2cBusBusyTimerEvt" type="QTimeEvt" visibility="0x01" properties="0x00">
+    <documentation>/**&lt; QPC timer Used to time retries for checking if the I2C bus is busy. */</documentation>
+   </attribute>
+   <attribute name="nBusRetries" type="uint8_t" visibility="0x01" properties="0x00">
+    <documentation>/**&lt; Keep track of number of retries used to check if the I2C bus is still busy. */</documentation>
+   </attribute>
    <statechart>
     <initial target="../1/0">
      <action>(void)e;        /* suppress the compiler warning about unused parameter */
@@ -42,10 +51,12 @@ QS_FUN_DICTIONARY(&amp;I2CMgr_initial);
 QS_FUN_DICTIONARY(&amp;I2CMgr_Active);
 QS_FUN_DICTIONARY(&amp;I2CMgr_Idle);
 QS_FUN_DICTIONARY(&amp;I2CMgr_Busy);
+QS_FUN_DICTIONARY(&amp;I2CMgr_Read);
 
-QActive_subscribe((QActive *)me, UART_DMA_START_SIG);
-QActive_subscribe((QActive *)me, UART_DMA_DONE_SIG);
-QActive_subscribe((QActive *)me, UART_DMA_TIMEOUT_SIG);</action>
+QActive_subscribe((QActive *)me, I2C_READ_START_SIG);
+QActive_subscribe((QActive *)me, I2C_WRITE_START_SIG);
+QActive_subscribe((QActive *)me, I2C_TIMEOUT_SIG);
+QActive_subscribe((QActive *)me, I2C_BUS_RETRY_TIMEOUT_SIG);</action>
      <initial_glyph conn="1,2,4,3,11,4">
       <action box="0,-2,6,2"/>
      </initial_glyph>
@@ -61,14 +72,21 @@ QActive_subscribe((QActive *)me, UART_DMA_TIMEOUT_SIG);</action>
  * @return status_: QState type that specifies where the state
  * machine is going next.
  */</documentation>
-     <entry>/* Post a timer and disarm it right away so it can be
- * rearmed at any point */
+     <entry>/* Post all the timers and disarm them right away so it can be
+ * rearmed at any point without worrying asserts. */
 QTimeEvt_postIn(
     &amp;me-&gt;i2cTimerEvt,
     (QActive *)me,
     SEC_TO_TICKS( LL_MAX_TIMEOUT_SERIAL_DMA_BUSY_SEC )
 );
-QTimeEvt_disarm(&amp;me-&gt;i2cTimerEvt);</entry>
+QTimeEvt_disarm(&amp;me-&gt;i2cTimerEvt);
+
+QTimeEvt_postIn(
+    &amp;me-&gt;i2cBusBusyTimerEvt,
+    (QActive *)me,
+    SEC_TO_TICKS( LL_MAX_TIMEOUT_I2C_READ_OP_SEC )
+);
+QTimeEvt_disarm(&amp;me-&gt;i2cBusBusyTimerEvt);</entry>
      <state name="Idle">
       <documentation>/**
  * @brief This state indicates that the I2C bus is currently idle and the
@@ -83,9 +101,31 @@ QTimeEvt_disarm(&amp;me-&gt;i2cTimerEvt);</entry>
 I2CDataEvt const *rq = (I2CDataEvt const *) (uint32_t) QActive_recall(
     (QActive *)me,
     &amp;me-&gt;deferredEvtQueue
-);</entry>
-      <tran trig="UART_DMA_START" target="../../1">
-       <tran_glyph conn="24,14,1,3,18">
+);
+
+/* Reset all counters */
+me-&gt;nBusRetries = 0;
+DBG_printf(&quot;back in Idle\n&quot;);</entry>
+      <tran trig="I2C_READ_START">
+       <action>DBG_printf(&quot;Got I2C_READ_START\n&quot;);
+me-&gt;bBusBusy = I2C_GetFlagStatus(I2C1, I2C_FLAG_BUSY);</action>
+       <choice target="../../../1/2">
+        <guard brief="else"/>
+        <action>DBG_printf(&quot;Bus free\n&quot;);</action>
+        <choice_glyph conn="49,15,5,3,28">
+         <action box="1,-2,6,2"/>
+        </choice_glyph>
+       </choice>
+       <choice target="../../../1/3">
+        <guard brief="Bus busy?">SET == me-&gt;bBusBusy</guard>
+        <action>/*Reset the retries counter when first getting into this state. */
+me-&gt;nBusRetries = 0;
+DBG_printf(&quot;Bus busy, waiting for free\n&quot;);</action>
+        <choice_glyph conn="49,15,4,0,9">
+         <action box="0,3,9,2"/>
+        </choice_glyph>
+       </choice>
+       <tran_glyph conn="24,15,1,-1,25">
         <action box="0,-2,15,2"/>
        </tran_glyph>
       </tran>
@@ -107,44 +147,88 @@ I2CDataEvt const *rq = (I2CDataEvt const *) (uint32_t) QActive_recall(
       <entry>/* Post a timer on entry */
 QTimeEvt_rearm(
     &amp;me-&gt;i2cTimerEvt,
-    SEC_TO_TICKS( LL_MAX_TIMEOUT_SERIAL_DMA_BUSY_SEC )
+    SEC_TO_TICKS( LL_MAX_TIMEOUT_I2C_BUSY_SEC )
 );
 </entry>
       <exit>QTimeEvt_disarm( &amp;me-&gt;i2cTimerEvt ); /* Disarm timer on exit */</exit>
-      <tran trig="UART_DMA_DONE" target="../../0">
-       <tran_glyph conn="42,18,3,1,-18">
-        <action box="-14,-2,14,2"/>
-       </tran_glyph>
-      </tran>
-      <tran trig="UART_DMA_TIMEOUT" target="../../0">
+      <tran trig="I2C_TIMEOUT" target="../../0">
        <action>ERR_printf(&quot;I2C timeout occurred\n&quot;);</action>
        <tran_glyph conn="42,21,3,1,-18">
         <action box="-16,-2,16,2"/>
        </tran_glyph>
       </tran>
-      <tran trig="UART_DMA_START">
+      <tran trig="I2C_READ_START, I2C_WRITE_START">
        <action>if (QEQueue_getNFree(&amp;me-&gt;deferredEvtQueue) &gt; 0) {
    /* defer the request - this event will be handled
     * when the state machine goes back to Idle state */
    QActive_defer((QActive *)me, &amp;me-&gt;deferredEvtQueue, e);
 } else {
    /* notify the request sender that the request was ignored.. */
-   err_slow_printf(&quot;Unable to defer UART_DMA_START request\n&quot;);
+   ERR_printf(&quot;Unable to defer I2C request\n&quot;);
 }</action>
-       <tran_glyph conn="42,44,3,-1,17">
-        <action box="0,-2,15,2"/>
+       <tran_glyph conn="42,68,3,-1,16">
+        <action box="0,-4,15,4"/>
        </tran_glyph>
       </tran>
-      <state_glyph node="42,8,20,39">
+      <state name="BusBeingUsed">
+       <entry>/* Send START condition */
+I2C_GenerateSTART(I2C1, ENABLE);</entry>
+       <state_glyph node="77,12,31,56">
+        <entry box="1,2,6,2"/>
+       </state_glyph>
+      </state>
+      <state name="WaitForBusFree">
+       <entry>/* Post a timer on entry */
+QTimeEvt_rearm(
+    &amp;me-&gt;i2cTimerEvt,
+    SEC_TO_TICKS( LL_MAX_TIMEOUT_I2C_BUS_BUSY_RETRY_SEC )
+);
+</entry>
+       <tran trig="I2C_BUS_RETRY_TIMEOUT">
+        <action>me-&gt;nBusRetries++;
+me-&gt;bBusBusy = I2C_GetFlagStatus(I2C1, I2C_FLAG_BUSY);</action>
+        <choice target="../../../2">
+         <guard>else</guard>
+         <choice_glyph conn="49,37,5,3,28">
+          <action box="1,0,10,2"/>
+         </choice_glyph>
+        </choice>
+        <choice>
+         <guard brief="Bus Busy?">SET == me-&gt;bBusBusy</guard>
+         <choice target="../../..">
+          <guard brief="Retries left?">MAX_BUS_RETRIES &gt; me-&gt;nBusRetries</guard>
+          <choice_glyph conn="38,37,4,3,-9,9">
+           <action box="-8,-11,11,2"/>
+          </choice_glyph>
+         </choice>
+         <choice target="../../../../../0">
+          <guard>else</guard>
+          <choice_glyph conn="38,37,5,1,-14">
+           <action box="-8,-2,6,2"/>
+          </choice_glyph>
+         </choice>
+         <choice_glyph conn="49,37,5,-1,-11">
+          <action box="-10,0,10,2"/>
+         </choice_glyph>
+        </choice>
+        <tran_glyph conn="49,30,2,-1,7">
+         <action box="0,0,22,2"/>
+        </tran_glyph>
+       </tran>
+       <state_glyph node="47,24,21,6">
+        <entry box="1,2,4,2"/>
+       </state_glyph>
+      </state>
+      <state_glyph node="42,8,82,62">
        <entry box="1,2,5,2"/>
        <exit box="1,4,5,2"/>
       </state_glyph>
      </state>
-     <state_glyph node="3,3,63,47">
+     <state_glyph node="3,3,122,70">
       <entry box="1,2,5,2"/>
      </state_glyph>
     </state>
-    <state_diagram size="73,58"/>
+    <state_diagram size="128,75"/>
    </statechart>
   </class>
   <attribute name="AO_I2CMgr" type="QActive * const" visibility="0x00" properties="0x00">
@@ -160,15 +244,18 @@ QTimeEvt_rearm(
  * @retval None
  */</documentation>
    <code>I2CMgr *me = &amp;l_I2CMgr;
-QActive_ctor(&amp;me-&gt;super, (QStateHandler)&amp;I2CMgr_initial);
-QTimeEvt_ctor(&amp;me-&gt;i2cTimerEvt, UART_DMA_TIMEOUT_SIG);
+QActive_ctor( &amp;me-&gt;super, (QStateHandler)&amp;I2CMgr_initial );
+QTimeEvt_ctor( &amp;me-&gt;i2cTimerEvt, I2C_TIMEOUT_SIG );
+QTimeEvt_ctor( &amp;me-&gt;i2cBusBusyTimerEvt, I2C_BUS_RETRY_TIMEOUT_SIG );
 
 /* Initialize the deferred event queue and storage for it */
 QEQueue_init(
     &amp;me-&gt;deferredEvtQueue,
     (QEvt const **)( me-&gt;deferredEvtQSto ),
     Q_DIM(me-&gt;deferredEvtQSto)
-);</code>
+);
+
+dbg_slow_printf(&quot;Constructor\n&quot;);</code>
   </operation>
  </package>
  <directory name=".">
@@ -193,8 +280,8 @@ QEQueue_init(
 
 /* Includes ------------------------------------------------------------------*/
 #include &quot;I2CMgr.h&quot;
-#include &quot;project_includes.h&quot;         /* Includes common to entire project. */
-#include &quot;bsp.h&quot;        /* For seconds to bsp tick conversion (SEC_TO_TICK) */
+#include &quot;project_includes.h&quot;           /* Includes common to entire project. */
+#include &quot;bsp.h&quot;          /* For seconds to bsp tick conversion (SEC_TO_TICK) */
 
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */
@@ -203,6 +290,7 @@ Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */
 $declare(AOs::I2CMgr)
 
 /* Private defines -----------------------------------------------------------*/
+#define MAX_BUS_RETRIES    10 /**&lt; Max number of retries for I2C bus for busy flag */
 /* Private macros ------------------------------------------------------------*/
 /* Private variables and Local objects ---------------------------------------*/
 static I2CMgr l_I2CMgr;           /* the single instance of the active object */
