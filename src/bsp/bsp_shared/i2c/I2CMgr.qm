@@ -72,7 +72,10 @@ QActive_subscribe((QActive *)me, I2C_BUS_RETRY_TIMEOUT_SIG);</action>
  * @return status_: QState type that specifies where the state
  * machine is going next.
  */</documentation>
-     <entry>/* Post all the timers and disarm them right away so it can be
+     <entry>/* Initialize the I2C devices and associated busses */
+I2CD_Init( EEPROM );
+
+/* Post all the timers and disarm them right away so it can be
  * rearmed at any point without worrying asserts. */
 QTimeEvt_postIn(
     &amp;me-&gt;i2cTimerEvt,
@@ -109,10 +112,10 @@ DBG_printf(&quot;back in Idle\n&quot;);</entry>
       <tran trig="I2C_READ_START">
        <action>DBG_printf(&quot;Got I2C_READ_START\n&quot;);
 me-&gt;bBusBusy = I2C_GetFlagStatus(I2C1, I2C_FLAG_BUSY);</action>
-       <choice target="../../../1/2">
+       <choice target="../../../1/2/0">
         <guard brief="else"/>
         <action>DBG_printf(&quot;Bus free\n&quot;);</action>
-        <choice_glyph conn="49,15,5,3,28">
+        <choice_glyph conn="49,15,5,0,36,2">
          <action box="1,-2,6,2"/>
         </choice_glyph>
        </choice>
@@ -172,8 +175,15 @@ QTimeEvt_rearm(
       </tran>
       <state name="BusBeingUsed">
        <entry>/* Send START condition */
-I2C_GenerateSTART(I2C1, ENABLE);</entry>
-       <state_glyph node="77,12,31,56">
+I2C_GenerateSTART(I2C1, ENABLE);
+DBG_printf(&quot;Generating I2C start\n&quot;);</entry>
+       <state name="Read">
+        <state_glyph node="81,17,22,14"/>
+       </state>
+       <state name="WaitForBusMasterAck">
+        <state_glyph node="88,38,24,24"/>
+       </state>
+       <state_glyph node="77,11,43,57">
         <entry box="1,2,6,2"/>
        </state_glyph>
       </state>
@@ -282,6 +292,7 @@ dbg_slow_printf(&quot;Constructor\n&quot;);</code>
 #include &quot;I2CMgr.h&quot;
 #include &quot;project_includes.h&quot;           /* Includes common to entire project. */
 #include &quot;bsp.h&quot;          /* For seconds to bsp tick conversion (SEC_TO_TICK) */
+#include &quot;i2c.h&quot;
 
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */

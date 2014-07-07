@@ -37,6 +37,7 @@
 #include "I2CMgr.h"
 #include "project_includes.h"           /* Includes common to entire project. */
 #include "bsp.h"          /* For seconds to bsp tick conversion (SEC_TO_TICK) */
+#include "i2c.h"
 
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */
@@ -112,6 +113,8 @@ static QState I2CMgr_Idle(I2CMgr * const me, QEvt const * const e);
  */
 static QState I2CMgr_Busy(I2CMgr * const me, QEvt const * const e);
 static QState I2CMgr_BusBeingUsed(I2CMgr * const me, QEvt const * const e);
+static QState I2CMgr_Read(I2CMgr * const me, QEvt const * const e);
+static QState I2CMgr_WaitForBusMasterAck(I2CMgr * const me, QEvt const * const e);
 static QState I2CMgr_WaitForBusFree(I2CMgr * const me, QEvt const * const e);
 
 
@@ -196,6 +199,9 @@ static QState I2CMgr_Active(I2CMgr * const me, QEvt const * const e) {
     switch (e->sig) {
         /* ${AOs::I2CMgr::SM::Active} */
         case Q_ENTRY_SIG: {
+            /* Initialize the I2C devices and associated busses */
+            I2CD_Init( EEPROM );
+
             /* Post all the timers and disarm them right away so it can be
              * rearmed at any point without worrying asserts. */
             QTimeEvt_postIn(
@@ -263,7 +269,7 @@ static QState I2CMgr_Idle(I2CMgr * const me, QEvt const * const e) {
             /* ${AOs::I2CMgr::SM::Active::Idle::I2C_READ_START::[else]} */
             else {
                 DBG_printf("Bus free\n");
-                status_ = Q_TRAN(&I2CMgr_BusBeingUsed);
+                status_ = Q_TRAN(&I2CMgr_Read);
             }
             break;
         }
@@ -341,11 +347,34 @@ static QState I2CMgr_BusBeingUsed(I2CMgr * const me, QEvt const * const e) {
         case Q_ENTRY_SIG: {
             /* Send START condition */
             I2C_GenerateSTART(I2C1, ENABLE);
+            DBG_printf("Generating I2C start\n");
             status_ = Q_HANDLED();
             break;
         }
         default: {
             status_ = Q_SUPER(&I2CMgr_Busy);
+            break;
+        }
+    }
+    return status_;
+}
+/*${AOs::I2CMgr::SM::Active::Busy::BusBeingUsed::Read} .....................*/
+static QState I2CMgr_Read(I2CMgr * const me, QEvt const * const e) {
+    QState status_;
+    switch (e->sig) {
+        default: {
+            status_ = Q_SUPER(&I2CMgr_BusBeingUsed);
+            break;
+        }
+    }
+    return status_;
+}
+/*${AOs::I2CMgr::SM::Active::Busy::BusBeingUsed::WaitForBusMasterAck} ......*/
+static QState I2CMgr_WaitForBusMasterAck(I2CMgr * const me, QEvt const * const e) {
+    QState status_;
+    switch (e->sig) {
+        default: {
+            status_ = Q_SUPER(&I2CMgr_BusBeingUsed);
             break;
         }
     }

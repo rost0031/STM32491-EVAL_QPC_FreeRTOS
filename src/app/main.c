@@ -68,8 +68,8 @@ static union MediumEvents {
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
 /*............................................................................*/
-int main(void) {
-
+int main(void)
+{
     /* initialize the Board Support Package */
     BSP_init();
     dbg_slow_printf("Initialized BSP\n");

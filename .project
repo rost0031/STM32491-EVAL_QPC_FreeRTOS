@@ -90,4 +90,42 @@
 		<nature>org.eclipse.cdt.core.ccnature</nature>
 		<nature>org.python.pydev.pythonNature</nature>
 	</natures>
+	<filteredResources>
+		<filter>
+			<id>1404769313441</id>
+			<name></name>
+			<type>26</type>
+			<matcher>
+				<id>org.eclipse.ui.ide.multiFilter</id>
+				<arguments>1.0-name-matches-false-false-.git</arguments>
+			</matcher>
+		</filter>
+		<filter>
+			<id>1404769313455</id>
+			<name></name>
+			<type>26</type>
+			<matcher>
+				<id>org.eclipse.ui.ide.multiFilter</id>
+				<arguments>1.0-name-matches-false-false-doc</arguments>
+			</matcher>
+		</filter>
+		<filter>
+			<id>1404769313469</id>
+			<name></name>
+			<type>26</type>
+			<matcher>
+				<id>org.eclipse.ui.ide.multiFilter</id>
+				<arguments>1.0-name-matches-false-false-examples</arguments>
+			</matcher>
+		</filter>
+		<filter>
+			<id>1404769313485</id>
+			<name></name>
+			<type>26</type>
+			<matcher>
+				<id>org.eclipse.ui.ide.multiFilter</id>
+				<arguments>1.0-name-matches-false-false-doxygen</arguments>
+			</matcher>
+		</filter>
+	</filteredResources>
 </projectDescription>

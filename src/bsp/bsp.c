@@ -14,8 +14,6 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "bsp.h"
-//#include <stdio.h>
-//#include <string.h>
 
 #include "stm32f2xx_rcc.h"                                 /* for RCC support */
 #include "stm32f2xx_gpio.h"                               /* for GPIO support */
@@ -24,6 +22,7 @@
 #include "qp_port.h"                                        /* for QP support */
 #include "project_includes.h"        /* application events and active objects */
 #include "time.h"                          /* for processor date/time support */
+#include "i2c.h"                                           /* For I2C support */
 
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */
@@ -94,6 +93,9 @@ void BSP_init( void )
 
    /* Initialize the Serial for printfs to the serial port */
    Serial_Init( SYSTEM_SERIAL );
+
+//   /* Initialize the I2C devices and associated busses */
+//   I2CD_Init( EEPROM );
 
    /* Start Ethernet configuration */
    /* Assert a reset on the ETH_RST line.  This should only be released

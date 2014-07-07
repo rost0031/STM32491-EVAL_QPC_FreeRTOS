@@ -127,17 +127,24 @@ void I2CD_Init( I2C_Device_t device )
    );
 
    /* Set up Interrupt controller to handle I2C Error interrupts */
-   NVIC_Config(
-         s_I2C_Dev[device].i2c_er_irq_num,
-         s_I2C_Dev[device].i2c_er_irq_prio
+//   NVIC_Config(
+//         s_I2C_Dev[device].i2c_er_irq_num,
+//         s_I2C_Dev[device].i2c_er_irq_prio
+//   );
+
+   /* Enable All I2C Interrupts */
+   I2C_ITConfig(
+         s_I2C_Dev[device].i2c_bus,
+         I2C_IT_EVT | I2C_IT_ERR ,
+         ENABLE
    );
 
-   /* I2C Peripheral Enable */
-   I2C_Cmd(s_I2C_Dev[device].i2c_bus, ENABLE);
+   /* Apply I2C configuration */
+   I2C_Init( s_I2C_Dev[device].i2c_bus, &I2C_InitStructure );
+   I2C_AcknowledgeConfig(s_I2C_Dev[device].i2c_bus, ENABLE );
 
-   /* Apply I2C configuration after enabling it */
-   I2C_Init(s_I2C_Dev[device].i2c_bus, &I2C_InitStructure);
-   I2C_AcknowledgeConfig(s_I2C_Dev[device].i2c_bus, ENABLE);
+   /* I2C Peripheral Enable */
+   I2C_Cmd( s_I2C_Dev[device].i2c_bus, ENABLE );
 }
 
 /**
@@ -148,18 +155,67 @@ void I2CD_Init( I2C_Device_t device )
 /******************************************************************************/
 void I2C1_EV_IRQHandler( void )
 {
-   DBG_printf("I2C Event\n");
+   QK_ISR_ENTRY();                         /* inform QK about entering an ISR */
+
+   /* Get Last I2C Event */
+   __IO uint32_t I2CEvent = I2C_GetLastEvent( I2C1 );
+   switch (I2CEvent) {
+      case 0x00000001:
+         /* This is the I2C "Event" that is always triggering so we explicitly
+          * ignore it here */
+         break;
+
+      case I2C_EVENT_MASTER_MODE_SELECT:
+         dbg_slow_printf("I2C_EVENT_MASTER_MODE_SELECT event\n");
+         /* Send slave Address for write */
+//         I2C_Send7bitAddress(I2C1, (uint8_t)SLAVE_ADDRESS, I2C_Direction_Transmitter);
+         break;
+
+
+         /* Check on EV6 */
+      case I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED:
+         dbg_slow_printf("I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED event\n");
+         /* Transmit the First Data  */
+//         I2C_SendData(I2C1, TxBuffer[Tx_Idx++]);
+         break;
+
+         /* Check on EV8 */
+      case I2C_EVENT_MASTER_BYTE_TRANSMITTING:
+         dbg_slow_printf("I2C_EVENT_MASTER_BYTE_TRANSMITTING event\n");
+         break;
+
+      case I2C_EVENT_MASTER_BYTE_TRANSMITTED:
+         dbg_slow_printf("I2C_EVENT_MASTER_BYTE_TRANSMITTED event\n");
+//         if (Tx_Idx == (uint8_t)NumberOfByteToTransmit) {
+//            /* Send STOP condition */
+//            I2C_GenerateSTOP(I2C1, ENABLE);
+//            I2C_ITConfig(I2C1, I2C_IT_EVT | I2C_IT_BUF, DISABLE);
+//         } else {
+//            /* Transmit Data TxBuffer */
+//            I2C_SendData(I2C1, TxBuffer[Tx_Idx++]);
+//         }
+         break;
+
+      default:
+         dbg_slow_printf("default case: %08x\n", I2CEvent);
+         break;
+   }
+
+// dbg_slow_printf("I2C Event\n");
+   QK_ISR_EXIT();                           /* inform QK about exiting an ISR */
 }
 
 /******************************************************************************/
 void I2C1_ER_IRQHandler( void )
 {
-   DBG_printf("I2C Error\n");
+   QK_ISR_ENTRY();                         /* inform QK about entering an ISR */
+   dbg_slow_printf("I2C Error\n");
    /* Read SR1 register to get I2C error */
    if ((I2C_ReadRegister(I2C1, I2C_Register_SR1) & 0xFF00) != 0x00) {
       /* Clears error flags */
       I2C1->SR1 &= 0x00FF;
    }
+   QK_ISR_EXIT();                           /* inform QK about exiting an ISR */
 }
 
 /******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/
