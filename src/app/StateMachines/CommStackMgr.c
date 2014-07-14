@@ -164,15 +164,14 @@ static QState CommStackMgr_Active(CommStackMgr * const me, QEvt const * const e)
         case TIME_TEST_SIG: {
             DBG_printf("I2C read test\n");
 
-            /* Create MsgEvt event to send out the message */
-            I2CDataEvt *i2cDataEvt = Q_NEW(I2CDataEvt, I2C_READ_START_SIG);
+            /* Create event to request i2c data and publish it. */
+            I2CReqEvt *i2cReqEvt = Q_NEW(I2CReqEvt, I2C_READ_START_SIG);
+            i2cReqEvt->i2cDevice = EEPROM;
+            i2cReqEvt->wReadAddr = 0x00;
+            i2cReqEvt->nReadLen  = 10;
+            QF_PUBLISH((QEvent *)i2cReqEvt, AO_CommStackMgr);
 
-            /* Set the message length and source */
-            i2cDataEvt->wBufferLen = 10;
-            memset(i2cDataEvt->buffer, 0xFF, i2cDataEvt->wBufferLen);
-
-            /* Post the msgEvt for this AO (CommStackMgr) to handle */
-            QF_PUBLISH((QEvent *)i2cDataEvt, AO_CommStackMgr);
+            QTimeEvt_disarm( &me->timeTestTimerEvt );
 
             /*
             t_Time fast_print_start_time = TIME_getTime();

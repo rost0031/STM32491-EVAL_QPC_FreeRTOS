@@ -40,6 +40,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "qp_port.h"                                        /* for QP support */
 #include "Shared.h"                                   /*  Common Declarations */
+#include "i2c.h"                               /* For I2C device declarations */
 
 /* Exported defines ----------------------------------------------------------*/
 /* Exported macros -----------------------------------------------------------*/
@@ -53,12 +54,33 @@ typedef struct {
 /* protected: */
     QEvt super;
 
+    /**< Which I2C device data is from. */
+    I2C_Device_t i2cDevice;
+
     /**< Buffer that holds the data. */
     char buffer[MAX_MSG_LEN];
 
     /**< Length of data in the buffer. */
     uint16_t wBufferLen;
 } I2CDataEvt;
+
+/**
+ * \struct Event struct type for requesting I2C data.
+ */
+/*${Events::I2CReqEvt} .....................................................*/
+typedef struct {
+/* protected: */
+    QEvt super;
+
+    /**< Which I2C device is being accessed. */
+    I2C_Device_t i2cDevice;
+
+    /**< Address on the I2C device to read. */
+    uint16_t wReadAddr;
+
+    /**< Number of bytes to read from I2C device. */
+    uint16_t nReadLen;
+} I2CReqEvt;
 
 
 /* Exported constants --------------------------------------------------------*/
@@ -68,12 +90,12 @@ typedef struct {
  * @brief C "constructor" for I2CMgr "class".
  * Initializes all the timers and queues used by the AO, sets up a deferral
  * queue, and sets of the first state.
- * @param  None
- * @param  None
+ * @param  [in] i2cBus: I2C_TypeDef * type that specifies which STM32 I2C bus this
+ * AO is responsible for.
  * @retval None
  */
 /*${AOs::I2CMgr_ctor} ......................................................*/
-void I2CMgr_ctor(void);
+void I2CMgr_ctor(I2C_TypeDef *   i2cBus);
 
 
 /**< "opaque" pointer to the Active Object */

@@ -200,6 +200,18 @@ void CON_slow_output(
                wLineNumber
          );
          break;
+      case ISR:
+         tmpBufferIndex += snprintf(
+               tmpBuffer,
+               MAX_MSG_LEN,
+               "D-ISR!-%02d:%02d:%02d:%05d-:%d:",
+               time.hour_min_sec.RTC_Hours,
+               time.hour_min_sec.RTC_Minutes,
+               time.hour_min_sec.RTC_Seconds,
+               (int)time.sub_sec,
+               wLineNumber
+         );
+         break;
       case CON: // This is used to print menu so don't prepend anything
       default:
          break;

@@ -143,8 +143,9 @@ typedef enum DEBUG_LEVEL {
    LOG,     /**< Basic logging. */
    WRN,     /**< Warnings. Always printed. */
    ERR,     /**< Critical errors.  Always printed. */
-   CON      /**< This is reserved for printing to the console as part of
+   CON,     /**< This is reserved for printing to the console as part of
                  regular operation and nothing will be prepended */
+   ISR,     /**< Use this with isr_debug_slow_printf to get smaller printout */
 } DEBUG_LEVEL_T;
 
 /* Exported constants --------------------------------------------------------*/
@@ -595,8 +596,8 @@ void CON_slow_output(
 /**
  * @brief Slow isr debug print function.
  *
- * This macro behaves just like a printf function but prepends "D:",
- * in front of the user passed in message.
+ * This macro behaves just like a printf function but prepends "D-ISR",
+ * timestamp, and line number only in front of the user passed in message.
  *
  * Usage Example:
  *
@@ -605,7 +606,7 @@ void CON_slow_output(
  * isr_debug_slow_printf("Slow isr debug print test %d\n", i);
  *
  * will output:
- * D: Slow isr debug print test 0
+ * D-ISR:-00:04:09:00459-219:Slow isr debug print test 0
  * @endcode
  *
  * @note 1. Don't use this after the BSP and RTOS has been initialized since it
@@ -622,9 +623,10 @@ void CON_slow_output(
  *
  * @return None
  */
-#define isr_debug_slow_printf(fmt, ...) \
-      do { if (DEBUG) fprintf(stderr, "D:" fmt, ##__VA_ARGS__); } while (0)
-
+#define isr_dbg_slow_printf(fmt, ...) \
+      do { if (DEBUG) CON_slow_output(ISR, __func__, __LINE__, fmt, \
+            ##__VA_ARGS__); \
+      } while (0)
    /**
     * @} end addtogroup groupSerialSlow
     */

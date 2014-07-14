@@ -19,6 +19,7 @@
 #include "stm32f2xx_exti.h"                               /* for EXTI support */
 #include "project_includes.h"        /* application events and active objects */
 #include "qp_port.h"                                        /* for QP support */
+#include "qk_port.h"
 #include "Shared.h"                                   /*  Common Declarations */
 #include <stdio.h>                                    /* for printf() support */
 #include "CBSignals.h"                            /*  For signal declarations */

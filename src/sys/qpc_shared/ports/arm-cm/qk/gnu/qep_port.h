@@ -39,4 +39,6 @@
 
 #include "qep.h"               /* QEP platform-independent public interface */
 
+#define QF_TIMEEVT_CTR_SIZE  4
+
 #endif                                                        /* qep_port_h */

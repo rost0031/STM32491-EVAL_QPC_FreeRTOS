@@ -95,7 +95,7 @@ void BSP_init( void )
    Serial_Init( SYSTEM_SERIAL );
 
 //   /* Initialize the I2C devices and associated busses */
-//   I2CD_Init( EEPROM );
+//   I2C_BusInit( I2CBus1 );
 
    /* Start Ethernet configuration */
    /* Assert a reset on the ETH_RST line.  This should only be released

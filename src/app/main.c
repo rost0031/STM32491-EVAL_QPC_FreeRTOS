@@ -48,22 +48,20 @@ static union SmallEvents {
  */
 static union MediumEvents {
     void   *e0;                                       /* minimum event size */
-    uint8_t e1[sizeof(MsgEvt)];
-    uint8_t e2[sizeof(EthEvt)];
-    uint8_t e3[sizeof(SerialDataEvt)];
-    uint8_t e4[sizeof(I2CDataEvt)];
-} l_medPoolSto[100];                    /* storage for the medium event pool */
+    uint8_t e1[sizeof(I2CReqEvt)];
+} l_medPoolSto[20];                    /* storage for the medium event pool */
 
 /**
  * \union Large Events.
  * This union is a storage for large sized events.
  */
-//static union LargeEvents {
-//    void   *e0;                                       /* minimum event size */
-//    uint8_t e1[sizeof(MsgEvt)];
-//    uint8_t e2[sizeof(EthEvt)];
-//    uint8_t e3[sizeof(SerialDataEvt)];
-//} l_lrgPoolSto[10];                    /* storage for the large event pool */
+static union LargeEvents {
+    void   *e0;                                       /* minimum event size */
+    uint8_t e1[sizeof(MsgEvt)];
+    uint8_t e2[sizeof(EthEvt)];
+    uint8_t e3[sizeof(SerialDataEvt)];
+    uint8_t e4[sizeof(I2CDataEvt)];
+} l_lrgPoolSto[20];                    /* storage for the large event pool */
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
@@ -79,7 +77,7 @@ int main(void)
     dbg_slow_printf("Initializing AO constructors\n");
     SerialMgr_ctor();
     LWIPMgr_ctor();
-    I2CMgr_ctor();
+    I2CMgr_ctor( I2C1 );           /* Start this instance of AO for I2C1 bus. */
     CommStackMgr_ctor();
 
     dbg_slow_printf("Initializing QF\n");
@@ -89,7 +87,7 @@ int main(void)
     dbg_slow_printf("Initializing object dictionaries for QSPY\n");
     QS_OBJ_DICTIONARY(l_smlPoolSto);
     QS_OBJ_DICTIONARY(l_medPoolSto);
-//    QS_OBJ_DICTIONARY(l_lrgPoolSto);
+    QS_OBJ_DICTIONARY(l_lrgPoolSto);
     QS_OBJ_DICTIONARY(l_SerialMgrQueueSto);
     QS_OBJ_DICTIONARY(l_LWIPMgrQueueSto);
     QS_OBJ_DICTIONARY(l_I2CMgrQueueSto);
@@ -101,7 +99,7 @@ int main(void)
     dbg_slow_printf("Initializing event storage pools\n");
     QF_poolInit(l_smlPoolSto, sizeof(l_smlPoolSto), sizeof(l_smlPoolSto[0]));
     QF_poolInit(l_medPoolSto, sizeof(l_medPoolSto), sizeof(l_medPoolSto[0]));
-    //    QF_poolInit(l_lrgPoolSto, sizeof(l_lrgPoolSto), sizeof(l_lrgPoolSto[0]));
+    QF_poolInit(l_lrgPoolSto, sizeof(l_lrgPoolSto), sizeof(l_lrgPoolSto[0]));
 
     /* Start Active objects */
     dbg_slow_printf("Starting Active Objects\n");
