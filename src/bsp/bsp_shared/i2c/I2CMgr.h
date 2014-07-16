@@ -95,7 +95,7 @@ typedef struct {
  * @retval None
  */
 /*${AOs::I2CMgr_ctor} ......................................................*/
-void I2CMgr_ctor(I2C_TypeDef *   i2cBus);
+void I2CMgr_ctor(I2C_Bus_t iBus);
 
 
 /**< "opaque" pointer to the Active Object */

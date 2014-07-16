@@ -52,7 +52,7 @@ extern "C" {
  * I2C Devices available on the system.
  */
 typedef enum I2C_Devices {
-   EEPROM  = 0,                         /**< EEPROM attached to I2C. */
+   EEPROM  = 0,                         /**< EEPROM attached to I2C */
    /* Insert more I2C device enumerations here... */
    MAX_I2C_DEV     /**< Maximum number of available I2C devices on the system */
 } I2C_Device_t;
@@ -62,7 +62,7 @@ typedef enum I2C_Devices {
  * I2C Busses available on the system.
  */
 typedef enum I2C_Busses {
-   I2CBus1  = 0,                                       /**< I2C Bus 1 (I2C1). */
+   I2CBus1  = 0,                                        /**< I2C Bus 1 (I2C1) */
    /* Insert more I2C device enumerations here... */
    MAX_I2C_BUS      /**< Maximum number of available I2C Busses on the system */
 } I2C_Bus_t;
@@ -73,8 +73,8 @@ typedef enum I2C_Busses {
  */
 typedef struct I2C_BusDevices
 {
-   I2C_Device_t            i2c_dev;          /**< System I2C device specifier.*/
-   I2C_TypeDef *           i2c_bus;        /**< I2C bus device is attached to.*/
+   I2C_Device_t            i2c_dev;          /**< System I2C device specifier */
+   I2C_TypeDef *           i2c_bus;        /**< I2C bus device is attached to */
 
    uint8_t                 i2c_address;  /**< I2C Slave address of the device */
 
@@ -87,27 +87,43 @@ typedef struct I2C_BusDevices
  */
 typedef struct I2C_BusSettings
 {
-   I2C_Bus_t               i2c_sys_bus;     /**< System specifier for I2C Bus.*/
+   I2C_Bus_t               i2c_sys_bus;     /**< System specifier for I2C Bus */
 
    /* I2C Bus settings */
-   I2C_TypeDef *           i2c_bus;                              /**< I2C bus.*/
-   const uint32_t          i2c_bus_speed;            /**< I2C bus speed in Hz.*/
-   const uint32_t          i2c_clk;                            /**< I2C clock.*/
+   I2C_TypeDef *           i2c_bus;                              /**< I2C bus */
+   const uint32_t          i2c_bus_speed;            /**< I2C bus speed in Hz */
+   const uint32_t          i2c_clk;                            /**< I2C clock */
 
-   IRQn_Type               i2c_ev_irq_num;          /**< I2C Event IRQ number.*/
-   ISR_Priority            i2c_ev_irq_prio;       /**< I2C Event IRQ priority.*/
-   IRQn_Type               i2c_er_irq_num;          /**< I2C Error IRQ number.*/
-   ISR_Priority            i2c_er_irq_prio;       /**< I2C Error IRQ priority.*/
+   /* I2C interrupt settings */
+   IRQn_Type               i2c_ev_irq_num;          /**< I2C Event IRQ number */
+   ISR_Priority            i2c_ev_irq_prio;       /**< I2C Event IRQ priority */
+   IRQn_Type               i2c_er_irq_num;          /**< I2C Error IRQ number */
+   ISR_Priority            i2c_er_irq_prio;       /**< I2C Error IRQ priority */
 
-   GPIO_TypeDef *          scl_port;                        /**< I2C SCL port.*/
-   const uint16_t          scl_pin;                          /**< I2C SCL pin.*/
-   const uint16_t          scl_af_pin_source;/**< I2C SCL alt function source.*/
-   const uint16_t          scl_af;                  /**< I2C SCL alt function.*/
+   /* I2C GPIO settings for SCL */
+   GPIO_TypeDef *          scl_port;                        /**< I2C SCL port */
+   const uint16_t          scl_pin;                          /**< I2C SCL pin */
+   const uint16_t          scl_af_pin_source;/**< I2C SCL alt function source */
+   const uint16_t          scl_af;                  /**< I2C SCL alt function */
 
-   GPIO_TypeDef *          sda_port;                        /**< I2C SDA port.*/
-   const uint16_t          sda_pin;                          /**< I2C SDA pin.*/
-   const uint16_t          sda_af_pin_source;/**< I2C SDA alt function source.*/
-   const uint16_t          sda_af;                  /**< I2C SDA alt function.*/
+   /* I2C GPIO settings for SDA */
+   GPIO_TypeDef *          sda_port;                        /**< I2C SDA port */
+   const uint16_t          sda_pin;                          /**< I2C SDA pin */
+   const uint16_t          sda_af_pin_source;/**< I2C SDA alt function source */
+   const uint16_t          sda_af;                  /**< I2C SDA alt function */
+
+   /* I2C DMA settings */
+   DMA_TypeDef *           i2c_dma;                       /**< I2C DMA device */
+   const uint32_t          i2c_dma_channel;              /**< I2C DMA channel */
+   const uint32_t          i2c_dma_dr_addr;           /**< I2C DMA DR address */
+
+   DMA_Stream_TypeDef *    i2c_dma_tx_stream;      /**< I2C DMA stream for TX */
+   IRQn_Type               i2c_dma_tx_irq_num;     /**< I2C DMA TX IRQ number */
+   ISR_Priority            i2c_dma_tx_irq_prio;  /**< I2C DMA TX IRQ priority */
+
+   DMA_Stream_TypeDef *    i2c_dma_rx_stream;      /**< I2C DMA stream for RX */
+   IRQn_Type               i2c_dma_rx_irq_num;     /**< I2C DMA RX IRQ number */
+   ISR_Priority            i2c_dma_rx_irq_prio;  /**< I2C DMA RX IRQ priority */
 
    /* Buffer management */
    uint8_t                 *pRxBuffer;                   /**< I2C data buffer.*/
@@ -144,8 +160,8 @@ void I2C_BusInit( I2C_Bus_t iBus );
  * This function sets the direction in the I2C internal structure so the ISR will
  * know what to do when an interrupt fires.
  *
- * @param [in]  iBus: I2C_Bus_t identifier for I2C device
- *    @arg  EEPROM
+ * @param [in]  iBus: I2C_Bus_t identifier for I2C bus
+ *    @arg  I2CBus1
  * @param [in]  I2C_Direction: an STM32 define that specifies the direction for
  * an I2C device
  *    @arg  I2C_Direction_Receiver
@@ -154,6 +170,21 @@ void I2C_BusInit( I2C_Bus_t iBus );
  */
 void I2C_SetDirection( I2C_Bus_t iBus,  uint8_t I2C_Direction);
 
+/**
+ * @brief   Set the direction on the I2C bus.
+ *
+ * This function sets the direction in the I2C internal structure so the ISR will
+ * know what to do when an interrupt fires.
+ *
+ * @param [in]  iBus: I2C_Bus_t identifier for I2C bus
+ *    @arg  I2CBus1
+ * @param [in]  wReadAddr: uint16_t for internal I2C device address where to
+ * read from.
+ * @param [in]  wReadLen: uint16_t for how many bytes to read from the I2C
+ * device.
+ * @return: None
+ */
+void I2C_DMARead( I2C_Bus_t iBus, uint16_t wReadAddr, uint16_t wReadLen );
 /**
  * @}
  * end addtogroup groupI2C

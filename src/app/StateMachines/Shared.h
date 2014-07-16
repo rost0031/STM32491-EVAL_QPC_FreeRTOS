@@ -38,14 +38,14 @@
  * \enum Active Object priorities.
  * These are the priorities of all the Active Objects in the system.  The
  * priorities are lowest at zero.
- * Note: Never use priority 0.
+ * @note 1: Never use priority 0.
  */
 enum AO_Priorities {
    NEVER_USE_ZERO_PRIORITY = 0,   /**< Never use this.  It breaks everything. */
-   SERIAL_MGR_PRIORITY,                        /**< Priority of SerialMgr AO. */
    I2C_MGR_PRIORITY,                              /**< Priority of I2CMgr AO. */
    COMM_MGR_PRIORITY,                       /**< Priority of CommStackMgr AO. */
    ETH_PRIORITY,       /**< Priority of LWIP AO which handles ethernet comms. */
+   SERIAL_MGR_PRIORITY,                        /**< Priority of SerialMgr AO. */
    /* Insert new priorities here ... */
    MAX_SHARED_PRIORITY     /**< This should always be at the end of this list */
 };

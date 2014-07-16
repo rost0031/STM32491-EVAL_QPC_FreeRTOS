@@ -19,6 +19,7 @@
 #include "project_includes.h"
 #include "Shared.h"
 #include "I2CMgr.h"                                    /* For I2C event types */
+#include "stm32f2xx_dma.h"                           /* For STM32 DMA support */
 
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */
@@ -33,7 +34,7 @@ Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */
 /**
  * @brief Buffer for I2C device
  */
-static uint8_t          i2cRxBuffer[MAX_MSG_LEN];
+static uint8_t          i2c1RxBuffer[MAX_MSG_LEN];
 
 /**
  * @brief An internal structure that holds settings for I2C devices on all I2C
@@ -63,23 +64,40 @@ I2C_BusSettings_t s_I2C_Bus[MAX_I2C_BUS] =
             100000,                    /**< i2c_bus_speed (Hz)*/
             RCC_APB1Periph_I2C1,       /**< i2c_clk */
 
+            /* I2C interrupt settings */
             I2C1_EV_IRQn,              /**< i2c_ev_irq_num */
             I2C1_EV_PRIO,              /**< i2c_ev_irq_prio */
             I2C1_ER_IRQn,              /**< i2c_er_irq_num */
             I2C1_ER_PRIO,              /**< i2c_er_irq_prio */
 
+            /* I2C GPIO settings for SCL */
             GPIOB,                     /**< scl_port */
             GPIO_Pin_8,                /**< scl_pin */
             GPIO_PinSource8,           /**< scl_af_pin_source */
             GPIO_AF_I2C1,              /**< scl_af */
 
+            /* I2C GPIO settings for SDA */
             GPIOB,                     /**< sda_port */
             GPIO_Pin_9,                /**< sda_pin */
             GPIO_PinSource9,           /**< sda_af_pin_source */
             GPIO_AF_I2C1,              /**< sda_af */
 
+            /* I2C DMA settings */
+            DMA1,                      /**< i2c_dma */
+            DMA_Channel_1,             /**< i2c_dma_channel */
+            ((uint32_t)0x40005410),    /**< i2c_dma_dr_addr */
+
+            DMA1_Stream6,              /**< i2c_dma_tx_stream */
+            DMA1_Stream6_IRQn,         /**< i2c_dma_tx_irq_num */
+            DMA1_Stream6_PRIO,         /**< i2c_dma_tx_irq_prio */
+
+            DMA1_Stream0,              /**< i2c_dma_rx_stream */
+            DMA1_Stream0_IRQn,         /**< i2c_dma_rx_irq_num */
+            DMA1_Stream0_PRIO,         /**< i2c_dma_rx_irq_prio */
+
+
             /* Buffer management */
-            &i2cRxBuffer[0],           /**< *pRXBuffer */
+            &i2c1RxBuffer[0],          /**< *pRXBuffer */
             0,                         /**< nRXindex */
 
             /* Device management */
@@ -90,6 +108,8 @@ I2C_BusSettings_t s_I2C_Bus[MAX_I2C_BUS] =
             0,                         /**< nBytesCurrent */
       }
 };
+
+DMA_InitTypeDef    DMA_InitStructure;        /**< For I2C DMA initialization. */
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
@@ -158,6 +178,17 @@ void I2C_BusInit( I2C_Bus_t iBus )
 //         ENABLE
 //   );
 
+   /* Initialize the IRQ and priorities for I2C DMA */
+//   NVIC_Config(
+//         s_I2C_Bus[iBus].i2c_dma_rx_irq_num,
+//         s_I2C_Bus[iBus].i2c_dma_rx_irq_prio
+//   );
+//
+//   NVIC_Config(
+//         s_I2C_Bus[iBus].i2c_dma_tx_irq_num,
+//         s_I2C_Bus[iBus].i2c_dma_tx_irq_prio
+//   );
+
    /* Apply I2C configuration */
    I2C_Init( s_I2C_Bus[iBus].i2c_bus, &I2C_InitStructure );
    I2C_AcknowledgeConfig(s_I2C_Bus[iBus].i2c_bus, ENABLE );
@@ -168,7 +199,7 @@ void I2C_BusInit( I2C_Bus_t iBus )
 }
 
 /******************************************************************************/
-void I2C_SetDirection( I2C_Bus_t iBus,  uint8_t I2C_Direction)
+void I2C_SetDirection( I2C_Bus_t iBus,  uint8_t I2C_Direction )
 {
    /* Check inputs */
    assert_param( IS_I2C_DIRECTION( I2C_Direction ) );
@@ -177,10 +208,94 @@ void I2C_SetDirection( I2C_Bus_t iBus,  uint8_t I2C_Direction)
    s_I2C_Bus[iBus].bTransDirection = I2C_Direction;
 }
 
+/******************************************************************************/
+void I2C_DMARead( I2C_Bus_t iBus, uint16_t wReadAddr, uint16_t wReadLen )
+{
+   /* Check inputs */
+   assert_param( IS_I2C_BUS( iBus ) );
+
+//   /* Set the structure buffer management for how many bytes to expect and how
+//    * many are currently there (none). */
+//   s_I2C_Bus[iBus].nBytesExpected = wReadLen;
+//   s_I2C_Bus[iBus].nBytesCurrent  = 0;
+//   s_I2C_Bus[iBus].nRxindex       = 0;
+//
+//   /* Clear out the DMA settings */
+//   DMA_DeInit( s_I2C_Bus[iBus].i2c_dma_rx_stream );
+//
+//   /* Set up a new DMA structure for reading */
+//   DMA_InitStructure.DMA_Channel             = s_I2C_Bus[iBus].i2c_dma_channel;
+//   DMA_InitStructure.DMA_PeripheralBaseAddr  = s_I2C_Bus[iBus].i2c_dma_dr_addr;
+//   DMA_InitStructure.DMA_DIR                 = DMA_DIR_PeripheralToMemory;
+//   DMA_InitStructure.DMA_PeripheralInc       = DMA_PeripheralInc_Disable;
+//   DMA_InitStructure.DMA_MemoryInc           = DMA_MemoryInc_Enable;
+//   DMA_InitStructure.DMA_PeripheralDataSize  = DMA_PeripheralDataSize_Byte;
+//   DMA_InitStructure.DMA_MemoryDataSize      = DMA_MemoryDataSize_Byte;
+//   DMA_InitStructure.DMA_Mode                = DMA_Mode_Normal;
+//   DMA_InitStructure.DMA_Priority            = DMA_Priority_VeryHigh;
+//   DMA_InitStructure.DMA_FIFOMode            = DMA_FIFOMode_Enable;
+//   DMA_InitStructure.DMA_FIFOThreshold       = DMA_FIFOThreshold_Full;
+//   DMA_InitStructure.DMA_MemoryBurst         = DMA_MemoryBurst_Single;
+//   DMA_InitStructure.DMA_PeripheralBurst     = DMA_PeripheralBurst_Single;
+//   DMA_InitStructure.DMA_Memory0BaseAddr     = s_I2C_Bus[iBus].pRxBuffer;
+//   DMA_InitStructure.DMA_BufferSize          = s_I2C_Bus[iBus].nBytesExpected;
+//
+//   /* Initialize the DMA with the filled in structure */
+//   DMA_Init( s_I2C_Bus[iBus].i2c_dma_rx_stream, &DMA_InitStructure );
+//
+//   /* Enable the TransferComplete interrupt in the DMA */
+//   DMA_ITConfig( s_I2C_Bus[iBus].i2c_dma_rx_stream, DMA_IT_TC, ENABLE );
+//
+//   /* Clear any pending flags on RX Stream */
+//   DMA_ClearFlag(
+//         s_I2C_Bus[iBus].i2c_dma_rx_stream,
+//         DMA_FLAG_TCIF0 |
+//         DMA_FLAG_FEIF0 |
+//         DMA_FLAG_DMEIF0 |
+//         DMA_FLAG_TEIF0 |
+//         DMA_FLAG_HTIF0
+//   );
+//
+//   /* I2Cx DMA Enable */
+//   I2C_DMACmd( s_I2C_Bus[iBus].i2c_bus, ENABLE );
+//
+//   /* Finally, activate DMA */
+//   DMA_Cmd( s_I2C_Bus[iBus].i2c_dma_rx_stream, ENABLE );
+   DBG_printf("Sent fake DMA read\n");
+}
+
 /**
  * @}
  * end addtogroup groupI2C
  */
+
+/******************************************************************************/
+void DMA1_Stream0_IRQHandler( void )
+{
+   QK_ISR_ENTRY();                         /* inform QK about entering an ISR */
+
+   /* Test on DMA Stream Transfer Complete interrupt */
+   if ( RESET != DMA_GetITStatus(DMA1_Stream0, DMA_IT_TCIF4) ) {
+      /* Disable DMA so it doesn't keep outputting the buffer. */
+      DMA_Cmd( DMA1_Stream0, DISABLE );
+
+      /* Publish event stating that the count has been reached */
+      I2CDataEvt *i2cDataEvt = Q_NEW( I2CDataEvt, I2C_READ_DONE_SIG );
+      i2cDataEvt->i2cDevice = EEPROM;
+      i2cDataEvt->wBufferLen = s_I2C_Bus[I2CBus1].nBytesExpected;
+      MEMCPY(
+            i2cDataEvt->buffer,
+            s_I2C_Bus[I2CBus1].pRxBuffer,
+            i2cDataEvt->wBufferLen
+      );
+      QF_PUBLISH( (QEvent *)i2cDataEvt, AO_SerialMgr );
+
+      /* Clear DMA Stream Transfer Complete interrupt pending bit */
+      DMA_ClearITPendingBit( DMA1_Stream0, DMA_IT_TCIF4 );
+   }
+
+   QK_ISR_EXIT();                           /* inform QK about exiting an ISR */
+}
 
 /******************************************************************************/
 void I2C1_EV_IRQHandler( void )
@@ -209,12 +324,8 @@ void I2C1_EV_IRQHandler( void )
                   s_I2C_Bus[I2CBus1].i2c_cur_dev_addr,   // Look up the current device address for this bus
                   s_I2C_Bus[I2CBus1].bTransDirection     // Direction of data on this bus
             );
-//            I2C_Send7bitAddress(
-//                  I2C1,                                  // This is always the bus used in this ISR
-//                  0xA0,   // Look up the current device address for this bus
-//                  I2C_Direction_Receiver     // Direction of data on this bus
-//            );
-//            isr_dbg_slow_printf("I2C_EVENT_MASTER_MODE_SELECT\n");
+
+            isr_dbg_slow_printf("I2C_EVENT_MASTER_MODE_SELECT\n");
             break;
 
 
@@ -250,8 +361,8 @@ void I2C1_EV_IRQHandler( void )
 //            }
 //            isr_dbg_slow_printf("Sent addr\n");
             /* Create and publish event for I2CMgr */
-            QEvt *qEvt = Q_NEW( QEvt, I2C_MSTR_MODE_SELECTED_SIG );
-            QF_PUBLISH( (QEvt *)qEvt, AO_I2CMgr );
+//            QEvt *qEvt = Q_NEW( QEvt, I2C_MSTR_MODE_SELECTED_SIG );
+//            QF_PUBLISH( (QEvt *)qEvt, AO_I2CMgr );
             break;
 
          /* Check on EV8 */
@@ -262,8 +373,8 @@ void I2C1_EV_IRQHandler( void )
          case I2C_EVENT_MASTER_BYTE_TRANSMITTED:
             isr_dbg_slow_printf("I2C_EVENT_MASTER_BYTE_TRANSMITTED\n");
             /* Create and publish event for I2CMgr */
-            QEvt *qEvt1 = Q_NEW( QEvt, I2C_MSTR_BYTE_TRANSMITTED_SIG );
-            QF_PUBLISH( (QEvt *)qEvt1, AO_I2CMgr );
+//            QEvt *qEvt1 = Q_NEW( QEvt, I2C_MSTR_BYTE_TRANSMITTED_SIG );
+//            QF_PUBLISH( (QEvt *)qEvt1, AO_I2CMgr );
 
             //         if (Tx_Idx == (uint8_t)NumberOfByteToTransmit) {
             //            /* Send STOP condition */
