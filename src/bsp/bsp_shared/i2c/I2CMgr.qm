@@ -188,15 +188,6 @@ QTimeEvt_rearm(
 
 /* Send START condition */
 I2C_GenerateSTART(s_I2C_Bus[me-&gt;iBus].i2c_bus, ENABLE);</entry>
-       <exit>/* Disable Acknowledgment */
-I2C_AcknowledgeConfig(s_I2C_Bus[me-&gt;iBus].i2c_bus, DISABLE);
-
-I2C_GenerateSTOP(s_I2C_Bus[me-&gt;iBus].i2c_bus, ENABLE);
-
-/* Re-Enable Acknowledgment to be ready for another reception */
-I2C_AcknowledgeConfig(s_I2C_Bus[me-&gt;iBus].i2c_bus, ENABLE);
-
-DBG_printf(&quot;Generating I2C stop\n&quot;);</exit>
        <state name="Reading">
         <tran trig="I2C_READ_DONE" target="../../../../1">
          <action>DBG_printf(&quot;Read finished successfully: read %d bytes\n&quot;, ((I2CDataEvt const *)e)-&gt;wBufferLen);</action>
@@ -319,7 +310,17 @@ I2C_DMARead(
 );</entry>
          <exit>QTimeEvt_disarm( &amp;me-&gt;i2cDMATimerEvt );</exit>
          <tran trig="I2C_DMA_TIMEOUT" target="../../../../../1">
-          <action>ERR_printf(&quot;Timeout while waiting for DMA read timeout\n&quot;);</action>
+          <action>ERR_printf(&quot;Timeout while waiting for DMA read timeout\n&quot;);
+
+/* Disable Acknowledgment */
+I2C_AcknowledgeConfig(s_I2C_Bus[me-&gt;iBus].i2c_bus, DISABLE);
+
+I2C_GenerateSTOP(s_I2C_Bus[me-&gt;iBus].i2c_bus, ENABLE);
+
+/* Re-Enable Acknowledgment to be ready for another reception */
+I2C_AcknowledgeConfig(s_I2C_Bus[me-&gt;iBus].i2c_bus, ENABLE);
+
+DBG_printf(&quot;Generating I2C stop\n&quot;);</action>
           <tran_glyph conn="46,120,3,1,-22">
            <action box="-20,-2,16,2"/>
           </tran_glyph>
@@ -342,15 +343,18 @@ QF_PUBLISH((QEvt *)qEvt, AO_I2CMgr);</entry>
           <guard brief="EV5 Happened?">I2C_CheckEvent(s_I2C_Bus[me-&gt;iBus].i2c_bus, I2C_EVENT_MASTER_MODE_SELECT)</guard>
           <action>DBG_printf(&quot;Selecting slave I2C Device\n&quot;);
 
+/* Set the direction to transmit the address */
+I2C_SetDirection( me-&gt;iBus,  I2C_Direction_Transmitter);
+
 /* Send slave Address for write */
 I2C_Send7bitAddress(
     s_I2C_Bus[me-&gt;iBus].i2c_bus,            /* This is always the bus used in this ISR */
     s_I2C_Bus[me-&gt;iBus].i2c_cur_dev_addr,   /* Look up the current device address for this bus */
-    s_I2C_Bus[me-&gt;iBus].bTransDirection     /* Direction of data on this bus */
+    I2C_Direction_Transmitter //s_I2C_Bus[me-&gt;iBus].bTransDirection     /* Direction of data on this bus */
 );
 
 /* Reset the maximum number of times to poll the I2C bus for an event */
-me-&gt;nI2CLoopTimeout = MAX_I2C_TIMEOUT;</action>
+me-&gt;nI2CLoopTimeout = MAX_I2C_TIMEOUT * 20;</action>
           <choice_glyph conn="60,51,5,3,16">
            <action box="0,0,14,2"/>
           </choice_glyph>
@@ -535,7 +539,6 @@ me-&gt;nI2CLoopTimeout = MAX_I2C_TIMEOUT;</action>
        </state>
        <state_glyph node="42,33,98,127">
         <entry box="1,2,6,2"/>
-        <exit box="1,4,6,2"/>
        </state_glyph>
       </state>
       <state name="WaitForBusFree">

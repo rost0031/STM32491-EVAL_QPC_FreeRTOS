@@ -304,7 +304,7 @@ void DMA1_Stream0_IRQHandler( void )
       );
       QF_PUBLISH( (QEvent *)i2cDataEvt, AO_SerialMgr );
 
-      isr_dbg_slow_printf("DMA done\n");
+      isr_dbg_slow_printf("DMA done. EETimeout was %d\n", EETimeout);
 
       /* Try to read a junk byte to see if the stop big makes it through */
 //      /* Disable Acknowledgment */

@@ -348,20 +348,6 @@ static QState I2CMgr_BusBeingUsed(I2CMgr * const me, QEvt const * const e) {
             status_ = Q_HANDLED();
             break;
         }
-        /* ${AOs::I2CMgr::SM::Active::Busy::BusBeingUsed} */
-        case Q_EXIT_SIG: {
-            /* Disable Acknowledgment */
-            I2C_AcknowledgeConfig(s_I2C_Bus[me->iBus].i2c_bus, DISABLE);
-
-            I2C_GenerateSTOP(s_I2C_Bus[me->iBus].i2c_bus, ENABLE);
-
-            /* Re-Enable Acknowledgment to be ready for another reception */
-            I2C_AcknowledgeConfig(s_I2C_Bus[me->iBus].i2c_bus, ENABLE);
-
-            DBG_printf("Generating I2C stop\n");
-            status_ = Q_HANDLED();
-            break;
-        }
         default: {
             status_ = Q_SUPER(&I2CMgr_Busy);
             break;
@@ -518,6 +504,16 @@ static QState I2CMgr_WaitForDMAData(I2CMgr * const me, QEvt const * const e) {
         /* ${AOs::I2CMgr::SM::Active::Busy::BusBeingUsed::Reading::WaitForDMAData::I2C_DMA_TIMEOUT} */
         case I2C_DMA_TIMEOUT_SIG: {
             ERR_printf("Timeout while waiting for DMA read timeout\n");
+
+            /* Disable Acknowledgment */
+            I2C_AcknowledgeConfig(s_I2C_Bus[me->iBus].i2c_bus, DISABLE);
+
+            I2C_GenerateSTOP(s_I2C_Bus[me->iBus].i2c_bus, ENABLE);
+
+            /* Re-Enable Acknowledgment to be ready for another reception */
+            I2C_AcknowledgeConfig(s_I2C_Bus[me->iBus].i2c_bus, ENABLE);
+
+            DBG_printf("Generating I2C stop\n");
             status_ = Q_TRAN(&I2CMgr_Idle);
             break;
         }
@@ -548,15 +544,18 @@ static QState I2CMgr_WaitFor_I2C_EV5(I2CMgr * const me, QEvt const * const e) {
             if (I2C_CheckEvent(s_I2C_Bus[me->iBus].i2c_bus, I2C_EVENT_MASTER_MODE_SELECT)) {
                 DBG_printf("Selecting slave I2C Device\n");
 
+                /* Set the direction to transmit the address */
+                I2C_SetDirection( me->iBus,  I2C_Direction_Transmitter);
+
                 /* Send slave Address for write */
                 I2C_Send7bitAddress(
                     s_I2C_Bus[me->iBus].i2c_bus,            /* This is always the bus used in this ISR */
                     s_I2C_Bus[me->iBus].i2c_cur_dev_addr,   /* Look up the current device address for this bus */
-                    s_I2C_Bus[me->iBus].bTransDirection     /* Direction of data on this bus */
+                    I2C_Direction_Transmitter //s_I2C_Bus[me->iBus].bTransDirection     /* Direction of data on this bus */
                 );
 
                 /* Reset the maximum number of times to poll the I2C bus for an event */
-                me->nI2CLoopTimeout = MAX_I2C_TIMEOUT;
+                me->nI2CLoopTimeout = MAX_I2C_TIMEOUT * 20;
                 status_ = Q_TRAN(&I2CMgr_WaitFor_I2C_EV6);
             }
             /* ${AOs::I2CMgr::SM::Active::Busy::BusBeingUsed::WaitFor_I2C_EV5::I2C_CHECK_EV::[else]} */
