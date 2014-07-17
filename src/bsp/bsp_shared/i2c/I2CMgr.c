@@ -64,15 +64,6 @@ typedef struct {
     /**< Storage for deferred event queue. */
     QTimeEvt const * deferredEvtQSto[100];
 
-    /**< Flag that indicates whether the bus is free or busy */
-    FlagStatus bBusBusy;
-
-    /**< QPC timer Used to time retries for checking if the I2C bus is busy. */
-    QTimeEvt i2cBusBusyTimerEvt;
-
-    /**< Keep track of number of retries used to check if the I2C bus is still busy. */
-    uint8_t nBusRetries;
-
     /**< Address on the I2C device to read or write to.  This will be used to store
      the address coming from the events. */
     uint16_t wAddr;
@@ -138,7 +129,7 @@ static QState I2CMgr_WaitFor_I2C_EV5(I2CMgr * const me, QEvt const * const e);
 static QState I2CMgr_WaitFor_I2C_EV6(I2CMgr * const me, QEvt const * const e);
 static QState I2CMgr_WaitFor_I2C_EV8_MSB(I2CMgr * const me, QEvt const * const e);
 static QState I2CMgr_WaitFor_I2C_EV8_LSB(I2CMgr * const me, QEvt const * const e);
-static QState I2CMgr_WaitForBusFree(I2CMgr * const me, QEvt const * const e);
+static QState I2CMgr_StartI2CComm(I2CMgr * const me, QEvt const * const e);
 
 /**
  * @brief This state indicates that the I2C bus is currently idle and the
@@ -179,7 +170,6 @@ void I2CMgr_ctor(I2C_Bus_t iBus) {
 
     QActive_ctor( &me->super, (QStateHandler)&I2CMgr_initial );
     QTimeEvt_ctor( &me->i2cTimerEvt, I2C_TIMEOUT_SIG );
-    QTimeEvt_ctor( &me->i2cBusBusyTimerEvt, I2C_BUS_RETRY_TIMEOUT_SIG );
     QTimeEvt_ctor( &me->i2cDMATimerEvt, I2C_DMA_TIMEOUT_SIG );
 
     /* Initialize the deferred event queue and storage for it */
@@ -216,7 +206,6 @@ static QState I2CMgr_initial(I2CMgr * const me, QEvt const * const e) {
     QActive_subscribe((QActive *)me, I2C_READ_START_SIG);
     QActive_subscribe((QActive *)me, I2C_WRITE_START_SIG);
     QActive_subscribe((QActive *)me, I2C_TIMEOUT_SIG);
-    QActive_subscribe((QActive *)me, I2C_BUS_RETRY_TIMEOUT_SIG);
     QActive_subscribe((QActive *)me, I2C_CHECK_EV_SIG);
     QActive_subscribe((QActive *)me, I2C_READ_DONE_SIG);
     QActive_subscribe((QActive *)me, I2C_DMA_TIMEOUT_SIG);
@@ -247,13 +236,6 @@ static QState I2CMgr_Active(I2CMgr * const me, QEvt const * const e) {
                 SEC_TO_TICKS( LL_MAX_TIMEOUT_SERIAL_DMA_BUSY_SEC )
             );
             QTimeEvt_disarm(&me->i2cTimerEvt);
-
-            QTimeEvt_postIn(
-                &me->i2cBusBusyTimerEvt,
-                (QActive *)me,
-                SEC_TO_TICKS( LL_MAX_TIMEOUT_I2C_READ_OP_SEC )
-            );
-            QTimeEvt_disarm(&me->i2cBusBusyTimerEvt);
 
             QTimeEvt_postIn(
                 &me->i2cDMATimerEvt,
@@ -319,6 +301,7 @@ static QState I2CMgr_Busy(I2CMgr * const me, QEvt const * const e) {
                /* defer the request - this event will be handled
                 * when the state machine goes back to Idle state */
                QActive_defer((QActive *)me, &me->deferredEvtQueue, e);
+               dbg_slow_printf("Deferring I2C request until current is done\n");
             } else {
                /* notify the request sender that the request was ignored.. */
                ERR_printf("Unable to defer I2C request\n");
@@ -731,48 +714,45 @@ static QState I2CMgr_WaitFor_I2C_EV8_LSB(I2CMgr * const me, QEvt const * const e
     }
     return status_;
 }
-/*${AOs::I2CMgr::SM::Active::Busy::WaitForBusFree} .........................*/
-static QState I2CMgr_WaitForBusFree(I2CMgr * const me, QEvt const * const e) {
+/*${AOs::I2CMgr::SM::Active::Busy::StartI2CComm} ...........................*/
+static QState I2CMgr_StartI2CComm(I2CMgr * const me, QEvt const * const e) {
     QState status_;
     switch (e->sig) {
-        /* ${AOs::I2CMgr::SM::Active::Busy::WaitForBusFree} */
+        /* ${AOs::I2CMgr::SM::Active::Busy::StartI2CComm} */
         case Q_ENTRY_SIG: {
-            /* Create MsgEvt event to send out the message */
-            QEvt *qEvt = Q_NEW(QEvt, I2C_BUS_RETRY_TIMEOUT_SIG);
-
-            /* Post the msgEvt for this AO (CommStackMgr) to handle */
+            /* Create event to check event and publish it */
+            QEvt *qEvt = Q_NEW(QEvt, I2C_CHECK_EV_SIG);
             QF_PUBLISH((QEvt *)qEvt, AO_I2CMgr);
             status_ = Q_HANDLED();
             break;
         }
-        /* ${AOs::I2CMgr::SM::Active::Busy::WaitForBusFree::I2C_BUS_RETRY_TIMEOUT} */
-        case I2C_BUS_RETRY_TIMEOUT_SIG: {
-            me->nBusRetries++;
+        /* ${AOs::I2CMgr::SM::Active::Busy::StartI2CComm::I2C_CHECK_EV} */
+        case I2C_CHECK_EV_SIG: {
+            /* Check if bus is busy.  If free, go on to the next state.  Otherwise,
+             * try again until number of retries is out */
+            /* ${AOs::I2CMgr::SM::Active::Busy::StartI2CComm::I2C_CHECK_EV::[BusFree?]} */
+            if (RESET == I2C_GetFlagStatus( s_I2C_Bus[me->iBus].i2c_bus, I2C_FLAG_BUSY )) {
+                DBG_printf("Bus free after %d retries\n", MAX_I2C_TIMEOUT - me->nI2CLoopTimeout);
 
-            I2C_SoftwareResetCmd(s_I2C_Bus[me->iBus].i2c_bus, ENABLE);
-            I2C_SoftwareResetCmd(s_I2C_Bus[me->iBus].i2c_bus, DISABLE);
-            DBG_printf("Reset bus\n");
-
-            me->bBusBusy = I2C_GetFlagStatus(s_I2C_Bus[me->iBus].i2c_bus, I2C_FLAG_BUSY);
-            /* ${AOs::I2CMgr::SM::Active::Busy::WaitForBusFree::I2C_BUS_RETRY_TIMEOUT::[BusBusy?]} */
-            if (SET == me->bBusBusy) {
-                DBG_printf("Bus still busy after %d retries\n", me->nBusRetries);
-                /* ${AOs::I2CMgr::SM::Active::Busy::WaitForBusFree::I2C_BUS_RETRY_TIMEOUT::[BusBusy?]::[Retriesleft?]} */
-                if (MAX_BUS_RETRIES > me->nBusRetries) {
-                    DBG_printf("Retrying\n");
-                    status_ = Q_TRAN(&I2CMgr_WaitForBusFree);
-                }
-                /* ${AOs::I2CMgr::SM::Active::Busy::WaitForBusFree::I2C_BUS_RETRY_TIMEOUT::[BusBusy?]::[else]} */
-                else {
-                    DBG_printf("Out of retries\n");
-                    status_ = Q_TRAN(&I2CMgr_Idle);
-                }
-            }
-            /* ${AOs::I2CMgr::SM::Active::Busy::WaitForBusFree::I2C_BUS_RETRY_TIMEOUT::[else]} */
-            else {
-                DBG_printf("Bus free after %d retries\n", me->nBusRetries);
+                /* Reset the maximum number of times to poll the I2C bus for an event */
                 me->nI2CLoopTimeout = MAX_I2C_TIMEOUT;
                 status_ = Q_TRAN(&I2CMgr_WaitFor_I2C_EV5);
+            }
+            /* ${AOs::I2CMgr::SM::Active::Busy::StartI2CComm::I2C_CHECK_EV::[else]} */
+            else {
+                me->nI2CLoopTimeout--;                 /* Decrement counter */
+                /* ${AOs::I2CMgr::SM::Active::Busy::StartI2CComm::I2C_CHECK_EV::[else]::[Retriesleft?]} */
+                if (me->nI2CLoopTimeout != 0) {
+                    status_ = Q_TRAN(&I2CMgr_StartI2CComm);
+                }
+                /* ${AOs::I2CMgr::SM::Active::Busy::StartI2CComm::I2C_CHECK_EV::[else]::[else]} */
+                else {
+                    ERR_printf("Timeout waiting for I2C bus to be free\n");
+                    I2C_SoftwareResetCmd(s_I2C_Bus[me->iBus].i2c_bus, ENABLE);
+                    I2C_SoftwareResetCmd(s_I2C_Bus[me->iBus].i2c_bus, DISABLE);
+                    DBG_printf("I2C bus reset\n");
+                    status_ = Q_TRAN(&I2CMgr_Idle);
+                }
             }
             break;
         }
@@ -800,13 +780,11 @@ static QState I2CMgr_Idle(I2CMgr * const me, QEvt const * const e) {
         /* ${AOs::I2CMgr::SM::Active::Idle} */
         case Q_ENTRY_SIG: {
             /* recall the request from the private requestQueue */
-            I2CDataEvt const *rq = (I2CDataEvt const *) (uint32_t) QActive_recall(
+            I2CReqEvt const *rq = (I2CReqEvt const *) (uint32_t) QActive_recall(
                 (QActive *)me,
                 &me->deferredEvtQueue
             );
 
-            /* Reset all counters */
-            me->nBusRetries = 0;
             DBG_printf("back in Idle\n");
             status_ = Q_HANDLED();
             break;
@@ -822,26 +800,9 @@ static QState I2CMgr_Idle(I2CMgr * const me, QEvt const * const e) {
             me->wAddr = ((I2CReqEvt const *)e)->wReadAddr;
             me->nLen  = ((I2CReqEvt const *)e)->nReadLen;
 
-            //I2C_SoftwareResetCmd(I2C1, ENABLE);
-            //I2C_SoftwareResetCmd(I2C1, DISABLE);
-
-            /* Check if the bus is busy */
-            me->bBusBusy = I2C_GetFlagStatus(s_I2C_Bus[me->iBus].i2c_bus, I2C_FLAG_BUSY);
-            /* ${AOs::I2CMgr::SM::Active::Idle::I2C_READ_START::[Busbusy?]} */
-            if (SET == me->bBusBusy) {
-                /*Reset the retries counter when first getting into this state. */
-                me->nBusRetries = 0;
-                DBG_printf("Bus busy, waiting for free\n");
-                status_ = Q_TRAN(&I2CMgr_WaitForBusFree);
-            }
-            /* ${AOs::I2CMgr::SM::Active::Idle::I2C_READ_START::[else]} */
-            else {
-                DBG_printf("Bus free\n");
-
-                /* Reset the maximum number of times to poll the I2C bus for an event */
-                me->nI2CLoopTimeout = MAX_I2C_TIMEOUT;
-                status_ = Q_TRAN(&I2CMgr_WaitFor_I2C_EV5);
-            }
+            /* Reset the maximum number of times to poll the I2C bus for an event */
+            me->nI2CLoopTimeout = MAX_I2C_TIMEOUT;
+            status_ = Q_TRAN(&I2CMgr_StartI2CComm);
             break;
         }
         default: {

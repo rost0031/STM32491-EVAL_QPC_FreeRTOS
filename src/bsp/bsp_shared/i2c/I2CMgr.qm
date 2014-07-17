@@ -49,15 +49,6 @@
    <attribute name="deferredEvtQSto[100]" type="QTimeEvt const *" visibility="0x01" properties="0x00">
     <documentation>/**&lt; Storage for deferred event queue. */</documentation>
    </attribute>
-   <attribute name="bBusBusy" type="FlagStatus" visibility="0x01" properties="0x00">
-    <documentation>/**&lt; Flag that indicates whether the bus is free or busy */</documentation>
-   </attribute>
-   <attribute name="i2cBusBusyTimerEvt" type="QTimeEvt" visibility="0x01" properties="0x00">
-    <documentation>/**&lt; QPC timer Used to time retries for checking if the I2C bus is busy. */</documentation>
-   </attribute>
-   <attribute name="nBusRetries" type="uint8_t" visibility="0x01" properties="0x00">
-    <documentation>/**&lt; Keep track of number of retries used to check if the I2C bus is still busy. */</documentation>
-   </attribute>
    <attribute name="wAddr" type="uint16_t" visibility="0x01" properties="0x00">
     <documentation>/**&lt; Address on the I2C device to read or write to.  This will be used to store
  the address coming from the events. */</documentation>
@@ -102,7 +93,6 @@ QS_FUN_DICTIONARY(&amp;I2CMgr_Read);
 QActive_subscribe((QActive *)me, I2C_READ_START_SIG);
 QActive_subscribe((QActive *)me, I2C_WRITE_START_SIG);
 QActive_subscribe((QActive *)me, I2C_TIMEOUT_SIG);
-QActive_subscribe((QActive *)me, I2C_BUS_RETRY_TIMEOUT_SIG);
 QActive_subscribe((QActive *)me, I2C_CHECK_EV_SIG);
 QActive_subscribe((QActive *)me, I2C_READ_DONE_SIG);
 QActive_subscribe((QActive *)me, I2C_DMA_TIMEOUT_SIG);</action>
@@ -129,13 +119,6 @@ QTimeEvt_postIn(
     SEC_TO_TICKS( LL_MAX_TIMEOUT_SERIAL_DMA_BUSY_SEC )
 );
 QTimeEvt_disarm(&amp;me-&gt;i2cTimerEvt);
-
-QTimeEvt_postIn(
-    &amp;me-&gt;i2cBusBusyTimerEvt,
-    (QActive *)me,
-    SEC_TO_TICKS( LL_MAX_TIMEOUT_I2C_READ_OP_SEC )
-);
-QTimeEvt_disarm(&amp;me-&gt;i2cBusBusyTimerEvt);
 
 QTimeEvt_postIn(
     &amp;me-&gt;i2cDMATimerEvt,
@@ -175,6 +158,7 @@ QTimeEvt_rearm(
    /* defer the request - this event will be handled
     * when the state machine goes back to Idle state */
    QActive_defer((QActive *)me, &amp;me-&gt;deferredEvtQueue, e);
+   dbg_slow_printf(&quot;Deferring I2C request until current is done\n&quot;);
 } else {
    /* notify the request sender that the request was ignored.. */
    ERR_printf(&quot;Unable to defer I2C request\n&quot;);
@@ -191,7 +175,7 @@ I2C_GenerateSTART(s_I2C_Bus[me-&gt;iBus].i2c_bus, ENABLE);</entry>
        <state name="Reading">
         <tran trig="I2C_READ_DONE" target="../../../../1">
          <action>DBG_printf(&quot;Read finished successfully: read %d bytes\n&quot;, ((I2CDataEvt const *)e)-&gt;wBufferLen);</action>
-         <tran_glyph conn="44,114,3,1,-20">
+         <tran_glyph conn="44,109,3,1,-20">
           <action box="-18,-2,15,2"/>
          </tran_glyph>
         </tran>
@@ -218,7 +202,7 @@ I2C_Send7bitAddress(
 
 /* Reset the maximum number of times to poll the I2C bus for an event */
 me-&gt;nI2CLoopTimeout = MAX_I2C_TIMEOUT * 100;</action>
-           <choice_glyph conn="60,99,4,3,0,16">
+           <choice_glyph conn="60,94,4,3,0,16">
             <action box="1,0,14,2"/>
            </choice_glyph>
           </choice>
@@ -227,26 +211,26 @@ me-&gt;nI2CLoopTimeout = MAX_I2C_TIMEOUT * 100;</action>
            <action>me-&gt;nI2CLoopTimeout--;                 /* Decrement counter */</action>
            <choice target="../../..">
             <guard brief="Retries left?">me-&gt;nI2CLoopTimeout != 0</guard>
-            <choice_glyph conn="49,99,4,0,-4">
+            <choice_glyph conn="49,94,4,0,-4">
              <action box="-11,-4,12,2"/>
             </choice_glyph>
            </choice>
            <choice target="../../../../../../../1">
             <guard brief="else"/>
             <action>ERR_printf(&quot;Timeout waiting for I2C_EVENT_MASTER_MODE_SELECT (EV5)\n&quot;);</action>
-            <choice_glyph conn="49,99,5,1,-25">
+            <choice_glyph conn="49,94,5,1,-25">
              <action box="-7,0,6,2"/>
             </choice_glyph>
            </choice>
-           <choice_glyph conn="60,99,5,-1,-11">
+           <choice_glyph conn="60,94,5,-1,-11">
             <action box="-7,0,6,2"/>
            </choice_glyph>
           </choice>
-          <tran_glyph conn="60,95,2,-1,4">
+          <tran_glyph conn="60,90,2,-1,4">
            <action box="0,0,14,2"/>
           </tran_glyph>
          </tran>
-         <state_glyph node="46,89,18,6">
+         <state_glyph node="46,84,18,6">
           <entry box="1,2,6,2"/>
          </state_glyph>
         </state>
@@ -263,7 +247,7 @@ QF_PUBLISH((QEvt *)qEvt, AO_I2CMgr);</entry>
 
 /* Reset the maximum number of times to poll the I2C bus for an event */
 me-&gt;nI2CLoopTimeout = MAX_I2C_TIMEOUT;</action>
-           <choice_glyph conn="90,107,4,0,5,-41,3">
+           <choice_glyph conn="90,102,4,0,5,-41,3">
             <action box="0,2,14,2"/>
            </choice_glyph>
           </choice>
@@ -272,26 +256,26 @@ me-&gt;nI2CLoopTimeout = MAX_I2C_TIMEOUT;</action>
            <action>me-&gt;nI2CLoopTimeout--;                 /* Decrement counter */</action>
            <choice target="../../..">
             <guard brief="Retries left?">me-&gt;nI2CLoopTimeout != 0</guard>
-            <choice_glyph conn="79,107,4,0,-4">
+            <choice_glyph conn="79,102,4,0,-4">
              <action box="-10,-3,12,2"/>
             </choice_glyph>
            </choice>
            <choice target="../../../../../../../1">
             <guard brief="else"/>
             <action>ERR_printf(&quot;Timeout waiting for I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED (EV6)\n&quot;);</action>
-            <choice_glyph conn="79,107,5,1,-55">
+            <choice_glyph conn="79,102,5,1,-55">
              <action box="-8,0,7,2"/>
             </choice_glyph>
            </choice>
-           <choice_glyph conn="90,107,5,-1,-11">
+           <choice_glyph conn="90,102,5,-1,-11">
             <action box="-7,0,6,2"/>
            </choice_glyph>
           </choice>
-          <tran_glyph conn="90,103,2,-1,4">
+          <tran_glyph conn="90,98,2,-1,4">
            <action box="0,0,14,2"/>
           </tran_glyph>
          </tran>
-         <state_glyph node="76,97,18,6">
+         <state_glyph node="76,92,18,6">
           <entry box="1,2,6,2"/>
          </state_glyph>
         </state>
@@ -321,16 +305,16 @@ I2C_GenerateSTOP(s_I2C_Bus[me-&gt;iBus].i2c_bus, ENABLE);
 I2C_AcknowledgeConfig(s_I2C_Bus[me-&gt;iBus].i2c_bus, ENABLE);
 
 DBG_printf(&quot;Generating I2C stop\n&quot;);</action>
-          <tran_glyph conn="46,120,3,1,-22">
+          <tran_glyph conn="46,115,3,1,-22">
            <action box="-20,-2,16,2"/>
           </tran_glyph>
          </tran>
-         <state_glyph node="46,115,27,18">
+         <state_glyph node="46,110,27,18">
           <entry box="1,2,6,2"/>
           <exit box="1,4,6,2"/>
          </state_glyph>
         </state>
-        <state_glyph node="44,85,53,56"/>
+        <state_glyph node="44,80,53,56"/>
        </state>
        <state name="WaitFor_I2C_EV5">
         <entry>/* Post an event to check for EV5 event */
@@ -355,7 +339,7 @@ I2C_Send7bitAddress(
 
 /* Reset the maximum number of times to poll the I2C bus for an event */
 me-&gt;nI2CLoopTimeout = MAX_I2C_TIMEOUT;</action>
-          <choice_glyph conn="60,51,5,3,16">
+          <choice_glyph conn="60,46,5,3,16">
            <action box="0,0,14,2"/>
           </choice_glyph>
          </choice>
@@ -364,26 +348,26 @@ me-&gt;nI2CLoopTimeout = MAX_I2C_TIMEOUT;</action>
           <action>me-&gt;nI2CLoopTimeout--;                 /* Decrement counter */</action>
           <choice target="../../..">
            <guard brief="Retries left?">me-&gt;nI2CLoopTimeout != 0</guard>
-           <choice_glyph conn="49,51,4,2,-4">
+           <choice_glyph conn="49,46,4,2,-4">
             <action box="-11,-4,12,2"/>
            </choice_glyph>
           </choice>
           <choice target="../../../../../../1">
            <guard brief="else"/>
            <action>ERR_printf(&quot;Timeout waiting for I2C_EVENT_MASTER_MODE_SELECT (EV5)\n&quot;);</action>
-           <choice_glyph conn="49,51,5,1,-25">
+           <choice_glyph conn="49,46,5,1,-25">
             <action box="-7,0,6,2"/>
            </choice_glyph>
           </choice>
-          <choice_glyph conn="60,51,5,-1,-11">
+          <choice_glyph conn="60,46,5,-1,-11">
            <action box="-7,0,6,2"/>
           </choice_glyph>
          </choice>
-         <tran_glyph conn="60,47,2,-1,4">
+         <tran_glyph conn="60,42,2,-1,4">
           <action box="0,0,14,2"/>
          </tran_glyph>
         </tran>
-        <state_glyph node="46,41,18,6">
+        <state_glyph node="46,36,18,6">
          <entry box="1,2,6,2"/>
         </state_glyph>
        </state>
@@ -406,7 +390,7 @@ I2C_SendData(
 
 /* Reset the maximum number of times to poll the I2C bus for an event */
 me-&gt;nI2CLoopTimeout = MAX_I2C_TIMEOUT;</action>
-          <choice_glyph conn="90,59,4,1,5,-26">
+          <choice_glyph conn="90,54,4,1,5,-26">
            <action box="0,2,14,2"/>
           </choice_glyph>
          </choice>
@@ -415,26 +399,26 @@ me-&gt;nI2CLoopTimeout = MAX_I2C_TIMEOUT;</action>
           <action>me-&gt;nI2CLoopTimeout--;                 /* Decrement counter */</action>
           <choice target="../../..">
            <guard brief="Retries left?">me-&gt;nI2CLoopTimeout != 0</guard>
-           <choice_glyph conn="79,59,4,2,-4">
+           <choice_glyph conn="79,54,4,2,-4">
             <action box="-11,-4,12,2"/>
            </choice_glyph>
           </choice>
           <choice target="../../../../../../1">
            <guard brief="else"/>
            <action>ERR_printf(&quot;Timeout waiting for I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED (EV6)\n&quot;);</action>
-           <choice_glyph conn="79,59,5,1,-55">
+           <choice_glyph conn="79,54,5,1,-55">
             <action box="-8,0,7,2"/>
            </choice_glyph>
           </choice>
-          <choice_glyph conn="90,59,5,-1,-11">
+          <choice_glyph conn="90,54,5,-1,-11">
            <action box="-7,0,6,2"/>
           </choice_glyph>
          </choice>
-         <tran_glyph conn="90,55,2,-1,4">
+         <tran_glyph conn="90,50,2,-1,4">
           <action box="0,0,14,2"/>
          </tran_glyph>
         </tran>
-        <state_glyph node="76,49,18,6">
+        <state_glyph node="76,44,18,6">
          <entry box="1,2,6,2"/>
         </state_glyph>
        </state>
@@ -457,7 +441,7 @@ I2C_SendData(
 
 /* Reset the maximum number of times to poll the I2C bus for an event */
 me-&gt;nI2CLoopTimeout = MAX_I2C_TIMEOUT;</action>
-          <choice_glyph conn="60,72,4,3,0,16">
+          <choice_glyph conn="60,67,4,3,0,16">
            <action box="1,0,14,2"/>
           </choice_glyph>
          </choice>
@@ -466,26 +450,26 @@ me-&gt;nI2CLoopTimeout = MAX_I2C_TIMEOUT;</action>
           <action>me-&gt;nI2CLoopTimeout--;                 /* Decrement counter */</action>
           <choice target="../../..">
            <guard brief="Retries left?">me-&gt;nI2CLoopTimeout != 0</guard>
-           <choice_glyph conn="49,72,4,2,-4">
+           <choice_glyph conn="49,67,4,2,-4">
             <action box="-11,-4,12,2"/>
            </choice_glyph>
           </choice>
           <choice target="../../../../../../1">
            <guard brief="else"/>
            <action>ERR_printf(&quot;Timeout waiting for I2C_EVENT_MASTER_BYTE_TRANSMITTING (EV8)\n&quot;);</action>
-           <choice_glyph conn="49,72,5,1,-25">
+           <choice_glyph conn="49,67,5,1,-25">
             <action box="-8,0,7,2"/>
            </choice_glyph>
           </choice>
-          <choice_glyph conn="60,72,5,-1,-11">
+          <choice_glyph conn="60,67,5,-1,-11">
            <action box="-7,0,6,2"/>
           </choice_glyph>
          </choice>
-         <tran_glyph conn="60,68,2,-1,4">
+         <tran_glyph conn="60,63,2,-1,4">
           <action box="0,0,14,2"/>
          </tran_glyph>
         </tran>
-        <state_glyph node="46,62,18,6">
+        <state_glyph node="46,57,18,6">
          <entry box="1,2,6,2"/>
         </state_glyph>
        </state>
@@ -505,7 +489,7 @@ I2C_GenerateSTART(s_I2C_Bus[me-&gt;iBus].i2c_bus, ENABLE);
 
 /* Reset the maximum number of times to poll the I2C bus for an event */
 me-&gt;nI2CLoopTimeout = MAX_I2C_TIMEOUT;</action>
-          <choice_glyph conn="90,80,4,1,11,-26">
+          <choice_glyph conn="90,75,4,1,11,-26">
            <action box="0,2,14,2"/>
           </choice_glyph>
          </choice>
@@ -514,82 +498,79 @@ me-&gt;nI2CLoopTimeout = MAX_I2C_TIMEOUT;</action>
           <action>me-&gt;nI2CLoopTimeout--;                 /* Decrement counter */</action>
           <choice target="../../..">
            <guard brief="Retries left?">me-&gt;nI2CLoopTimeout != 0</guard>
-           <choice_glyph conn="79,80,4,2,-4">
+           <choice_glyph conn="79,75,4,2,-4">
             <action box="-10,-3,12,2"/>
            </choice_glyph>
           </choice>
           <choice target="../../../../../../1">
            <guard brief="else"/>
            <action>ERR_printf(&quot;Timeout waiting for I2C_EVENT_MASTER_BYTE_TRANSMITTING (EV8)\n&quot;);</action>
-           <choice_glyph conn="79,80,5,1,-55">
+           <choice_glyph conn="79,75,5,1,-55">
             <action box="-8,0,7,2"/>
            </choice_glyph>
           </choice>
-          <choice_glyph conn="90,80,5,-1,-11">
+          <choice_glyph conn="90,75,5,-1,-11">
            <action box="-7,0,6,2"/>
           </choice_glyph>
          </choice>
-         <tran_glyph conn="90,76,2,-1,4">
+         <tran_glyph conn="90,71,2,-1,4">
           <action box="0,0,14,2"/>
          </tran_glyph>
         </tran>
-        <state_glyph node="76,70,18,6">
+        <state_glyph node="76,65,18,6">
          <entry box="1,2,6,2"/>
         </state_glyph>
        </state>
-       <state_glyph node="42,33,98,127">
+       <state_glyph node="42,32,98,123">
         <entry box="1,2,6,2"/>
        </state_glyph>
       </state>
-      <state name="WaitForBusFree">
-       <entry>/* Create MsgEvt event to send out the message */
-QEvt *qEvt = Q_NEW(QEvt, I2C_BUS_RETRY_TIMEOUT_SIG);
-
-/* Post the msgEvt for this AO (CommStackMgr) to handle */
+      <state name="StartI2CComm">
+       <entry>/* Create event to check event and publish it */
+QEvt *qEvt = Q_NEW(QEvt, I2C_CHECK_EV_SIG);
 QF_PUBLISH((QEvt *)qEvt, AO_I2CMgr);</entry>
-       <tran trig="I2C_BUS_RETRY_TIMEOUT">
-        <action>me-&gt;nBusRetries++;
-
-I2C_SoftwareResetCmd(s_I2C_Bus[me-&gt;iBus].i2c_bus, ENABLE);
-I2C_SoftwareResetCmd(s_I2C_Bus[me-&gt;iBus].i2c_bus, DISABLE);
-DBG_printf(&quot;Reset bus\n&quot;);
-
-me-&gt;bBusBusy = I2C_GetFlagStatus(s_I2C_Bus[me-&gt;iBus].i2c_bus, I2C_FLAG_BUSY);</action>
+       <tran trig="I2C_CHECK_EV">
+        <action>/* Check if bus is busy.  If free, go on to the next state.  Otherwise,
+ * try again until number of retries is out */</action>
         <choice target="../../../2/1">
-         <guard>else</guard>
-         <action>DBG_printf(&quot;Bus free after %d retries\n&quot;, me-&gt;nBusRetries);
+         <guard brief="Bus Free?">RESET == I2C_GetFlagStatus( s_I2C_Bus[me-&gt;iBus].i2c_bus, I2C_FLAG_BUSY )</guard>
+         <action>DBG_printf(&quot;Bus free after %d retries\n&quot;, MAX_I2C_TIMEOUT - me-&gt;nI2CLoopTimeout);
+
+/* Reset the maximum number of times to poll the I2C bus for an event */
 me-&gt;nI2CLoopTimeout = MAX_I2C_TIMEOUT;</action>
-         <choice_glyph conn="50,30,4,0,11">
-          <action box="0,0,10,2"/>
+         <choice_glyph conn="60,26,4,0,10">
+          <action box="0,2,14,2"/>
          </choice_glyph>
         </choice>
         <choice>
-         <guard brief="Bus Busy?">SET == me-&gt;bBusBusy</guard>
-         <action>DBG_printf(&quot;Bus still busy after %d retries\n&quot;, me-&gt;nBusRetries);</action>
+         <guard brief="else"/>
+         <action>me-&gt;nI2CLoopTimeout--;                 /* Decrement counter */</action>
          <choice target="../../..">
-          <guard brief="Retries left?">MAX_BUS_RETRIES &gt; me-&gt;nBusRetries</guard>
-          <action>DBG_printf(&quot;Retrying\n&quot;);</action>
-          <choice_glyph conn="35,30,4,3,-5,9">
-           <action box="-4,-8,11,2"/>
+          <guard brief="Retries left?">me-&gt;nI2CLoopTimeout != 0</guard>
+          <choice_glyph conn="49,26,4,2,-4">
+           <action box="-11,-4,12,2"/>
           </choice_glyph>
          </choice>
          <choice target="../../../../../1">
-          <guard>else</guard>
-          <action>DBG_printf(&quot;Out of retries\n&quot;);</action>
-          <choice_glyph conn="35,30,5,1,-11">
-           <action box="-8,-2,6,2"/>
+          <guard brief="else"/>
+          <action>ERR_printf(&quot;Timeout waiting for I2C bus to be free\n&quot;);
+I2C_SoftwareResetCmd(s_I2C_Bus[me-&gt;iBus].i2c_bus, ENABLE);
+I2C_SoftwareResetCmd(s_I2C_Bus[me-&gt;iBus].i2c_bus, DISABLE);
+DBG_printf(&quot;I2C bus reset\n&quot;);</action>
+          <choice_glyph conn="49,26,5,1,-25">
+           <action box="-7,0,6,2"/>
           </choice_glyph>
          </choice>
-         <choice_glyph conn="50,30,5,-1,-15">
-          <action box="-12,-2,10,2"/>
+         <choice_glyph conn="60,26,5,-1,-11">
+          <action box="-7,0,6,2"/>
          </choice_glyph>
         </choice>
-        <tran_glyph conn="50,27,2,-1,3">
-         <action box="0,0,22,2"/>
+        <tran_glyph conn="60,22,2,-1,4">
+         <action box="0,0,14,2"/>
         </tran_glyph>
        </tran>
-       <state_glyph node="44,21,21,6">
-        <entry box="1,2,4,2"/>
+       <state_glyph node="43,16,19,6">
+        <entry box="1,2,6,2"/>
        </state_glyph>
       </state>
       <state_glyph node="40,10,113,157">
@@ -608,15 +589,13 @@ me-&gt;nI2CLoopTimeout = MAX_I2C_TIMEOUT;</action>
  * machine is going next.
  */</documentation>
       <entry>/* recall the request from the private requestQueue */
-I2CDataEvt const *rq = (I2CDataEvt const *) (uint32_t) QActive_recall(
+I2CReqEvt const *rq = (I2CReqEvt const *) (uint32_t) QActive_recall(
     (QActive *)me,
     &amp;me-&gt;deferredEvtQueue
 );
 
-/* Reset all counters */
-me-&gt;nBusRetries = 0;
 DBG_printf(&quot;back in Idle\n&quot;);</entry>
-      <tran trig="I2C_READ_START">
+      <tran trig="I2C_READ_START" target="../../0/3">
        <action>DBG_printf(&quot;Got I2C_READ_START\n&quot;);
 
 /* Store the device */
@@ -626,31 +605,9 @@ me-&gt;iDevice = ((I2CReqEvt const *)e)-&gt;i2cDevice;
 me-&gt;wAddr = ((I2CReqEvt const *)e)-&gt;wReadAddr;
 me-&gt;nLen  = ((I2CReqEvt const *)e)-&gt;nReadLen;
 
-//I2C_SoftwareResetCmd(I2C1, ENABLE);
-//I2C_SoftwareResetCmd(I2C1, DISABLE);
-
-/* Check if the bus is busy */
-me-&gt;bBusBusy = I2C_GetFlagStatus(s_I2C_Bus[me-&gt;iBus].i2c_bus, I2C_FLAG_BUSY);</action>
-       <choice target="../../../0/2/1">
-        <guard brief="else"/>
-        <action>DBG_printf(&quot;Bus free\n&quot;);
-
 /* Reset the maximum number of times to poll the I2C bus for an event */
 me-&gt;nI2CLoopTimeout = MAX_I2C_TIMEOUT;</action>
-        <choice_glyph conn="50,14,5,0,22,23,-20,4">
-         <action box="1,-2,6,2"/>
-        </choice_glyph>
-       </choice>
-       <choice target="../../../0/3">
-        <guard brief="Bus busy?">SET == me-&gt;bBusBusy</guard>
-        <action>/*Reset the retries counter when first getting into this state. */
-me-&gt;nBusRetries = 0;
-DBG_printf(&quot;Bus busy, waiting for free\n&quot;);</action>
-        <choice_glyph conn="50,14,4,0,7">
-         <action box="0,2,9,2"/>
-        </choice_glyph>
-       </choice>
-       <tran_glyph conn="24,14,1,-1,26">
+       <tran_glyph conn="24,14,1,0,26,2">
         <action box="0,-2,15,2"/>
        </tran_glyph>
       </tran>
@@ -683,7 +640,6 @@ me-&gt;iBus = iBus;
 
 QActive_ctor( &amp;me-&gt;super, (QStateHandler)&amp;I2CMgr_initial );
 QTimeEvt_ctor( &amp;me-&gt;i2cTimerEvt, I2C_TIMEOUT_SIG );
-QTimeEvt_ctor( &amp;me-&gt;i2cBusBusyTimerEvt, I2C_BUS_RETRY_TIMEOUT_SIG );
 QTimeEvt_ctor( &amp;me-&gt;i2cDMATimerEvt, I2C_DMA_TIMEOUT_SIG );
 
 /* Initialize the deferred event queue and storage for it */
