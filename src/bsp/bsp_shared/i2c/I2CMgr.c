@@ -153,8 +153,6 @@ static QState I2CMgr_Idle(I2CMgr * const me, QEvt const * const e);
 
 
 /* Private defines -----------------------------------------------------------*/
-#define MAX_BUS_RETRIES    10 /**< Max number of retries for I2C bus for busy flag */
-#define MAX_I2C_TIMEOUT 0xF00 /**< Max number of retries for I2C bus for busy flag */
 /* Private macros ------------------------------------------------------------*/
 /* Private variables and Local objects ---------------------------------------*/
 static I2CMgr l_I2CMgr;           /* the single instance of the active object */
@@ -551,11 +549,11 @@ static QState I2CMgr_WaitFor_I2C_EV5(I2CMgr * const me, QEvt const * const e) {
                 I2C_Send7bitAddress(
                     s_I2C_Bus[me->iBus].i2c_bus,            /* This is always the bus used in this ISR */
                     s_I2C_Bus[me->iBus].i2c_cur_dev_addr,   /* Look up the current device address for this bus */
-                    I2C_Direction_Transmitter //s_I2C_Bus[me->iBus].bTransDirection     /* Direction of data on this bus */
+                    s_I2C_Bus[me->iBus].bTransDirection     /* Direction of data on this bus */
                 );
 
                 /* Reset the maximum number of times to poll the I2C bus for an event */
-                me->nI2CLoopTimeout = MAX_I2C_TIMEOUT * 20;
+                me->nI2CLoopTimeout = MAX_I2C_TIMEOUT;
                 status_ = Q_TRAN(&I2CMgr_WaitFor_I2C_EV6);
             }
             /* ${AOs::I2CMgr::SM::Active::Busy::BusBeingUsed::WaitFor_I2C_EV5::I2C_CHECK_EV::[else]} */

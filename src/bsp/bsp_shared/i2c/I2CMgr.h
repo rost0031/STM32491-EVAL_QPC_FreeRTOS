@@ -43,6 +43,8 @@
 #include "i2c.h"                               /* For I2C device declarations */
 
 /* Exported defines ----------------------------------------------------------*/
+#define MAX_BUS_RETRIES   100 /**< Max number of retries for I2C bus for busy flag */
+#define MAX_I2C_TIMEOUT 10000 /**< Max number of retries for I2C bus for busy flag */
 /* Exported macros -----------------------------------------------------------*/
 /* Exported types ------------------------------------------------------------*/
 

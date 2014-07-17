@@ -160,34 +160,34 @@ void I2C_BusInit( I2C_Bus_t iBus )
    I2C_InitStructure.I2C_ClockSpeed          = s_I2C_Bus[iBus].i2c_bus_speed;
 
    /* Set up Interrupt controller to handle I2C Event interrupts */
-//   NVIC_Config(
-//         s_I2C_Bus[iBus].i2c_ev_irq_num,
-//         s_I2C_Bus[iBus].i2c_ev_irq_prio
-//   );
+   //   NVIC_Config(
+   //         s_I2C_Bus[iBus].i2c_ev_irq_num,
+   //         s_I2C_Bus[iBus].i2c_ev_irq_prio
+   //   );
 
    /* Set up Interrupt controller to handle I2C Error interrupts */
-//   NVIC_Config(
-//         s_I2C_Bus[iBus].i2c_er_irq_num,
-//         s_I2C_Bus[iBus].i2c_er_irq_prio
-//   );
+   //   NVIC_Config(
+   //         s_I2C_Bus[iBus].i2c_er_irq_num,
+   //         s_I2C_Bus[iBus].i2c_er_irq_prio
+   //   );
 
    /* Enable All I2C Interrupts */
-//   I2C_ITConfig(
-//         s_I2C_Bus[iBus].i2c_bus,
-//         I2C_IT_EVT, // | I2C_IT_BUF, // | I2C_IT_ERR,
-//         ENABLE
-//   );
+   //   I2C_ITConfig(
+   //         s_I2C_Bus[iBus].i2c_bus,
+   //         I2C_IT_EVT, // | I2C_IT_BUF, // | I2C_IT_ERR,
+   //         ENABLE
+   //   );
 
    /* Initialize the IRQ and priorities for I2C DMA */
    NVIC_Config(
          s_I2C_Bus[iBus].i2c_dma_rx_irq_num,
          s_I2C_Bus[iBus].i2c_dma_rx_irq_prio
    );
-//
-//   NVIC_Config(
-//         s_I2C_Bus[iBus].i2c_dma_tx_irq_num,
-//         s_I2C_Bus[iBus].i2c_dma_tx_irq_prio
-//   );
+   //
+   //   NVIC_Config(
+   //         s_I2C_Bus[iBus].i2c_dma_tx_irq_num,
+   //         s_I2C_Bus[iBus].i2c_dma_tx_irq_prio
+   //   );
 
    /* Apply I2C configuration */
    I2C_Init( s_I2C_Bus[iBus].i2c_bus, &I2C_InitStructure );
@@ -276,26 +276,38 @@ void DMA1_Stream0_IRQHandler( void )
 
    /* Test on DMA Stream Transfer Complete interrupt */
    if ( RESET != DMA_GetITStatus(DMA1_Stream0, DMA_IT_TCIF0) ) {
-      I2C_AcknowledgeConfig( I2C1, DISABLE);
-      I2C_GenerateSTOP(I2C1, ENABLE);
+      /* Start of STM32 I2C HW bug workaround:
+       * This is a workaround for the STM32 I2C hardware bug.  You have to send
+       * the STOP bit before receiving the last byte.  In the case of DMA xfers,
+       * this means doing it before you shut off the DMA stream.
+       * See the STM32 errata for more details. - HR */
 
-      /* Wait for the byte to be received */
-      uint16_t EETimeout = 10000;
+      I2C_AcknowledgeConfig( I2C1, DISABLE);        /* Disable Acknowledgment */
+
+      I2C_GenerateSTOP(I2C1, ENABLE);                        /* Generate Stop */
+
+      /* Wait for the byte to be received.
+       * Note: There's really no way around waiting for this flag to be reset
+       * outside of the ISR since you have to do this BEFORE you shut off DMA
+       * which has to be done in this ISR. Thankfully, this flag gets reset
+       * fairly quickly (189 times through the loop). - HR. */
+      uint16_t nI2CBusTimeout = MAX_I2C_TIMEOUT;
       while(I2C_GetFlagStatus(I2C1, I2C_FLAG_RXNE) == RESET) {
-         if((EETimeout--) == 0) {
-            isr_dbg_slow_printf("Timeout 1\n");
+         if((nI2CBusTimeout--) == 0) {
+            ERR_printf("Timeout waiting for I2C Stop bit flag reset!\n");
             return;
          }
       }
 
-      I2C_AcknowledgeConfig(I2C1, ENABLE);
+      I2C_AcknowledgeConfig(I2C1, ENABLE);        /* Re-enable Acknowledgment */
+      /* End of STM32 I2C HW bug workaround */
 
       /* Disable DMA so it doesn't keep outputting the buffer. */
       DMA_Cmd( DMA1_Stream0, DISABLE );
 
       /* Publish event stating that the count has been reached */
       I2CDataEvt *i2cDataEvt = Q_NEW( I2CDataEvt, I2C_READ_DONE_SIG );
-      i2cDataEvt->i2cDevice = EEPROM;
+      i2cDataEvt->i2cDevice = s_I2C_Bus[I2CBus1].i2c_cur_dev;
       i2cDataEvt->wBufferLen = s_I2C_Bus[I2CBus1].nBytesExpected;
       MEMCPY(
             i2cDataEvt->buffer,
@@ -304,39 +316,8 @@ void DMA1_Stream0_IRQHandler( void )
       );
       QF_PUBLISH( (QEvent *)i2cDataEvt, AO_SerialMgr );
 
-      isr_dbg_slow_printf("DMA done. EETimeout was %d\n", EETimeout);
+      DBG_printf("I2C DMA read done. nI2CBusTimeout was %d\n", nI2CBusTimeout);
 
-      /* Try to read a junk byte to see if the stop big makes it through */
-//      /* Disable Acknowledgment */
-//      I2C_AcknowledgeConfig( I2C1, DISABLE);
-//
-//      I2C_GenerateSTOP(I2C1, ENABLE);
-
-//      /* Wait for the byte to be received */
-//      uint16_t EETimeout = 10000;
-//      while(I2C_GetFlagStatus(I2C1, I2C_FLAG_RXNE) == RESET) {
-//         if((EETimeout--) == 0) {
-//            isr_dbg_slow_printf("Timeout 1\n");
-//            return;
-//         }
-//      }
-
-      /* Read the byte received from the EEPROM */
-//      I2C_ReceiveData(I2C1);
-//
-//      /* Wait to make sure that STOP control bit has been cleared */
-//      EETimeout = 10000;
-//      while(I2C1->CR1 & I2C_CR1_STOP) {
-//         if((EETimeout--) == 0) {
-//            isr_dbg_slow_printf("Timeout 2\n");
-//            return;
-//         }
-//      }
-
-      /* Re-Enable Acknowledgment to be ready for another reception */
-//      I2C_AcknowledgeConfig(I2C1, ENABLE);
-
-      isr_dbg_slow_printf("Stop bit done\n");
       /* Clear DMA Stream Transfer Complete interrupt pending bit */
       DMA_ClearITPendingBit( DMA1_Stream0, DMA_IT_TCIF0 );
    }
@@ -353,134 +334,134 @@ void I2C1_EV_IRQHandler( void )
    __IO uint32_t I2CEvent = I2C_GetLastEvent( I2C1 );
 
    /* Check which I2C device on this bus is being used */
-//   if ( EEPROM == s_I2C_Bus[I2CBus1].i2c_cur_dev ) {
-      switch (I2CEvent) {
-         //      case 0x00000000:
-         //      case 0x00000001:
-         //      case 0x00004001:
-         //      case 0x00034044:
-         //         /* This is the I2C "Event" that is always triggering so we explicitly
-         //          * ignore it here */
-         //         break;
+   //   if ( EEPROM == s_I2C_Bus[I2CBus1].i2c_cur_dev ) {
+   switch (I2CEvent) {
+      //      case 0x00000000:
+      //      case 0x00000001:
+      //      case 0x00004001:
+      //      case 0x00034044:
+      //         /* This is the I2C "Event" that is always triggering so we explicitly
+      //          * ignore it here */
+      //         break;
 
-         case I2C_EVENT_MASTER_MODE_SELECT:
+      case I2C_EVENT_MASTER_MODE_SELECT:
 
-            /* Send slave Address for write */
-            I2C_Send7bitAddress(
-                  I2C1,                                  // This is always the bus used in this ISR
-                  s_I2C_Bus[I2CBus1].i2c_cur_dev_addr,   // Look up the current device address for this bus
-                  s_I2C_Bus[I2CBus1].bTransDirection     // Direction of data on this bus
-            );
+         /* Send slave Address for write */
+         I2C_Send7bitAddress(
+               I2C1,                                  // This is always the bus used in this ISR
+               s_I2C_Bus[I2CBus1].i2c_cur_dev_addr,   // Look up the current device address for this bus
+               s_I2C_Bus[I2CBus1].bTransDirection     // Direction of data on this bus
+         );
 
-            isr_dbg_slow_printf("I2C_EVENT_MASTER_MODE_SELECT\n");
-            break;
+         isr_dbg_slow_printf("I2C_EVENT_MASTER_MODE_SELECT\n");
+         break;
 
 
          /* Check on EV6 */
-         case I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED:
+      case I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED:
 
-            /* Send the EEPROM's internal address to read from:
-             * MSB of the address first */
-//            I2C_SendData(I2C1, (uint8_t)((0x00 & 0xFF00) >> 8));
-            isr_dbg_slow_printf("I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED\n");
+         /* Send the EEPROM's internal address to read from:
+          * MSB of the address first */
+         //            I2C_SendData(I2C1, (uint8_t)((0x00 & 0xFF00) >> 8));
+         isr_dbg_slow_printf("I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED\n");
 
 
-//            /*!< Send the EEPROM's internal address to read from: MSB of the address first */
-//            I2C_SendData(I2C1, (uint8_t)((0x0000 & 0xFF00) >> 8));
-//
-//            /*!< Test on EV8 and clear it */
-//            uint16_t sEETimeout = 10000;
-//            while(!I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_BYTE_TRANSMITTING))
-//            {
-//               if((sEETimeout--) == 0) {
-//                  isr_dbg_slow_printf("Timed out sending addr msb\n");
-//               }
-//            }
-//
-//            /*!< Send the EEPROM's internal address to read from: LSB of the address */
-//            I2C_SendData(I2C1, (uint8_t)(0x0000 & 0x00FF));
-//            sEETimeout = 10000;
-//            while(I2C_GetFlagStatus(I2C1, I2C_FLAG_BTF) == RESET)
-//            {
-//               if((sEETimeout--) == 0) {
-//                  isr_dbg_slow_printf("Timed out sending addr lsb\n");
-//               }
-//            }
-//            isr_dbg_slow_printf("Sent addr\n");
-            /* Create and publish event for I2CMgr */
-//            QEvt *qEvt = Q_NEW( QEvt, I2C_MSTR_MODE_SELECTED_SIG );
-//            QF_PUBLISH( (QEvt *)qEvt, AO_I2CMgr );
-            break;
+         //            /*!< Send the EEPROM's internal address to read from: MSB of the address first */
+         //            I2C_SendData(I2C1, (uint8_t)((0x0000 & 0xFF00) >> 8));
+         //
+         //            /*!< Test on EV8 and clear it */
+         //            uint16_t sEETimeout = 10000;
+         //            while(!I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_BYTE_TRANSMITTING))
+         //            {
+         //               if((sEETimeout--) == 0) {
+         //                  isr_dbg_slow_printf("Timed out sending addr msb\n");
+         //               }
+         //            }
+         //
+         //            /*!< Send the EEPROM's internal address to read from: LSB of the address */
+         //            I2C_SendData(I2C1, (uint8_t)(0x0000 & 0x00FF));
+         //            sEETimeout = 10000;
+         //            while(I2C_GetFlagStatus(I2C1, I2C_FLAG_BTF) == RESET)
+         //            {
+         //               if((sEETimeout--) == 0) {
+         //                  isr_dbg_slow_printf("Timed out sending addr lsb\n");
+         //               }
+         //            }
+         //            isr_dbg_slow_printf("Sent addr\n");
+         /* Create and publish event for I2CMgr */
+         //            QEvt *qEvt = Q_NEW( QEvt, I2C_MSTR_MODE_SELECTED_SIG );
+         //            QF_PUBLISH( (QEvt *)qEvt, AO_I2CMgr );
+         break;
 
          /* Check on EV8 */
-         case I2C_EVENT_MASTER_BYTE_TRANSMITTING:
-            isr_dbg_slow_printf("I2C_EVENT_MASTER_BYTE_TRANSMITTING\n");
-            break;
+      case I2C_EVENT_MASTER_BYTE_TRANSMITTING:
+         isr_dbg_slow_printf("I2C_EVENT_MASTER_BYTE_TRANSMITTING\n");
+         break;
 
-         case I2C_EVENT_MASTER_BYTE_TRANSMITTED:
-            isr_dbg_slow_printf("I2C_EVENT_MASTER_BYTE_TRANSMITTED\n");
-            /* Create and publish event for I2CMgr */
-//            QEvt *qEvt1 = Q_NEW( QEvt, I2C_MSTR_BYTE_TRANSMITTED_SIG );
-//            QF_PUBLISH( (QEvt *)qEvt1, AO_I2CMgr );
+      case I2C_EVENT_MASTER_BYTE_TRANSMITTED:
+         isr_dbg_slow_printf("I2C_EVENT_MASTER_BYTE_TRANSMITTED\n");
+         /* Create and publish event for I2CMgr */
+         //            QEvt *qEvt1 = Q_NEW( QEvt, I2C_MSTR_BYTE_TRANSMITTED_SIG );
+         //            QF_PUBLISH( (QEvt *)qEvt1, AO_I2CMgr );
 
-            //         if (Tx_Idx == (uint8_t)NumberOfByteToTransmit) {
-            //            /* Send STOP condition */
-            //            I2C_GenerateSTOP(I2C1, ENABLE);
-            //            I2C_ITConfig(I2C1, I2C_IT_EVT | I2C_IT_BUF, DISABLE);
-            //         } else {
-            //            /* Transmit Data TxBuffer */
-            //            I2C_SendData(I2C1, TxBuffer[Tx_Idx++]);
-            //         }
+         //         if (Tx_Idx == (uint8_t)NumberOfByteToTransmit) {
+         //            /* Send STOP condition */
+         //            I2C_GenerateSTOP(I2C1, ENABLE);
+         //            I2C_ITConfig(I2C1, I2C_IT_EVT | I2C_IT_BUF, DISABLE);
+         //         } else {
+         //            /* Transmit Data TxBuffer */
+         //            I2C_SendData(I2C1, TxBuffer[Tx_Idx++]);
+         //         }
 
-            break;
+         break;
 
-//         case I2C_EVENT_MASTER_BYTE_RECEIVED:
-//            isr_dbg_slow_printf("I2C_EVENT_MASTER_BYTE_RECEIVED\n");
-//
-//            /* Read the byte received */
-//            s_I2C_Bus[I2CBus1].pRxBuffer[ s_I2C_Bus[I2CBus1].nRxindex++ ] = I2C_ReceiveData( I2C1 );
-//               ++s_I2C_Bus[I2CBus1].nBytesCurrent;
-//
-//               /* Start
-//                * This is a workaround for the STM32 I2C hardware bug.  You have
-//                * to send the STOP bit before receiving the last byte.  See the
-//                * STM32 errata for more details. */
-//               if ( 1 == s_I2C_Bus[I2CBus1].nBytesExpected - s_I2C_Bus[I2CBus1].nBytesCurrent) {
-//                  /* Disable Acknowledgment */
-//                  I2C_AcknowledgeConfig( I2C1, DISABLE );
-//
-//                  /* Send STOP Condition */
-//                  I2C_GenerateSTOP( I2C1, ENABLE );
-//               }/* End */
-//
-//               /* Check if all the expected bytes have been read in from the bus */
-//               if ( s_I2C_Bus[I2CBus1].nBytesExpected == s_I2C_Bus[I2CBus1].nBytesCurrent ) {
-//                  /* Create an event and fill it with the data from the RX buffer of the bus.*/
-//                  I2CDataEvt *qEvtI2CReadDone = Q_NEW( I2CDataEvt, I2C_READ_DONE_SIG );
-//                  qEvtI2CReadDone->i2cDevice = EEPROM;
-//                  qEvtI2CReadDone->wBufferLen = s_I2C_Bus[I2CBus1].nBytesCurrent;
-//                  MEMCPY(
-//                        qEvtI2CReadDone->buffer,
-//                        s_I2C_Bus[I2CBus1].pRxBuffer,
-//                        qEvtI2CReadDone->wBufferLen
-//                  );
-//                  QF_PUBLISH( (QEvt *)qEvtI2CReadDone, AO_I2CMgr );
-//               }
-//
-//               /* Re-Enable Acknowledgment to be ready for another reception */
-//               I2C_AcknowledgeConfig(I2C1, ENABLE);
-//
-//               break;
-            default:
-               isr_dbg_slow_printf("dc: %08x\n", (unsigned int)I2CEvent);
-               break;
+         //         case I2C_EVENT_MASTER_BYTE_RECEIVED:
+         //            isr_dbg_slow_printf("I2C_EVENT_MASTER_BYTE_RECEIVED\n");
+         //
+         //            /* Read the byte received */
+         //            s_I2C_Bus[I2CBus1].pRxBuffer[ s_I2C_Bus[I2CBus1].nRxindex++ ] = I2C_ReceiveData( I2C1 );
+         //               ++s_I2C_Bus[I2CBus1].nBytesCurrent;
+         //
+         //               /* Start
+         //                * This is a workaround for the STM32 I2C hardware bug.  You have
+         //                * to send the STOP bit before receiving the last byte.  See the
+         //                * STM32 errata for more details. */
+         //               if ( 1 == s_I2C_Bus[I2CBus1].nBytesExpected - s_I2C_Bus[I2CBus1].nBytesCurrent) {
+         //                  /* Disable Acknowledgment */
+         //                  I2C_AcknowledgeConfig( I2C1, DISABLE );
+         //
+         //                  /* Send STOP Condition */
+         //                  I2C_GenerateSTOP( I2C1, ENABLE );
+         //               }/* End */
+         //
+         //               /* Check if all the expected bytes have been read in from the bus */
+         //               if ( s_I2C_Bus[I2CBus1].nBytesExpected == s_I2C_Bus[I2CBus1].nBytesCurrent ) {
+         //                  /* Create an event and fill it with the data from the RX buffer of the bus.*/
+         //                  I2CDataEvt *qEvtI2CReadDone = Q_NEW( I2CDataEvt, I2C_READ_DONE_SIG );
+         //                  qEvtI2CReadDone->i2cDevice = EEPROM;
+         //                  qEvtI2CReadDone->wBufferLen = s_I2C_Bus[I2CBus1].nBytesCurrent;
+         //                  MEMCPY(
+         //                        qEvtI2CReadDone->buffer,
+         //                        s_I2C_Bus[I2CBus1].pRxBuffer,
+         //                        qEvtI2CReadDone->wBufferLen
+         //                  );
+         //                  QF_PUBLISH( (QEvt *)qEvtI2CReadDone, AO_I2CMgr );
+         //               }
+         //
+         //               /* Re-Enable Acknowledgment to be ready for another reception */
+         //               I2C_AcknowledgeConfig(I2C1, ENABLE);
+         //
+         //               break;
+      default:
+         isr_dbg_slow_printf("dc: %08x\n", (unsigned int)I2CEvent);
+         break;
 
-      }
-//   }else {
-//      isr_dbg_slow_printf("Invalid I2C device selected: %d\n", s_I2C_Bus[I2CBus1].i2c_cur_dev );
-//   }
+   }
+   //   }else {
+   //      isr_dbg_slow_printf("Invalid I2C device selected: %d\n", s_I2C_Bus[I2CBus1].i2c_cur_dev );
+   //   }
 
- isr_dbg_slow_printf("I2C Event\n");
+   isr_dbg_slow_printf("I2C Event\n");
    QK_ISR_EXIT();                           /* inform QK about exiting an ISR */
 }
 

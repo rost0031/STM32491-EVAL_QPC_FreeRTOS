@@ -350,11 +350,11 @@ I2C_SetDirection( me-&gt;iBus,  I2C_Direction_Transmitter);
 I2C_Send7bitAddress(
     s_I2C_Bus[me-&gt;iBus].i2c_bus,            /* This is always the bus used in this ISR */
     s_I2C_Bus[me-&gt;iBus].i2c_cur_dev_addr,   /* Look up the current device address for this bus */
-    I2C_Direction_Transmitter //s_I2C_Bus[me-&gt;iBus].bTransDirection     /* Direction of data on this bus */
+    s_I2C_Bus[me-&gt;iBus].bTransDirection     /* Direction of data on this bus */
 );
 
 /* Reset the maximum number of times to poll the I2C bus for an event */
-me-&gt;nI2CLoopTimeout = MAX_I2C_TIMEOUT * 20;</action>
+me-&gt;nI2CLoopTimeout = MAX_I2C_TIMEOUT;</action>
           <choice_glyph conn="60,51,5,3,16">
            <action box="0,0,14,2"/>
           </choice_glyph>
@@ -728,8 +728,6 @@ Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */
 $declare(AOs::I2CMgr)
 
 /* Private defines -----------------------------------------------------------*/
-#define MAX_BUS_RETRIES    10 /**&lt; Max number of retries for I2C bus for busy flag */
-#define MAX_I2C_TIMEOUT 0xF00 /**&lt; Max number of retries for I2C bus for busy flag */
 /* Private macros ------------------------------------------------------------*/
 /* Private variables and Local objects ---------------------------------------*/
 static I2CMgr l_I2CMgr;           /* the single instance of the active object */
@@ -777,6 +775,8 @@ $define(AOs::I2CMgr)
 #include &quot;i2c.h&quot;                               /* For I2C device declarations */
 
 /* Exported defines ----------------------------------------------------------*/
+#define MAX_BUS_RETRIES   100 /**&lt; Max number of retries for I2C bus for busy flag */
+#define MAX_I2C_TIMEOUT 10000 /**&lt; Max number of retries for I2C bus for busy flag */
 /* Exported macros -----------------------------------------------------------*/
 /* Exported types ------------------------------------------------------------*/
 $declare(Events)
