@@ -273,9 +273,23 @@ void I2C_DMARead( I2C_Bus_t iBus, uint16_t wReadAddr, uint16_t wReadLen )
 void DMA1_Stream0_IRQHandler( void )
 {
    QK_ISR_ENTRY();                         /* inform QK about entering an ISR */
-   isr_dbg_slow_printf("DMA1_Stream0_IRQHandler\n");
+
    /* Test on DMA Stream Transfer Complete interrupt */
    if ( RESET != DMA_GetITStatus(DMA1_Stream0, DMA_IT_TCIF0) ) {
+      I2C_AcknowledgeConfig( I2C1, DISABLE);
+      I2C_GenerateSTOP(I2C1, ENABLE);
+
+      /* Wait for the byte to be received */
+      uint16_t EETimeout = 10000;
+      while(I2C_GetFlagStatus(I2C1, I2C_FLAG_RXNE) == RESET) {
+         if((EETimeout--) == 0) {
+            isr_dbg_slow_printf("Timeout 1\n");
+            return;
+         }
+      }
+
+      I2C_AcknowledgeConfig(I2C1, ENABLE);
+
       /* Disable DMA so it doesn't keep outputting the buffer. */
       DMA_Cmd( DMA1_Stream0, DISABLE );
 
@@ -290,6 +304,39 @@ void DMA1_Stream0_IRQHandler( void )
       );
       QF_PUBLISH( (QEvent *)i2cDataEvt, AO_SerialMgr );
 
+      isr_dbg_slow_printf("DMA done\n");
+
+      /* Try to read a junk byte to see if the stop big makes it through */
+//      /* Disable Acknowledgment */
+//      I2C_AcknowledgeConfig( I2C1, DISABLE);
+//
+//      I2C_GenerateSTOP(I2C1, ENABLE);
+
+//      /* Wait for the byte to be received */
+//      uint16_t EETimeout = 10000;
+//      while(I2C_GetFlagStatus(I2C1, I2C_FLAG_RXNE) == RESET) {
+//         if((EETimeout--) == 0) {
+//            isr_dbg_slow_printf("Timeout 1\n");
+//            return;
+//         }
+//      }
+
+      /* Read the byte received from the EEPROM */
+//      I2C_ReceiveData(I2C1);
+//
+//      /* Wait to make sure that STOP control bit has been cleared */
+//      EETimeout = 10000;
+//      while(I2C1->CR1 & I2C_CR1_STOP) {
+//         if((EETimeout--) == 0) {
+//            isr_dbg_slow_printf("Timeout 2\n");
+//            return;
+//         }
+//      }
+
+      /* Re-Enable Acknowledgment to be ready for another reception */
+//      I2C_AcknowledgeConfig(I2C1, ENABLE);
+
+      isr_dbg_slow_printf("Stop bit done\n");
       /* Clear DMA Stream Transfer Complete interrupt pending bit */
       DMA_ClearITPendingBit( DMA1_Stream0, DMA_IT_TCIF0 );
    }

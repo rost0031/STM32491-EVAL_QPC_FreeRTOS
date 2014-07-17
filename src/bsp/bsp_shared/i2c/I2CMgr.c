@@ -350,7 +350,14 @@ static QState I2CMgr_BusBeingUsed(I2CMgr * const me, QEvt const * const e) {
         }
         /* ${AOs::I2CMgr::SM::Active::Busy::BusBeingUsed} */
         case Q_EXIT_SIG: {
+            /* Disable Acknowledgment */
+            I2C_AcknowledgeConfig(s_I2C_Bus[me->iBus].i2c_bus, DISABLE);
+
             I2C_GenerateSTOP(s_I2C_Bus[me->iBus].i2c_bus, ENABLE);
+
+            /* Re-Enable Acknowledgment to be ready for another reception */
+            I2C_AcknowledgeConfig(s_I2C_Bus[me->iBus].i2c_bus, ENABLE);
+
             DBG_printf("Generating I2C stop\n");
             status_ = Q_HANDLED();
             break;
@@ -410,7 +417,7 @@ static QState I2CMgr_WaitFor_I2C_EV5_R(I2CMgr * const me, QEvt const * const e) 
                 );
 
                 /* Reset the maximum number of times to poll the I2C bus for an event */
-                me->nI2CLoopTimeout = MAX_I2C_TIMEOUT * 10000;
+                me->nI2CLoopTimeout = MAX_I2C_TIMEOUT * 100;
                 status_ = Q_TRAN(&I2CMgr_WaitFor_I2C_EV6_R);
             }
             /* ${AOs::I2CMgr::SM::Active::Busy::BusBeingUsed::Reading::WaitFor_I2C_EV5_R::I2C_CHECK_EV::[else]} */

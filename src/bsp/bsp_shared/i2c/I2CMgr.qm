@@ -188,7 +188,14 @@ QTimeEvt_rearm(
 
 /* Send START condition */
 I2C_GenerateSTART(s_I2C_Bus[me-&gt;iBus].i2c_bus, ENABLE);</entry>
-       <exit>I2C_GenerateSTOP(s_I2C_Bus[me-&gt;iBus].i2c_bus, ENABLE);
+       <exit>/* Disable Acknowledgment */
+I2C_AcknowledgeConfig(s_I2C_Bus[me-&gt;iBus].i2c_bus, DISABLE);
+
+I2C_GenerateSTOP(s_I2C_Bus[me-&gt;iBus].i2c_bus, ENABLE);
+
+/* Re-Enable Acknowledgment to be ready for another reception */
+I2C_AcknowledgeConfig(s_I2C_Bus[me-&gt;iBus].i2c_bus, ENABLE);
+
 DBG_printf(&quot;Generating I2C stop\n&quot;);</exit>
        <state name="Reading">
         <tran trig="I2C_READ_DONE" target="../../../../1">
