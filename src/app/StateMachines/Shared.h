@@ -42,10 +42,11 @@
  */
 enum AO_Priorities {
    NEVER_USE_ZERO_PRIORITY = 0,   /**< Never use this.  It breaks everything. */
-   COMM_MGR_PRIORITY,                       /**< Priority of CommStackMgr AO. */
    ETH_PRIORITY,       /**< Priority of LWIP AO which handles ethernet comms. */
+   COMM_MGR_PRIORITY,                       /**< Priority of CommStackMgr AO. */
    I2C_MGR_PRIORITY,                              /**< Priority of I2CMgr AO. */
    SERIAL_MGR_PRIORITY,                        /**< Priority of SerialMgr AO. */
+
    /* Insert new priorities here ... */
    MAX_SHARED_PRIORITY     /**< This should always be at the end of this list */
 };
