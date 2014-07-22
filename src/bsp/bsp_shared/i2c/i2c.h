@@ -57,6 +57,7 @@ typedef enum I2C_States {
    I2C_MASTER_TX_MODE_SELECTED_ST,
    I2C_SENT_MSB_ADDR_ST,
    I2C_SENT_LSB_ADDR_ST,
+   I2C_GEN_2ND_START_ST,
    /* Insert more I2C states here... */
    I2C_MAX_ST     /**< Maximum number of available I2C states */
 } I2C_State_t;
