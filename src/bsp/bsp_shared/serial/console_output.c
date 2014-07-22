@@ -14,7 +14,7 @@
  * @addtogroup groupSerial
  * @{
  */
-
+#define QP_IMPL           /* this is QP implementation */
 /* Includes ------------------------------------------------------------------*/
 #include "console_output.h"
 #include "qp_port.h"                                        /* for QP support */
@@ -23,6 +23,9 @@
 #include "Shared.h"                                   /*  Common Declarations */
 #include "time.h"
 #include "SerialMgr.h"
+#include "qk.h"
+#include "qf_pkg.h"                             /* For crit entry/exit macros */
+
 
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */
@@ -42,14 +45,19 @@ void CON_output(
       ...
 )
 {
+
    /* 1. Get the time first so the printout of the event is as close as possible
     * to when it actually occurred */
    time_T time = TIME_getTime();
 
+//   QF_CRIT_STAT_
+//   QF_CRIT_ENTRY_();                                /* Start critical section */
    /* 2. Construct a new msg event pointer and allocate storage in the QP event
     * pool */
    SerialDataEvt *serDataEvt = Q_NEW(SerialDataEvt, UART_DMA_START_SIG);
    serDataEvt->wBufferLen = 0;
+//   sprintf(serDataEvt->buffer, "test\n");
+//   QF_PUBLISH((QEvent *)serDataEvt, 0);
 
    /* 3. Based on the debug level specified by the calling macro, decide what to
     * prepend (if anything). */
@@ -126,6 +134,7 @@ void CON_output(
 
    /* 6. Publish the event*/
    QF_PUBLISH((QEvent *)serDataEvt, 0);
+//   QF_CRIT_EXIT_();                                   /* End critical section */
 }
 
 /******************************************************************************/

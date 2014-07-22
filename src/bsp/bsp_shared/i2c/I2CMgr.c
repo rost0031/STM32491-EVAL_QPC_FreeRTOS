@@ -301,7 +301,7 @@ static QState I2CMgr_Busy(I2CMgr * const me, QEvt const * const e) {
                /* defer the request - this event will be handled
                 * when the state machine goes back to Idle state */
                QActive_defer((QActive *)me, &me->deferredEvtQueue, e);
-               dbg_slow_printf("Deferring I2C request until current is done\n");
+               DBG_printf("Deferring I2C request until current is done\n");
             } else {
                /* notify the request sender that the request was ignored.. */
                ERR_printf("Unable to defer I2C request\n");

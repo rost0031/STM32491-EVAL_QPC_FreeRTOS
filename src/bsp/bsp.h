@@ -84,7 +84,7 @@ enum KernelUnawareISRs {                                        /* see NOTE00 */
 Q_ASSERT_COMPILE(MAX_KERNEL_UNAWARE_CMSIS_PRI <= QF_AWARE_ISR_CMSIS_PRI);
 
 typedef enum KernelAwareISRs {   /* ISR priorities starting from the highest urgency */
-	EXTI0_PRIO = QF_AWARE_ISR_CMSIS_PRI,                         /* see NOTE00 */
+	SYSTICK_PRIO = QF_AWARE_ISR_CMSIS_PRI,                         /* see NOTE00 */
 //	EXTI1_PRIO,
 //	EXTI2_PRIO,
 //	EXTI3_PRIO,
@@ -99,13 +99,13 @@ typedef enum KernelAwareISRs {   /* ISR priorities starting from the highest urg
 //	DMA2_Stream3_PRIO,
 //	DMA2_Stream2_PRIO,
 	DMA1_Stream4_PRIO,
+   DMA1_Stream0_PRIO,
 //	DMA1_Stream2_PRIO,
 //	DMA1_Stream3_PRIO,
-	DMA1_Stream0_PRIO,
+
 //	DMA1_Stream1_PRIO,
 //	DMA1_Stream5_PRIO,
 	DMA1_Stream6_PRIO,
-	SYSTICK_PRIO,
 //	USART3_PRIO,
 	UART4_PRIO,
    I2C1_ER_PRIO,
