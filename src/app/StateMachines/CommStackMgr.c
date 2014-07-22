@@ -171,14 +171,14 @@ static QState CommStackMgr_Active(CommStackMgr * const me, QEvt const * const e)
             i2cReqEvt->nReadLen  = 10;
             QF_PUBLISH((QEvent *)i2cReqEvt, AO_CommStackMgr);
 
-
+            /*
             I2CReqEvt *i2cReqEvt1 = Q_NEW(I2CReqEvt, I2C_READ_START_SIG);
             i2cReqEvt1->i2cDevice = EEPROM;
             i2cReqEvt1->wReadAddr = 0x30;
             i2cReqEvt1->nReadLen  = 5;
             QF_PUBLISH((QEvent *)i2cReqEvt1, AO_CommStackMgr);
-
-            //QTimeEvt_disarm( &me->timeTestTimerEvt );
+            */
+            QTimeEvt_disarm( &me->timeTestTimerEvt );
 
             /*
             t_Time fast_print_start_time = TIME_getTime();

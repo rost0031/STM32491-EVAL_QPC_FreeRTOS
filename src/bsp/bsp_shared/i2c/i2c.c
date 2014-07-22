@@ -102,6 +102,7 @@ I2C_BusSettings_t s_I2C_Bus[MAX_I2C_BUS] =
 
             /* Device management */
             EEPROM,                    /**< i2c_cur_dev */
+            I2C_IDLE_ST,               /**< i2c_cur_st */
             0xA0,                      /**< i2c_cur_dev_addr */
             I2C_Direction_Transmitter, /**< bTransDirection */
             0,                         /**< nBytesExpected */
@@ -160,10 +161,10 @@ void I2C_BusInit( I2C_Bus_t iBus )
    I2C_InitStructure.I2C_ClockSpeed          = s_I2C_Bus[iBus].i2c_bus_speed;
 
    /* Set up Interrupt controller to handle I2C Event interrupts */
-   //   NVIC_Config(
-   //         s_I2C_Bus[iBus].i2c_ev_irq_num,
-   //         s_I2C_Bus[iBus].i2c_ev_irq_prio
-   //   );
+   NVIC_Config(
+         s_I2C_Bus[iBus].i2c_ev_irq_num,
+         s_I2C_Bus[iBus].i2c_ev_irq_prio
+   );
 
    /* Set up Interrupt controller to handle I2C Error interrupts */
    //   NVIC_Config(
@@ -172,22 +173,22 @@ void I2C_BusInit( I2C_Bus_t iBus )
    //   );
 
    /* Enable All I2C Interrupts */
-   //   I2C_ITConfig(
-   //         s_I2C_Bus[iBus].i2c_bus,
-   //         I2C_IT_EVT, // | I2C_IT_BUF, // | I2C_IT_ERR,
-   //         ENABLE
-   //   );
+   I2C_ITConfig(
+         s_I2C_Bus[iBus].i2c_bus,
+         I2C_IT_EVT | I2C_IT_BUF, // | I2C_IT_ERR,
+         ENABLE
+   );
 
    /* Initialize the IRQ and priorities for I2C DMA */
    NVIC_Config(
          s_I2C_Bus[iBus].i2c_dma_rx_irq_num,
          s_I2C_Bus[iBus].i2c_dma_rx_irq_prio
    );
-   //
-   //   NVIC_Config(
-   //         s_I2C_Bus[iBus].i2c_dma_tx_irq_num,
-   //         s_I2C_Bus[iBus].i2c_dma_tx_irq_prio
-   //   );
+//
+//      NVIC_Config(
+//            s_I2C_Bus[iBus].i2c_dma_tx_irq_num,
+//            s_I2C_Bus[iBus].i2c_dma_tx_irq_prio
+//      );
 
    /* Apply I2C configuration */
    I2C_Init( s_I2C_Bus[iBus].i2c_bus, &I2C_InitStructure );
@@ -344,26 +345,90 @@ void I2C1_EV_IRQHandler( void )
       //          * ignore it here */
       //         break;
 
-      case I2C_EVENT_MASTER_MODE_SELECT:
+      case I2C_EVENT_MASTER_MODE_SELECT: /* BUSY, MSL and SB flag */
 
-         /* Send slave Address for write */
-         I2C_Send7bitAddress(
-               I2C1,                                  // This is always the bus used in this ISR
-               s_I2C_Bus[I2CBus1].i2c_cur_dev_addr,   // Look up the current device address for this bus
-               s_I2C_Bus[I2CBus1].bTransDirection     // Direction of data on this bus
-         );
+         if ( I2C_GEN_START_ST == s_I2C_Bus[I2CBus1].i2c_cur_st ) {
+            /* Set new state */
+            s_I2C_Bus[I2CBus1].i2c_cur_st = I2C_MASTER_TX_MODE_SELECTED_ST;
 
-         isr_dbg_slow_printf("I2C_EVENT_MASTER_MODE_SELECT\n");
+//            isr_dbg_slow_printf("Selecting master\n");
+            DBG_printf("Selecting master\n");
+            /* Send slave Address for write */
+            I2C_Send7bitAddress(
+                  I2C1,                                  // This is always the bus used in this ISR
+                  s_I2C_Bus[I2CBus1].i2c_cur_dev_addr,   // Look up the current device address for this bus
+                  s_I2C_Bus[I2CBus1].bTransDirection     // Direction of data on this bus
+            );
+         }
+
+         /* Create and publish event for I2CMgr */
+//         QEvt *qEvt = Q_NEW( QEvt, I2C_EV_MASTER_MODE_SELECT_SIG );
+//         QF_PUBLISH( (QEvt *)qEvt, AO_I2CMgr );
+
+//         isr_dbg_slow_printf("I2C_EVENT_MASTER_MODE_SELECT\n");
          break;
 
+      /* Check on EV6 */
+      case I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED: /* BUSY, MSL, ADDR, TXE and TRA flags */
+//         isr_dbg_slow_printf("I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED\n");
+         if ( I2C_MASTER_TX_MODE_SELECTED_ST == s_I2C_Bus[I2CBus1].i2c_cur_st ) {
 
-         /* Check on EV6 */
-      case I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED:
+//            isr_dbg_slow_printf("MSB\n");
 
-         /* Send the EEPROM's internal address to read from:
-          * MSB of the address first */
-         //            I2C_SendData(I2C1, (uint8_t)((0x00 & 0xFF00) >> 8));
-         isr_dbg_slow_printf("I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED\n");
+            /* Set new state */
+            s_I2C_Bus[I2CBus1].i2c_cur_st = I2C_SENT_MSB_ADDR_ST;
+
+            /* Create and publish event for I2CMgr */
+//            QEvt *qEvt1 = Q_NEW( QEvt, I2C_EV_MASTER_TX_MODE_SELECTED_SIG );
+//            QF_PUBLISH( (QEvt *)qEvt1, AO_I2CMgr );
+
+            /* Send the MSB of the address first to the I2C device */
+            I2C_SendData(
+                  s_I2C_Bus[I2CBus1].i2c_bus,
+                  (uint8_t)((s_I2C_Bus[I2CBus1].i2c_cur_dev_addr & 0xFF00) >> 8)
+            );
+
+//            I2C_GetITStatus()
+//            I2C_GetFlagStatus( I2C1, I2C_FLAG_MSL | I2C_FLAG_ADDR | I2C_FLAG_TXE | I2C_FLAG_TRA );
+//            isr_dbg_slow_printf("I2C (before) MSL: %x, ADDR: %x, TXE: %x, TRA: %x\n",
+//                  I2C_GetFlagStatus(I2C1, I2C_FLAG_MSL),
+//                  I2C_GetFlagStatus(I2C1, I2C_FLAG_ADDR),
+//                  I2C_GetFlagStatus(I2C1, I2C_FLAG_TXE),
+//                  I2C_GetFlagStatus(I2C1, I2C_FLAG_TRA)
+//            );
+//            I2C_SendData(I2C1, (uint8_t)((0x0000 & 0xFF00) >> 8));
+
+//            isr_dbg_slow_printf("I2C (after) MSL: %x, ADDR: %x, TXE: %x, TRA: %x\n",
+//                  I2C_GetFlagStatus(I2C1, I2C_FLAG_MSL),
+//                  I2C_GetFlagStatus(I2C1, I2C_FLAG_ADDR),
+//                  I2C_GetFlagStatus(I2C1, I2C_FLAG_TXE),
+//                  I2C_GetFlagStatus(I2C1, I2C_FLAG_TRA)
+//            );
+
+//            /*!< Test on EV8 and clear it */
+//            uint16_t sEETimeout = 10000;
+//            while(!I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_BYTE_TRANSMITTING))
+////            while(I2C_GetFlagStatus(I2C1, I2C_FLAG_BTF) == RESET)
+//            {
+//               if((sEETimeout--) == 0) {
+//                  isr_dbg_slow_printf("Timed out sending addr msb\n");
+//                  break;
+//               }
+//            }
+//
+//            /*!< Send the EEPROM's internal address to read from: LSB of the address */
+//            I2C_SendData(I2C1, (uint8_t)(0x0000 & 0x00FF));
+//            sEETimeout = 10000;
+//            while(I2C_GetFlagStatus(I2C1, I2C_FLAG_BTF) == RESET)
+//            {
+//               if((sEETimeout--) == 0) {
+//                  isr_dbg_slow_printf("Timed out sending addr lsb\n");
+//                  break;
+//               }
+//            }
+//            isr_dbg_slow_printf("Sent addr\n");
+         }
+
 
 
          //            /*!< Send the EEPROM's internal address to read from: MSB of the address first */
@@ -395,11 +460,33 @@ void I2C1_EV_IRQHandler( void )
 
          /* Check on EV8 */
       case I2C_EVENT_MASTER_BYTE_TRANSMITTING:
-         isr_dbg_slow_printf("I2C_EVENT_MASTER_BYTE_TRANSMITTING\n");
-         break;
-
+//         isr_dbg_slow_printf("I2C_EVENT_MASTER_BYTE_TRANSMITTING\n");
+//         break;
+         DBG_printf("I2C_EVENT_MASTER_BYTE_TRANSMITTING\n");
       case I2C_EVENT_MASTER_BYTE_TRANSMITTED:
-         isr_dbg_slow_printf("I2C_EVENT_MASTER_BYTE_TRANSMITTED\n");
+         DBG_printf("I2C_EVENT_MASTER_BYTE_TRANSMITTED\n");
+
+         if ( I2C_SENT_MSB_ADDR_ST == s_I2C_Bus[I2CBus1].i2c_cur_st ) {
+
+            /* Create and publish event for I2CMgr */
+            QEvt *qEvt2 = Q_NEW( QEvt, I2C_SENT_MSB_ADDR_SIG );
+            QF_PUBLISH( (QEvt *)qEvt2, AO_I2CMgr );
+
+            /* Set new state */
+            s_I2C_Bus[I2CBus1].i2c_cur_st = I2C_SENT_LSB_ADDR_ST;
+
+            /* Send the LSB of the address to the I2C device */
+            I2C_SendData(
+                  s_I2C_Bus[I2CBus1].i2c_bus,
+                  (uint8_t)(s_I2C_Bus[I2CBus1].i2c_cur_dev_addr & 0xFF00)
+            );
+            isr_dbg_slow_printf("Sent LSB\n");
+         } else if ( I2C_SENT_LSB_ADDR_ST == s_I2C_Bus[I2CBus1].i2c_cur_st ) {
+            isr_dbg_slow_printf("Ready to send second start\n");
+         }
+
+
+
          /* Create and publish event for I2CMgr */
          //            QEvt *qEvt1 = Q_NEW( QEvt, I2C_MSTR_BYTE_TRANSMITTED_SIG );
          //            QF_PUBLISH( (QEvt *)qEvt1, AO_I2CMgr );
@@ -461,7 +548,7 @@ void I2C1_EV_IRQHandler( void )
    //      isr_dbg_slow_printf("Invalid I2C device selected: %d\n", s_I2C_Bus[I2CBus1].i2c_cur_dev );
    //   }
 
-   isr_dbg_slow_printf("I2C Event\n");
+//   isr_dbg_slow_printf("I2C Event\n");
    QK_ISR_EXIT();                           /* inform QK about exiting an ISR */
 }
 

@@ -51,6 +51,20 @@ extern "C" {
  * \enum I2C_Device_t
  * I2C Devices available on the system.
  */
+typedef enum I2C_States {
+   I2C_IDLE_ST  = 0,                         /**< I2C is idle */
+   I2C_GEN_START_ST,
+   I2C_MASTER_TX_MODE_SELECTED_ST,
+   I2C_SENT_MSB_ADDR_ST,
+   I2C_SENT_LSB_ADDR_ST,
+   /* Insert more I2C states here... */
+   I2C_MAX_ST     /**< Maximum number of available I2C states */
+} I2C_State_t;
+
+/**
+ * \enum I2C_Device_t
+ * I2C Devices available on the system.
+ */
 typedef enum I2C_Devices {
    EEPROM  = 0,                         /**< EEPROM attached to I2C */
    /* Insert more I2C device enumerations here... */
@@ -131,6 +145,7 @@ typedef struct I2C_BusSettings
 
    /* Device management */
    I2C_Device_t            i2c_cur_dev;     /**< Current I2C device specifier.*/
+   I2C_State_t             i2c_cur_st;             /**< Current I2C bus state.*/
    uint8_t                 i2c_cur_dev_addr;      /**< I2C device bus address.*/
    uint8_t                 bTransDirection;    /**< Transmitting or Receiving */
    uint16_t                nBytesExpected; /**< How many bytes expected to TX or RX. */

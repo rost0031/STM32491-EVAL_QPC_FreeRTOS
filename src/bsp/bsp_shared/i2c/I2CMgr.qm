@@ -95,7 +95,11 @@ QActive_subscribe((QActive *)me, I2C_WRITE_START_SIG);
 QActive_subscribe((QActive *)me, I2C_TIMEOUT_SIG);
 QActive_subscribe((QActive *)me, I2C_CHECK_EV_SIG);
 QActive_subscribe((QActive *)me, I2C_READ_DONE_SIG);
-QActive_subscribe((QActive *)me, I2C_DMA_TIMEOUT_SIG);</action>
+QActive_subscribe((QActive *)me, I2C_DMA_TIMEOUT_SIG);
+QActive_subscribe((QActive *)me, I2C_EV_MASTER_MODE_SELECT_SIG);
+QActive_subscribe((QActive *)me, I2C_EV_MASTER_TX_MODE_SELECTED_SIG);
+QActive_subscribe((QActive *)me, I2C_SENT_MSB_ADDR_SIG);
+QActive_subscribe((QActive *)me, I2C_SENT_LSB_ADDR_SIG);</action>
      <initial_glyph conn="1,2,4,3,14,4">
       <action box="0,-2,6,2"/>
      </initial_glyph>
@@ -145,7 +149,9 @@ QTimeEvt_rearm(
     &amp;me-&gt;i2cTimerEvt,
     SEC_TO_TICKS( LL_MAX_TIMEOUT_I2C_BUSY_SEC )
 );
-</entry>
+
+/* Set the I2C device state */
+s_I2C_Bus[me-&gt;iBus].i2c_cur_st = I2C_IDLE_ST;</entry>
       <exit>QTimeEvt_disarm( &amp;me-&gt;i2cTimerEvt ); /* Disarm timer on exit */</exit>
       <tran trig="I2C_TIMEOUT" target="../../1">
        <action>ERR_printf(&quot;I2C timeout occurred\n&quot;);</action>
@@ -168,10 +174,10 @@ QTimeEvt_rearm(
        </tran_glyph>
       </tran>
       <state name="BusBeingUsed">
-       <entry>DBG_printf(&quot;Generating I2C start\n&quot;);
+       <entry>//DBG_printf(&quot;Generating I2C start\n&quot;);
 
 /* Send START condition */
-I2C_GenerateSTART(s_I2C_Bus[me-&gt;iBus].i2c_bus, ENABLE);</entry>
+//I2C_GenerateSTART(s_I2C_Bus[me-&gt;iBus].i2c_bus, ENABLE);</entry>
        <state name="Reading">
         <tran trig="I2C_READ_DONE" target="../../../../1">
          <action>DBG_printf(&quot;Read finished successfully: read %d bytes\n&quot;, ((I2CDataEvt const *)e)-&gt;wBufferLen);</action>
@@ -433,7 +439,7 @@ QF_PUBLISH((QEvt *)qEvt, AO_I2CMgr);</entry>
           <guard brief="EV8 Happened?">I2C_CheckEvent( s_I2C_Bus[me-&gt;iBus].i2c_bus, I2C_EVENT_MASTER_BYTE_TRANSMITTING )</guard>
           <action>DBG_printf(&quot;Sending internal LSB addr to the I2C Device\n&quot;);
 
-/* Send the MSB of the address first to the I2C device */
+/* Send the LSB of the address to the I2C device */
 I2C_SendData(
     s_I2C_Bus[me-&gt;iBus].i2c_bus,
     (uint8_t)(me-&gt;wAddr &amp; 0xFF00)
@@ -521,6 +527,45 @@ me-&gt;nI2CLoopTimeout = MAX_I2C_TIMEOUT;</action>
          <entry box="1,2,6,2"/>
         </state_glyph>
        </state>
+       <state name="SetupI2CDevice">
+        <entry>DBG_printf(&quot;Generating I2C start\n&quot;);
+
+/* Set the I2C device state: generate start bit */
+s_I2C_Bus[me-&gt;iBus].i2c_cur_st = I2C_GEN_START_ST;
+
+/* Set the direction to transmit the address */
+I2C_SetDirection( me-&gt;iBus,  I2C_Direction_Transmitter);
+
+/* Send START condition */
+I2C_GenerateSTART(s_I2C_Bus[me-&gt;iBus].i2c_bus, ENABLE);</entry>
+        <tran trig="I2C_EV_MASTER_MODE_SELECT">
+         <action>DBG_printf(&quot;Got I2C_EV_MASTER_MODE_SELECT\n&quot;);</action>
+         <tran_glyph conn="105,44,3,-1,28">
+          <action box="0,-2,24,2"/>
+         </tran_glyph>
+        </tran>
+        <tran trig="I2C_EV_MASTER_TX_MODE_SELECTED">
+         <action>DBG_printf(&quot;Got I2C_EV_MASTER_TX_MODE_SELECTED\n&quot;);</action>
+         <tran_glyph conn="105,47,3,-1,28">
+          <action box="0,-2,30,2"/>
+         </tran_glyph>
+        </tran>
+        <tran trig="I2C_SENT_MSB_ADDR">
+         <action>DBG_printf(&quot;Got I2C_SENT_MSB_ADDR\n&quot;);</action>
+         <tran_glyph conn="105,50,3,-1,28">
+          <action box="0,-2,19,2"/>
+         </tran_glyph>
+        </tran>
+        <tran trig="I2C_SENT_LSB_ADDR">
+         <action>DBG_printf(&quot;Got I2C_SENT_LSB_ADDR\n&quot;);</action>
+         <tran_glyph conn="105,53,3,-1,28">
+          <action box="0,-2,19,2"/>
+         </tran_glyph>
+        </tran>
+        <state_glyph node="105,37,32,25">
+         <entry box="1,2,6,2"/>
+        </state_glyph>
+       </state>
        <state_glyph node="42,32,98,123">
         <entry box="1,2,6,2"/>
        </state_glyph>
@@ -532,13 +577,13 @@ QF_PUBLISH((QEvt *)qEvt, AO_I2CMgr);</entry>
        <tran trig="I2C_CHECK_EV">
         <action>/* Check if bus is busy.  If free, go on to the next state.  Otherwise,
  * try again until number of retries is out */</action>
-        <choice target="../../../2/1">
+        <choice target="../../../2/5">
          <guard brief="Bus Free?">RESET == I2C_GetFlagStatus( s_I2C_Bus[me-&gt;iBus].i2c_bus, I2C_FLAG_BUSY )</guard>
          <action>DBG_printf(&quot;Bus free after %d retries\n&quot;, MAX_I2C_TIMEOUT - me-&gt;nI2CLoopTimeout);
 
 /* Reset the maximum number of times to poll the I2C bus for an event */
 me-&gt;nI2CLoopTimeout = MAX_I2C_TIMEOUT;</action>
-         <choice_glyph conn="60,26,4,0,10">
+         <choice_glyph conn="60,26,4,0,9,50,2">
           <action box="0,2,14,2"/>
          </choice_glyph>
         </choice>

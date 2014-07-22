@@ -129,6 +129,7 @@ static QState I2CMgr_WaitFor_I2C_EV5(I2CMgr * const me, QEvt const * const e);
 static QState I2CMgr_WaitFor_I2C_EV6(I2CMgr * const me, QEvt const * const e);
 static QState I2CMgr_WaitFor_I2C_EV8_MSB(I2CMgr * const me, QEvt const * const e);
 static QState I2CMgr_WaitFor_I2C_EV8_LSB(I2CMgr * const me, QEvt const * const e);
+static QState I2CMgr_SetupI2CDevice(I2CMgr * const me, QEvt const * const e);
 static QState I2CMgr_StartI2CComm(I2CMgr * const me, QEvt const * const e);
 
 /**
@@ -209,6 +210,10 @@ static QState I2CMgr_initial(I2CMgr * const me, QEvt const * const e) {
     QActive_subscribe((QActive *)me, I2C_CHECK_EV_SIG);
     QActive_subscribe((QActive *)me, I2C_READ_DONE_SIG);
     QActive_subscribe((QActive *)me, I2C_DMA_TIMEOUT_SIG);
+    QActive_subscribe((QActive *)me, I2C_EV_MASTER_MODE_SELECT_SIG);
+    QActive_subscribe((QActive *)me, I2C_EV_MASTER_TX_MODE_SELECTED_SIG);
+    QActive_subscribe((QActive *)me, I2C_SENT_MSB_ADDR_SIG);
+    QActive_subscribe((QActive *)me, I2C_SENT_LSB_ADDR_SIG);
     return Q_TRAN(&I2CMgr_Idle);
 }
 
@@ -279,6 +284,8 @@ static QState I2CMgr_Busy(I2CMgr * const me, QEvt const * const e) {
                 SEC_TO_TICKS( LL_MAX_TIMEOUT_I2C_BUSY_SEC )
             );
 
+            /* Set the I2C device state */
+            s_I2C_Bus[me->iBus].i2c_cur_st = I2C_IDLE_ST;
             status_ = Q_HANDLED();
             break;
         }
@@ -322,10 +329,10 @@ static QState I2CMgr_BusBeingUsed(I2CMgr * const me, QEvt const * const e) {
     switch (e->sig) {
         /* ${AOs::I2CMgr::SM::Active::Busy::BusBeingUsed} */
         case Q_ENTRY_SIG: {
-            DBG_printf("Generating I2C start\n");
+            //DBG_printf("Generating I2C start\n");
 
             /* Send START condition */
-            I2C_GenerateSTART(s_I2C_Bus[me->iBus].i2c_bus, ENABLE);
+            //I2C_GenerateSTART(s_I2C_Bus[me->iBus].i2c_bus, ENABLE);
             status_ = Q_HANDLED();
             break;
         }
@@ -633,7 +640,7 @@ static QState I2CMgr_WaitFor_I2C_EV8_MSB(I2CMgr * const me, QEvt const * const e
             if (I2C_CheckEvent( s_I2C_Bus[me->iBus].i2c_bus, I2C_EVENT_MASTER_BYTE_TRANSMITTING )) {
                 DBG_printf("Sending internal LSB addr to the I2C Device\n");
 
-                /* Send the MSB of the address first to the I2C device */
+                /* Send the LSB of the address to the I2C device */
                 I2C_SendData(
                     s_I2C_Bus[me->iBus].i2c_bus,
                     (uint8_t)(me->wAddr & 0xFF00)
@@ -714,6 +721,56 @@ static QState I2CMgr_WaitFor_I2C_EV8_LSB(I2CMgr * const me, QEvt const * const e
     }
     return status_;
 }
+/*${AOs::I2CMgr::SM::Active::Busy::BusBeingUsed::SetupI2CDevice} ...........*/
+static QState I2CMgr_SetupI2CDevice(I2CMgr * const me, QEvt const * const e) {
+    QState status_;
+    switch (e->sig) {
+        /* ${AOs::I2CMgr::SM::Active::Busy::BusBeingUsed::SetupI2CDevice} */
+        case Q_ENTRY_SIG: {
+            DBG_printf("Generating I2C start\n");
+
+            /* Set the I2C device state: generate start bit */
+            s_I2C_Bus[me->iBus].i2c_cur_st = I2C_GEN_START_ST;
+
+            /* Set the direction to transmit the address */
+            I2C_SetDirection( me->iBus,  I2C_Direction_Transmitter);
+
+            /* Send START condition */
+            I2C_GenerateSTART(s_I2C_Bus[me->iBus].i2c_bus, ENABLE);
+            status_ = Q_HANDLED();
+            break;
+        }
+        /* ${AOs::I2CMgr::SM::Active::Busy::BusBeingUsed::SetupI2CDevice::I2C_EV_MASTER_MODE_SELECT} */
+        case I2C_EV_MASTER_MODE_SELECT_SIG: {
+            DBG_printf("Got I2C_EV_MASTER_MODE_SELECT\n");
+            status_ = Q_HANDLED();
+            break;
+        }
+        /* ${AOs::I2CMgr::SM::Active::Busy::BusBeingUsed::SetupI2CDevice::I2C_EV_MASTER_TX_MODE_SELECTED} */
+        case I2C_EV_MASTER_TX_MODE_SELECTED_SIG: {
+            DBG_printf("Got I2C_EV_MASTER_TX_MODE_SELECTED\n");
+            status_ = Q_HANDLED();
+            break;
+        }
+        /* ${AOs::I2CMgr::SM::Active::Busy::BusBeingUsed::SetupI2CDevice::I2C_SENT_MSB_ADDR} */
+        case I2C_SENT_MSB_ADDR_SIG: {
+            DBG_printf("Got I2C_SENT_MSB_ADDR\n");
+            status_ = Q_HANDLED();
+            break;
+        }
+        /* ${AOs::I2CMgr::SM::Active::Busy::BusBeingUsed::SetupI2CDevice::I2C_SENT_LSB_ADDR} */
+        case I2C_SENT_LSB_ADDR_SIG: {
+            DBG_printf("Got I2C_SENT_LSB_ADDR\n");
+            status_ = Q_HANDLED();
+            break;
+        }
+        default: {
+            status_ = Q_SUPER(&I2CMgr_BusBeingUsed);
+            break;
+        }
+    }
+    return status_;
+}
 /*${AOs::I2CMgr::SM::Active::Busy::StartI2CComm} ...........................*/
 static QState I2CMgr_StartI2CComm(I2CMgr * const me, QEvt const * const e) {
     QState status_;
@@ -736,7 +793,7 @@ static QState I2CMgr_StartI2CComm(I2CMgr * const me, QEvt const * const e) {
 
                 /* Reset the maximum number of times to poll the I2C bus for an event */
                 me->nI2CLoopTimeout = MAX_I2C_TIMEOUT;
-                status_ = Q_TRAN(&I2CMgr_WaitFor_I2C_EV5);
+                status_ = Q_TRAN(&I2CMgr_SetupI2CDevice);
             }
             /* ${AOs::I2CMgr::SM::Active::Busy::StartI2CComm::I2C_CHECK_EV::[else]} */
             else {
