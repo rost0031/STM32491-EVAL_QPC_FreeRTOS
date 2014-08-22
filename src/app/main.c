@@ -93,14 +93,20 @@ int main(void)
     BSP_init();
     printf("Initialized BSP\n");
 //    dbg_slow_printf("Initialized BSP\n");
+    uint8_t thing = 0;
 
     while (1) {
-       BSP_LEDToggle(LED1);
-       for (uint32_t i=0; i < 10000000; i++) {
-
+       for (uint32_t i=0; i < 0xFFFFFFFF; i++) {
+          thing++;
        }
 //       USART_SendData(USART1, '7');USART_SendData(USART1, '\n');
-       printf("Stuff\n");
+       time_T time = TIME_getTime();
+       printf("Time is %02d:%02d:%02d:%04d\n",
+               time.hour_min_sec.RTC_Hours,
+               time.hour_min_sec.RTC_Minutes,
+               time.hour_min_sec.RTC_Seconds,
+               (int)time.sub_sec);
+       thing = 0;
     }
 //    log_slow_printf("Starting Bootloader version %s built on %s\n", FW_VER, BUILD_DATE);
 

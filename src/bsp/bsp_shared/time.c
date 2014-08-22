@@ -17,6 +17,9 @@
 #include "Shared.h"
 #include "bsp.h"
 #include "project_includes.h"
+#include "stm32f4xx_rtc.h"                           /* For STM32 RTC support */
+#include "stm32f4xx_tim.h"                         /* For STM32 Timer support */
+#include "stm32f4xx_exti.h"                         /* For STM32 EXTI support */
 
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */
@@ -30,8 +33,10 @@ Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */
 /* Private variables and Local objects ---------------------------------------*/
 RTC_InitTypeDef RTC_InitStructure;
 RTC_TimeTypeDef RTC_TimeStructure;
-__IO uint32_t LsiFreq = 0;
-__IO uint32_t CaptureNumber = 0, PeriodValue = 0;
+
+__IO uint32_t   uwLsiFreq = 0;
+__IO uint32_t   uwCaptureNumber = 0;
+__IO uint32_t   uwPeriodValue = 0;
 
 /* Private function prototypes -----------------------------------------------*/
 /**
@@ -40,18 +45,6 @@ __IO uint32_t CaptureNumber = 0, PeriodValue = 0;
  * @retval LSI Frequency
  */
 static uint32_t TIME_getLSIFrequency( void );
-
-/**
- * @brief Initializes the subsecond timer (TIM7).
- *
- * This init function sets up TIM7 to be used as a microsecond timer.
- *
- * @note 1: This function should be called only once and only in the beginning
- * by TIME_Init().
- * @param  None
- * @return None
- */
-static void TIME_subSecondTimer_Init( void );
 
 /* Private functions ---------------------------------------------------------*/
 
@@ -68,12 +61,11 @@ void TIME_Init( void )
    RCC_LSICmd( ENABLE );
 
    /* Wait till LSI is ready */
-   while(RCC_GetFlagStatus(RCC_FLAG_LSIRDY) == RESET)
-   {
+   while( RESET == RCC_GetFlagStatus( RCC_FLAG_LSIRDY ) ) {
    }
 
    /* Select the RTC Clock Source */
-   RCC_RTCCLKConfig(RCC_RTCCLKSource_LSI);
+   RCC_RTCCLKConfig( RCC_RTCCLKSource_LSI );
 
    /* Enable the RTC Clock */
    RCC_RTCCLKCmd( ENABLE );
@@ -81,17 +73,47 @@ void TIME_Init( void )
    /* Wait for RTC APB registers synchronisation */
    RTC_WaitForSynchro();
 
+   /* Calendar Configuration with LSI supposed at 32KHz */
+   RTC_InitStructure.RTC_AsynchPrediv = 0x7F;
+   RTC_InitStructure.RTC_SynchPrediv  = 0xFF; /* (32KHz / 128) - 1 = 0xFF*/
+   RTC_InitStructure.RTC_HourFormat = RTC_HourFormat_24;
+   RTC_Init(&RTC_InitStructure);
+
+    /* EXTI configuration ******************************************************/
+   EXTI_ClearITPendingBit(EXTI_Line22);
+   EXTI_InitTypeDef EXTI_InitStructure;
+   EXTI_InitStructure.EXTI_Line = EXTI_Line22;
+   EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
+   EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising;
+   EXTI_InitStructure.EXTI_LineCmd = ENABLE;
+   EXTI_Init(&EXTI_InitStructure);
+
+   /* Set up Interrupt controller to handle RTC Wakeup interrupt */
+   NVIC_Config( RTC_WKUP_IRQn, RTC_WKUP_PRIO );
+
+   /* Configure the RTC WakeUp Clock source: CK_SPRE (1Hz) */
+   RTC_WakeUpClockConfig(RTC_WakeUpClock_CK_SPRE_16bits);
+   RTC_SetWakeUpCounter(0x0);
+
+   /* Enable the RTC Wakeup Interrupt */
+   RTC_ITConfig(RTC_IT_WUT, ENABLE);
+
+   /* Enable Wakeup Counter */
+   RTC_WakeUpCmd(ENABLE);
+
    /* Get the LSI frequency:  TIM5 is used to measure the LSI frequency */
-   LsiFreq = TIME_getLSIFrequency();
+   uwLsiFreq = TIME_getLSIFrequency();
 
    /* Calendar Configuration */
    RTC_InitStructure.RTC_AsynchPrediv = 0x7F;
-   RTC_InitStructure.RTC_SynchPrediv =  (LsiFreq/128) - 1;
+   RTC_InitStructure.RTC_SynchPrediv =  (uwLsiFreq/128) - 1;
    RTC_InitStructure.RTC_HourFormat = RTC_HourFormat_24;
    /* Check on RTC init */
-   if (RTC_Init(&RTC_InitStructure) == ERROR) {
+   if ( ERROR == RTC_Init(&RTC_InitStructure) ) {
       err_slow_printf("!!RTC Prescaler Config failed!!\n");
    }
+
+   printf("uwLsiFreq is %d and RTC_SynchPrediv is %d\n", uwLsiFreq, RTC_InitStructure.RTC_SynchPrediv);
 
    /* Initialize the clock to zero */
    RTC_TimeStructure.RTC_H12     = RTC_H12_AM;
@@ -104,45 +126,24 @@ void TIME_Init( void )
       err_slow_printf("!! RTC Set Time failed. !!\n");
    }
 
-   /* EXTI configuration ******************************************************/
-   EXTI_ClearITPendingBit(EXTI_Line22);
-   EXTI_InitTypeDef EXTI_InitStructure;
-   EXTI_InitStructure.EXTI_Line = EXTI_Line22;
-   EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
-   EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising;
-   EXTI_InitStructure.EXTI_LineCmd = ENABLE;
-   EXTI_Init(&EXTI_InitStructure);
-
-   /* Set up Interrupt controller to handle RTC Wakeup interrupt */
-   NVIC_Config( RTC_WKUP_IRQn, RTC_WKUP_PRIO );
-
-   RTC_WakeUpCmd(DISABLE);
-
-   /* Configure the RTC WakeUp Clock source: CK_SPRE (1Hz) */
-   RTC_WakeUpClockConfig(RTC_WakeUpClock_CK_SPRE_16bits);
-   RTC_SetWakeUpCounter(0x0);
-
-   /* Enable the RTC Wakeup Interrupt */
-   RTC_ITConfig(RTC_IT_WUT, ENABLE);
-
-   /* Enable Wakeup Counter */
-   RTC_WakeUpCmd(ENABLE);
-
    /* Enable the subsecond timer */
-   TIME_subSecondTimer_Init();
+//   TIME_subSecondTimer_Init();
 }
 
 /******************************************************************************/
 uint32_t TIME_getLSIFrequency( void )
 {
+   /* Enable the LSI oscillator ************************************************/
+   RCC_LSICmd( ENABLE );
+
    /* TIM5 configuration *******************************************************/
-   RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM5, ENABLE);
+   RCC_APB1PeriphClockCmd( RCC_APB1Periph_TIM5, ENABLE );
 
    /* Connect internally the TIM5_CH4 Input Capture to the LSI clock output */
-   TIM_RemapConfig(TIM5, TIM5_LSI);
+   TIM_RemapConfig( TIM5, TIM5_LSI );
 
    /* Configure TIM5 presclaer */
-   TIM_PrescalerConfig(TIM5, 0, TIM_PSCReloadMode_Immediate);
+   TIM_PrescalerConfig( TIM5, 0, TIM_PSCReloadMode_Immediate );
 
    /* TIM5 configuration: Input Capture mode ---------------------
      The LSI oscillator is connected to TIM5 CH4
@@ -150,32 +151,32 @@ uint32_t TIME_getLSIFrequency( void )
      The TIM5 CCR4 is used to compute the frequency value
   ------------------------------------------------------------ */
    TIM_ICInitTypeDef  TIM_ICInitStructure;
-   TIM_ICInitStructure.TIM_Channel = TIM_Channel_4;
-   TIM_ICInitStructure.TIM_ICPolarity = TIM_ICPolarity_Rising;
+   TIM_ICInitStructure.TIM_Channel     = TIM_Channel_4;
+   TIM_ICInitStructure.TIM_ICPolarity  = TIM_ICPolarity_Rising;
    TIM_ICInitStructure.TIM_ICSelection = TIM_ICSelection_DirectTI;
    TIM_ICInitStructure.TIM_ICPrescaler = TIM_ICPSC_DIV8;
-   TIM_ICInitStructure.TIM_ICFilter = 0;
-   TIM_ICInit(TIM5, &TIM_ICInitStructure);
+   TIM_ICInitStructure.TIM_ICFilter    = 0;
+   TIM_ICInit( TIM5, &TIM_ICInitStructure );
 
    /* Enable TIM5 Interrupt channel */
    NVIC_Config( TIM5_IRQn, TIM5_PRIO );
 
    /* Enable TIM5 counter */
-   TIM_Cmd(TIM5, ENABLE);
+   TIM_Cmd( TIM5, ENABLE );
 
    /* Reset the flags */
    TIM5->SR = 0;
 
    /* Enable the CC4 Interrupt Request */
-   TIM_ITConfig(TIM5, TIM_IT_CC4, ENABLE);
+   TIM_ITConfig( TIM5, TIM_IT_CC4, ENABLE );
 
    /* Wait until the TIM5 get 2 LSI edges (refer to TIM5_IRQHandler() in
-    stm32f2xx_it.c file) ******************************************************/
-   while(CaptureNumber != 2)
-   {
+    stm32f4xx_it.c file) ******************************************************/
+   while(uwCaptureNumber != 2) {
    }
-   /* Deinitialize the TIM5 peripheral registers to their default reset values */
-   TIM_DeInit(TIM5);
+   /* Deinitialize the TIM5 peripheral registers to their default reset values.
+    * It is not used again after this by the TIME module. */
+   TIM_DeInit( TIM5 );
 
    /* Compute the LSI frequency, depending on TIM5 input clock frequency (PCLK1)*/
    /* Get SYSCLK, HCLK and PCLKx frequency */
@@ -183,35 +184,35 @@ uint32_t TIME_getLSIFrequency( void )
    RCC_GetClocksFreq(&RCC_ClockFreq);
 
    /* Get PCLK1 prescaler */
-   if ((RCC->CFGR & RCC_CFGR_PPRE1) == 0) {
+   if (0 == (RCC->CFGR & RCC_CFGR_PPRE1) ) {
       /* PCLK1 prescaler equal to 1 => TIMCLK = PCLK1 */
-      return ((RCC_ClockFreq.PCLK1_Frequency / PeriodValue) * 8);
+      return ((RCC_ClockFreq.PCLK1_Frequency / uwPeriodValue) * 8);
    } else {
       /* PCLK1 prescaler different from 1 => TIMCLK = 2 * PCLK1 */
-      return (((2 * RCC_ClockFreq.PCLK1_Frequency) / PeriodValue) * 8) ;
+      return (((2 * RCC_ClockFreq.PCLK1_Frequency) / uwPeriodValue) * 8) ;
    }
 }
 
 
-/******************************************************************************/
-void TIME_subSecondTimer_Init( void )
-{
-   /* Enable timer clock  - use TIMER7 */
-   RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM7, ENABLE);
-
-   /* Time base configuration - The magic numbers allow a ~10000 ticks/sec on
-    * this timer. */
-   TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
-   TIM_TimeBaseStructInit(&TIM_TimeBaseStructure);
-   TIM_TimeBaseStructure.TIM_Prescaler       = SUBSECOND_TIM_PRESCALAR;
-   TIM_TimeBaseStructure.TIM_Period          = SUBSECOND_TIM_FREQUENCY;
-   TIM_TimeBaseStructure.TIM_ClockDivision   = 0;
-   TIM_TimeBaseStructure.TIM_CounterMode     = TIM_CounterMode_Up;
-   TIM_TimeBaseInit(TIM7, &TIM_TimeBaseStructure);
-
-   /* Enable counter */
-   TIM_Cmd(TIM7, ENABLE);
-}
+///******************************************************************************/
+//void TIME_subSecondTimer_Init( void )
+//{
+//   /* Enable timer clock  - use TIMER7 */
+//   RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM7, ENABLE);
+//
+//   /* Time base configuration - The magic numbers allow a ~10000 ticks/sec on
+//    * this timer. */
+//   TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
+//   TIM_TimeBaseStructInit(&TIM_TimeBaseStructure);
+//   TIM_TimeBaseStructure.TIM_Prescaler       = SUBSECOND_TIM_PRESCALAR;
+//   TIM_TimeBaseStructure.TIM_Period          = SUBSECOND_TIM_FREQUENCY;
+//   TIM_TimeBaseStructure.TIM_ClockDivision   = 0;
+//   TIM_TimeBaseStructure.TIM_CounterMode     = TIM_CounterMode_Up;
+//   TIM_TimeBaseInit(TIM7, &TIM_TimeBaseStructure);
+//
+//   /* Enable counter */
+//   TIM_Cmd(TIM7, ENABLE);
+//}
 
 /******************************************************************************/
 time_T TIME_getTime( void )
@@ -221,12 +222,30 @@ time_T TIME_getTime( void )
    /* Get the current Time and Date */
    RTC_GetTime(RTC_Format_BIN, &RTC_TimeStructure);
 
-   /* Unfreeze the RTC DR Register */
+   /* Unfreeze the RTC DR Register.  Why this isn't done by the STM32 library
+    * for this function but IS for the RTC_GetSubSecond(), I'll never know.
+    * Also, this register is automatically "refrozen" as soon as your read it */
    (void)RTC->DR;
 
    time.hour_min_sec = RTC_TimeStructure;
-   time.sub_sec = TIM7->CNT;
 
+   uint32_t fracSec = RTC_GetSubSecond();
+   time.sub_sec = (uint32_t)( 1000 * (
+         (float)(RTC_InitStructure.RTC_SynchPrediv  - fracSec) /
+         (float)(RTC_InitStructure.RTC_SynchPrediv + 1))
+   );
+
+//   printf("fracSec: %d, uwLsiFreq: %d sub_sec: %d\n",
+//         fracSec,
+//         RTC_InitStructure.RTC_SynchPrediv,
+//         (uint32_t)( 1000 * (
+//         (float)(RTC_InitStructure.RTC_SynchPrediv  - fracSec) /
+//         (float)(RTC_InitStructure.RTC_SynchPrediv + 1)))
+//         );
+
+//   uwLsiFreq is 35320 and RTC_SynchPrediv is 274
+
+//   time.sub_sec =  999 - (fracSec - fracSec/42);
    return (time);
 }
 

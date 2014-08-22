@@ -38,8 +38,8 @@
  */
 typedef struct
 {
-//   RTC_TimeTypeDef   hour_min_sec;   /**< STM32 Time struct with h, m, and s. */
-//   uint32_t          sub_sec;   /**< uint32_t subsecond timer from 0 - 10000. */
+   RTC_TimeTypeDef   hour_min_sec;   /**< STM32 Time struct with h, m, and s. */
+   uint32_t          sub_sec;    /**< uint32_t subsecond timer from 0 - 1000. */
 }time_T;
 
 /* Exported constants --------------------------------------------------------*/

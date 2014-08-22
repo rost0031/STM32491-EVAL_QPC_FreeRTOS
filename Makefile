@@ -233,6 +233,7 @@ C_SRCS					:= \
 						\
 						serial.c \
 						console_output.c \
+						time.c \
 						\
 			            misc.c  \
 			      		stm32f4xx_crc.c \

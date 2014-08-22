@@ -112,23 +112,23 @@ void BSP_init( void )
 //   GPIO_SetBits(GPIOA, GPIO_Pin_8);
 //   /* End Ethernet configuration */
 //
-//   /* Initialize the time (RTC and a subsecond timer). */
-//   TIME_Init();
+   /* Initialize the RTC for getting time stamps. */
+   TIME_Init();
 }
 
 /******************************************************************************/
-//void NVIC_Config(uint8_t irq, uint8_t priority)
-//{
-//   NVIC_InitTypeDef nvic_init;
-//
-//   nvic_init.NVIC_IRQChannel                   = irq;
-//   nvic_init.NVIC_IRQChannelPreemptionPriority = 0x0;
-//   nvic_init.NVIC_IRQChannelSubPriority        = 0x0;
-//   nvic_init.NVIC_IRQChannelCmd                = ENABLE;
-//   NVIC_Init(&nvic_init);/* enables the device and sets interrupt priority */
-//   NVIC_ClearPendingIRQ(irq);
-//   NVIC_SetPriority(irq,   		priority);
-//}
+void NVIC_Config(uint8_t irq, uint8_t priority)
+{
+   NVIC_InitTypeDef nvic_init;
+
+   nvic_init.NVIC_IRQChannel                   = irq;
+   nvic_init.NVIC_IRQChannelPreemptionPriority = 0x0;
+   nvic_init.NVIC_IRQChannelSubPriority        = 0x0;
+   nvic_init.NVIC_IRQChannelCmd                = ENABLE;
+   NVIC_Init( &nvic_init );/* enables the device and sets interrupt priority */
+   NVIC_ClearPendingIRQ( irq );
+   NVIC_SetPriority( irq, priority );
+}
 
 /******************************************************************************/
 void BSP_Delay(__IO uint32_t nCount)

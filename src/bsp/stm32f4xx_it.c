@@ -1,36 +1,27 @@
 /**
-  ******************************************************************************
-  * @file    LwIP/LwIP_HTTP_Server_Netconn_RTOS/Src/stm32f4xx_it.c 
-  * @author  MCD Application Team
-  * @version V1.1.0
-  * @date    26-June-2014
-  * @brief   Main Interrupt Service Routines.
-  *          This file provides template for all exceptions handler and 
-  *          peripherals interrupt service routine.
-  ******************************************************************************
-  * @attention
-  *
-  * <h2><center>&copy; COPYRIGHT(c) 2014 STMicroelectronics</center></h2>
-  *
-  * Licensed under MCD-ST Liberty SW License Agreement V2, (the "License");
-  * You may not use this file except in compliance with the License.
-  * You may obtain a copy of the License at:
-  *
-  *        http://www.st.com/software_license_agreement_liberty_v2
-  *
-  * Unless required by applicable law or agreed to in writing, software 
-  * distributed under the License is distributed on an "AS IS" BASIS, 
-  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  * See the License for the specific language governing permissions and
-  * limitations under the License.
-  *
-  ******************************************************************************
-  */
+ * @file   stm32f4xx_it.c
+ * @brief  This file contains most interrupt handler functions.
+ *
+ * @date   06/23/2014
+ * @author Harry Rostovtsev
+ * @email  harry_rostovtsev@datacard.com
+ * Copyright (C) 2014 Datacard. All rights reserved.
+ *
+ * @addtogroup groupISR
+ * @{
+ */
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f4xx_it.h"
 
+#include "stm32f4xx.h"                                 /* For STM32F4 support */
+#include "stm32f4xx_dma.h"                                 /* for DMA support */
+#include "stm32f4xx_tim.h"                                 /* for TIM support */
+#include "stm32f4xx_rtc.h"                                 /* for RTC support */
+#include "stm32f4xx_exti.h"                               /* for EXTI support */
+
 #include <stdio.h>                                    /* for printf() support */
+#include "time.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -42,21 +33,12 @@
 /*            Cortex-M4 Processor Exceptions Handlers                         */
 /******************************************************************************/
 
-/**
-  * @brief  This function handles NMI exception.
-  * @param  None
-  * @retval None
-  */
+/******************************************************************************/
 void NMI_Handler(void)
 {
 }
 
-/**
- * @brief  This function gets called by Hard Fault exception handler to print
- * out the contents of the registers.
- * @param  [in] *hardfault_args: pointer to array containing values of registers.
- * @retval None
- */
+/******************************************************************************/
 void hard_fault_handler_c(unsigned int *hardfault_args)
 {
    unsigned int stacked_r0;
@@ -99,52 +81,40 @@ void hard_fault_handler_c(unsigned int *hardfault_args)
    }
 }
 
-/**
-  * @brief  This function handles Memory Manage exception.
-  * @param  None
-  * @retval None
-  */
+/******************************************************************************/
 void MemManage_Handler(void)
 {
-  /* Go to infinite loop when Memory Manage exception occurs */
-  while (1)
-  {
-  }
+   printf ("[MemManage_handler!]\n");
+   /* Go to infinite loop when Memory Manage exception occurs */
+   while (1)
+   {
+   }
 }
 
-/**
-  * @brief  This function handles Bus Fault exception.
-  * @param  None
-  * @retval None
-  */
+/******************************************************************************/
 void BusFault_Handler(void)
 {
-  /* Go to infinite loop when Bus Fault exception occurs */
-  while (1)
-  {
-  }
+   printf ("[BusFault_Handler!]\n");
+   /* Go to infinite loop when Bus Fault exception occurs */
+   while (1)
+   {
+   }
 }
 
-/**
-  * @brief  This function handles Usage Fault exception.
-  * @param  None
-  * @retval None
-  */
+/******************************************************************************/
 void UsageFault_Handler(void)
 {
-  /* Go to infinite loop when Usage Fault exception occurs */
-  while (1)
-  {
-  }
+   printf ("[UsageFault_Handler!]\n");
+   /* Go to infinite loop when Usage Fault exception occurs */
+   while (1)
+   {
+   }
 }
 
-/**
-  * @brief  This function handles Debug Monitor exception.
-  * @param  None
-  * @retval None
-  */
+/******************************************************************************/
 void DebugMon_Handler(void)
 {
+   printf ("[DebugMon_Handler!]\n");
 }
 
 /******************************************************************************/
@@ -154,34 +124,73 @@ void DebugMon_Handler(void)
 /*  file (startup_stm32f4xx.s).                                               */
 /******************************************************************************/
 
-/**
-  * @brief  This function handles External line 8 interrupt request.
-  * @param  None
-  * @retval None
-  */
-void EXTI9_5_IRQHandler(void)
+
+extern __IO unsigned long uwPeriodValue;     /**< external reference to period value used by TIME_getLSIFrequency() */
+extern __IO unsigned long uwCaptureNumber;   /**< external reference to capture number used by TIME_getLSIFrequency() */
+uint16_t tmpCC4[2] = {0, 0};                 /**< Local storage for TIM5_IRQHandler() to temporarily store timer counts for frequency calculation */
+
+/******************************************************************************/
+void TIM5_IRQHandler( void )
 {
-//  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_8);
+   /* This is for measuring the LSI frequency for configuring the RTC */
+   if ( RESET != TIM_GetITStatus( TIM5, TIM_IT_CC4 ) ) {
+      /* Get the Input Capture value */
+      tmpCC4[uwCaptureNumber++] = TIM_GetCapture4( TIM5 );
+
+      /* Clear CC4 Interrupt pending bit */
+      TIM_ClearITPendingBit( TIM5, TIM_IT_CC4 );
+
+      if ( uwCaptureNumber >= 2 ) {
+         /* Compute the period length */
+         uwPeriodValue = (uint16_t)(0xFFFF - tmpCC4[0] + tmpCC4[1] + 1);
+      }
+   }
 }
 
-/**
-  * @brief  This function handles Ethernet interrupt request.
-  * @param  None
-  * @retval None
-  */
-void ETH_IRQHandler(void)
+/******************************************************************************/
+void RTC_WKUP_IRQHandler( void )
 {
-//  ETHERNET_IRQHandler();
+   //   QK_ISR_ENTRY();                        /* inform QK about entering an ISR */
+
+   if( RESET != RTC_GetITStatus(RTC_IT_WUT) ) {
+
+      //      t_Time time = TIME_getTime();
+
+      /* Reset the subSecond counter on the timer used to keep track of time */
+//      TIM7->CNT = 0;
+
+      //      /* 1. Construct a new msg event indicating that a msg has been received */
+      //      SerialDataEvt *serDataEvt = Q_NEW(SerialDataEvt, UART_DMA_START_SIG);
+      //
+      //
+      //      /* 2. Fill the msg payload and get the msg source and length */
+      //      serDataEvt->wBufferLen = snprintf(
+      //            serDataEvt->buffer,
+      //            MAX_MSG_LEN,
+      //            "Time in ISR before reset of subsecond: %02d:%02d:%02d:%d\n",
+      //            time.hour_min_sec.RTC_Hours,
+      //            time.hour_min_sec.RTC_Minutes,
+      //            time.hour_min_sec.RTC_Seconds,
+      //            (int)time.sub_sec
+      //      );
+      //
+      //      QF_PUBLISH((QEvent *)serDataEvt, AO_CommStackMgr);
+
+      time_T time = TIME_getTime();
+       printf("Time in ISR is %02d:%02d:%02d:%04d\n",
+               time.hour_min_sec.RTC_Hours,
+               time.hour_min_sec.RTC_Minutes,
+               time.hour_min_sec.RTC_Seconds,
+               (int)time.sub_sec);
+
+      /* Clear the pending bits so the interrupt fires again next time. */
+      RTC_ClearITPendingBit(RTC_IT_WUT);
+      EXTI_ClearITPendingBit(EXTI_Line22);
+   }
+
+   //   QK_ISR_EXIT();                          /* inform QK about exiting an ISR */
 }
-
 /**
-  * @brief  This function handles PPP interrupt request.
-  * @param  None
-  * @retval None
-  */
-/*void PPP_IRQHandler(void)
-{
-}*/
-
-
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
+ * @} end addtogroup groupISR
+ */
+/******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/
