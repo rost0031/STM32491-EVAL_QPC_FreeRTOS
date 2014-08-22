@@ -45,8 +45,7 @@ static I2C_BusDevice_t s_I2C_Dev[MAX_I2C_DEV] =
       {
             EEPROM,                    /**< i2c_dev */
             I2C1,                      /**< i2c_bus */
-
-            0xA0,                      /**< i2c_address */
+            0x00,                      /**< i2c_address */
       }
 };
 
@@ -383,6 +382,7 @@ void I2C1_EV_IRQHandler( void )
 
       case I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED:
          isr_dbg_slow_printf("I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED\n");
+
          break;
 
       /* Check on EV6 */
@@ -414,14 +414,14 @@ void I2C1_EV_IRQHandler( void )
 //                  I2C_GetFlagStatus(I2C1, I2C_FLAG_TRA)
 //            );
 //            I2C_SendData(I2C1, (uint8_t)((0x0000 & 0xFF00) >> 8));
-
+//
 //            isr_dbg_slow_printf("I2C (after) MSL: %x, ADDR: %x, TXE: %x, TRA: %x\n",
 //                  I2C_GetFlagStatus(I2C1, I2C_FLAG_MSL),
 //                  I2C_GetFlagStatus(I2C1, I2C_FLAG_ADDR),
 //                  I2C_GetFlagStatus(I2C1, I2C_FLAG_TXE),
 //                  I2C_GetFlagStatus(I2C1, I2C_FLAG_TRA)
 //            );
-
+//
 //            /*!< Test on EV8 and clear it */
 //            uint16_t sEETimeout = 10000;
 //            while(!I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_BYTE_TRANSMITTING))
@@ -448,31 +448,31 @@ void I2C1_EV_IRQHandler( void )
 
 
 
-         //            /*!< Send the EEPROM's internal address to read from: MSB of the address first */
-         //            I2C_SendData(I2C1, (uint8_t)((0x0000 & 0xFF00) >> 8));
-         //
-         //            /*!< Test on EV8 and clear it */
-         //            uint16_t sEETimeout = 10000;
-         //            while(!I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_BYTE_TRANSMITTING))
-         //            {
-         //               if((sEETimeout--) == 0) {
-         //                  isr_dbg_slow_printf("Timed out sending addr msb\n");
-         //               }
-         //            }
-         //
-         //            /*!< Send the EEPROM's internal address to read from: LSB of the address */
-         //            I2C_SendData(I2C1, (uint8_t)(0x0000 & 0x00FF));
-         //            sEETimeout = 10000;
-         //            while(I2C_GetFlagStatus(I2C1, I2C_FLAG_BTF) == RESET)
-         //            {
-         //               if((sEETimeout--) == 0) {
-         //                  isr_dbg_slow_printf("Timed out sending addr lsb\n");
-         //               }
-         //            }
-         //            isr_dbg_slow_printf("Sent addr\n");
-         /* Create and publish event for I2CMgr */
-         //            QEvt *qEvt = Q_NEW( QEvt, I2C_MSTR_MODE_SELECTED_SIG );
-         //            QF_PUBLISH( (QEvt *)qEvt, AO_I2CMgr );
+//            /*!< Send the EEPROM's internal address to read from: MSB of the address first */
+//            I2C_SendData(I2C1, (uint8_t)((0x0000 & 0xFF00) >> 8));
+//
+//            /*!< Test on EV8 and clear it */
+//            uint16_t sEETimeout = 10000;
+//            while(!I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_BYTE_TRANSMITTING))
+//            {
+//               if((sEETimeout--) == 0) {
+//                  isr_dbg_slow_printf("Timed out sending addr msb\n");
+//               }
+//            }
+//
+//            /*!< Send the EEPROM's internal address to read from: LSB of the address */
+//            I2C_SendData(I2C1, (uint8_t)(0x0000 & 0x00FF));
+//            sEETimeout = 10000;
+//            while(I2C_GetFlagStatus(I2C1, I2C_FLAG_BTF) == RESET)
+//            {
+//               if((sEETimeout--) == 0) {
+//                  isr_dbg_slow_printf("Timed out sending addr lsb\n");
+//               }
+//            }
+//            isr_dbg_slow_printf("Sent addr\n");
+/* Create and publish event for I2CMgr */
+//            QEvt *qEvt = Q_NEW( QEvt, I2C_MSTR_MODE_SELECTED_SIG );
+//            QF_PUBLISH( (QEvt *)qEvt, AO_I2CMgr );
          break;
 
          /* Check on EV8 */
@@ -509,18 +509,18 @@ void I2C1_EV_IRQHandler( void )
 
 
 
-         /* Create and publish event for I2CMgr */
-         //            QEvt *qEvt1 = Q_NEW( QEvt, I2C_MSTR_BYTE_TRANSMITTED_SIG );
-         //            QF_PUBLISH( (QEvt *)qEvt1, AO_I2CMgr );
-
-         //         if (Tx_Idx == (uint8_t)NumberOfByteToTransmit) {
-         //            /* Send STOP condition */
-         //            I2C_GenerateSTOP(I2C1, ENABLE);
-         //            I2C_ITConfig(I2C1, I2C_IT_EVT | I2C_IT_BUF, DISABLE);
-         //         } else {
-         //            /* Transmit Data TxBuffer */
-         //            I2C_SendData(I2C1, TxBuffer[Tx_Idx++]);
-         //         }
+/* Create and publish event for I2CMgr */
+//            QEvt *qEvt1 = Q_NEW( QEvt, I2C_MSTR_BYTE_TRANSMITTED_SIG );
+//            QF_PUBLISH( (QEvt *)qEvt1, AO_I2CMgr );
+//
+//         if (Tx_Idx == (uint8_t)NumberOfByteToTransmit) {
+//            /* Send STOP condition */
+//            I2C_GenerateSTOP(I2C1, ENABLE);
+//            I2C_ITConfig(I2C1, I2C_IT_EVT | I2C_IT_BUF, DISABLE);
+//         } else {
+//            /* Transmit Data TxBuffer */
+//            I2C_SendData(I2C1, TxBuffer[Tx_Idx++]);
+//         }
 
          break;
 

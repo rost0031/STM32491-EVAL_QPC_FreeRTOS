@@ -14,11 +14,6 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "time.h"
-#include "stm32f2xx.h"
-#include "stm32f2xx_rcc.h"
-#include "stm32f2xx_tim.h"
-#include "stm32f2xx_pwr.h"
-#include "stm32f2xx_exti.h"
 #include "Shared.h"
 #include "bsp.h"
 #include "project_includes.h"

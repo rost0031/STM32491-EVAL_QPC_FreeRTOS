@@ -16,24 +16,20 @@
 #define SERIAL_H_
 
 /* Includes ------------------------------------------------------------------*/
-#include "stm32f2xx_usart.h"
-#include "stm32f2xx_gpio.h"
-#include "stm32f2xx_rcc.h"
-#include "stm32f2xx_dma.h"
-#include "bsp.h"
-
+#include "stm32f4xx.h"
+#include "bsp_defs.h"
 /* Exported defines ----------------------------------------------------------*/
 /* Exported macros -----------------------------------------------------------*/
 /* Exported types ------------------------------------------------------------*/
 /**
- * \enum USART_Port
- * USART/UART/Serial ports available on the system.
+ * \enum SerialPort_T
+ * Serial ports available on the system.
  */
-typedef enum USART_Ports {
-   SYSTEM_SERIAL  = 0,                         /**< Serial debug port, UART4. */
+typedef enum SerialPorts {
+   SERIAL_SYS  = 0,                           /**< Serial debug/basic IO port */
    /* Insert more serial port enumerations here... */
-   MAX_SERIAL     /**< Maximum number of available serial ports on the system */
-} USART_Port_T;
+   SERIAL_MAX     /**< Maximum number of available serial ports on the system */
+} SerialPort_T;
 
 /**
  * \struct USART_Settings_t
@@ -42,24 +38,25 @@ typedef enum USART_Ports {
  */
 typedef struct USART_Settings
 {
-    USART_Port_T                 port;     /**< System serial port specifier. */
+    SerialPort_T        port;                         /**< System serial port */
 
-    /* USART settings */
-    USART_TypeDef *              usart;       /**< STM32 UART port specifier. */
-    const uint32_t               usart_baud;      /**< Serial port baud rate. */
-    uint32_t                     usart_clk;  /**< STM32 UART clock specifier. */
-    IRQn_Type                    usart_irq_num;        /**< STM32 IRQ number. */
-    ISR_Priority                 usart_irq_prio;     /**< STM32 IRQ priority. */
+    USART_TypeDef *     usart;                           /**< STM32 UART port */
+    const uint32_t      usart_baud;                       /**< UART Baud rate */
+    uint32_t            usart_clk;                            /**< UART clock */
+    IRQn_Type           usart_irq_num;                  /**< STM32 IRQ number */
+    ISR_Priority        usart_irq_prio;               /**< STM32 IRQ priority */
 
-    GPIO_TypeDef *               tx_port;       /**< STM32 TX port specifier. */
-    const uint16_t               tx_pin;         /**< STM32 TX pin specifier. */
-    const uint16_t               tx_af_pin_source;/**< STM32 TX alt function source specifier. */
-    const uint16_t               tx_af; /**< STM32 TX alt function specifier. */
+    GPIO_TypeDef *      tx_port;                            /**< UART TX port */
+    const uint16_t      tx_pin;                             /**< UART TX pin  */
+    const uint16_t      tx_af_pin_source;       /**< UART TX alt-func pin src */
+    const uint16_t      tx_af;                      /**< UART TX alt function */
+    uint32_t            tx_gpio_clk;                  /**< UART TX GPIO clock */
 
-    GPIO_TypeDef *               rx_port;       /**< STM32 RX port specifier. */
-    const uint16_t               rx_pin;         /**< STM32 RX pin specifier. */
-    const uint16_t               rx_af_pin_source;/**< STM32 RX alt function source specifier. */
-    const uint16_t               rx_af; /**< STM32 RX alt function specifier. */
+    GPIO_TypeDef *      rx_port;                            /**< UART RX port */
+    const uint16_t      rx_pin;                              /**< UART RX pin */
+    const uint16_t      rx_af_pin_source;       /**< UART RX alt-func pin src */
+    const uint16_t      rx_af;                      /**< UART RX alt function */
+    uint32_t            rx_gpio_clk;                  /**< UART RX GPIO clock */
 
     /* Buffer management */
     char                         *buffer;    /**< Serial port in data buffer. */
@@ -73,7 +70,7 @@ typedef struct USART_Settings
  */
 typedef struct USART_DMA_Settings
 {
-    USART_Port_T                 port;     /**< System serial port specifier. */
+    SerialPort_T                 port;     /**< System serial port specifier. */
 
     IRQn_Type                    dma_irq_num;/**< STM32 serial DMA IRQ number.*/
     ISR_Priority                 dma_irq_prio;/**< STM32 serial DMA IRQ priority. */
@@ -96,7 +93,7 @@ typedef struct USART_DMA_Settings
  * @return: None
  */
 void Serial_Init(
-      USART_Port_T serial_port
+      SerialPort_T serial_port
 );
 
 /**
@@ -113,7 +110,7 @@ void Serial_Init(
  * @return: None
  */
 void Serial_DMAConfig(
-      USART_Port_T serial_port,
+      SerialPort_T serial_port,
       char *pBuffer,
       uint16_t wBufferLen
 );
@@ -130,7 +127,7 @@ void Serial_DMAConfig(
  * @return: None
  */
 void Serial_DMAStartXfer(
-      USART_Port_T serial_port
+      SerialPort_T serial_port
 );
 
 /**
@@ -151,7 +148,7 @@ void Serial_DMAStartXfer(
  *    @arg  ERR_SERIAL_MSG_BASE64_ENC_FAILED: Failed to base64 encode the message, likely due to length
  */
 uint32_t Serial_send_base64_enc_msg(
-      USART_Port_T serial_port,
+      SerialPort_T serial_port,
       char *message,
       uint16_t len
 );
@@ -171,7 +168,7 @@ uint32_t Serial_send_base64_enc_msg(
  *    @arg  ERR_SERIAL_MSG_TOO_LONG:   Message being sent is longer than MAX_MSG_LEN
  */
 uint32_t Serial_send_raw_msg(
-      USART_Port_T serial_port,
+      SerialPort_T serial_port,
       char *message,
       uint16_t len
 );

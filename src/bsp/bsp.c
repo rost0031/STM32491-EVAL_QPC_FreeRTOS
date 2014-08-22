@@ -15,14 +15,13 @@
 /* Includes ------------------------------------------------------------------*/
 #include "bsp.h"
 
-#include "stm32f2xx_rcc.h"                                 /* for RCC support */
-#include "stm32f2xx_gpio.h"                               /* for GPIO support */
-#include "stm32f2x7_eth_bsp.h"                        /* for Ethernet support */
+#include "stm32f4xx.h"                                 /* For STM32F4 support */
 
 #include "qp_port.h"                                        /* for QP support */
 #include "project_includes.h"        /* application events and active objects */
 #include "time.h"                          /* for processor date/time support */
 #include "i2c.h"                                           /* For I2C support */
+#include "serial.h"
 
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */
@@ -45,54 +44,54 @@ QSTimeCtr QS_tickPeriod_;
 #endif
 
 /* Private function prototypes -----------------------------------------------*/
+
 /* Private functions ---------------------------------------------------------*/
 /******************************************************************************/
 void BSP_init( void )
 {
-
-   SystemInit();         /* initialize STM32 system (clock, PLL and Flash) */
+   Serial_Init( SERIAL_SYS );
 
    /* ENABLE GPIO clocks */
-   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, ENABLE);
-   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE);
-   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOC, ENABLE);
-   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOD, ENABLE);
-   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOE, ENABLE);
-   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOF, ENABLE);
-   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOG, ENABLE);
-   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOH, ENABLE);
-   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOI, ENABLE);
-
-   /* DMA clock enable */
-   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA1 , ENABLE);
-   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA2 , ENABLE);
-
-   /* Enable syscfg clock */
-   RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
-
-   /* Enable TIM clocks on APB2 bus */
-   RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM1, ENABLE);
-   RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM8, ENABLE);
-   RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM9, ENABLE);
-   RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM10, ENABLE);
-   RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM11, ENABLE);
-
-   /* Enable TIM clocks on APB1 bus */
-   RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
-   RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
-   RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4, ENABLE);
-   RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM5, ENABLE);
-   RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM6, ENABLE);
-   RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM7, ENABLE);
-   RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM12, ENABLE);
-   RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM13, ENABLE);
-   RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM14, ENABLE);
-
-   /* Enable CRC clock */
-   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_CRC, ENABLE);
-
-   /* Initialize the Serial for printfs to the serial port */
-   Serial_Init( SYSTEM_SERIAL );
+//   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, ENABLE);
+//   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE);
+//   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOC, ENABLE);
+//   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOD, ENABLE);
+//   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOE, ENABLE);
+//   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOF, ENABLE);
+//   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOG, ENABLE);
+//   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOH, ENABLE);
+//   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOI, ENABLE);
+//
+//   /* DMA clock enable */
+//   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA1 , ENABLE);
+//   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA2 , ENABLE);
+//
+//   /* Enable syscfg clock */
+//   RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
+//
+//   /* Enable TIM clocks on APB2 bus */
+//   RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM1, ENABLE);
+//   RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM8, ENABLE);
+//   RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM9, ENABLE);
+//   RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM10, ENABLE);
+//   RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM11, ENABLE);
+//
+//   /* Enable TIM clocks on APB1 bus */
+//   RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
+//   RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
+//   RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4, ENABLE);
+//   RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM5, ENABLE);
+//   RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM6, ENABLE);
+//   RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM7, ENABLE);
+//   RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM12, ENABLE);
+//   RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM13, ENABLE);
+//   RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM14, ENABLE);
+//
+//   /* Enable CRC clock */
+//   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_CRC, ENABLE);
+//
+//   /* Initialize the Serial for printfs to the serial port */
+//   Serial_Init( SYSTEM_SERIAL );
 
 //   /* Initialize the I2C devices and associated busses */
 //   I2C_BusInit( I2CBus1 );
@@ -100,36 +99,36 @@ void BSP_init( void )
    /* Start Ethernet configuration */
    /* Assert a reset on the ETH_RST line.  This should only be released
     * after all the local MAC and DMA configuration is done. */
-   GPIO_ResetBits(GPIOA, GPIO_Pin_8);
-
-   /* initialize the ETH GPIO */
-   ETH_GPIO_Config();
-
-   /* initialize the ETH MACDMA */
-   ETH_MACDMA_Config();
-
-   /* Release the reset on the ETH_RST line now that the local MAC and DMA
-    * configuration is done. */
-   GPIO_SetBits(GPIOA, GPIO_Pin_8);
-   /* End Ethernet configuration */
-
-   /* Initialize the time (RTC and a subsecond timer). */
-   TIME_Init();
+//   GPIO_ResetBits(GPIOA, GPIO_Pin_8);
+//
+//   /* initialize the ETH GPIO */
+//   ETH_GPIO_Config();
+//
+//   /* initialize the ETH MACDMA */
+//   ETH_MACDMA_Config();
+//
+//   /* Release the reset on the ETH_RST line now that the local MAC and DMA
+//    * configuration is done. */
+//   GPIO_SetBits(GPIOA, GPIO_Pin_8);
+//   /* End Ethernet configuration */
+//
+//   /* Initialize the time (RTC and a subsecond timer). */
+//   TIME_Init();
 }
 
 /******************************************************************************/
-void NVIC_Config(uint8_t irq, uint8_t priority)
-{
-   NVIC_InitTypeDef nvic_init;
-
-   nvic_init.NVIC_IRQChannel                   = irq;
-   nvic_init.NVIC_IRQChannelPreemptionPriority = 0x0;
-   nvic_init.NVIC_IRQChannelSubPriority        = 0x0;
-   nvic_init.NVIC_IRQChannelCmd                = ENABLE;
-   NVIC_Init(&nvic_init);/* enables the device and sets interrupt priority */
-   NVIC_ClearPendingIRQ(irq);
-   NVIC_SetPriority(irq,   		priority);
-}
+//void NVIC_Config(uint8_t irq, uint8_t priority)
+//{
+//   NVIC_InitTypeDef nvic_init;
+//
+//   nvic_init.NVIC_IRQChannel                   = irq;
+//   nvic_init.NVIC_IRQChannelPreemptionPriority = 0x0;
+//   nvic_init.NVIC_IRQChannelSubPriority        = 0x0;
+//   nvic_init.NVIC_IRQChannelCmd                = ENABLE;
+//   NVIC_Init(&nvic_init);/* enables the device and sets interrupt priority */
+//   NVIC_ClearPendingIRQ(irq);
+//   NVIC_SetPriority(irq,   		priority);
+//}
 
 /******************************************************************************/
 void BSP_Delay(__IO uint32_t nCount)
@@ -420,15 +419,15 @@ void QS_onFlush(void) {
 /******************************************************************************/
 void SysTick_Handler( void )
 {
-   QK_ISR_ENTRY();                       /* inform QK-nano about ISR entry */
+   QK_ISR_ENTRY();                          /* inform QK-nano about ISR entry */
 #ifdef Q_SPY
-   uint32_t dummy = SysTick->CTRL;        /* clear NVIC_ST_CTRL_COUNT flag */
-   QS_tickTime_ += QS_tickPeriod_;       /* account for the clock rollover */
+   uint32_t dummy = SysTick->CTRL;           /* clear NVIC_ST_CTRL_COUNT flag */
+   QS_tickTime_ += QS_tickPeriod_;          /* account for the clock rollover */
 #endif
 
-   QF_TICK(&l_SysTick_Handler);           /* process all armed time events */
+   QF_TICK(&l_SysTick_Handler);              /* process all armed time events */
 
-   QK_ISR_EXIT();                         /* inform QK-nano about ISR exit */
+   QK_ISR_EXIT();                            /* inform QK-nano about ISR exit */
 }
 
 /**

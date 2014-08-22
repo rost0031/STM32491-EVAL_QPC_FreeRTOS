@@ -13,7 +13,11 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "serial.h"
-#include "stm32f2xx.h"
+#include "stm32f4xx.h"                                 /* For STM32F4 support */
+#include "stm32f4xx_rcc.h"                         /* For STM32F4 clk support */
+#include "stm32f4xx_gpio.h"                        /* For STM32F4 clk support */
+#include "stm32f4xx_usart.h"                       /* For STM32F4 clk support */
+
 #include "project_includes.h"
 #include "base64_wrapper.h"
 #include <stdio.h>
@@ -22,10 +26,8 @@
 #include "CBErrors.h"
 #include <assert.h>
 #include <string.h>
-#include "stm32f2xx_dma.h"
-#include "misc.h"
 #include "mem_datacopy.h"
-#include "SerialMgr.h"
+//#include "SerialMgr.h"
 
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */
@@ -51,33 +53,35 @@ Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */
 static char          system_serial_buffer[MAX_MSG_LEN];
 
 /**
- * @brief An internal structure that holds almost all the settings for the U
- * SART ports.
+ * @brief An internal array of structures that holds almost all the settings for
+ * the all serial ports used in the system.
  */
-static USART_Settings_t s_USART_Port[MAX_SERIAL] =
+static USART_Settings_t a_UARTSettings[SERIAL_MAX] =
 {
       {
-            SYSTEM_SERIAL,             /**< port */
+            SERIAL_SYS,                /**< port */
 
             /* USART settings */
-            UART4,                     /**< usart */
+            USART1,                    /**< usart */
             115200,                    /**< usart_baud */
-            RCC_APB1Periph_UART4,      /**< usart_clk */
-            UART4_IRQn,                /**< usart_irq_num */
-            UART4_PRIO,                /**< usart_irq_prio */
+            RCC_APB2Periph_USART1,     /**< usart_clk */
+            USART1_IRQn,               /**< usart_irq_num */
+            USART1_PRIO,               /**< usart_irq_prio */
 
-            GPIOC,                     /**< tx_port */
-            GPIO_Pin_10,               /**< tx_pin */
-            GPIO_PinSource10,          /**< tx_af_pin_source */
-            GPIO_AF_UART4,             /**< tx_af */
+            GPIOA,                     /**< tx_port */
+            GPIO_Pin_9,                /**< tx_pin */
+            GPIO_PinSource9,           /**< tx_af_pin_source */
+            GPIO_AF_USART1,            /**< tx_af */
+            RCC_AHB1Periph_GPIOA,      /**< tx_gpio_clk */
 
-            GPIOC,                     /**< rx_port */
-            GPIO_Pin_11,               /**< rx_pin */
-            GPIO_PinSource11,          /**< rx_af_pin_source */
-            GPIO_AF_UART4,             /**< rx_af */
+            GPIOA,                     /**< rx_port */
+            GPIO_Pin_10,               /**< rx_pin */
+            GPIO_PinSource10,          /**< rx_af_pin_source */
+            GPIO_AF_USART1,            /**< rx_af */
+            RCC_AHB1Periph_GPIOA,      /**< rx_gpio_clk */
 
             /* Buffer management */
-            &system_serial_buffer[0],  /**< *buffer */
+            &system_serial_buffer[0],   /**< *buffer */
             0,                         /**< index */
       }
 };
@@ -87,98 +91,117 @@ static USART_Settings_t s_USART_Port[MAX_SERIAL] =
 
 /******************************************************************************/
 void Serial_Init(
-      USART_Port_T serial_port
+      SerialPort_T serial_port
 )
 {
-    assert(serial_port < MAX_SERIAL);
+    assert(serial_port < SERIAL_MAX);/* Don't allow goofy values for settings */
 
-    /* Set up Interrupt controller to handle USART DMA */
-    NVIC_Config( DMA1_Stream4_IRQn, DMA1_Stream4_PRIO );
+    /* 1 - Enable all the necessary clocks ---------------------------------- */
+    /* Enable UART TX AND RX GPIO clocks */
+    RCC_AHB1PeriphClockCmd(
+          a_UARTSettings[serial_port].tx_gpio_clk | a_UARTSettings[serial_port].rx_gpio_clk,
+          ENABLE
+    );
 
-    /* Rest of USARTs use a different APBus1 */
-    RCC_APB1PeriphClockCmd( s_USART_Port[serial_port].usart_clk, ENABLE );
+    if ( SERIAL_SYS == serial_port ) {
+       /* Set up Interrupt controller to handle USART DMA */
+//       NVIC_Config( DMA1_Stream4_IRQn, DMA1_Stream4_PRIO );
 
-    /* USART configured RFID1, RFID2, and SYSTEM_SERIAL as follows:
+       /* Rest of USARTs use a different APBus1 */
+       RCC_APB2PeriphClockCmd( a_UARTSettings[serial_port].usart_clk, ENABLE );
+    }
+
+    /* 2 - Set all the GPIO ------------------------------------------------- */
+    /* Set up alt function */
+    GPIO_PinAFConfig(
+          a_UARTSettings[serial_port].tx_port,
+          a_UARTSettings[serial_port].tx_af_pin_source,
+          a_UARTSettings[serial_port].tx_af
+    );
+
+    GPIO_PinAFConfig(
+          a_UARTSettings[serial_port].rx_port,
+          a_UARTSettings[serial_port].rx_af_pin_source,
+          a_UARTSettings[serial_port].rx_af
+    );
+
+    /* Configure basic alt function structure common to TX and RX */
+    GPIO_InitTypeDef   GPIO_InitStructure;
+    GPIO_InitStructure.GPIO_Mode    = GPIO_Mode_AF;
+    GPIO_InitStructure.GPIO_OType   = GPIO_OType_PP;
+    GPIO_InitStructure.GPIO_PuPd    = GPIO_PuPd_UP;
+    GPIO_InitStructure.GPIO_Speed   = GPIO_Speed_50MHz;
+
+    /* Configure USART TX */
+    GPIO_InitStructure.GPIO_Pin     = a_UARTSettings[serial_port].tx_pin;
+    GPIO_Init(a_UARTSettings[serial_port].tx_port, &GPIO_InitStructure);
+
+    /* Configure USART RX */
+    GPIO_InitStructure.GPIO_Pin     = a_UARTSettings[serial_port].rx_pin;
+    GPIO_Init(a_UARTSettings[serial_port].rx_port, &GPIO_InitStructure);
+
+    /* 3 - Set all the USART ------------------------------------------------ */
+    /* All system serial devices are configured as follows:
        - BaudRate = 115200 baud
        - Word Length = 8 Bits
        - One Stop Bit
        - No parity
        - Hardware flow control disabled (RTS and CTS signals)
        - Receive and transmit enabled
+
+       If this changes as more serial devices are added, make sure to either
+       include the new settings in the a_UARTSettings array of settings or use
+       a case statement to decide which devices get which settings.
      */
     USART_InitTypeDef  USART_InitStructure;
     USART_InitStructure.USART_Parity         = USART_Parity_No;
 
-    USART_InitStructure.USART_BaudRate       = s_USART_Port[serial_port].usart_baud;
+    USART_InitStructure.USART_BaudRate       = a_UARTSettings[serial_port].usart_baud;
     USART_InitStructure.USART_WordLength     = USART_WordLength_8b;
     USART_InitStructure.USART_StopBits       = USART_StopBits_1;
     USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
     USART_InitStructure.USART_Mode           = USART_Mode_Rx | USART_Mode_Tx;
 
-    NVIC_Config(
-          s_USART_Port[serial_port].usart_irq_num,
-          s_USART_Port[serial_port].usart_irq_prio
-    );
-
-    /* Set up alt function */
-    GPIO_PinAFConfig(
-          s_USART_Port[serial_port].tx_port,
-          s_USART_Port[serial_port].tx_af_pin_source,
-          s_USART_Port[serial_port].tx_af
-    );
-
-    GPIO_PinAFConfig(
-          s_USART_Port[serial_port].rx_port,
-          s_USART_Port[serial_port].rx_af_pin_source,
-          s_USART_Port[serial_port].rx_af
-    );
-
-    /* Configure basic alt function structure*/
-    GPIO_InitTypeDef   GPIO_InitStructure;
-    GPIO_InitStructure.GPIO_Mode             = GPIO_Mode_AF;
-    GPIO_InitStructure.GPIO_OType            = GPIO_OType_PP;
-    GPIO_InitStructure.GPIO_PuPd             = GPIO_PuPd_UP;
-    GPIO_InitStructure.GPIO_Speed            = GPIO_Speed_50MHz;
-
-    /* Configure USART Tx as alternate function  */
-    GPIO_InitStructure.GPIO_Pin              = s_USART_Port[serial_port].tx_pin;
-    GPIO_Init(s_USART_Port[serial_port].tx_port, &GPIO_InitStructure);
-
-    /* Configure USART Rx as alternate function  */
-    GPIO_InitStructure.GPIO_Pin              = s_USART_Port[serial_port].rx_pin;
-    GPIO_Init(s_USART_Port[serial_port].rx_port, &GPIO_InitStructure);
+//    NVIC_Config(
+//          a_UARTSettings[serial_port].usart_irq_num,
+//          a_UARTSettings[serial_port].usart_irq_prio
+//    );
 
     /* USART configuration */
-    USART_Init(s_USART_Port[serial_port].usart, &USART_InitStructure);
+    USART_Init( a_UARTSettings[serial_port].usart, &USART_InitStructure );
 
     /* Enable USART */
-    USART_Cmd(s_USART_Port[serial_port].usart, ENABLE);
+    USART_Cmd( a_UARTSettings[serial_port].usart, ENABLE );
 
-    /* Enable USART interrupts */
-    USART_ITConfig(s_USART_Port[serial_port].usart, USART_IT_RXNE, ENABLE);
+//    /* Enable USART interrupts */
+//    USART_ITConfig(
+//          a_UARTSettings[serial_port].usart,                   /* Which USART */
+//          USART_IT_RXNE,                         /* Which interrupt to choose */
+//          ENABLE                                         /* ENABLE or DISABLE */
+//    );
 }
 
 /******************************************************************************/
 void Serial_DMAConfig(
-      USART_Port_T serial_port,
+      SerialPort_T serial_port,
       char *pBuffer,
       uint16_t wBufferLen
 )
 {
    assert(wBufferLen <= MAX_MSG_LEN);
 
-   s_USART_Port[serial_port].index = wBufferLen;
-   MEMCPY( s_USART_Port[serial_port].buffer, pBuffer, wBufferLen );
+   a_UARTSettings[serial_port].index = wBufferLen;
+   MEMCPY( a_UARTSettings[serial_port].buffer, pBuffer, wBufferLen );
 
    DMA_DeInit(DMA1_Stream4);
 
    DMA_InitTypeDef  DMA_InitStructure;
    DMA_InitStructure.DMA_Channel             = DMA_Channel_4;
    DMA_InitStructure.DMA_DIR                 = DMA_DIR_MemoryToPeripheral; // Transmit
-   DMA_InitStructure.DMA_Memory0BaseAddr     = (uint32_t)s_USART_Port[serial_port].buffer;
-   DMA_InitStructure.DMA_BufferSize          = (uint16_t)s_USART_Port[serial_port].index;
+   DMA_InitStructure.DMA_Memory0BaseAddr     = (uint32_t)a_UARTSettings[serial_port].buffer;
+   DMA_InitStructure.DMA_BufferSize          = (uint16_t)a_UARTSettings[serial_port].index;
 //   DMA_InitStructure.DMA_PeripheralBaseAddr  = (uint32_t)&UART4->DR;
-   DMA_InitStructure.DMA_PeripheralBaseAddr  = (uint32_t)&(s_USART_Port[serial_port].usart)->DR;
+   DMA_InitStructure.DMA_PeripheralBaseAddr  = (uint32_t)&(a_UARTSettings[serial_port].usart)->DR;
    DMA_InitStructure.DMA_PeripheralInc       = DMA_PeripheralInc_Disable;
    DMA_InitStructure.DMA_MemoryInc           = DMA_MemoryInc_Enable;
    DMA_InitStructure.DMA_PeripheralDataSize  = DMA_PeripheralDataSize_Byte;
@@ -203,7 +226,7 @@ void Serial_DMAConfig(
 
 /******************************************************************************/
 void Serial_DMAStartXfer(
-      USART_Port_T serial_port
+      SerialPort_T serial_port
 )
 {
    /* Enable the DMA TX Stream */
@@ -212,7 +235,7 @@ void Serial_DMAStartXfer(
 
 /******************************************************************************/
 uint32_t Serial_send_base64_enc_msg(
-      USART_Port_T serial_port,
+      SerialPort_T serial_port,
       char *message,
       uint16_t len
 )
@@ -232,7 +255,7 @@ uint32_t Serial_send_base64_enc_msg(
 
 /******************************************************************************/
 uint32_t Serial_send_raw_msg(
-      USART_Port_T serial_port,
+      SerialPort_T serial_port,
       char *message,
       uint16_t len
 )
@@ -249,13 +272,13 @@ uint32_t Serial_send_raw_msg(
    for ( uint16_t i = 0; i < len; i++ ) {
       uint32_t timeout = SERIAL_LONG_TIMEOUT;   // every byte starts a new timeout count
 
-      while( RESET == USART_GetFlagStatus( s_USART_Port[ serial_port ].usart, USART_FLAG_TXE ) ) {
+      while( RESET == USART_GetFlagStatus( a_UARTSettings[ serial_port ].usart, USART_FLAG_TXE ) ) {
          if( (timeout--) <= 0 ) {
             err_slow_printf("!!! - Hardware not responding while trying to send a serial msg\n");
             return ERR_SERIAL_HW_TIMEOUT;
          }
       }
-      USART_SendData( s_USART_Port[ serial_port ].usart, message[i] );
+      USART_SendData( a_UARTSettings[ serial_port ].usart, message[i] );
    }
 
    return ERR_NONE;
@@ -284,28 +307,28 @@ void UART4_IRQHandler(void)
 
         // A line feed signals the end of the data stream (message)
         if (data != '\n')  {
-            s_USART_Port[SYSTEM_SERIAL].buffer[ s_USART_Port[SYSTEM_SERIAL].index++ ] = data;
+            a_UARTSettings[SERIAL_SYS].buffer[ a_UARTSettings[SERIAL_SYS].index++ ] = data;
         } else {
-            s_USART_Port[SYSTEM_SERIAL].buffer[ s_USART_Port[SYSTEM_SERIAL].index++ ] = data;
+            a_UARTSettings[SERIAL_SYS].buffer[ a_UARTSettings[SERIAL_SYS].index++ ] = data;
             /* 1. Construct a new msg event indicating that a msg has been received */
             MsgEvt *msgEvt = Q_NEW( MsgEvt, MSG_RECEIVED_SIG );
 
             /* 2. Fill the msg payload with payload (the actual received msg)*/
-            MEMCPY( msgEvt->msg, s_USART_Port[SYSTEM_SERIAL].buffer, s_USART_Port[SYSTEM_SERIAL].index );
-            msgEvt->msg_len = s_USART_Port[SYSTEM_SERIAL].index;
+            MEMCPY( msgEvt->msg, a_UARTSettings[SERIAL_SYS].buffer, a_UARTSettings[SERIAL_SYS].index );
+            msgEvt->msg_len = a_UARTSettings[SERIAL_SYS].index;
             msgEvt->msg_src = SERIAL;
 
             /* 3. Publish the newly created event to current AO */
             QF_PUBLISH( (QEvent *)msgEvt, AO_SerialMgr );
 
             // Reset the serial receive buffer
-            s_USART_Port[SYSTEM_SERIAL].index = 0;
+            a_UARTSettings[SERIAL_SYS].index = 0;
         }
 
         //This check serves as the timeout for the While loop and also protects serial_index from running over
-        if ( s_USART_Port[SYSTEM_SERIAL].index >= MAX_MSG_LEN ) {
+        if ( a_UARTSettings[SERIAL_SYS].index >= MAX_MSG_LEN ) {
            err_slow_printf("Attempting to send a serial msg over %d bytes which will overrun the buffer.", MAX_MSG_LEN);
-           assert( s_USART_Port[SYSTEM_SERIAL].index >= MAX_MSG_LEN );
+           assert( a_UARTSettings[SERIAL_SYS].index >= MAX_MSG_LEN );
         }
     }
     QK_ISR_EXIT();                        /* inform QK about exiting an ISR */

@@ -24,8 +24,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <stdio.h>
-#include "stm32f2xx.h"                                     /* For __get_MSP() */
-#include "stm32f2xx_usart.h"                              /* For UART support */
+#include "stm32f4xx.h"                                     /* For __get_MSP() */
+#include "stm32f4xx_usart.h"                             /* For USART support */
 #include "Shared.h"                                     /* For MEMCPY/SMEMCPY */
 
 /* Compile-time called macros ------------------------------------------------*/
@@ -36,21 +36,21 @@
  * @brief Standard out redirect to UART
  */
 #ifndef STDOUT_USART
-#define STDOUT_USART 4
+#define STDOUT_USART 1
 #endif
 
 /**
  * @brief Standard error redirect to UART
  */
 #ifndef STDERR_USART
-#define STDERR_USART 4
+#define STDERR_USART 1
 #endif
 
 /**
  * @brief Standard in redirect to UART
  */
 #ifndef STDIN_USART
-#define STDIN_USART 4
+#define STDIN_USART 1
 #endif
 
 /* Private macros ------------------------------------------------------------*/
@@ -137,7 +137,6 @@ int _read(int file, char *ptr, int len)
       case STDIN_FILENO:
          for (n = 0; n < len; n++) {
 #if   STDIN_USART == 1
-            char c = Usart1Get();
             while ((USART1->SR & USART_FLAG_RXNE) == (uint16_t)RESET) {}
             char c = (char)(USART1->DR & (uint16_t)0x01FF);
 #elif STDIN_USART == 2
@@ -169,12 +168,10 @@ int _write(int file, char *ptr, int len)
       case STDOUT_FILENO: /*stdout*/
          for (n = 0; n < len; n++) {
 #if STDOUT_USART == 1
-            Usart1Put(*ptr++ & (uint16_t)0x01FF);
             while ((USART1->SR & USART_FLAG_TC) == (uint16_t)RESET) {}
             USART1->DR = (*ptr++ & (uint16_t)0x01FF);
 #elif  STDOUT_USART == 2
-            while ((USART2->SR & USART_FLAG_TC) == (uint16_t) RESET) {
-            }
+            while ((USART2->SR & USART_FLAG_TC) == (uint16_t) RESET) {}
             USART2->DR = (*ptr++ & (uint16_t) 0x01FF);
 #elif  STDOUT_USART == 3
             while ((USART3->SR & USART_FLAG_TC) == (uint16_t)RESET) {}
@@ -188,10 +185,10 @@ int _write(int file, char *ptr, int len)
       case STDERR_FILENO: /* stderr */
          for (n = 0; n < len; n++) {
 #if STDERR_USART == 1
-            Usart1Put(*ptr++ & (uint16_t)0x01FF);
+            while ((USART1->SR & USART_FLAG_TC) == (uint16_t)RESET) {}
+            USART1->DR = (*ptr++ & (uint16_t)0x01FF);
 #elif  STDERR_USART == 2
-            while ((USART2->SR & USART_FLAG_TC) == (uint16_t) RESET) {
-            }
+            while ((USART2->SR & USART_FLAG_TC) == (uint16_t) RESET) {}
             USART2->DR = (*ptr++ & (uint16_t) 0x01FF);
 #elif  STDERR_USART == 3
             while ((USART3->SR & USART_FLAG_TC) == (uint16_t)RESET) {}

@@ -1,11 +1,11 @@
 ##############################################################################
 # Product: Makefile for Project
-# Date of the Last Update:  Jul 16, 2012
+# Date of the Last Update:  Aug 7, 2014
 #
 #                             Datacard 
 #                    ---------------------------
 #
-# Copyright (C) 2012 Datacard. All rights reserved.
+# Copyright (C) 2014 Datacard. All rights reserved.
 #
 ##############################################################################
 # examples of invoking this Makefile:
@@ -58,7 +58,36 @@ TRACEON=$(TRACE:0=@)
 TRACE_FLAG=$(TRACEON:1=)
 
 # Output file basename (should be the same as the directory name)
-PROJECT_NAME			= L1BootLdr
+PROJECT_NAME			= CBBootLdr
+
+#------------------------------------------------------------------------------
+#  MCU SETUP - This specifies which core to pass down to all the other makefiles
+#  and to compile options for different ARM cortex-m processors.
+#------------------------------------------------------------------------------
+MCU                     = cortex-m4-vfp
+
+ifeq (cortex-m0, $(MCU))
+	ARM_CORE            = cortex-m0
+	MFLAGS              = -mcpu=$(ARM_CORE) -mthumb -mfloat-abi=soft
+else ifeq (cortex-m0plus, $(MCU))
+	ARM_CORE            = cortex-m0plus
+	MFLAGS              = -mcpu=$(ARM_CORE) -mthumb -mfloat-abi=soft
+else ifeq (cortex-m3, $(MCU))
+	ARM_CORE            = cortex-m3
+	MFLAGS              = -mcpu=$(ARM_CORE) -mthumb -mfloat-abi=soft
+else ifeq (cortex-m4-vfp, $(MCU))
+	ARM_CORE            = cortex-m4
+	ARM_FPU             = fpv4-sp-d16
+	MFLAGS              = -mcpu=$(ARM_CORE) -mfpu=$(ARM_FPU) \
+						  -mlittle-endian -mthumb -mthumb-interwork
+else ifeq (cortex-m4-fpv4-sp-d16, $(MCU))
+	ARM_CORE            = cortex-m4
+	ARM_FPU             = fpv4-sp-d16
+	MFLAGS              = -mcpu=$(ARM_CORE) -mfpu=$(ARM_FPU) -mfloat-abi=softfp \
+	                      -mlittle-endian -mthumb -mthumb-interwork
+else
+	$(error Must specify the MCU, like MCU=cortex-m0 )
+endif
 
 #------------------------------------------------------------------------------
 #  TOOLCHAIN SETUP
@@ -97,7 +126,7 @@ QPC 					= $(SYS_DIR)/qpc_shared
 QP_PORT_DIR 			= $(QPC)/ports/arm-cm/qk/gnu
 
 # STM32 Drivers
-STM32F2XX_STD_PERIPH	= $(BSP_DIR)/bsp_shared/STM32F2xx_StdPeriph_Driver_shared
+STM32F4XX_STD_PERIPH	= $(BSP_DIR)/bsp_shared/STM32F4xx_StdPeriph_Driver
 
 # LWIP
 LWIP_DIR				= $(SYS_DIR)/lwip_shared
@@ -129,7 +158,7 @@ VPATH 					= $(APP_DIR) \
 						  $(BASE64_DIR) \
 						  $(BSP_DIR)/bsp_shared/runtime \
 						  \
-						  $(STM32F2XX_STD_PERIPH)/src
+						  $(STM32F4XX_STD_PERIPH)/src
 
 # include directories
 INCLUDES  				= -I$(SRC_DIR) \
@@ -155,24 +184,30 @@ INCLUDES  				= -I$(SRC_DIR) \
 						  -I$(LWIP_DIR)/src/include/ipv4 \
 						  \
 						  -I$(BSP_DIR)/bsp_shared/CMSIS_shared/Include \
-						  -I$(BSP_DIR)/bsp_shared/CMSIS_shared/Device/ST/STM32F2xx/Include \
+						  -I$(BSP_DIR)/bsp_shared/CMSIS_shared/Device/ST/STM32F4xx/Include \
 						  \
 						  -I$(QP_LWIP_PORT_DIR) \
 						  -I$(QP_LWIP_PORT_DIR)/arch \
 						  -I$(QP_LWIP_PORT_DIR)/netif \
 						  \
-						  -I$(STM32F2XX_STD_PERIPH)/inc
+						  -I$(STM32F4XX_STD_PERIPH)/inc
 
 #-----------------------------------------------------------------------------
 # defines
-# HSE_VALUE=8000000 overrides the External Clock setting for the Redwood L1
+# HSE_VALUE=8000000 overrides the External Clock setting for the 
 # board since the development kit runs at a 25MHz external clock
 #-----------------------------------------------------------------------------
-DEFINES   				= -DUSE_STM322xG_EVAL \
+#DEFINES   				= -DSTM32F439xx \
+#						  -DUSE_STDPERIPH_DRIVER \
+#						  -DHSE_VALUE=8000000 \
+#						  -DLWIP_TCP=1 \
+#						  -DFLASH_BASE=0x08000000
+
+# Temporary for devel kit						  
+DEFINES                 = -DSTM32F429_439xx \
 						  -DUSE_STDPERIPH_DRIVER \
-						  -DHSE_VALUE=8000000 \
 						  -DLWIP_TCP=1 \
-						  -DFLASH_BASE=0x08000000
+						  -DFLASH_BASE=0x08000000			  
 						  
 #-----------------------------------------------------------------------------
 # files
@@ -180,56 +215,38 @@ DEFINES   				= -DUSE_STM322xG_EVAL \
 
 # assembler source files
 ASM_SRCS 				:= \
-						startup_stm32f2xx.S \
+						startup_stm32f429xx.S \
 						memcpy.S \
 						stm32_hardfault_handler.S
 
 # C source files
-C_SRCS 					:= \
-			      		main.c \
-			      		CommStackMgr.c \
-			      		stm32f2xx_it.c \
-			      		system_stm32f2xx.c \
-			      		no_heap.c \
-			      		\
-			      		LWIPMgr.c \
-			      		\
-			      		stm32f2x7_eth_bsp.c \
-			      		stm32f2x7_eth.c \
+C_SRCS					:= \
 						\
-			      		bsp.c \
-			      		i2c.c \
-			      		I2CMgr.c \
-			      		time.c \
-			      		lwip.c \
-			      		SerialMgr.c \
-			      		serial.c \
-			      		console_output.c \
-			      		crc32compat.c \
-						stm32f2xx_it.c \
-			      		system_stm32f2xx.c \
-			      		\
-			      		cencode.c \
-			      		cdecode.c \
-			      		base64_wrapper.c \
-			      		\
-			      		eth_driver.c \
-			      		\
-			      		syscalls.c \
+						main.c \
+						no_heap.c \
 						\
-			      		misc.c  \
-			      		stm32f2xx_crc.c \
-			      		stm32f2xx_dma.c \
-			      		stm32f2xx_exti.c \
-			      		stm32f2xx_flash.c \
-			      		stm32f2xx_i2c.c \
-						stm32f2xx_gpio.c \
-			      		stm32f2xx_pwr.c \
-			      		stm32f2xx_rcc.c \
-			      		stm32f2xx_rtc.c \
-			      		stm32f2xx_syscfg.c \
-			      		stm32f2xx_tim.c \
-			      		stm32f2xx_usart.c
+						bsp.c \
+						system_stm32f4xx.c \
+						stm32f4xx_it.c \
+						\
+						syscalls.c\
+						\
+						serial.c \
+						console_output.c \
+						\
+			            misc.c  \
+			      		stm32f4xx_crc.c \
+			      		stm32f4xx_dma.c \
+			      		stm32f4xx_exti.c \
+			      		stm32f4xx_flash.c \
+			      		stm32f4xx_i2c.c \
+						stm32f4xx_gpio.c \
+			      		stm32f4xx_pwr.c \
+			      		stm32f4xx_rcc.c \
+			      		stm32f4xx_rtc.c \
+			      		stm32f4xx_syscfg.c \
+			      		stm32f4xx_tim.c \
+			      		stm32f4xx_usart.c
 			      		
 			      		
 # Temporarily not compiled files.  These will need to be added back in before
@@ -237,49 +254,50 @@ C_SRCS 					:= \
 #			      		flash_if.c \
 			      		
 # Add these back in once that hardware is actually needed. HR.			      		
-#			      		stm32f2xx_adc.c  \
-#			      		stm32f2xx_can.c \
-#			      		stm32f2xx_cryp.c \
-#			      		stm32f2xx_cryp_aes.c \
-#			      		stm32f2xx_cryp_des.c \
-#			      		stm32f2xx_cryp_tdes.c \
-#			      		stm32f2xx_dac.c \
-#			      		stm32f2xx_dbgmcu.c \
-#			      		stm32f2xx_fsmc.c \
-#			      		stm32f2xx_hash.c \
-#			      		stm32f2xx_hash_md5.c \
-#			      		stm32f2xx_hash_sha1.c \
-#			      		stm32f2xx_iwdg.c \
-#			      		stm32f2xx_rng.c \
-#			      		stm32f2xx_sdio.c \
-#			      		stm32f2xx_spi.c \
-#			      		stm32f2xx_wwdg.c
+#			      		stm32f4xx_adc.c  \
+#			      		stm32f4xx_can.c \
+#			      		stm32f4xx_cryp.c \
+#			      		stm32f4xx_cryp_aes.c \
+#			      		stm32f4xx_cryp_des.c \
+#			      		stm32f4xx_cryp_tdes.c \
+#			      		stm32f4xx_dac.c \
+#			      		stm32f4xx_dbgmcu.c \
+#			      		stm32f4xx_dcmi.c \
+#			      		stm32f4xx_dmad2.c \
+#			      		stm32f4xx_fmc.c \
+#			      		stm32f4xx_fsmc.c \
+#			      		stm32f4xx_hash.c \
+#			      		stm32f4xx_hash_md5.c \
+#			      		stm32f4xx_hash_sha1.c \
+#			      		stm32f4xx_iwdg.c \
+#			      		stm32f4xx_ltdc.c \
+#			      		stm32f4xx_rng.c \
+#			      		stm32f4xx_sai.c \
+#			      		stm32f4xx_sdio.c \
+#			      		stm32f4xx_spi.c \
+#			      		stm32f4xx_wwdg.c
 						
-
 # C++ source files
 CPP_SRCS 				:=	$(wildcard *.cpp)
 
 
-LD_SCRIPT 				:= $(BSP_DIR)/linkerscript/stm32f207flash.ld
+LD_SCRIPT 				:= $(BSP_DIR)/linkerscript/stm32f439flash.ld
 LDFLAGS  				:= -T$(LDSCRIPT)
 
 #-----------------------------------------------------------------------------
 # build options for various configurations
 #
 
-ARM_CORE 	= cortex-m3
-
-
 ifeq (rel, $(CONF))       # Release configuration ............................
 
 BIN_DIR 	:= rel
 DEFINES		+= -DNDEBUG
 LIBS    	:= -lqp_$(ARM_CORE)_cs -llwip_$(ARM_CORE)_cs
-ASFLAGS 	= -mthumb -mcpu=$(ARM_CORE)
-CFLAGS 		= -mcpu=$(ARM_CORE) -std=gnu99 -mthumb -Wall -ffunction-sections -fdata-sections \
+ASFLAGS 	= $(MFLAGS)
+CFLAGS 		= $(MFLAGS) -std=gnu99 -Wall -ffunction-sections -fdata-sections \
 			  -Os $(INCLUDES) $(DEFINES)
 
-CPPFLAGS 	= -mcpu=$(ARM_CORE) -mthumb \
+CPPFLAGS 	= $(MFLAGS) \
 			  -Wall -fno-rtti -fno-exceptions \
 			  -Os $(INCLUDES) $(DEFINES)
 
@@ -290,11 +308,11 @@ else ifeq (spy, $(CONF))  # Spy configuration ................................
 BIN_DIR 	:= spy
 DEFINES		+= -DQ_SPY
 LIBS    	:= -lqp_$(ARM_CORE)_cs -llwip_$(ARM_CORE)_cs
-ASFLAGS 	= -g -mthumb -mcpu=$(ARM_CORE)
-CFLAGS 		= -mcpu=$(ARM_CORE) -std=gnu99 -mthumb -Wall -ffunction-sections -fdata-sections \
+ASFLAGS 	= -g $(MFLAGS)
+CFLAGS 		= $(MFLAGS) -std=gnu99 -Wall -ffunction-sections -fdata-sections \
 			  -Os -g -O $(INCLUDES) $(DEFINES)
 
-CPPFLAGS 	= -mcpu=$(ARM_CORE) -mthumb \
+CPPFLAGS 	= $(MFLAGS) \
 			  -Wall -fno-rtti -fno-exceptions \
 			  -g -O $(INCLUDES) $(DEFINES)
 
@@ -304,11 +322,11 @@ else                     # default Debug configuration .......................
 
 BIN_DIR 	:= dbg
 LIBS    	:= -lqp_$(ARM_CORE)_cs -llwip_$(ARM_CORE)_cs
-ASFLAGS 	= -g -mthumb -mcpu=$(ARM_CORE)
-CFLAGS 		= -mcpu=$(ARM_CORE) -std=gnu99 -mthumb -Wall -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,--strip-all \
+ASFLAGS 	= -g $(MFLAGS)
+CFLAGS 		= $(MFLAGS) -std=gnu99 -Wall -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,--strip-all \
 			  -g -Os $(INCLUDES) $(DEFINES)
 
-CPPFLAGS 	= -mcpu=$(ARM_CORE) -mthumb \
+CPPFLAGS 	= $(MFLAGS) \
 			  -Wall -fno-rtti -fno-exceptions \
 			  -g -O $(INCLUDES) $(DEFINES)
 	
@@ -409,14 +427,14 @@ build_qpc:
 	@echo ---------------------------
 	@echo --- Building QPC libraries ---
 	@echo ---------------------------
-	$(TRACE_FLAG)cd $(QP_PORT_DIR); make CONF=$(BIN_DIR)
+	$(TRACE_FLAG)cd $(QP_PORT_DIR); make MCU=$(MCU) CONF=$(BIN_DIR)
 
 build_lwip:
 	@echo ---------------------------
 	@echo --- Building LWIP libraries ---
 	@echo ----Passing in current proj directory
 	#TODO: The passed in directories must be relative to the LWIP library, not this project
-	$(TRACE_FLAG)cd $(LWIP_DIR); make LWIP_PORT_DIR=$(LWIP_PORT_FOR_LWIP) PROJ_BSP=$(BSP_DIR_FOR_LWIP) LWIP_SRC_DIR=$(LWIP_SRC_DIR) TRACE=$(TRACE)
+	$(TRACE_FLAG)cd $(LWIP_DIR); make MCU=$(MCU) CONF=$(BIN_DIR) LWIP_PORT_DIR=$(LWIP_PORT_FOR_LWIP) PROJ_BSP=$(BSP_DIR_FOR_LWIP) LWIP_SRC_DIR=$(LWIP_SRC_DIR) TRACE=$(TRACE)
 
 $(BIN_DIR)/%.d : %.c
 	$(TRACE_FLAG)$(CC) -MM -MT $(@:.d=.o) $(CFLAGS) $< > $@
@@ -446,12 +464,12 @@ cleanall:
 	@echo ---------------------------
 	@echo --- Cleaning EVERYTHING
 	@echo ---------------------------
-	$(TRACE_FLAG)cd $(QP_PORT_DIR); make CONF=dbg clean
-	$(TRACE_FLAG)cd $(QP_PORT_DIR); make CONF=spy clean
-	$(TRACE_FLAG)cd $(QP_PORT_DIR); make CONF=rel clean
-	$(TRACE_FLAG)cd $(LWIP_DIR); make LWIP_PORT_DIR=$(LWIP_PORT_FOR_LWIP) PROJ_BSP=$(BSP_DIR_FOR_LWIP) LWIP_SRC_DIR=$(LWIP_SRC_DIR) CONF=dbg clean
-	$(TRACE_FLAG)cd $(LWIP_DIR); make LWIP_PORT_DIR=$(LWIP_PORT_FOR_LWIP) PROJ_BSP=$(BSP_DIR_FOR_LWIP) LWIP_SRC_DIR=$(LWIP_SRC_DIR) CONF=spy clean
-	$(TRACE_FLAG)cd $(LWIP_DIR); make LWIP_PORT_DIR=$(LWIP_PORT_FOR_LWIP) PROJ_BSP=$(BSP_DIR_FOR_LWIP) LWIP_SRC_DIR=$(LWIP_SRC_DIR) CONF=rel clean
+	$(TRACE_FLAG)cd $(QP_PORT_DIR); make MCU=$(MCU) CONF=dbg clean
+	$(TRACE_FLAG)cd $(QP_PORT_DIR); make MCU=$(MCU) CONF=spy clean
+	$(TRACE_FLAG)cd $(QP_PORT_DIR); make MCU=$(MCU) CONF=rel clean
+	$(TRACE_FLAG)cd $(LWIP_DIR); make LWIP_PORT_DIR=$(LWIP_PORT_FOR_LWIP) PROJ_BSP=$(BSP_DIR_FOR_LWIP) LWIP_SRC_DIR=$(LWIP_SRC_DIR) MCU=$(MCU) CONF=dbg clean
+	$(TRACE_FLAG)cd $(LWIP_DIR); make LWIP_PORT_DIR=$(LWIP_PORT_FOR_LWIP) PROJ_BSP=$(BSP_DIR_FOR_LWIP) LWIP_SRC_DIR=$(LWIP_SRC_DIR) MCU=$(MCU) CONF=spy clean
+	$(TRACE_FLAG)cd $(LWIP_DIR); make LWIP_PORT_DIR=$(LWIP_PORT_FOR_LWIP) PROJ_BSP=$(BSP_DIR_FOR_LWIP) LWIP_SRC_DIR=$(LWIP_SRC_DIR) MCU=$(MCU) CONF=rel clean
 	-$(RM) dbg/*.o dbg/*.d dbg/*.hex dbg/*.elf dbg/*.map dbg
 	-$(RM) spy/*.o spy/*.d spy/*.hex spy/*.elf spy/*.map rel
 	-$(RM) rel/*.o rel/*.d rel/*.hex rel/*.elf rel/*.map spy
@@ -472,7 +490,7 @@ clean_qpc_libs:
 	@echo ---------------------------
 	@echo --- Cleaning QPC libraries
 	@echo ---------------------------
-	$(TRACE_FLAG)cd $(QP_PORT_DIR); make CONF=$(BIN_DIR) clean
+	$(TRACE_FLAG)cd $(QP_PORT_DIR); make MCU=$(MCU) CONF=$(BIN_DIR) clean
 
 show:
 	@echo CONF = $(CONF)
@@ -485,3 +503,4 @@ show:
 	@echo CPP_DEPS_EXT = $(CPP_DEPS_EXT)
 	@echo TARGET_ELF = $(TARGET_ELF)
 	@echo LIBS = $(LIBS)
+	@echo MCU = $(MCU)

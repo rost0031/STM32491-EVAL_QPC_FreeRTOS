@@ -25,7 +25,7 @@
 #define TIME_H__
 
 /* Includes ------------------------------------------------------------------*/
-#include "stm32f2xx_rtc.h"
+#include "stm32f4xx.h"                                 /* For STM32F4 support */
 
 /* Exported defines ----------------------------------------------------------*/
 /* Exported macros -----------------------------------------------------------*/
@@ -38,8 +38,8 @@
  */
 typedef struct
 {
-   RTC_TimeTypeDef   hour_min_sec;   /**< STM32 Time struct with h, m, and s. */
-   uint32_t          sub_sec;   /**< uint32_t subsecond timer from 0 - 10000. */
+//   RTC_TimeTypeDef   hour_min_sec;   /**< STM32 Time struct with h, m, and s. */
+//   uint32_t          sub_sec;   /**< uint32_t subsecond timer from 0 - 10000. */
 }time_T;
 
 /* Exported constants --------------------------------------------------------*/

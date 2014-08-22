@@ -31,9 +31,38 @@ endif
 
 
 #------------------------------------------------------------------------------
+#  MCU SETUP - these defaults can be overridden by passing in MCU=
+#------------------------------------------------------------------------------
+ARM_CORE 					= cortex-m3
+MFLAGS                      = -mcpu=$(ARM_CORE) -mthumb -mfloat-abi=soft
+
+ifeq (cortex-m0, $(MCU))
+	ARM_CORE                = cortex-m0
+	MFLAGS                  = -mcpu=$(ARM_CORE) -mthumb -mfloat-abi=soft
+else ifeq (cortex-m0plus, $(MCU))
+	ARM_CORE                = cortex-m0plus
+	MFLAGS                  = -mcpu=$(ARM_CORE) -mthumb -mfloat-abi=soft
+else ifeq (cortex-m3, $(MCU))
+	ARM_CORE                = cortex-m3
+	MFLAGS                  = -mcpu=$(ARM_CORE) -mthumb -mfloat-abi=soft
+else ifeq (cortex-m4-vfp, $(MCU))
+	ARM_CORE                = cortex-m4
+	ARM_FPU                 = fpv4-sp-d16
+	MFLAGS                  = -mcpu=$(ARM_CORE) -mfpu=$(ARM_FPU) \
+							  -mlittle-endian -mthumb -mthumb-interwork
+else ifeq (cortex-m4-fpv4-sp-d16, $(MCU))
+	ARM_CORE                = cortex-m4
+	ARM_FPU                 = fpv4-sp-d16
+	MFLAGS                  = -mcpu=$(ARM_CORE) -mfpu=$(ARM_FPU) -mfloat-abi=softfp \
+	                          -mlittle-endian -mthumb -mthumb-interwork
+else
+	$(error Must specify the MCU, like MCU=cortex-m0 )
+endif
+
+
+#------------------------------------------------------------------------------
 #  TOOLCHAIN SETUP
 #------------------------------------------------------------------------------
-ARM_CORE 				= cortex-m3
 CROSS    				= arm-none-eabi-
 CC       				= $(CROSS)gcc
 CPP      				= $(CROSS)g++
@@ -49,25 +78,26 @@ MKDIR    				= mkdir
 # TODO: fix this section since the CONF flag is not used but there is 
 # debugging that can be enabled/disabled in LWIP
 
-ARM_CORE 				= cortex-m3
-
 ifeq (rel, $(CONF))       # Release configuration ............................
 
-BINDIR   				=$(LWIP_DIR)/rel
-CFLAGS  				=-c -mcpu=$(ARM_CORE) -std=gnu99 -mthumb -Wall -ffunction-sections -fdata-sections -Os -DNDEBUG
-ASMFLAGS 				=-c -mcpu=$(ARM_CORE)
+BINDIR   				= $(LWIP_DIR)/rel
+CFLAGS  				= -c $(MFLAGS) -std=gnu99 -mthumb -Wall \
+                          -ffunction-sections -fdata-sections -Os -DNDEBUG
+ASMFLAGS 				= -c $(MFLAGS)
 
 else ifeq (spy, $(CONF))  # Spy configuration ................................
 
-BINDIR   				=$(LWIP_DIR)/spy
-CFLAGS  				=-g -c -mcpu=$(ARM_CORE) -std=gnu99 -mthumb -Wall -ffunction-sections -fdata-sections -Os -DQ_SPY
-ASMFLAGS 				=-g -c -mcpu=$(ARM_CORE)
+BINDIR   				= $(LWIP_DIR)/spy
+CFLAGS  				= -g -c $(MFLAGS) -std=gnu99 -mthumb -Wall \
+                          -ffunction-sections -fdata-sections -Os -DQ_SPY
+ASMFLAGS 				= -g -c $(MFLAGS)
 
 else                     # default Debug configuration .......................
 
 BINDIR   				= $(LWIP_DIR)/dbg
-CFLAGS  				= -g -c -mcpu=$(ARM_CORE) -std=gnu99 -mthumb -Wall -ffunction-sections -fdata-sections -Os
-ASMFLAGS 				= -g -c -mcpu=$(ARM_CORE)
+CFLAGS  				= -g -c $(MFLAGS) -std=gnu99 -mthumb -Wall \
+                          -ffunction-sections -fdata-sections -Os
+ASMFLAGS 				= -g -c $(MFLAGS)
 
 endif
 

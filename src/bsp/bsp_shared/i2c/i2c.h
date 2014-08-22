@@ -20,10 +20,7 @@ extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
-#include "stm32f2xx.h"
-#include "stm32f2xx_i2c.h"
-#include "stm32f2xx_rcc.h"
-#include "stm32f2xx_gpio.h"
+#include "stm32f4xx.h"                                 /* For STM32F4 support */
 #include "bsp.h"
 
 /* Exported defines ----------------------------------------------------------*/

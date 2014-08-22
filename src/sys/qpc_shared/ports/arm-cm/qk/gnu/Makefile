@@ -38,9 +38,37 @@
 # make CONF=spy clean
 
 #------------------------------------------------------------------------------
-#  TOOLCHAIN SETUP
+#  MCU SETUP - these defaults can be overridden by passing in MCU=
 #------------------------------------------------------------------------------
 ARM_CORE 					= cortex-m3
+MFLAGS                      = -mcpu=$(ARM_CORE) -mthumb -mfloat-abi=soft
+
+ifeq (cortex-m0, $(MCU))
+	ARM_CORE                = cortex-m0
+	MFLAGS                  = -mcpu=$(ARM_CORE) -mthumb -mfloat-abi=soft
+else ifeq (cortex-m0plus, $(MCU))
+	ARM_CORE                = cortex-m0plus
+	MFLAGS                  = -mcpu=$(ARM_CORE) -mthumb -mfloat-abi=soft
+else ifeq (cortex-m3, $(MCU))
+	ARM_CORE                = cortex-m3
+	MFLAGS                  = -mcpu=$(ARM_CORE) -mthumb -mfloat-abi=soft
+else ifeq (cortex-m4-vfp, $(MCU))
+	ARM_CORE                = cortex-m4
+	ARM_FPU                 = fpv4-sp-d16
+	MFLAGS                  = -mcpu=$(ARM_CORE) -mfpu=$(ARM_FPU) \
+							  -mlittle-endian -mthumb -mthumb-interwork
+else ifeq (cortex-m4-fpv4-sp-d16, $(MCU))
+	ARM_CORE                = cortex-m4
+	ARM_FPU                 = fpv4-sp-d16
+	MFLAGS                  = -mcpu=$(ARM_CORE) -mfpu=$(ARM_FPU) -mfloat-abi=softfp \
+	                          -mlittle-endian -mthumb -mthumb-interwork
+else
+	$(error Must specify the MCU, like MCU=cortex-m0 )
+endif
+
+#------------------------------------------------------------------------------
+#  TOOLCHAIN SETUP
+#------------------------------------------------------------------------------
 CROSS    					= arm-none-eabi-
 CC      					= $(CROSS)gcc
 CPP      					= $(CROSS)g++
@@ -65,7 +93,7 @@ QP_PRTDIR  					= .
 LIBFLAGS   					= rs
 QS_OBJS    					=
 
-CCINC      = -I$(QP_PRTDIR) -I$(QP_INCDIR)
+CCINC                       = -I$(QP_PRTDIR) -I$(QP_INCDIR)
 
 #-----------------------------------------------------------------------------
 # build options for various configurations
@@ -77,8 +105,8 @@ BINDIR  					= rel
 # gcc options
 # -c    : compile only
 # -O    : optimize
-CCFLAGS 					= -c -mcpu=$(ARM_CORE) -std=gnu99 -mthumb -Wall -ffunction-sections -fdata-sections -Os -DNDEBUG -o$@
-ASMFLAGS 					= -c -mcpu=$(ARM_CORE) -mthumb
+CCFLAGS 					= -c $(MFLAGS) -std=gnu99 -Wall -ffunction-sections -fdata-sections -Os -DNDEBUG -o$@
+ASMFLAGS 					= -c $(MFLAGS)
 else ifeq (spy, $(CONF))  # Spy configuration ................................
 BINDIR  = spy
 
@@ -86,20 +114,20 @@ BINDIR  = spy
 # -c    : compile only
 # -g    : source level debugging
 # -D    : define preprocessor macro
-CCFLAGS 					= -g -c -mcpu=$(ARM_CORE) -std=gnu99 -mthumb -Wall -ffunction-sections -fdata-sections -Os -DQ_SPY -o$@
-QS_CSRC   					= 	qs.c \
-					          	qs_.c \
-					          	qs_blk.c \
-					          	qs_byte.c \
-					          	qs_dict.c \
-					          	qs_f32.c \
-					          	qs_f64.c \
-					          	qs_mem.c \
-					          	qs_str.c
+CCFLAGS 					= -g -c $(MFLAGS) -std=gnu99 -Wall -ffunction-sections -fdata-sections -Os -DQ_SPY -o$@
+QS_CSRC   					= qs.c \
+					          qs_.c \
+					          qs_blk.c \
+					          qs_byte.c \
+					          qs_dict.c \
+					          qs_f32.c \
+					          qs_f64.c \
+					          qs_mem.c \
+					          qs_str.c
 					          	
 QS_OBJS 					= $(patsubst %.c, $(BINDIR)/%.o, $(QS_CSRC))
 
-ASMFLAGS 					= -g -c -mcpu=$(ARM_CORE) -mthumb
+ASMFLAGS 					= -g -c $(MFLAGS)
 else                     # default Debug configuration .......................
 
 BINDIR  					= dbg
@@ -108,8 +136,8 @@ QP_DEP  					= $(QP_INCDIR)\qassert.h
 # gcc options
 # -c    : compile only
 # -g    : source level debugging
-CCFLAGS 					= -g -c -mcpu=$(ARM_CORE) -std=gnu99 -mthumb -Wall -ffunction-sections -fdata-sections -Os
-ASMFLAGS 					= -g -c -mcpu=$(ARM_CORE) -mthumb
+CCFLAGS 					= -g -c $(MFLAGS) -std=gnu99 -Wall -ffunction-sections -fdata-sections -Os
+ASMFLAGS 					= -g -c $(MFLAGS)
 endif
 
 VPATH = $(QEP_SRCDIR) $(QF_SRCDIR) $(QS_SRCDIR) $(QK_SRCDIR) $(QP_PRTDIR)/src
