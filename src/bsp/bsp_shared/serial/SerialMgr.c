@@ -37,6 +37,7 @@
 #include "SerialMgr.h"
 #include "project_includes.h"         /* Includes common to entire project. */
 #include "bsp.h"        /* For seconds to bsp tick conversion (SEC_TO_TICK) */
+#include "serial.h"                           /* For low level serial support */
 
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE;                 /* For QSPY to know the name of this file */
@@ -230,7 +231,7 @@ static QState SerialMgr_Idle(SerialMgr * const me, QEvt const * const e) {
             /* Set up the DMA buffer here.  This copies the data from the event to the UART's
              * private buffer as well to avoid someone overwriting it */
             Serial_DMAConfig(
-                SYSTEM_SERIAL,
+                SERIAL_SYS,
                 (char *)((SerialDataEvt const *) e)->buffer,
                 ((SerialDataEvt const *) e)->wBufferLen
             );
@@ -268,7 +269,7 @@ static QState SerialMgr_Busy(SerialMgr * const me, QEvt const * const e) {
             );
 
             /* Start the DMA transfer over serial */
-            Serial_DMAStartXfer( SYSTEM_SERIAL );
+            Serial_DMAStartXfer( SERIAL_SYS );
             status_ = Q_HANDLED();
             break;
         }

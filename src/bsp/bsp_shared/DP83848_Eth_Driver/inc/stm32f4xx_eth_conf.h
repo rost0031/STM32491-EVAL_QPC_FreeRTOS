@@ -1,27 +1,27 @@
 /**
- * @file   stm32f2x7_eth_conf.h
- * @brief  Configuration file for the STM32F2x7 ETH MAC driver.
+ * @file   stm32f4xx_eth_conf.h
+ * @brief  Configuration file for the STM32F4xx ETH MAC driver.
  *
- * @date   09/27/2012
+ * @date   08/25/2015
  * @author Harry Rostovtsev
  * @email  harry_rostovtsev@datacard.com
- * Copyright (C) 2012 Datacard. All rights reserved.
+ * Copyright (C) 2014 Datacard. All rights reserved.
  *
- * @addtogroup groupKSZ8863
+ * @addtogroup groupDP83848
  * @{
  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __STM32F2x7_ETH_CONF_H
-#define __STM32F2x7_ETH_CONF_H
+#ifndef __STM32F2xx_ETH_CONF_H
+#define __STM32F2xx_ETH_CONF_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
-#include "stm32f2xx.h"
-#include "stm32f2x7_eth.h"
+#include "stm32f4xx.h"                                 /* For STM32F4 support */
+#include "stm32f4xx_eth.h"
 
 /* Exported defines ----------------------------------------------------------*/
 
@@ -82,7 +82,6 @@ extern "C" {
 #define ETH_TXBUFNB        2
 #endif
 
-#if 0  // START - None of this is needed for KSZ8863 since we are not talking to the PHY
 /* PHY configuration section **************************************************/
 /* PHY Reset delay */ 
 #define PHY_RESET_DELAY    ((uint32_t)0x000FFFFF) 
@@ -97,7 +96,6 @@ extern "C" {
    have to update this value depending on the used external PHY */
 #define PHY_SPEED_STATUS            ((uint16_t)0x0002) /* Value for DP83848 PHY */
 #define PHY_DUPLEX_STATUS           ((uint16_t)0x0004) /* Value for DP83848 PHY */
-#endif
 
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
@@ -110,8 +108,8 @@ extern "C" {
 
 /**
  * @}
- * end addtogroup groupKSZ8863
+ * end addtogroup groupDP83848
  */
 
-#endif                                              /* __STM32F2x7_ETH_CONF_H */
-/******** Copyright (C) 2012 Datacard. All rights reserved *****END OF FILE****/
+#endif                                              /* __STM32F4xx_ETH_CONF_H */
+/******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/

@@ -44,6 +44,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "LWIPMgr.h"
 #include "lwip.h"                                             /* lwIP stack */
+#include "bsp_defs.h"
 
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */

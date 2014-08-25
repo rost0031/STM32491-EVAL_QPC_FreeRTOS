@@ -1,20 +1,20 @@
 /**
- * @file 	stm32f2x7_eth_bsp.h
+ * @file 	stm32f4xx_eth_bsp.h
  * @brief   This file contains the Board Support Package functions for any
- * STM32F2xx board and Micrel KSZ8863 Ethernet switch.
+ * STM32F4xx board and Texas Instruments DP83848 Ethernet PHY.
  *
- * @date   	09/27/2012
+ * @date   	08/25/2014
  * @author 	Harry Rostovtsev
  * @email  	harry_rostovtsev@datacard.com
- * Copyright (C) 2012 Datacard. All rights reserved.
+ * Copyright (C) 2014 Datacard. All rights reserved.
  *
- * @addtogroup groupKSZ8863
+ * @addtogroup groupDP83848
  * @{
  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __STM32F2x7_ETH_BSP_H
-#define __STM32F2x7_ETH_BSP_H
+#ifndef __STM32F4xx_ETH_BSP_H
+#define __STM32F4xx_ETH_BSP_H
 
 #ifdef __cplusplus
  extern "C" {
@@ -48,8 +48,8 @@ void ETH_GPIO_Config( void );
 
 /**
  * @}
- * end addtogroup groupKSZ8863
+ * end addtogroup groupDP83848
  */
 
-#endif                                               /* __STM32F2x7_ETH_BSP_H */
-/******** Copyright (C) 2012 Datacard. All rights reserved *****END OF FILE****/
+#endif                                               /* __STM32F4xx_ETH_BSP_H */
+/******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/

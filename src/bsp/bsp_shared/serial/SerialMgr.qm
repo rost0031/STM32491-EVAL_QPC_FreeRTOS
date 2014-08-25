@@ -90,7 +90,7 @@ SerialDataEvt const *rq = (SerialDataEvt const *) (uint32_t) QActive_recall(
        <action>/* Set up the DMA buffer here.  This copies the data from the event to the UART's
  * private buffer as well to avoid someone overwriting it */
 Serial_DMAConfig(
-    SYSTEM_SERIAL,
+    SERIAL_SYS,
     (char *)((SerialDataEvt const *) e)-&gt;buffer,
     ((SerialDataEvt const *) e)-&gt;wBufferLen
 );</action>
@@ -120,7 +120,7 @@ QTimeEvt_rearm(
 );
 
 /* Start the DMA transfer over serial */
-Serial_DMAStartXfer( SYSTEM_SERIAL );</entry>
+Serial_DMAStartXfer( SERIAL_SYS );</entry>
       <exit>QTimeEvt_disarm( &amp;me-&gt;serialTimerEvt ); /* Disarm timer on exit */</exit>
       <tran trig="UART_DMA_DONE" target="../../0">
        <tran_glyph conn="42,18,3,1,-17">
@@ -206,6 +206,7 @@ QEQueue_init(
 #include &quot;SerialMgr.h&quot;
 #include &quot;project_includes.h&quot;         /* Includes common to entire project. */
 #include &quot;bsp.h&quot;        /* For seconds to bsp tick conversion (SEC_TO_TICK) */
+#include &quot;serial.h&quot;                           /* For low level serial support */
 
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE;                 /* For QSPY to know the name of this file */

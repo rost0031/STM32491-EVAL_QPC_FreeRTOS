@@ -1,22 +1,25 @@
 /**
- * @file   stm32f2x7_eth.c
- * @brief  This file is the low level driver for STM32F2x7 Ethernet Controller.
- *         This driver does not include low level functions for PTP time-stamp.
- *         This file is derived from the original version distributed by
- *         ST Micro.
+ * @file   stm32f4xx_eth.c
+ * @brief  This file is the low level driver for Texas Instruments DP83848
+ *         Ethernet PHY.
+ * This driver does not include low level functions for PTP time-stamp.
+ * This file is derived from the original version distributed by ST Micro.
  *
- * @date   09/27/2012
+ * @date   08/25/2014
  * @author Harry Rostovtsev
  * @email  harry_rostovtsev@datacard.com
- * Copyright (C) 2012 Datacard. All rights reserved.
+ * Copyright (C) 2014 Datacard. All rights reserved.
  */
 
 /* Includes ------------------------------------------------------------------*/
-#include "stm32f2x7_eth.h"
-#include "stm32f2xx_rcc.h"
+#include "stm32f4xx_eth.h"
+
+#include "stm32f4xx.h"                                 /* For STM32F4 support */
+#include "stm32f4xx_rcc.h"                         /* For STM32F4 clk support */
+
 #include <string.h>
 
-/** @addtogroup groupKSZ8863
+/** @addtogroup groupDP83848
  * @brief ETH driver modules
  * @{
  */
@@ -114,7 +117,6 @@ __IO uint32_t Frame_Rx_index;
  * @{
  */
 
-#if 0 // None of this is needed for KSZ8863 since we are not talking to the PHY
 #ifndef USE_Delay
 /**
  * @brief  Inserts a delay time.
@@ -129,8 +131,6 @@ static void ETH_Delay(__IO uint32_t nCount)
 	}
 }
 #endif /* USE_Delay*/
-
-#endif
 
 /******************************************************************************/                             
 /*                           Global ETH MAC/DMA functions                     */
@@ -264,11 +264,9 @@ void ETH_StructInit(ETH_InitTypeDef* ETH_InitStruct)
 uint32_t ETH_Init(ETH_InitTypeDef* ETH_InitStruct, uint16_t PHYAddress)
 {
 
-#if 0 // These were only needed for the PHY on the STM3220G
 	uint32_t RegValue = 0;
 	__IO uint32_t i = 0;
 	__IO uint32_t timeout = 0;
-#endif
 
 	uint32_t tmpreg = 0;
 	RCC_ClocksTypeDef  rcc_clocks;
@@ -350,7 +348,6 @@ uint32_t ETH_Init(ETH_InitTypeDef* ETH_InitStruct, uint16_t PHYAddress)
 	/* Write to ETHERNET MAC MIIAR: Configure the ETHERNET CSR Clock Range */
 	ETH->MACMIIAR = (uint32_t)tmpreg;
 
-#if 0  // START - None of this is needed for KSZ8863 since we are not talking to the PHY
 	/*-------------------- PHY initialization and configuration ----------------*/
 	/* Put the PHY in reset mode */
 	if(!(ETH_WritePHYRegister(PHYAddress, PHY_BCR, PHY_Reset)))	{
@@ -422,7 +419,6 @@ uint32_t ETH_Init(ETH_InitTypeDef* ETH_InitStruct, uint16_t PHYAddress)
 		/* Delay to assure PHY configuration */
 		_eth_delay_(PHY_CONFIG_DELAY);
 	}
-#endif // END - None of this is needed for KSZ8863 since we are not talking to the PHY
 
 	/*------------------------ ETHERNET MACCR Configuration --------------------*/
 	/* Get the ETHERNET MACCR value */

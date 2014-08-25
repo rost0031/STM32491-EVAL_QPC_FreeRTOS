@@ -1,13 +1,13 @@
 /**
  * @file   eth_driver.h
- * @brief  This file contains QPC LWIP Ethernet layer headers for STM32F2xx
+ * @brief  This file contains QPC LWIP Ethernet layer headers for STM32F4xx
  * 		  Board. This file is derived from the original version distributed by
  *         Quantum Leaps as part of the demo on the Luminary devel kit.
  *
- * @date   09/27/2012
+ * @date   08/25/2014
  * @author Harry Rostovtsev
  * @email  harry_rostovtsev@datacard.com
- * Copyright (C) 2012 Datacard. All rights reserved.
+ * Copyright (C) 2014 Datacard. All rights reserved.
  *
  * @addtogroup groupLWIP_QPC_Eth
  * @{
@@ -34,8 +34,8 @@
 #include "netif/etharp.h"
 
 /* for STM32 support */
-#include "stm32f2x7_eth.h"
-#include "stm32f2x7_eth_bsp.h"
+#include "stm32f4xx_eth.h"
+#include "stm32f4xx_eth_bsp.h"
 
 /* Exported defines ----------------------------------------------------------*/
 #if LWIP_PTPD
@@ -219,4 +219,4 @@ void low_level_transmit(struct netif *netif, struct pbuf *p);
  */
 
 #endif                                                       /* ETH_DRIVER_H_ */
-/******** Copyright (C) 2012 Datacard. All rights reserved *****END OF FILE****/
+/******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/

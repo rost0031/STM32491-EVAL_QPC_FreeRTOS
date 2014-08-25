@@ -1,14 +1,14 @@
 /**
  * @file    eth_driver.c
- * @brief   This file contains QPC LWIP Ethernet layer for an STM32F2xx board
- * with a Micrel KSZ8863 Ethernet MAC-MAC switch.
+ * @brief   This file contains QPC LWIP Ethernet layer for an STM32F4xx board
+ * with a Texas Instruments DP83848 Ethernet PHY
  * This file is derived from the ``ethernetif.c'' skeleton Ethernet network
  * interface driver for lwIP.
  *
- * @date   09/27/2012
+ * @date   08/25/2014
  * @author Harry Rostovtsev
  * @email  harry_rostovtsev@datacard.com
- * Copyright (C) 2012 Datacard. All rights reserved.
+ * Copyright (C) 2014 Datacard. All rights reserved.
  *
  * @addtogroup groupLWIP_QPC_Eth
  * @{
@@ -16,8 +16,8 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "netif/eth_driver.h"
-#include "stm32f2x7_eth.h"
-#include "stm32f2x7_eth_bsp.h"
+#include "stm32f4xx_eth.h"
+#include "stm32f4xx_eth_bsp.h"
 #include "project_includes.h"
 
 /* Compile-time called macros ------------------------------------------------*/
@@ -575,4 +575,4 @@ void ETH_IRQHandler(void) {
 }
 
 
-/******** Copyright (C) 2012 Datacard. All rights reserved *****END OF FILE****/
+/******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/

@@ -1,27 +1,27 @@
 /**
- * @file   stm32f2x7_eth.h
+ * @file   stm32f4xx_eth.h
  * @brief  This file contains all the functions prototypes for the Ethernet MAC
  *         firmware driver. This file is derived from the original version
  *         distributed by ST Micro.
  *
- * @date   09/27/2012
+ * @date   08/25/2014
  * @author Harry Rostovtsev
  * @email  harry_rostovtsev@datacard.com
- * Copyright (C) 2012 Datacard. All rights reserved.
+ * Copyright (C) 2014 Datacard. All rights reserved.
  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __STM32F2x7_ETH_H
-#define __STM32F2x7_ETH_H
+#ifndef __STM32F4xx_ETH_H
+#define __STM32F4xx_ETH_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
-#include "stm32f2x7_eth_conf.h"
+#include "stm32f4xx_eth_conf.h"
 
-/** @addtogroup groupKSZ8863
+/** @addtogroup groupDP83848
  * @{
  */
 
@@ -1860,7 +1860,6 @@ uint32_t ETH_GetMMCRegister(uint32_t ETH_MMCReg);
 }
 #endif
 
-#endif /* __STM32F2x7_ETH_H */
 /**
  * @}
  */
@@ -1870,4 +1869,5 @@ uint32_t ETH_GetMMCRegister(uint32_t ETH_MMCReg);
  * @}
  */
 
-/******** Copyright (C) 2012 Datacard. All rights reserved *****END OF FILE****/
+#endif                                                   /* __STM32F4xx_ETH_H */
+/******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/
