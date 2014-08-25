@@ -183,7 +183,7 @@ typedef enum DEBUG_LEVEL {
  * @note 1: Do not call this function directly.  Instead, call on of the
  * DBG/LOG/WRN/ERR/CON_printf() macros.  Printout from these looks something
  * like:
- * DBG_LEVEL-HH:MM:SS:XXXXX-SomeFunctionName():fileLineNumber: User message here
+ * DBG_LEVEL-HH:MM:SS:XXX-SomeFunctionName():fileLineNumber: User message here
  *
  * @note 2: when printing to a @CON debug level, no data is prepended to the front
  * of the buffer.  This should be used to do menu output to the console.
@@ -240,7 +240,7 @@ void CON_output(
  * DBG_printf("Debug print test %d\n", i);
  *
  * will output:
- * DBG-00:04:09:00459-LWIPMgr_Running():219: Debug print test 0
+ * DBG-00:04:09:459-LWIPMgr_Running():219: Debug print test 0
  * @endcode
  *
  * @note 1: This macro is disabled in Rel builds.
@@ -272,7 +272,7 @@ void CON_output(
  * LOG_printf("Logging print test %d\n", i);
  *
  * will output:
- * LOG-00:04:09:00459-LWIPMgr_Running():219: Logging print test 0
+ * LOG-00:04:09:459-LWIPMgr_Running():219: Logging print test 0
  * @endcode
  *
  * @note 1: This macro is disabled in Rel builds.
@@ -304,7 +304,7 @@ void CON_output(
  * WRN_printf("Warning print test %d\n", i);
  *
  * will output:
- * WRN-00:04:09:00459-LWIPMgr_Running():219: Warning print test 0
+ * WRN-00:04:09:459-LWIPMgr_Running():219: Warning print test 0
  * @endcode
  *
  * @note 1: This macro is enabled in Rel builds.
@@ -336,7 +336,7 @@ void CON_output(
  * WRN_printf("Error print test %d\n", i);
  *
  * will output:
- * ERR-00:04:09:00459-LWIPMgr_Running():219: Error print test 0
+ * ERR-00:04:09:459-LWIPMgr_Running():219: Error print test 0
  * @endcode
  *
  * @note 1: This macro is enabled in Rel builds.
@@ -466,7 +466,7 @@ void CON_slow_output(
  * dbg_slow_printf("Slow debug print test %d\n", i);
  *
  * will output:
- * DBG-SLOW!-00:04:09:00459-LWIPMgr_Running():219: Slow debug print test 0
+ * DBG-SLOW!-00:04:09:459-LWIPMgr_Running():219: Slow debug print test 0
  * @endcode
  *
  * @note 1. Don't use this after the BSP and RTOS has been initialized since it
@@ -501,7 +501,7 @@ void CON_slow_output(
  * log_slow_printf("Slow logging print test %d\n", i);
  *
  * will output:
- * LOG-SLOW!-00:04:09:00459-LWIPMgr_Running():219: Slow logging print test 0
+ * LOG-SLOW!-00:04:09:459-LWIPMgr_Running():219: Slow logging print test 0
  * @endcode
  *
  * @note 1. Don't use this after the BSP and RTOS has been initialized since it
@@ -536,7 +536,7 @@ void CON_slow_output(
  * log_slow_printf("Slow warning print test %d\n", i);
  *
  * will output:
- * WRN-SLOW!-00:04:09:00459-LWIPMgr_Running():219: Slow warning print test 0
+ * WRN-SLOW!-00:04:09:459-LWIPMgr_Running():219: Slow warning print test 0
  * @endcode
  *
  * @note 1. Don't use this after the BSP and RTOS has been initialized since it
@@ -571,7 +571,7 @@ void CON_slow_output(
  * err_slow_printf("Slow error print test %d\n", i);
  *
  * will output:
- * ERR-SLOW!-00:04:09:00459-LWIPMgr_Running():219: Slow error print test 0
+ * ERR-SLOW!-00:04:09:459-LWIPMgr_Running():219: Slow error print test 0
  * @endcode
  *
  * @note 1. Don't use this after the BSP and RTOS has been initialized since it
@@ -606,7 +606,7 @@ void CON_slow_output(
  * isr_debug_slow_printf("Slow isr debug print test %d\n", i);
  *
  * will output:
- * D-ISR:-00:04:09:00459-219:Slow isr debug print test 0
+ * D-ISR:-00:04:09:459-219:Slow isr debug print test 0
  * @endcode
  *
  * @note 1. Don't use this after the BSP and RTOS has been initialized since it

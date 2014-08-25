@@ -16,8 +16,11 @@
 #include "time.h"
 #include "Shared.h"
 #include "bsp.h"
+#include "bsp_defs.h"
 #include "project_includes.h"
+#include "stm32f4xx.h"                                 /* For STM32F4 support */
 #include "stm32f4xx_rtc.h"                           /* For STM32 RTC support */
+#include "stm32f4xx_rcc.h"                           /* For STM32 clk support */
 #include "stm32f4xx_tim.h"                         /* For STM32 Timer support */
 #include "stm32f4xx_exti.h"                         /* For STM32 EXTI support */
 
@@ -26,21 +29,26 @@ Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */
 
 /* Private typedefs ----------------------------------------------------------*/
 /* Private defines -----------------------------------------------------------*/
-#define SUBSECOND_TIM_FREQUENCY                                         10049
-#define SUBSECOND_TIM_PRESCALAR                                         1191
-
 /* Private macros ------------------------------------------------------------*/
 /* Private variables and Local objects ---------------------------------------*/
-RTC_InitTypeDef RTC_InitStructure;
-RTC_TimeTypeDef RTC_TimeStructure;
+RTC_InitTypeDef RTC_InitStructure;   /**< Init structure for RTC, must be accessible by local functions to get the synch prediv used to set up RTC */
 
-__IO uint32_t   uwLsiFreq = 0;
-__IO uint32_t   uwCaptureNumber = 0;
-__IO uint32_t   uwPeriodValue = 0;
+__IO uint32_t   uwLsiFreq = 0;       /**< Measured LSI frequency */
+__IO uint32_t   uwCaptureNumber = 0; /**< Counter to keep track of captures on TIM5 used to measure LSI frequency, shared with ISR. */
+__IO uint32_t   uwPeriodValue = 0;   /**< Calculated period value of LSI output, shared with ISR. */
 
 /* Private function prototypes -----------------------------------------------*/
 /**
  * @brief  Configures TIM5 to measure the LSI oscillator frequency.
+ * This function configures TIM5 to measure the frequency of the LSI oscillator.
+ * The reason to do this is because LSI is quite drifty and can cause the RTC to
+ * be off by quite a bit.  This function measures the "real" frequency instead
+ * of depending on the supposed 32.67 kHz frequency.
+ *
+ * @note 1: This function sets up TIM5 but after returning, TIM5 can be used for
+ * other purposes.
+ * @note 2: This function should only be called by the TIME_Init() function.
+ *
  * @param  None
  * @retval LSI Frequency
  */
@@ -79,27 +87,28 @@ void TIME_Init( void )
    RTC_InitStructure.RTC_HourFormat = RTC_HourFormat_24;
    RTC_Init(&RTC_InitStructure);
 
-    /* EXTI configuration ******************************************************/
-   EXTI_ClearITPendingBit(EXTI_Line22);
-   EXTI_InitTypeDef EXTI_InitStructure;
-   EXTI_InitStructure.EXTI_Line = EXTI_Line22;
-   EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
-   EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising;
-   EXTI_InitStructure.EXTI_LineCmd = ENABLE;
-   EXTI_Init(&EXTI_InitStructure);
-
-   /* Set up Interrupt controller to handle RTC Wakeup interrupt */
-   NVIC_Config( RTC_WKUP_IRQn, RTC_WKUP_PRIO );
+   /**TODO: This doesn't seem to be necessary.  Take out after verifying. HR */
+//    /* EXTI configuration ******************************************************/
+//   EXTI_ClearITPendingBit(EXTI_Line22);
+//   EXTI_InitTypeDef EXTI_InitStructure;
+//   EXTI_InitStructure.EXTI_Line = EXTI_Line22;
+//   EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
+//   EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising;
+//   EXTI_InitStructure.EXTI_LineCmd = ENABLE;
+//   EXTI_Init(&EXTI_InitStructure);
+//
+//   /* Set up Interrupt controller to handle RTC Wakeup interrupt */
+//   NVIC_Config( RTC_WKUP_IRQn, RTC_WKUP_PRIO );
 
    /* Configure the RTC WakeUp Clock source: CK_SPRE (1Hz) */
-   RTC_WakeUpClockConfig(RTC_WakeUpClock_CK_SPRE_16bits);
-   RTC_SetWakeUpCounter(0x0);
+   RTC_WakeUpClockConfig( RTC_WakeUpClock_CK_SPRE_16bits );
+   RTC_SetWakeUpCounter( 0x0 );
 
    /* Enable the RTC Wakeup Interrupt */
-   RTC_ITConfig(RTC_IT_WUT, ENABLE);
+   RTC_ITConfig( RTC_IT_WUT, ENABLE );
 
    /* Enable Wakeup Counter */
-   RTC_WakeUpCmd(ENABLE);
+   RTC_WakeUpCmd( ENABLE );
 
    /* Get the LSI frequency:  TIM5 is used to measure the LSI frequency */
    uwLsiFreq = TIME_getLSIFrequency();
@@ -109,13 +118,12 @@ void TIME_Init( void )
    RTC_InitStructure.RTC_SynchPrediv =  (uwLsiFreq/128) - 1;
    RTC_InitStructure.RTC_HourFormat = RTC_HourFormat_24;
    /* Check on RTC init */
-   if ( ERROR == RTC_Init(&RTC_InitStructure) ) {
+   if ( ERROR == RTC_Init( &RTC_InitStructure ) ) {
       err_slow_printf("!!RTC Prescaler Config failed!!\n");
    }
 
-   printf("uwLsiFreq is %d and RTC_SynchPrediv is %d\n", uwLsiFreq, RTC_InitStructure.RTC_SynchPrediv);
-
    /* Initialize the clock to zero */
+   RTC_TimeTypeDef RTC_TimeStructure;
    RTC_TimeStructure.RTC_H12     = RTC_H12_AM;
    RTC_TimeStructure.RTC_Hours   = 0;
    RTC_TimeStructure.RTC_Minutes = 0;
@@ -131,7 +139,7 @@ void TIME_Init( void )
 }
 
 /******************************************************************************/
-uint32_t TIME_getLSIFrequency( void )
+static uint32_t TIME_getLSIFrequency( void )
 {
    /* Enable the LSI oscillator ************************************************/
    RCC_LSICmd( ENABLE );
@@ -193,31 +201,11 @@ uint32_t TIME_getLSIFrequency( void )
    }
 }
 
-
-///******************************************************************************/
-//void TIME_subSecondTimer_Init( void )
-//{
-//   /* Enable timer clock  - use TIMER7 */
-//   RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM7, ENABLE);
-//
-//   /* Time base configuration - The magic numbers allow a ~10000 ticks/sec on
-//    * this timer. */
-//   TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
-//   TIM_TimeBaseStructInit(&TIM_TimeBaseStructure);
-//   TIM_TimeBaseStructure.TIM_Prescaler       = SUBSECOND_TIM_PRESCALAR;
-//   TIM_TimeBaseStructure.TIM_Period          = SUBSECOND_TIM_FREQUENCY;
-//   TIM_TimeBaseStructure.TIM_ClockDivision   = 0;
-//   TIM_TimeBaseStructure.TIM_CounterMode     = TIM_CounterMode_Up;
-//   TIM_TimeBaseInit(TIM7, &TIM_TimeBaseStructure);
-//
-//   /* Enable counter */
-//   TIM_Cmd(TIM7, ENABLE);
-//}
-
 /******************************************************************************/
 time_T TIME_getTime( void )
 {
    time_T time;
+   RTC_TimeTypeDef RTC_TimeStructure;
 
    /* Get the current Time and Date */
    RTC_GetTime(RTC_Format_BIN, &RTC_TimeStructure);
