@@ -227,25 +227,22 @@ time_T TIME_getTime( void )
     * Also, this register is automatically "refrozen" as soon as your read it */
    (void)RTC->DR;
 
+   /* Hours, minutes, and seconds are stored in the exact same format as in the
+    * structure so we can use direct assignment. */
    time.hour_min_sec = RTC_TimeStructure;
 
+   /* Sub-second depends on the frequency used by the clock and the fracSec
+    * holds the down-counted timer, which then needs to be normalized using the
+    * synch frequency prediv scalar.  The formula for this is:
+    *
+    * Second fraction = ( PREDIV_S - SS ) / ( PREDIV_S + 1 )
+    */
    uint32_t fracSec = RTC_GetSubSecond();
    time.sub_sec = (uint32_t)( 1000 * (
          (float)(RTC_InitStructure.RTC_SynchPrediv  - fracSec) /
          (float)(RTC_InitStructure.RTC_SynchPrediv + 1))
    );
 
-//   printf("fracSec: %d, uwLsiFreq: %d sub_sec: %d\n",
-//         fracSec,
-//         RTC_InitStructure.RTC_SynchPrediv,
-//         (uint32_t)( 1000 * (
-//         (float)(RTC_InitStructure.RTC_SynchPrediv  - fracSec) /
-//         (float)(RTC_InitStructure.RTC_SynchPrediv + 1)))
-//         );
-
-//   uwLsiFreq is 35320 and RTC_SynchPrediv is 274
-
-//   time.sub_sec =  999 - (fracSec - fracSec/42);
    return (time);
 }
 
