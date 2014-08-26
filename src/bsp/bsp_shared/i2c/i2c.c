@@ -15,11 +15,12 @@
 /* Includes ------------------------------------------------------------------*/
 #include "i2c.h"
 #include "qp_port.h"                                        /* for QP support */
-#include "stm32f2xx_it.h"
+#include "stm32f4xx_it.h"
 #include "project_includes.h"
 #include "Shared.h"
 #include "I2CMgr.h"                                    /* For I2C event types */
-#include "stm32f2xx_dma.h"                           /* For STM32 DMA support */
+#include "stm32f4xx_dma.h"                           /* For STM32 DMA support */
+#include "stm32f4xx_i2c.h"                           /* For STM32 DMA support */
 
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */

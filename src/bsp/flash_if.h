@@ -13,7 +13,7 @@
 #ifndef FLASH_IF_H_
 #define FLASH_IF_H_
 
-#include "stm32f2xx_flash.h"
+#include "stm32f4xx_flash.h"
 #include "Shared.h"
 #include "project_includes.h"
 

@@ -115,6 +115,15 @@ void PendSV_Handler( void ) __attribute__((__interrupt__));
 void SysTick_Handler( void ) __attribute__((__interrupt__));
 
 /**
+ * @brief   This ISR function handles DMA2_Stream7 global interrupt requests.
+ *
+ * This ISR function turns off the DMA used by UART1 upon completion of TX.
+ * @param     None
+ * @retval    None
+ */
+void DMA2_Stream7_IRQHandler( void ) __attribute__((__interrupt__));
+
+/**
  * @brief   This ISR function handles TIM5 global interrupt requests.
  *
  * This ISR is used to sample and time the clock rate of the RTC clock and is

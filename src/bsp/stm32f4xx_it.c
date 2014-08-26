@@ -21,7 +21,12 @@
 #include "stm32f4xx_exti.h"                               /* for EXTI support */
 
 #include <stdio.h>                                    /* for printf() support */
-#include "time.h"
+#include "project_includes.h"        /* application events and active objects */
+#include "qp_port.h"                                        /* for QP support */
+#include "Shared.h"                                   /*  Common Declarations */
+#include "CBSignals.h"                            /*  For signal declarations */
+#include "SerialMgr.h"                                 /* for SerialMgr types */
+#include "time.h"                          /* for processor date/time support */
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -124,7 +129,27 @@ void DebugMon_Handler(void)
 /*  file (startup_stm32f4xx.s).                                               */
 /******************************************************************************/
 
+/******************************************************************************/
+void DMA2_Stream7_IRQHandler( void )
+{
+   QK_ISR_ENTRY();                         /* inform QK about entering an ISR */
+   /* Test on DMA Stream Transfer Complete interrupt */
+   if ( RESET != DMA_GetITStatus(DMA2_Stream7, DMA_IT_TCIF7) ) {
+      /* Disable DMA so it doesn't keep outputting the buffer. */
+      DMA_Cmd(DMA2_Stream7, DISABLE);
 
+      /* Publish event stating that the count has been reached */
+      QEvt *qEvt = Q_NEW(QEvt, UART_DMA_DONE_SIG);
+      QF_PUBLISH((QEvent *)qEvt, AO_SerialMgr );
+
+      /* Clear DMA Stream Transfer Complete interrupt pending bit */
+      DMA_ClearITPendingBit(DMA2_Stream7, DMA_IT_TCIF7);
+   }
+
+   QK_ISR_EXIT();                           /* inform QK about exiting an ISR */
+}
+
+/******************************************************************************/
 extern __IO unsigned long uwPeriodValue;     /**< external reference to period value used by TIME_getLSIFrequency() */
 extern __IO unsigned long uwCaptureNumber;   /**< external reference to capture number used by TIME_getLSIFrequency() */
 uint16_t tmpCC4[2] = {0, 0};                 /**< Local storage for TIM5_IRQHandler() to temporarily store timer counts for frequency calculation */
@@ -176,12 +201,12 @@ void RTC_WKUP_IRQHandler( void )
       //
       //      QF_PUBLISH((QEvent *)serDataEvt, AO_CommStackMgr);
 
-      time_T time = TIME_getTime();
-       printf("Time in ISR is %02d:%02d:%02d:%04d\n",
-               time.hour_min_sec.RTC_Hours,
-               time.hour_min_sec.RTC_Minutes,
-               time.hour_min_sec.RTC_Seconds,
-               (int)time.sub_sec);
+//      time_T time = TIME_getTime();
+//       printf("Time in ISR is %02d:%02d:%02d:%04d\n",
+//               time.hour_min_sec.RTC_Hours,
+//               time.hour_min_sec.RTC_Minutes,
+//               time.hour_min_sec.RTC_Seconds,
+//               (int)time.sub_sec);
 
       /* Clear the pending bits so the interrupt fires again next time. */
       RTC_ClearITPendingBit(RTC_IT_WUT);

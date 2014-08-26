@@ -59,8 +59,8 @@ typedef struct USART_Settings
     uint32_t            rx_gpio_clk;                  /**< UART RX GPIO clock */
 
     /* Buffer management */
-    char                         *buffer;    /**< Serial port in data buffer. */
-    uint16_t                     index;/**< Serial port in data buffer used length. */
+    char                *buffer;             /**< Serial port in data buffer. */
+    uint16_t            index;   /**< Serial port in data buffer used length. */
 } USART_Settings_t;
 
 /**
@@ -70,12 +70,13 @@ typedef struct USART_Settings
  */
 typedef struct USART_DMA_Settings
 {
-    SerialPort_T                 port;     /**< System serial port specifier. */
+    SerialPort_T        port;              /**< System serial port specifier. */
 
-    IRQn_Type                    dma_irq_num;/**< STM32 serial DMA IRQ number.*/
-    ISR_Priority                 dma_irq_prio;/**< STM32 serial DMA IRQ priority. */
-    uint32_t                     dma_channel;  /**< STM32 serial DMA channel. */
-    DMA_Stream_TypeDef           dma_stream;    /**< STM32 serial DMA stream. */
+    IRQn_Type           dma_irq_num;          /**< STM32 serial DMA IRQ number*/
+    ISR_Priority        dma_irq_prio;      /**< STM32 serial DMA IRQ priority */
+    uint32_t            dma_channel;            /**< STM32 serial DMA channel */
+    DMA_Stream_TypeDef* dma_stream;              /**< STM32 serial DMA stream */
+    const uint32_t      dma_clk;       /**< STM32 DMA clock for use with uart */
 
 } USART_DMA_Settings_t;
 

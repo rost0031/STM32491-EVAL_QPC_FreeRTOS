@@ -26,7 +26,7 @@
 #define CRC32COMPAT_H_
 
 /* Includes ------------------------------------------------------------------*/
-#include "stm32f2xx_crc.h"                           /* For STM32 CRC support */
+#include "stm32f4xx_crc.h"                           /* For STM32 CRC support */
 
 /* Exported defines ----------------------------------------------------------*/
 /* Exported macros -----------------------------------------------------------*/

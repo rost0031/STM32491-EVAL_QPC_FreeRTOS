@@ -22,7 +22,7 @@
 #include "CBErrors.h"
 #include "Shared.h"                                   /*  Common Declarations */
 #include "time.h"
-//#include "SerialMgr.h"
+#include "SerialMgr.h"
 //#include "qk.h"
 //#include "qf_pkg.h"                             /* For crit entry/exit macros */
 
@@ -45,96 +45,92 @@ void CON_output(
       ...
 )
 {
+   /* 1. Get the time first so the printout of the event is as close as possible
+    * to when it actually occurred */
+   time_T time = TIME_getTime();
 
-//   /* 1. Get the time first so the printout of the event is as close as possible
-//    * to when it actually occurred */
-//   time_T time = TIME_getTime();
-//
-////   QF_CRIT_STAT_
-////   QF_CRIT_ENTRY_();                                /* Start critical section */
-//   /* 2. Construct a new msg event pointer and allocate storage in the QP event
-//    * pool */
-//   SerialDataEvt *serDataEvt = Q_NEW(SerialDataEvt, UART_DMA_START_SIG);
-//   serDataEvt->wBufferLen = 0;
-////   sprintf(serDataEvt->buffer, "test\n");
-////   QF_PUBLISH((QEvent *)serDataEvt, 0);
-//
-//   /* 3. Based on the debug level specified by the calling macro, decide what to
-//    * prepend (if anything). */
-//   switch (dbgLvl) {
-//      case DBG:
-//         serDataEvt->wBufferLen += snprintf(
-//               &serDataEvt->buffer[serDataEvt->wBufferLen],
-//               MAX_MSG_LEN,
-//               "DBG-%02d:%02d:%02d:%03d-%s():%d:",
-//               time.hour_min_sec.RTC_Hours,
-//               time.hour_min_sec.RTC_Minutes,
-//               time.hour_min_sec.RTC_Seconds,
-//               (int)time.sub_sec,
-//               pFuncName,
-//               wLineNumber
-//         );
-//         break;
-//      case LOG:
-//         serDataEvt->wBufferLen += snprintf(
-//               &serDataEvt->buffer[serDataEvt->wBufferLen],
-//               MAX_MSG_LEN,
-//               "LOG-%02d:%02d:%02d:%03d-%s():%d:",
-//               time.hour_min_sec.RTC_Hours,
-//               time.hour_min_sec.RTC_Minutes,
-//               time.hour_min_sec.RTC_Seconds,
-//               (int)time.sub_sec,
-//               pFuncName,
-//               wLineNumber
-//         );
-//         break;
-//      case WRN:
-//         serDataEvt->wBufferLen += snprintf(
-//               &serDataEvt->buffer[serDataEvt->wBufferLen],
-//               MAX_MSG_LEN,
-//               "WRN-%02d:%02d:%02d:%03d-%s():%d:",
-//               time.hour_min_sec.RTC_Hours,
-//               time.hour_min_sec.RTC_Minutes,
-//               time.hour_min_sec.RTC_Seconds,
-//               (int)time.sub_sec,
-//               pFuncName,
-//               wLineNumber
-//         );
-//         break;
-//      case ERR:
-//         serDataEvt->wBufferLen += snprintf(
-//               &serDataEvt->buffer[serDataEvt->wBufferLen],
-//               MAX_MSG_LEN,
-//               "ERR-%02d:%02d:%02d:%03d-%s():%d:",
-//               time.hour_min_sec.RTC_Hours,
-//               time.hour_min_sec.RTC_Minutes,
-//               time.hour_min_sec.RTC_Seconds,
-//               (int)time.sub_sec,
-//               pFuncName,
-//               wLineNumber
-//         );
-//         break;
-//      case CON: // This is used to print menu so don't prepend anything
-//      default:
-//         break;
-//   }
-//
-//   /* 4. Pass the va args list to get output to a buffer */
-//   va_list args;
-//   va_start(args, fmt);
-//
-//   /* 5. Print the actual user supplied data to the buffer and set the length */
-//   serDataEvt->wBufferLen += vsnprintf(
-//         &serDataEvt->buffer[serDataEvt->wBufferLen],
-//         MAX_MSG_LEN - serDataEvt->wBufferLen, // Account for the part of the buffer that was already written.
-//         fmt,
-//         args
-//   );
-//   va_end(args);
-//
-//   /* 6. Publish the event*/
+   /* 2. Construct a new msg event pointer and allocate storage in the QP event
+    * pool */
+   SerialDataEvt *serDataEvt = Q_NEW(SerialDataEvt, UART_DMA_START_SIG);
+   serDataEvt->wBufferLen = 0;
+//   sprintf(serDataEvt->buffer, "test\n");
 //   QF_PUBLISH((QEvent *)serDataEvt, 0);
-////   QF_CRIT_EXIT_();                                   /* End critical section */
+
+   /* 3. Based on the debug level specified by the calling macro, decide what to
+    * prepend (if anything). */
+   switch (dbgLvl) {
+      case DBG:
+         serDataEvt->wBufferLen += snprintf(
+               &serDataEvt->buffer[serDataEvt->wBufferLen],
+               MAX_MSG_LEN,
+               "DBG-%02d:%02d:%02d:%03d-%s():%d:",
+               time.hour_min_sec.RTC_Hours,
+               time.hour_min_sec.RTC_Minutes,
+               time.hour_min_sec.RTC_Seconds,
+               (int)time.sub_sec,
+               pFuncName,
+               wLineNumber
+         );
+         break;
+      case LOG:
+         serDataEvt->wBufferLen += snprintf(
+               &serDataEvt->buffer[serDataEvt->wBufferLen],
+               MAX_MSG_LEN,
+               "LOG-%02d:%02d:%02d:%03d-%s():%d:",
+               time.hour_min_sec.RTC_Hours,
+               time.hour_min_sec.RTC_Minutes,
+               time.hour_min_sec.RTC_Seconds,
+               (int)time.sub_sec,
+               pFuncName,
+               wLineNumber
+         );
+         break;
+      case WRN:
+         serDataEvt->wBufferLen += snprintf(
+               &serDataEvt->buffer[serDataEvt->wBufferLen],
+               MAX_MSG_LEN,
+               "WRN-%02d:%02d:%02d:%03d-%s():%d:",
+               time.hour_min_sec.RTC_Hours,
+               time.hour_min_sec.RTC_Minutes,
+               time.hour_min_sec.RTC_Seconds,
+               (int)time.sub_sec,
+               pFuncName,
+               wLineNumber
+         );
+         break;
+      case ERR:
+         serDataEvt->wBufferLen += snprintf(
+               &serDataEvt->buffer[serDataEvt->wBufferLen],
+               MAX_MSG_LEN,
+               "ERR-%02d:%02d:%02d:%03d-%s():%d:",
+               time.hour_min_sec.RTC_Hours,
+               time.hour_min_sec.RTC_Minutes,
+               time.hour_min_sec.RTC_Seconds,
+               (int)time.sub_sec,
+               pFuncName,
+               wLineNumber
+         );
+         break;
+      case CON: // This is used to print menu so don't prepend anything
+      default:
+         break;
+   }
+
+   /* 4. Pass the va args list to get output to a buffer */
+   va_list args;
+   va_start(args, fmt);
+
+   /* 5. Print the actual user supplied data to the buffer and set the length */
+   serDataEvt->wBufferLen += vsnprintf(
+         &serDataEvt->buffer[serDataEvt->wBufferLen],
+         MAX_MSG_LEN - serDataEvt->wBufferLen, // Account for the part of the buffer that was already written.
+         fmt,
+         args
+   );
+   va_end(args);
+
+   /* 6. Publish the event*/
+   QF_PUBLISH((QEvent *)serDataEvt, 0);
 }
 
 /******************************************************************************/

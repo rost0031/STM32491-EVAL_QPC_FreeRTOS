@@ -92,14 +92,14 @@ QF_PUBLISH((QEvent *)i2cReqEvt1, AO_CommStackMgr);
 */
 QTimeEvt_disarm( &amp;me-&gt;timeTestTimerEvt );
 
-/*
-t_Time fast_print_start_time = TIME_getTime();
-DBG_printf(&quot;Fast DBG_printf() test message from CommStackMgr\n&quot;);
-t_Time fast_print_finish_time = TIME_getTime();
 
-t_Time slow_print_start_time = TIME_getTime();
+time_T fast_print_start_time = TIME_getTime();
+DBG_printf(&quot;Fast DBG_printf() test message from CommStackMgr\n&quot;);
+time_T fast_print_finish_time = TIME_getTime();
+
+time_T slow_print_start_time = TIME_getTime();
 dbg_slow_printf(&quot;Slow dbg_slow_printf() test message from CommStackMgr\n&quot;);
-t_Time slow_print_finish_time = TIME_getTime();
+time_T slow_print_finish_time = TIME_getTime();
 
 DBG_printf(&quot;DBG_printf() start: %02d:%02d:%02d:%d stop: %02d:%02d:%02d:%d\n&quot;,
      fast_print_start_time.hour_min_sec.RTC_Hours,
@@ -121,7 +121,7 @@ DBG_printf(&quot;dbg_slow_printf() start: %02d:%02d:%02d:%d stop: %02d:%02d:%02d
      slow_print_finish_time.hour_min_sec.RTC_Seconds,
      (int)slow_print_finish_time.sub_sec
 );
-*/</action>
+</action>
       <tran_glyph conn="3,19,3,-1,21">
        <action box="0,-2,11,2"/>
       </tran_glyph>
@@ -173,6 +173,7 @@ QTimeEvt_ctor(&amp;me-&gt;timeTestTimerEvt, TIME_TEST_SIG);</code>
 #include &quot;project_includes.h&quot;           /* Includes common to entire project. */
 #include &quot;bsp.h&quot;                              /* For time to ticks conversion */
 #include &quot;I2CMgr.h&quot;                                         /* For I2CDataEvt */
+#include &quot;time.h&quot;
 
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE;                 /* For QSPY to know the name of this file */

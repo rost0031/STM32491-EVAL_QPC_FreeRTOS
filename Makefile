@@ -239,6 +239,7 @@ C_SRCS					:= \
 						serial.c \
 						console_output.c \
 						time.c \
+						i2c.c \
 						\
 						LWIPMgr.c \
 						I2CMgr.c \

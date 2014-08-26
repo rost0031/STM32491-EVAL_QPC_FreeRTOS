@@ -36,6 +36,7 @@
 #include "project_includes.h"           /* Includes common to entire project. */
 #include "bsp.h"                              /* For time to ticks conversion */
 #include "I2CMgr.h"                                         /* For I2CDataEvt */
+#include "time.h"
 
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE;                 /* For QSPY to know the name of this file */
@@ -180,14 +181,14 @@ static QState CommStackMgr_Active(CommStackMgr * const me, QEvt const * const e)
             */
             QTimeEvt_disarm( &me->timeTestTimerEvt );
 
-            /*
-            t_Time fast_print_start_time = TIME_getTime();
-            DBG_printf("Fast DBG_printf() test message from CommStackMgr\n");
-            t_Time fast_print_finish_time = TIME_getTime();
 
-            t_Time slow_print_start_time = TIME_getTime();
+            time_T fast_print_start_time = TIME_getTime();
+            DBG_printf("Fast DBG_printf() test message from CommStackMgr\n");
+            time_T fast_print_finish_time = TIME_getTime();
+
+            time_T slow_print_start_time = TIME_getTime();
             dbg_slow_printf("Slow dbg_slow_printf() test message from CommStackMgr\n");
-            t_Time slow_print_finish_time = TIME_getTime();
+            time_T slow_print_finish_time = TIME_getTime();
 
             DBG_printf("DBG_printf() start: %02d:%02d:%02d:%d stop: %02d:%02d:%02d:%d\n",
                  fast_print_start_time.hour_min_sec.RTC_Hours,
@@ -209,7 +210,7 @@ static QState CommStackMgr_Active(CommStackMgr * const me, QEvt const * const e)
                  slow_print_finish_time.hour_min_sec.RTC_Seconds,
                  (int)slow_print_finish_time.sub_sec
             );
-            */
+
             status_ = Q_HANDLED();
             break;
         }

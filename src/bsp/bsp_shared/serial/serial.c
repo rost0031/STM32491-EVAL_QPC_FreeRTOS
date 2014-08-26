@@ -15,8 +15,9 @@
 #include "serial.h"
 #include "stm32f4xx.h"                                 /* For STM32F4 support */
 #include "stm32f4xx_rcc.h"                         /* For STM32F4 clk support */
-#include "stm32f4xx_gpio.h"                        /* For STM32F4 clk support */
-#include "stm32f4xx_usart.h"                       /* For STM32F4 clk support */
+#include "stm32f4xx_dma.h"                         /* For STM32F4 DMA support */
+#include "stm32f4xx_gpio.h"                       /* For STM32F4 gpio support */
+#include "stm32f4xx_usart.h"                      /* For STM32F4 uart support */
 
 #include "project_includes.h"
 #include "base64_wrapper.h"
@@ -27,7 +28,8 @@
 #include <assert.h>
 #include <string.h>
 #include "mem_datacopy.h"
-//#include "SerialMgr.h"
+#include "bsp.h"
+#include "SerialMgr.h"
 
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */
@@ -81,11 +83,23 @@ static USART_Settings_t a_UARTSettings[SERIAL_MAX] =
             RCC_AHB1Periph_GPIOA,      /**< rx_gpio_clk */
 
             /* Buffer management */
-            &system_serial_buffer[0],   /**< *buffer */
+            &system_serial_buffer[0],  /**< *buffer */
             0,                         /**< index */
       }
 };
 
+static USART_DMA_Settings_t a_UARTDMASettings[SERIAL_MAX] =
+{
+      {
+            SERIAL_SYS,                /**< port */
+
+            DMA2_Stream7_IRQn,         /**< dma_irq_num */
+            DMA2_Stream7_PRIO,         /**< dma_irq_prio */
+            DMA_Channel_4,             /**< dma_channel */
+            DMA2_Stream7,              /**< dma_stream */
+            RCC_AHB1Periph_DMA2,       /**< dma_clk */
+      }
+};
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
 
@@ -190,17 +204,26 @@ void Serial_DMAConfig(
 {
    assert(wBufferLen <= MAX_MSG_LEN);
 
+     /* Enable the DMA clock */
+   RCC_AHB1PeriphClockCmd( a_UARTDMASettings[serial_port].dma_clk, ENABLE );
+
+   /* Set up Interrupt controller to handle USART DMA */
+   NVIC_Config(
+         a_UARTDMASettings[serial_port].dma_irq_num,
+         a_UARTDMASettings[serial_port].dma_irq_prio
+   );
+
+   /* Copy over the buffer and index. TODO: maybe do this in the StartXfer()? */
    a_UARTSettings[serial_port].index = wBufferLen;
    MEMCPY( a_UARTSettings[serial_port].buffer, pBuffer, wBufferLen );
 
-   DMA_DeInit(DMA1_Stream4);
+   DMA_DeInit( a_UARTDMASettings[serial_port].dma_stream );
 
    DMA_InitTypeDef  DMA_InitStructure;
-   DMA_InitStructure.DMA_Channel             = DMA_Channel_4;
+   DMA_InitStructure.DMA_Channel             = a_UARTDMASettings[serial_port].dma_channel;
    DMA_InitStructure.DMA_DIR                 = DMA_DIR_MemoryToPeripheral; // Transmit
    DMA_InitStructure.DMA_Memory0BaseAddr     = (uint32_t)a_UARTSettings[serial_port].buffer;
    DMA_InitStructure.DMA_BufferSize          = (uint16_t)a_UARTSettings[serial_port].index;
-//   DMA_InitStructure.DMA_PeripheralBaseAddr  = (uint32_t)&UART4->DR;
    DMA_InitStructure.DMA_PeripheralBaseAddr  = (uint32_t)&(a_UARTSettings[serial_port].usart)->DR;
    DMA_InitStructure.DMA_PeripheralInc       = DMA_PeripheralInc_Disable;
    DMA_InitStructure.DMA_MemoryInc           = DMA_MemoryInc_Enable;
@@ -213,15 +236,13 @@ void Serial_DMAConfig(
    DMA_InitStructure.DMA_MemoryBurst         = DMA_MemoryBurst_Single;
    DMA_InitStructure.DMA_PeripheralBurst     = DMA_PeripheralBurst_Single;
 
-   DMA_Init(DMA1_Stream4, &DMA_InitStructure);
+   DMA_Init( a_UARTDMASettings[serial_port].dma_stream, &DMA_InitStructure );
 
    /* Enable the USART Tx DMA request */
-   USART_DMACmd(UART4, USART_DMAReq_Tx, ENABLE);
+   USART_DMACmd( a_UARTSettings[serial_port].usart, USART_DMAReq_Tx, ENABLE );
 
    /* Enable DMA Stream Transfer Complete interrupt */
-   DMA_ITConfig(DMA1_Stream4, DMA_IT_TC, ENABLE);
-
-
+   DMA_ITConfig( a_UARTDMASettings[serial_port].dma_stream, DMA_IT_TC, ENABLE );
 }
 
 /******************************************************************************/
@@ -230,7 +251,7 @@ void Serial_DMAStartXfer(
 )
 {
    /* Enable the DMA TX Stream */
-   DMA_Cmd(DMA1_Stream4, ENABLE);
+   DMA_Cmd(a_UARTDMASettings[serial_port].dma_stream, ENABLE);
 }
 
 /******************************************************************************/

@@ -127,19 +127,19 @@ int main(void)
           (QEvt *)0                                /* no initialization event */
     );
 
-//    QACTIVE_START(AO_LWIPMgr,
-//          ETH_PRIORITY,                                           /* priority */
-//          l_LWIPMgrQueueSto, Q_DIM(l_LWIPMgrQueueSto),           /* evt queue */
-//          (void *)0, 0U,                               /* no per-thread stack */
-//          (QEvt *)0                                /* no initialization event */
-//    );
-//
-//    QACTIVE_START(AO_I2CMgr,
-//          I2C_MGR_PRIORITY,                                       /* priority */
-//          l_I2CMgrQueueSto, Q_DIM(l_I2CMgrQueueSto),             /* evt queue */
-//          (void *)0, 0U,                               /* no per-thread stack */
-//          (QEvt *)0                                /* no initialization event */
-//    );
+    QACTIVE_START(AO_LWIPMgr,
+          ETH_PRIORITY,                                           /* priority */
+          l_LWIPMgrQueueSto, Q_DIM(l_LWIPMgrQueueSto),           /* evt queue */
+          (void *)0, 0U,                               /* no per-thread stack */
+          (QEvt *)0                                /* no initialization event */
+    );
+
+    QACTIVE_START(AO_I2CMgr,
+          I2C_MGR_PRIORITY,                                       /* priority */
+          l_I2CMgrQueueSto, Q_DIM(l_I2CMgrQueueSto),             /* evt queue */
+          (void *)0, 0U,                               /* no per-thread stack */
+          (QEvt *)0                                /* no initialization event */
+    );
 
     QACTIVE_START(AO_CommStackMgr,
           COMM_MGR_PRIORITY,                                      /* priority */
