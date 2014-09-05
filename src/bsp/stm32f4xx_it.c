@@ -19,6 +19,7 @@
 #include "stm32f4xx_tim.h"                                 /* for TIM support */
 #include "stm32f4xx_rtc.h"                                 /* for RTC support */
 #include "stm32f4xx_exti.h"                               /* for EXTI support */
+#include "stm32f4x7_eth_bsp.h"
 
 #include <stdio.h>                                    /* for printf() support */
 #include "project_includes.h"        /* application events and active objects */
@@ -157,6 +158,7 @@ uint16_t tmpCC4[2] = {0, 0};                 /**< Local storage for TIM5_IRQHand
 /******************************************************************************/
 void TIM5_IRQHandler( void )
 {
+//   printf("TIM5 interrupt!@!!!!!!!!!!!!!!!!!!!\n");
    /* This is for measuring the LSI frequency for configuring the RTC */
    if ( RESET != TIM_GetITStatus( TIM5, TIM_IT_CC4 ) ) {
       /* Get the Input Capture value */
@@ -215,6 +217,7 @@ void RTC_WKUP_IRQHandler( void )
 
    //   QK_ISR_EXIT();                          /* inform QK about exiting an ISR */
 }
+
 /**
  * @} end addtogroup groupISR
  */

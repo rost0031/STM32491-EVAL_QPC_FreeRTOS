@@ -607,7 +607,8 @@ LOG_printf(&quot;Connection closed\n&quot;);</code>
 
 /* Includes ------------------------------------------------------------------*/
 #include &quot;LWIPMgr.h&quot;
-#include &quot;lwip.h&quot;                                             /* lwIP stack */
+#include &quot;lwip.h&quot;                                               /* lwIP stack */
+#include &quot;bsp_defs.h&quot;
 
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */

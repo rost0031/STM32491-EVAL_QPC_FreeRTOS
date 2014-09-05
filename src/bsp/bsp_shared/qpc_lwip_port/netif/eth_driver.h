@@ -34,8 +34,8 @@
 #include "netif/etharp.h"
 
 /* for STM32 support */
-#include "stm32f4xx_eth.h"
-#include "stm32f4xx_eth_bsp.h"
+#include "stm32f4x7_eth.h"
+#include "stm32f4x7_eth_bsp.h"
 
 /* Exported defines ----------------------------------------------------------*/
 #if LWIP_PTPD

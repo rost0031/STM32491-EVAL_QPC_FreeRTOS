@@ -118,84 +118,84 @@ DMA_InitTypeDef    DMA_InitStructure;        /**< For I2C DMA initialization. */
 /******************************************************************************/
 void I2C_BusInit( I2C_Bus_t iBus )
 {
-   /* Periph clock enable.  The GPIO clocks should already be enabled by BSP_Init() */
-   RCC_APB1PeriphClockCmd(s_I2C_Bus[iBus].i2c_clk, ENABLE);
-
-   /* Connect PXx to I2C SCL alt function. */
-   GPIO_PinAFConfig(
-         s_I2C_Bus[iBus].scl_port,
-         s_I2C_Bus[iBus].scl_af_pin_source,
-         s_I2C_Bus[iBus].scl_af
-   );
-
-   /* Connect PXx to I2C SDA alt function. */
-   GPIO_PinAFConfig(
-         s_I2C_Bus[iBus].sda_port,
-         s_I2C_Bus[iBus].sda_af_pin_source,
-         s_I2C_Bus[iBus].sda_af
-   );
-
-   /* Configure I2C pins: SCL */
-   GPIO_InitTypeDef  GPIO_InitStructure;
-   GPIO_InitStructure.GPIO_Pin      = s_I2C_Bus[iBus].scl_pin;
-   GPIO_InitStructure.GPIO_Mode     = GPIO_Mode_AF;
-   GPIO_InitStructure.GPIO_Speed    = GPIO_Speed_50MHz;
-   GPIO_InitStructure.GPIO_OType    = GPIO_OType_OD;
-   GPIO_InitStructure.GPIO_PuPd     = GPIO_PuPd_NOPULL;
-   GPIO_Init(s_I2C_Bus[iBus].scl_port, &GPIO_InitStructure);
-
-   /* Configure I2C pins: SDA */
-   GPIO_InitStructure.GPIO_Pin = s_I2C_Bus[iBus].sda_pin;
-   GPIO_Init(s_I2C_Bus[iBus].sda_port, &GPIO_InitStructure);
-
-   /* Reset I2C IP */
-   I2C_DeInit( s_I2C_Bus[iBus].i2c_bus );
-
-   /* I2C configuration */
-   I2C_InitTypeDef  I2C_InitStructure;
-   I2C_InitStructure.I2C_Mode                = I2C_Mode_SMBusHost;
-   I2C_InitStructure.I2C_DutyCycle           = I2C_DutyCycle_2;
-   I2C_InitStructure.I2C_OwnAddress1         = s_I2C_Bus[iBus].i2c_cur_dev_addr;
-   I2C_InitStructure.I2C_Ack                 = I2C_Ack_Enable;
-   I2C_InitStructure.I2C_AcknowledgedAddress = I2C_AcknowledgedAddress_7bit;
-   I2C_InitStructure.I2C_ClockSpeed          = s_I2C_Bus[iBus].i2c_bus_speed;
-
-   /* Set up Interrupt controller to handle I2C Event interrupts */
-   NVIC_Config(
-         s_I2C_Bus[iBus].i2c_ev_irq_num,
-         s_I2C_Bus[iBus].i2c_ev_irq_prio
-   );
-
-   /* Set up Interrupt controller to handle I2C Error interrupts */
-   //   NVIC_Config(
-   //         s_I2C_Bus[iBus].i2c_er_irq_num,
-   //         s_I2C_Bus[iBus].i2c_er_irq_prio
-   //   );
-
-   /* Enable All I2C Interrupts */
-   I2C_ITConfig(
-         s_I2C_Bus[iBus].i2c_bus,
-         I2C_IT_EVT | I2C_IT_BUF, // | I2C_IT_ERR,
-         ENABLE
-   );
-
-   /* Initialize the IRQ and priorities for I2C DMA */
-   NVIC_Config(
-         s_I2C_Bus[iBus].i2c_dma_rx_irq_num,
-         s_I2C_Bus[iBus].i2c_dma_rx_irq_prio
-   );
+//   /* Periph clock enable.  The GPIO clocks should already be enabled by BSP_Init() */
+//   RCC_APB1PeriphClockCmd(s_I2C_Bus[iBus].i2c_clk, ENABLE);
 //
-//      NVIC_Config(
-//            s_I2C_Bus[iBus].i2c_dma_tx_irq_num,
-//            s_I2C_Bus[iBus].i2c_dma_tx_irq_prio
-//      );
-
-   /* Apply I2C configuration */
-   I2C_Init( s_I2C_Bus[iBus].i2c_bus, &I2C_InitStructure );
-   I2C_AcknowledgeConfig(s_I2C_Bus[iBus].i2c_bus, ENABLE );
-
-   /* I2C Peripheral Enable */
-   I2C_Cmd( s_I2C_Bus[iBus].i2c_bus, ENABLE );
+//   /* Connect PXx to I2C SCL alt function. */
+//   GPIO_PinAFConfig(
+//         s_I2C_Bus[iBus].scl_port,
+//         s_I2C_Bus[iBus].scl_af_pin_source,
+//         s_I2C_Bus[iBus].scl_af
+//   );
+//
+//   /* Connect PXx to I2C SDA alt function. */
+//   GPIO_PinAFConfig(
+//         s_I2C_Bus[iBus].sda_port,
+//         s_I2C_Bus[iBus].sda_af_pin_source,
+//         s_I2C_Bus[iBus].sda_af
+//   );
+//
+//   /* Configure I2C pins: SCL */
+//   GPIO_InitTypeDef  GPIO_InitStructure;
+//   GPIO_InitStructure.GPIO_Pin      = s_I2C_Bus[iBus].scl_pin;
+//   GPIO_InitStructure.GPIO_Mode     = GPIO_Mode_AF;
+//   GPIO_InitStructure.GPIO_Speed    = GPIO_Speed_50MHz;
+//   GPIO_InitStructure.GPIO_OType    = GPIO_OType_OD;
+//   GPIO_InitStructure.GPIO_PuPd     = GPIO_PuPd_NOPULL;
+//   GPIO_Init(s_I2C_Bus[iBus].scl_port, &GPIO_InitStructure);
+//
+//   /* Configure I2C pins: SDA */
+//   GPIO_InitStructure.GPIO_Pin = s_I2C_Bus[iBus].sda_pin;
+//   GPIO_Init(s_I2C_Bus[iBus].sda_port, &GPIO_InitStructure);
+//
+//   /* Reset I2C IP */
+//   I2C_DeInit( s_I2C_Bus[iBus].i2c_bus );
+//
+//   /* I2C configuration */
+//   I2C_InitTypeDef  I2C_InitStructure;
+//   I2C_InitStructure.I2C_Mode                = I2C_Mode_SMBusHost;
+//   I2C_InitStructure.I2C_DutyCycle           = I2C_DutyCycle_2;
+//   I2C_InitStructure.I2C_OwnAddress1         = s_I2C_Bus[iBus].i2c_cur_dev_addr;
+//   I2C_InitStructure.I2C_Ack                 = I2C_Ack_Enable;
+//   I2C_InitStructure.I2C_AcknowledgedAddress = I2C_AcknowledgedAddress_7bit;
+//   I2C_InitStructure.I2C_ClockSpeed          = s_I2C_Bus[iBus].i2c_bus_speed;
+//
+//   /* Set up Interrupt controller to handle I2C Event interrupts */
+//   NVIC_Config(
+//         s_I2C_Bus[iBus].i2c_ev_irq_num,
+//         s_I2C_Bus[iBus].i2c_ev_irq_prio
+//   );
+//
+//   /* Set up Interrupt controller to handle I2C Error interrupts */
+//   //   NVIC_Config(
+//   //         s_I2C_Bus[iBus].i2c_er_irq_num,
+//   //         s_I2C_Bus[iBus].i2c_er_irq_prio
+//   //   );
+//
+//   /* Enable All I2C Interrupts */
+//   I2C_ITConfig(
+//         s_I2C_Bus[iBus].i2c_bus,
+//         I2C_IT_EVT | I2C_IT_BUF, // | I2C_IT_ERR,
+//         ENABLE
+//   );
+//
+//   /* Initialize the IRQ and priorities for I2C DMA */
+//   NVIC_Config(
+//         s_I2C_Bus[iBus].i2c_dma_rx_irq_num,
+//         s_I2C_Bus[iBus].i2c_dma_rx_irq_prio
+//   );
+////
+////      NVIC_Config(
+////            s_I2C_Bus[iBus].i2c_dma_tx_irq_num,
+////            s_I2C_Bus[iBus].i2c_dma_tx_irq_prio
+////      );
+//
+//   /* Apply I2C configuration */
+//   I2C_Init( s_I2C_Bus[iBus].i2c_bus, &I2C_InitStructure );
+//   I2C_AcknowledgeConfig(s_I2C_Bus[iBus].i2c_bus, ENABLE );
+//
+//   /* I2C Peripheral Enable */
+//   I2C_Cmd( s_I2C_Bus[iBus].i2c_bus, ENABLE );
 
 }
 
@@ -212,57 +212,57 @@ void I2C_SetDirection( I2C_Bus_t iBus,  uint8_t I2C_Direction )
 /******************************************************************************/
 void I2C_DMARead( I2C_Bus_t iBus, uint16_t wReadAddr, uint16_t wReadLen )
 {
-   /* Check inputs */
-   assert_param( IS_I2C_BUS( iBus ) );
-
-   /* Set the structure buffer management for how many bytes to expect and how
-    * many are currently there (none). */
-   s_I2C_Bus[iBus].nBytesExpected = wReadLen;
-   s_I2C_Bus[iBus].nBytesCurrent  = 0;
-   s_I2C_Bus[iBus].nRxindex       = 0;
-
-   /* Clear out the DMA settings */
-   DMA_DeInit( s_I2C_Bus[iBus].i2c_dma_rx_stream );
-
-   /* Set up a new DMA structure for reading */
-   DMA_InitStructure.DMA_Channel             = s_I2C_Bus[iBus].i2c_dma_channel;
-   DMA_InitStructure.DMA_PeripheralBaseAddr  = s_I2C_Bus[iBus].i2c_dma_dr_addr;
-   DMA_InitStructure.DMA_DIR                 = DMA_DIR_PeripheralToMemory;
-   DMA_InitStructure.DMA_PeripheralInc       = DMA_PeripheralInc_Disable;
-   DMA_InitStructure.DMA_MemoryInc           = DMA_MemoryInc_Enable;
-   DMA_InitStructure.DMA_PeripheralDataSize  = DMA_PeripheralDataSize_Byte;
-   DMA_InitStructure.DMA_MemoryDataSize      = DMA_MemoryDataSize_Byte;
-   DMA_InitStructure.DMA_Mode                = DMA_Mode_Normal;
-   DMA_InitStructure.DMA_Priority            = DMA_Priority_VeryHigh;
-   DMA_InitStructure.DMA_FIFOMode            = DMA_FIFOMode_Enable;
-   DMA_InitStructure.DMA_FIFOThreshold       = DMA_FIFOThreshold_Full;
-   DMA_InitStructure.DMA_MemoryBurst         = DMA_MemoryBurst_Single;
-   DMA_InitStructure.DMA_PeripheralBurst     = DMA_PeripheralBurst_Single;
-   DMA_InitStructure.DMA_Memory0BaseAddr     = s_I2C_Bus[iBus].pRxBuffer;
-   DMA_InitStructure.DMA_BufferSize          = s_I2C_Bus[iBus].nBytesExpected;
-
-   /* Initialize the DMA with the filled in structure */
-   DMA_Init( s_I2C_Bus[iBus].i2c_dma_rx_stream, &DMA_InitStructure );
-
-   /* Enable the TransferComplete interrupt in the DMA */
-   DMA_ITConfig( s_I2C_Bus[iBus].i2c_dma_rx_stream, DMA_IT_TC, ENABLE );
-
-   /* Clear any pending flags on RX Stream */
-   DMA_ClearFlag(
-         s_I2C_Bus[iBus].i2c_dma_rx_stream,
-         DMA_FLAG_TCIF0 |
-         DMA_FLAG_FEIF0 |
-         DMA_FLAG_DMEIF0 |
-         DMA_FLAG_TEIF0 |
-         DMA_FLAG_HTIF0
-   );
-
-   /* I2Cx DMA Enable */
-   I2C_DMACmd( s_I2C_Bus[iBus].i2c_bus, ENABLE );
-
-   /* Finally, activate DMA */
-   DMA_Cmd( s_I2C_Bus[iBus].i2c_dma_rx_stream, ENABLE );
-   DBG_printf("Sent DMA read\n");
+//   /* Check inputs */
+//   assert_param( IS_I2C_BUS( iBus ) );
+//
+//   /* Set the structure buffer management for how many bytes to expect and how
+//    * many are currently there (none). */
+//   s_I2C_Bus[iBus].nBytesExpected = wReadLen;
+//   s_I2C_Bus[iBus].nBytesCurrent  = 0;
+//   s_I2C_Bus[iBus].nRxindex       = 0;
+//
+//   /* Clear out the DMA settings */
+//   DMA_DeInit( s_I2C_Bus[iBus].i2c_dma_rx_stream );
+//
+//   /* Set up a new DMA structure for reading */
+//   DMA_InitStructure.DMA_Channel             = s_I2C_Bus[iBus].i2c_dma_channel;
+//   DMA_InitStructure.DMA_PeripheralBaseAddr  = s_I2C_Bus[iBus].i2c_dma_dr_addr;
+//   DMA_InitStructure.DMA_DIR                 = DMA_DIR_PeripheralToMemory;
+//   DMA_InitStructure.DMA_PeripheralInc       = DMA_PeripheralInc_Disable;
+//   DMA_InitStructure.DMA_MemoryInc           = DMA_MemoryInc_Enable;
+//   DMA_InitStructure.DMA_PeripheralDataSize  = DMA_PeripheralDataSize_Byte;
+//   DMA_InitStructure.DMA_MemoryDataSize      = DMA_MemoryDataSize_Byte;
+//   DMA_InitStructure.DMA_Mode                = DMA_Mode_Normal;
+//   DMA_InitStructure.DMA_Priority            = DMA_Priority_VeryHigh;
+//   DMA_InitStructure.DMA_FIFOMode            = DMA_FIFOMode_Enable;
+//   DMA_InitStructure.DMA_FIFOThreshold       = DMA_FIFOThreshold_Full;
+//   DMA_InitStructure.DMA_MemoryBurst         = DMA_MemoryBurst_Single;
+//   DMA_InitStructure.DMA_PeripheralBurst     = DMA_PeripheralBurst_Single;
+//   DMA_InitStructure.DMA_Memory0BaseAddr     = s_I2C_Bus[iBus].pRxBuffer;
+//   DMA_InitStructure.DMA_BufferSize          = s_I2C_Bus[iBus].nBytesExpected;
+//
+//   /* Initialize the DMA with the filled in structure */
+//   DMA_Init( s_I2C_Bus[iBus].i2c_dma_rx_stream, &DMA_InitStructure );
+//
+//   /* Enable the TransferComplete interrupt in the DMA */
+//   DMA_ITConfig( s_I2C_Bus[iBus].i2c_dma_rx_stream, DMA_IT_TC, ENABLE );
+//
+//   /* Clear any pending flags on RX Stream */
+//   DMA_ClearFlag(
+//         s_I2C_Bus[iBus].i2c_dma_rx_stream,
+//         DMA_FLAG_TCIF0 |
+//         DMA_FLAG_FEIF0 |
+//         DMA_FLAG_DMEIF0 |
+//         DMA_FLAG_TEIF0 |
+//         DMA_FLAG_HTIF0
+//   );
+//
+//   /* I2Cx DMA Enable */
+//   I2C_DMACmd( s_I2C_Bus[iBus].i2c_bus, ENABLE );
+//
+//   /* Finally, activate DMA */
+//   DMA_Cmd( s_I2C_Bus[iBus].i2c_dma_rx_stream, ENABLE );
+//   DBG_printf("Sent DMA read\n");
 }
 
 /**

@@ -27,7 +27,7 @@
  * @brief   How many times per second that the RTOS should attempt to handle its
  * events.  Tells QPC how often to run with respect to system clock.
  */
-#define BSP_TICKS_PER_SEC                                                  10000
+#define BSP_TICKS_PER_SEC                                                  1000
 
 /* Exported macros -----------------------------------------------------------*/
 /**
@@ -85,14 +85,16 @@ enum KernelUnawareISRs {                                        /* see NOTE00 */
 Q_ASSERT_COMPILE(MAX_KERNEL_UNAWARE_CMSIS_PRI <= QF_AWARE_ISR_CMSIS_PRI);
 
 typedef enum KernelAwareISRs {   /* ISR priorities starting from the highest urgency */
-	SYSTICK_PRIO = QF_AWARE_ISR_CMSIS_PRI,                         /* see NOTE00 */
+	ETH_PRIO = QF_AWARE_ISR_CMSIS_PRI,                         /* see NOTE00 */
+	SYSTICK_PRIO,                      /* Ethernet should take the lowest priority */
 	DMA2_Stream7_PRIO,
 	DMA1_Stream6_PRIO,
 	DMA1_Stream0_PRIO,
 	USART1_PRIO,
    I2C1_ER_PRIO,
 	I2C1_EV_PRIO,
-	ETH_PRIO,			             /* Ethernet should take the lowest priority */
+
+	ETH_LINK_PRIO,
 	/* ... */
 	MAX_KERNEL_AWARE_CMSIS_PRI                             /* keep always last */
 } ISR_Priority;

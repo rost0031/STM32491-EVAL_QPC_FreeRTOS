@@ -14,13 +14,14 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "bsp.h"
-
-#include "stm32f4xx.h"                                 /* For STM32F4 support */
-
-#include "qp_port.h"                                        /* for QP support */
+#include "bsp_defs.h"
+#include "stm32f4xx.h"                                     /* STM32F4 support */
+#include "stm32f4x7_eth_bsp.h"                     /* DP83848 ETH PHY support */
+#include "stm32f4x7_eth.h"                         /* STM32F4 ETH MAC support */
+#include "qp_port.h"                                            /* QP support */
 #include "project_includes.h"        /* application events and active objects */
-#include "time.h"                          /* for processor date/time support */
-#include "i2c.h"                                           /* For I2C support */
+#include "time.h"                              /* processor date/time support */
+#include "i2c.h"                                               /* I2C support */
 #include "serial.h"
 
 /* Compile-time called macros ------------------------------------------------*/
@@ -49,9 +50,22 @@ QSTimeCtr QS_tickPeriod_;
 /******************************************************************************/
 void BSP_init( void )
 {
+   /* Enable syscfg clock */
+   RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
+
+   /* 1. Initialize the Serial for printfs to the serial port */
    Serial_Init( SERIAL_SYS );
 
-   /* ENABLE GPIO clocks */
+   /* 2. Initialize the RTC for getting time stamps. */
+   TIME_Init();
+
+
+   RCC_ClocksTypeDef RCC_Clocks;
+   RCC_GetClocksFreq(&RCC_Clocks);
+   dbg_slow_printf("Clock speed: %d\n", RCC_Clocks.SYSCLK_Frequency);
+
+
+//   /* ENABLE GPIO clocks */
 //   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, ENABLE);
 //   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE);
 //   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOC, ENABLE);
@@ -62,12 +76,15 @@ void BSP_init( void )
 //   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOH, ENABLE);
 //   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOI, ENABLE);
 //
-//   /* DMA clock enable */
-//   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA1 , ENABLE);
-//   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA2 , ENABLE);
-//
-//   /* Enable syscfg clock */
-//   RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
+   /* DMA clock enable */
+   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA1 , ENABLE);
+   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA2 , ENABLE);
+
+   /* 3. Initialize Ethernet */
+   ETH_BSP_Config();
+
+
+
 //
 //   /* Enable TIM clocks on APB2 bus */
 //   RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM1, ENABLE);
@@ -89,31 +106,12 @@ void BSP_init( void )
 //
 //   /* Enable CRC clock */
 //   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_CRC, ENABLE);
-//
-//   /* Initialize the Serial for printfs to the serial port */
-//   Serial_Init( SYSTEM_SERIAL );
 
 //   /* Initialize the I2C devices and associated busses */
 //   I2C_BusInit( I2CBus1 );
 
-   /* Start Ethernet configuration */
-   /* Assert a reset on the ETH_RST line.  This should only be released
-    * after all the local MAC and DMA configuration is done. */
-//   GPIO_ResetBits(GPIOA, GPIO_Pin_8);
-//
-//   /* initialize the ETH GPIO */
-//   ETH_GPIO_Config();
-//
-//   /* initialize the ETH MACDMA */
-//   ETH_MACDMA_Config();
-//
-//   /* Release the reset on the ETH_RST line now that the local MAC and DMA
-//    * configuration is done. */
-//   GPIO_SetBits(GPIOA, GPIO_Pin_8);
-//   /* End Ethernet configuration */
-//
-   /* Initialize the RTC for getting time stamps. */
-   TIME_Init();
+
+
 }
 
 /******************************************************************************/
@@ -182,7 +180,23 @@ void QF_onStartup( void )
     * DO NOT LEAVE THE ISR PRIORITIES AT THE DEFAULT VALUE!
     */
    NVIC_SetPriority(SysTick_IRQn,   SYSTICK_PRIO);
+
+   DBG_printf("ETH->DMAOMR before enabling ETH irqs: 0x%08x\n", ETH->DMAOMR );
+   DBG_printf("ETH->DMAIER before enabling ETH irqs: 0x%08x\n", ETH->DMAIER );
+   DBG_printf("ETH->MACSR before enabling ETH irqs: 0x%08x\n", ETH->MACSR );
+   DBG_printf("ETH->DMASR before enabling ETH irqs: 0x%08x\n", ETH->DMASR);
+
    NVIC_Config(ETH_IRQn, ETH_PRIO);
+
+//   if ( ETH_GetDMAFlagStatus(ETH_DMA_FLAG_R) == SET) {
+//      ETH_DMAClearITPendingBit(ETH_DMA_IT_NIS | ETH_DMA_IT_R);/* clear the interrupt sources */
+//   }
+//
+//   if ( ETH_GetDMAFlagStatus(ETH_DMA_FLAG_T) == SET) {
+//      ETH_DMAClearITPendingBit(ETH_DMA_IT_NIS | ETH_DMA_IT_T);/* clear the interrupt sources */
+//   }
+
+   DBG_printf("Enabled ETH IRQ\n");
 }
 
 /******************************************************************************/
@@ -216,7 +230,7 @@ void QK_onIdle(void)
 
 #ifdef Q_SPY
 
-   if ((USART3->SR & USART_FLAG_TXE) != 0) {              /* is TXE empty? */
+   if ((USART1->SR & USART_FLAG_TXE) != 0) {              /* is TXE empty? */
       uint16_t b;
 
       QF_INT_DISABLE();
@@ -224,7 +238,7 @@ void QK_onIdle(void)
       QF_INT_ENABLE();
 
       if (b != QS_EOD) {                              /* not End-Of-Data? */
-         USART3->DR = (b & 0xFF);             /* put into the DR register */
+         USART1->DR = (b & 0xFF);             /* put into the DR register */
       }
    }
 
@@ -399,9 +413,9 @@ QSTimeCtr QS_onGetTime(void) {            /* invoked with interrupts locked */
 void QS_onFlush(void) {
    uint16_t b;
    while ((b = QS_getByte()) != QS_EOD) {      /* while not End-Of-Data... */
-      while ((USART3->SR & USART_FLAG_TXE) == 0) { /* while TXE not empty */
+      while ((USART1->SR & USART_FLAG_TXE) == 0) { /* while TXE not empty */
       }
-      USART3->DR = (b & 0xFF);                /* put into the DR register */
+      USART1->DR = (b & 0xFF);                /* put into the DR register */
    }
 }
 #endif                                                             /* Q_SPY */

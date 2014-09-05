@@ -1,12 +1,10 @@
 /**
   ******************************************************************************
-  * @file    stm32f2xx_eth_conf_template.h
+  * @file    stm32f4x7_eth_conf.h
   * @author  MCD Application Team
   * @version V1.0.0
-  * @date    25-April-2011
-  * @brief   Configuration file for the STM32F4xx Ethernet driver.
-  *          This file should be copied to the application folder and renamed to
-  *          stm32f4xx_eth_conf.h
+  * @date    31-October-2011
+  * @brief   Configuration file for the STM32F4x7 Ethernet driver.
   ******************************************************************************
   * @attention
   *
@@ -19,11 +17,11 @@
   *
   * <h2><center>&copy; COPYRIGHT 2011 STMicroelectronics</center></h2>
   ******************************************************************************
-  */ 
+  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __STM32F4xx_ETH_CONF_H
-#define __STM32F4xx_ETH_CONF_H
+#ifndef __STM32F4x7_ETH_CONF_H
+#define __STM32F4x7_ETH_CONF_H
 
 #ifdef __cplusplus
  extern "C" {
@@ -50,6 +48,7 @@
   #define _eth_delay_    ETH_Delay /* Default _eth_delay_ function with less precise timing */
 #endif
 
+
 /* Uncomment the line below to allow custom configuration of the Ethernet driver buffers */    
 //#define CUSTOM_DRIVER_BUFFERS_CONFIG   
 
@@ -64,7 +63,7 @@
 
 /* PHY configuration section **************************************************/
 /* PHY Reset delay */ 
-#define PHY_RESET_DELAY    ((uint32_t)0x000FFFFF) 
+#define PHY_RESET_DELAY    ((uint32_t)0x000FFFFF)
 /* PHY Configuration delay */ 
 #define PHY_CONFIG_DELAY   ((uint32_t)0x00FFFFFF)
 
@@ -85,7 +84,7 @@
 }
 #endif
 
-#endif /* __STM32F4xx_ETH_CONF_H */
+#endif /* __STM32F4x7_ETH_CONF_H */
 
 
 /******************* (C) COPYRIGHT 2011 STMicroelectronics *****END OF FILE****/

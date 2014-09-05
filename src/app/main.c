@@ -84,16 +84,13 @@ int main(void)
     /* initialize the Board Support Package */
     BSP_init();
     dbg_slow_printf("Initialized BSP\n");
-    uint8_t thing = 0;
     log_slow_printf("Starting Bootloader version %s built on %s\n", FW_VER, BUILD_DATE);
-
-
 
     /* Instantiate the Active objects by calling their "constructors"         */
     dbg_slow_printf("Initializing AO constructors\n");
     SerialMgr_ctor();
-//    LWIPMgr_ctor();
-//    I2CMgr_ctor( I2CBus1 );        /* Start this instance of AO for I2C1 bus. */
+    LWIPMgr_ctor();
+    I2CMgr_ctor( I2CBus1 );        /* Start this instance of AO for I2C1 bus. */
     CommStackMgr_ctor();
 
     dbg_slow_printf("Initializing QF\n");

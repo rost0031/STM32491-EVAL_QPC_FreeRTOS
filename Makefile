@@ -112,7 +112,7 @@ BSP_DIR					= $(SRC_DIR)/bsp
 SYS_DIR					= $(SRC_DIR)/sys
 
 # Ethernet Driver
-ETH_DRV_DIR				= $(BSP_DIR)/bsp_shared/DP83848_Eth_Driver
+ETH_DRV_DIR				= $(BSP_DIR)/bsp_shared/STM32F4x7_ETH_Driver
 QP_LWIP_PORT_DIR		= $(BSP_DIR)/bsp_shared/qpc_lwip_port
 
 # Serial Driver and AO
@@ -229,8 +229,8 @@ C_SRCS					:= \
 						system_stm32f4xx.c \
 						stm32f4xx_it.c \
 						\
-						stm32f4xx_eth.c \
-						stm32f4xx_eth_bsp.c \
+						stm32f4x7_eth.c \
+						stm32f4x7_eth_bsp.c \
 						eth_driver.c \
 						lwip.c \
 						\

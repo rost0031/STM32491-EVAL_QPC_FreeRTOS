@@ -16,8 +16,8 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "netif/eth_driver.h"
-#include "stm32f4xx_eth.h"
-#include "stm32f4xx_eth_bsp.h"
+#include "stm32f4x7_eth.h"
+#include "stm32f4x7_eth_bsp.h"
 #include "project_includes.h"
 
 /* Compile-time called macros ------------------------------------------------*/
@@ -526,6 +526,7 @@ void low_level_init(struct netif *netif)
 
 	/* Enable MAC and DMA transmission and reception */
 	ETH_Start();
+	dbg_slow_printf("Ethernet started...\n");
 }
 
 /**
@@ -538,6 +539,8 @@ void low_level_init(struct netif *netif)
  * the shared objects from QP */
 void ETH_IRQHandler(void) {
     QK_ISR_ENTRY();                      /* inform QK about entering an ISR */
+
+    printf("\n!!EthHandler!!\n\n");
 
     if ( ETH_GetDMAFlagStatus(ETH_DMA_FLAG_R) == SET) {
       ETH_DMAClearITPendingBit(ETH_DMA_IT_NIS | ETH_DMA_IT_R);/* clear the interrupt sources */
