@@ -91,6 +91,14 @@ void ETH_BSP_Config(void)
  */
 static void ETH_MACDMA_Config(void)
 {
+   /* Enable ETHERNET clocks  */
+   RCC_AHB1PeriphClockCmd(
+         RCC_AHB1Periph_ETH_MAC |
+         RCC_AHB1Periph_ETH_MAC_Tx |
+         RCC_AHB1Periph_ETH_MAC_Rx,
+         ENABLE
+   );
+
    ETH_InitTypeDef ETH_InitStructure;
 
    /* Reset ETHERNET on AHB Bus */
@@ -219,10 +227,9 @@ void ETH_GPIO_Config(void)
    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL ;
 
-   /* Configure P0, PA1, PA2 and PA7 */
+   /* Configure PA1, PA2 and PA7 */
    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1 | GPIO_Pin_2 | GPIO_Pin_7;
    GPIO_Init(GPIOA, &GPIO_InitStructure);
-//   GPIO_PinAFConfig(GPIOA, GPIO_PinSource0, GPIO_AF_ETH);
    GPIO_PinAFConfig(GPIOA, GPIO_PinSource1, GPIO_AF_ETH);
    GPIO_PinAFConfig(GPIOA, GPIO_PinSource2, GPIO_AF_ETH);
    GPIO_PinAFConfig(GPIOA, GPIO_PinSource7, GPIO_AF_ETH);
@@ -249,26 +256,12 @@ void ETH_GPIO_Config(void)
    GPIO_PinAFConfig(GPIOG, GPIO_PinSource13, GPIO_AF_ETH);
    GPIO_PinAFConfig(GPIOG, GPIO_PinSource14, GPIO_AF_ETH);
 
-   /* Configure PH3, PH6, PH7 */
+   /* Configure PH6, PH7 */
    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6 | GPIO_Pin_7;
    GPIO_Init(GPIOH, &GPIO_InitStructure);
-//   GPIO_PinAFConfig(GPIOH, GPIO_PinSource2, GPIO_AF_ETH);
-//   GPIO_PinAFConfig(GPIOH, GPIO_PinSource3, GPIO_AF_ETH);
    GPIO_PinAFConfig(GPIOH, GPIO_PinSource6, GPIO_AF_ETH);
    GPIO_PinAFConfig(GPIOH, GPIO_PinSource7, GPIO_AF_ETH);
 
-   /* Configure PI10 */
-//   GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10;
-//   GPIO_Init(GPIOI, &GPIO_InitStructure);
-//   GPIO_PinAFConfig(GPIOI, GPIO_PinSource10, GPIO_AF_ETH);
-
-   /* Enable ETHERNET clock  */
-   RCC_AHB1PeriphClockCmd(
-         RCC_AHB1Periph_ETH_MAC |
-         RCC_AHB1Periph_ETH_MAC_Tx |
-         RCC_AHB1Periph_ETH_MAC_Rx,
-         ENABLE
-   );
 }
 
 /**
@@ -328,7 +321,7 @@ void Eth_Link_EXTIConfig(void)
 {
    GPIO_InitTypeDef GPIO_InitStructure;
    EXTI_InitTypeDef EXTI_InitStructure;
-   NVIC_InitTypeDef NVIC_InitStructure;
+//   NVIC_InitTypeDef NVIC_InitStructure;
 
    /* Enable the INT (PB14) Clock */
    RCC_AHB1PeriphClockCmd(ETH_LINK_GPIO_CLK, ENABLE);

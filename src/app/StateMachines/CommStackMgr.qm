@@ -121,21 +121,7 @@ DBG_printf(&quot;dbg_slow_printf() start: %02d:%02d:%02d:%d stop: %02d:%02d:%02d
      slow_print_finish_time.hour_min_sec.RTC_Seconds,
      (int)slow_print_finish_time.sub_sec
 );
-*/
-
-DBG_printf(&quot;ETH-&gt;DMAOMR: 0x%08x\n&quot;, ETH-&gt;DMAOMR );
-DBG_printf(&quot;ETH-&gt;DMAIER: 0x%08x\n&quot;, ETH-&gt;DMAIER );
-DBG_printf(&quot;ETH-&gt;MACSR:  0x%08x\n&quot;, ETH-&gt;MACSR );
-DBG_printf(&quot;ETH-&gt;DMASR:  0x%08x\n&quot;, ETH-&gt;DMASR );
-DBG_printf(&quot;ETH-&gt;MACCR:  0x%08x\n&quot;, ETH-&gt;MACCR );
-DBG_printf(&quot;ETH MAC IT status: TST|MMCT|MMCR|MMC|PMT = %d|%d|%d|%d|%d\n&quot;, 
-    ETH_GetMACITStatus(ETH_MAC_IT_TST),
-    ETH_GetMACITStatus(ETH_MAC_IT_MMCT),
-    ETH_GetMACITStatus(ETH_MAC_IT_MMCR),
-    ETH_GetMACITStatus(ETH_MAC_IT_MMC),
-    ETH_GetMACITStatus(ETH_MAC_IT_PMT)
-);
-DBG_printf(&quot;ETH Frame RXd?: %d\n&quot;, ETH_CheckFrameReceived());</action>
+*/</action>
       <tran_glyph conn="3,19,3,-1,21">
        <action box="0,-2,11,2"/>
       </tran_glyph>

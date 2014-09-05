@@ -540,8 +540,6 @@ void low_level_init(struct netif *netif)
 void ETH_IRQHandler(void) {
     QK_ISR_ENTRY();                      /* inform QK about entering an ISR */
 
-    printf("\n!!EthHandler!!\n\n");
-
     if ( ETH_GetDMAFlagStatus(ETH_DMA_FLAG_R) == SET) {
       ETH_DMAClearITPendingBit(ETH_DMA_IT_NIS | ETH_DMA_IT_R);/* clear the interrupt sources */
       static QEvent const evt_eth_rx = { LWIP_RX_READY_SIG, 0 };

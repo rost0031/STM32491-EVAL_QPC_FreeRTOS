@@ -211,20 +211,6 @@ static QState CommStackMgr_Active(CommStackMgr * const me, QEvt const * const e)
                  (int)slow_print_finish_time.sub_sec
             );
             */
-
-            DBG_printf("ETH->DMAOMR: 0x%08x\n", ETH->DMAOMR );
-            DBG_printf("ETH->DMAIER: 0x%08x\n", ETH->DMAIER );
-            DBG_printf("ETH->MACSR:  0x%08x\n", ETH->MACSR );
-            DBG_printf("ETH->DMASR:  0x%08x\n", ETH->DMASR );
-            DBG_printf("ETH->MACCR:  0x%08x\n", ETH->MACCR );
-            DBG_printf("ETH MAC IT status: TST|MMCT|MMCR|MMC|PMT = %d|%d|%d|%d|%d\n",
-                ETH_GetMACITStatus(ETH_MAC_IT_TST),
-                ETH_GetMACITStatus(ETH_MAC_IT_MMCT),
-                ETH_GetMACITStatus(ETH_MAC_IT_MMCR),
-                ETH_GetMACITStatus(ETH_MAC_IT_MMC),
-                ETH_GetMACITStatus(ETH_MAC_IT_PMT)
-            );
-            DBG_printf("ETH Frame RXd?: %d\n", ETH_CheckFrameReceived());
             status_ = Q_HANDLED();
             break;
         }

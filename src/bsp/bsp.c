@@ -77,8 +77,8 @@ void BSP_init( void )
 //   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOI, ENABLE);
 //
    /* DMA clock enable */
-   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA1 , ENABLE);
-   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA2 , ENABLE);
+//   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA1 , ENABLE);
+//   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA2 , ENABLE);
 
    /* 3. Initialize Ethernet */
    ETH_BSP_Config();
@@ -181,10 +181,10 @@ void QF_onStartup( void )
     */
    NVIC_SetPriority(SysTick_IRQn,   SYSTICK_PRIO);
 
-   DBG_printf("ETH->DMAOMR before enabling ETH irqs: 0x%08x\n", ETH->DMAOMR );
-   DBG_printf("ETH->DMAIER before enabling ETH irqs: 0x%08x\n", ETH->DMAIER );
-   DBG_printf("ETH->MACSR before enabling ETH irqs: 0x%08x\n", ETH->MACSR );
-   DBG_printf("ETH->DMASR before enabling ETH irqs: 0x%08x\n", ETH->DMASR);
+//   DBG_printf("ETH->DMAOMR before enabling ETH irqs: 0x%08x\n", ETH->DMAOMR );
+//   DBG_printf("ETH->DMAIER before enabling ETH irqs: 0x%08x\n", ETH->DMAIER );
+//   DBG_printf("ETH->MACSR before enabling ETH irqs: 0x%08x\n", ETH->MACSR );
+//   DBG_printf("ETH->DMASR before enabling ETH irqs: 0x%08x\n", ETH->DMASR);
 
    NVIC_Config(ETH_IRQn, ETH_PRIO);
 

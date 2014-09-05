@@ -158,7 +158,6 @@ uint16_t tmpCC4[2] = {0, 0};                 /**< Local storage for TIM5_IRQHand
 /******************************************************************************/
 void TIM5_IRQHandler( void )
 {
-//   printf("TIM5 interrupt!@!!!!!!!!!!!!!!!!!!!\n");
    /* This is for measuring the LSI frequency for configuring the RTC */
    if ( RESET != TIM_GetITStatus( TIM5, TIM_IT_CC4 ) ) {
       /* Get the Input Capture value */
