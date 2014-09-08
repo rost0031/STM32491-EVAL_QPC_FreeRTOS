@@ -32,9 +32,9 @@
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
 #define MII_MODE
-//#ifdef  MII_MODE
+#ifdef  MII_MODE
 //    #define PHY_CLOCK_MCO
-//#endif
+#endif
 
 #define DP83848_PHY_ADDRESS       0x01 /* Relative to STM324xG-EVAL Board */
 
@@ -57,15 +57,40 @@
 
 /* Exported macro ------------------------------------------------------------*/
 /* Exported functions ------------------------------------------------------- */
-void  ETH_BSP_Config(void);
-uint32_t Eth_Link_PHYITConfig(uint16_t PHYAddress);
-void Eth_Link_EXTIConfig(void);
-void Eth_Link_ITHandler(uint16_t PHYAddress);
+
+/**
+ * @brief  Configure ethernet, PHY, MAC, and EthDMA.
+ * @param  None
+ * @retval None
+ */
+void  ETH_BSP_Config( void );
+
+/**
+ * @brief  Configure the PHY to generate an interrupt on change of link status.
+ * @param PHYAddress: external PHY address
+ * @retval None
+ */
+uint32_t Eth_Link_PHYITConfig( uint16_t PHYAddress );
+
+/**
+ * @brief  EXTI configuration for Ethernet link status.
+ * @param PHYAddress: external PHY address
+ * @retval None
+ */
+void Eth_Link_EXTIConfig( void );
+
+/**
+ * @brief  This function handles Ethernet link status.  It should be called from
+ * the actual ISR that handles the EXTI line that is connected to the MII_INT
+ * pin on the PHY.
+ * @param  None
+ * @retval None
+ */
+void Eth_Link_ITHandler( uint16_t PHYAddress );
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* __STM32F4x7_ETH_BSP_H */
-
+#endif                                               /* __STM32F4x7_ETH_BSP_H */
 /******************* (C) COPYRIGHT 2011 STMicroelectronics *****END OF FILE****/

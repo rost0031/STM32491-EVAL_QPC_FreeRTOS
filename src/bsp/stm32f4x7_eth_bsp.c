@@ -32,7 +32,7 @@
 #include "misc.h"                            /* STM32F4 miscellaneous defines */
 
 #include "console_output.h"                         /* Console output support */
-#include "lwipopts.h"
+#include "lwipopts.h"                        /* LWIP options for this project */
 #include "bsp.h"
 
 /* Private typedef -----------------------------------------------------------*/
@@ -43,20 +43,25 @@ __IO uint32_t  EthInitStatus = 0;
 __IO uint8_t EthLinkStatus = 0;
 
 /* Private function prototypes -----------------------------------------------*/
+/**
+ * @brief  Configures the different GPIO ports.
+ * @param  None
+ * @retval None
+ */
 static void ETH_GPIO_Config(void);
+
+/**
+ * @brief  Configures the Ethernet Interface
+ * @param  None
+ * @retval None
+ */
 static void ETH_MACDMA_Config(void);
 
 /* Private functions ---------------------------------------------------------*/
 
-/**
- * @brief  ETH_BSP_Config
- * @param  None
- * @retval None
- */
+/******************************************************************************/
 void ETH_BSP_Config(void)
 {
-//   RCC_ClocksTypeDef RCC_Clocks;
-
    /* Configure the GPIO ports for ethernet pins */
    ETH_GPIO_Config();
 
@@ -65,31 +70,28 @@ void ETH_BSP_Config(void)
 
    if (EthInitStatus == 0) {
       err_slow_printf("Ethernet Init failed\n");
+      /* TODO: this can be handled better. Find out how to best tackle this from
+       * a system POV.  HR */
       while(1);
    } else {
       dbg_slow_printf("Ethernet Init succeeded\n");
    }
 
-   /* Configure the PHY to generate an interrupt on change of link status */
+   /* Configure the PHY to generate an interrupt on change of link status
+    * This can only be configured if
+    * A: there's a physical connection to the MII_INT pin on the PHY.
+    * B: the IO expander on the dev kit is configured .
+    * Some dev kits (STM324x9I-EVAL2) use the IO expander, while some don't. */
+
 //   Eth_Link_PHYITConfig(DP83848_PHY_ADDRESS);
 
    /* Configure the EXTI for Ethernet link status. */
 //   Eth_Link_EXTIConfig();
 
-//   /* Configure Systick clock source as HCLK */
-//   SysTick_CLKSourceConfig(SysTick_CLKSource_HCLK);
-//
-//   /* SystTick configuration: an interrupt every 10ms */
-//   RCC_GetClocksFreq(&RCC_Clocks);
-//   SysTick_Config(RCC_Clocks.HCLK_Frequency / 10000);
 }
 
-/**
- * @brief  Configures the Ethernet Interface
- * @param  None
- * @retval None
- */
-static void ETH_MACDMA_Config(void)
+/******************************************************************************/
+static void ETH_MACDMA_Config( void )
 {
    /* Enable ETHERNET clocks  */
    RCC_AHB1PeriphClockCmd(
@@ -111,45 +113,42 @@ static void ETH_MACDMA_Config(void)
    while (ETH_GetSoftwareResetStatus() == SET);
 
    /* ETHERNET Configuration --------------------------------------------------*/
-   /* Call ETH_StructInit if you don't like to configure all ETH_InitStructure parameter */
+   /* Call ETH_StructInit if you don't like to configure all ETH_InitStructure parameters */
    ETH_StructInit(&ETH_InitStructure);
 
-   /* Fill ETH_InitStructure parametrs */
+   /* Fill ETH_InitStructure parameters */
    /*------------------------   MAC   -----------------------------------*/
-   ETH_InitStructure.ETH_AutoNegotiation = ETH_AutoNegotiation_Enable;
-//   ETH_InitStructure.ETH_AutoNegotiation = ETH_AutoNegotiation_Disable;
-//   ETH_InitStructure.ETH_Speed = ETH_Speed_10M;
-   ETH_InitStructure.ETH_Mode = ETH_Mode_FullDuplex;
-
-   ETH_InitStructure.ETH_LoopbackMode = ETH_LoopbackMode_Disable;
-   ETH_InitStructure.ETH_RetryTransmission = ETH_RetryTransmission_Disable;
-   ETH_InitStructure.ETH_AutomaticPadCRCStrip = ETH_AutomaticPadCRCStrip_Disable;
-   ETH_InitStructure.ETH_ReceiveAll = ETH_ReceiveAll_Disable;
-   ETH_InitStructure.ETH_BroadcastFramesReception = ETH_BroadcastFramesReception_Enable;
-   ETH_InitStructure.ETH_PromiscuousMode = ETH_PromiscuousMode_Disable;
-   ETH_InitStructure.ETH_MulticastFramesFilter = ETH_MulticastFramesFilter_Perfect;
-   ETH_InitStructure.ETH_UnicastFramesFilter = ETH_UnicastFramesFilter_Perfect;
+   ETH_InitStructure.ETH_AutoNegotiation           = ETH_AutoNegotiation_Enable;
+   ETH_InitStructure.ETH_Mode                      = ETH_Mode_FullDuplex;
+   ETH_InitStructure.ETH_LoopbackMode              = ETH_LoopbackMode_Disable;
+   ETH_InitStructure.ETH_RetryTransmission         = ETH_RetryTransmission_Disable;
+   ETH_InitStructure.ETH_AutomaticPadCRCStrip      = ETH_AutomaticPadCRCStrip_Disable;
+   ETH_InitStructure.ETH_ReceiveAll                = ETH_ReceiveAll_Disable;
+   ETH_InitStructure.ETH_BroadcastFramesReception  = ETH_BroadcastFramesReception_Enable;
+   ETH_InitStructure.ETH_PromiscuousMode           = ETH_PromiscuousMode_Disable;
+   ETH_InitStructure.ETH_MulticastFramesFilter     = ETH_MulticastFramesFilter_Perfect;
+   ETH_InitStructure.ETH_UnicastFramesFilter       = ETH_UnicastFramesFilter_Perfect;
 #ifdef CHECKSUM_BY_HARDWARE
-   ETH_InitStructure.ETH_ChecksumOffload = ETH_ChecksumOffload_Enable;
+   ETH_InitStructure.ETH_ChecksumOffload           = ETH_ChecksumOffload_Enable;
 #endif
 
    /*------------------------   DMA   -----------------------------------*/
-
-   /* When we use the Checksum offload feature, we need to enable the Store and Forward mode:
-  the store and forward guarantee that a whole frame is stored in the FIFO, so the MAC can insert/verify the checksum, 
-  if the checksum is OK the DMA can handle the frame otherwise the frame is dropped */
+   /* When we use the Checksum offload feature, we need to enable the Store and
+    * Forward mode: the store and forward guarantee that a whole frame is stored
+    * in the FIFO, so the MAC can insert/verify the checksum, if the checksum is
+    * OK the DMA can handle the frame otherwise the frame is dropped */
    ETH_InitStructure.ETH_DropTCPIPChecksumErrorFrame = ETH_DropTCPIPChecksumErrorFrame_Enable;
-   ETH_InitStructure.ETH_ReceiveStoreForward = ETH_ReceiveStoreForward_Enable;
-   ETH_InitStructure.ETH_TransmitStoreForward = ETH_TransmitStoreForward_Enable;
+   ETH_InitStructure.ETH_ReceiveStoreForward       = ETH_ReceiveStoreForward_Enable;
+   ETH_InitStructure.ETH_TransmitStoreForward      = ETH_TransmitStoreForward_Enable;
 
-   ETH_InitStructure.ETH_ForwardErrorFrames = ETH_ForwardErrorFrames_Disable;
+   ETH_InitStructure.ETH_ForwardErrorFrames        = ETH_ForwardErrorFrames_Disable;
    ETH_InitStructure.ETH_ForwardUndersizedGoodFrames = ETH_ForwardUndersizedGoodFrames_Disable;
-   ETH_InitStructure.ETH_SecondFrameOperate = ETH_SecondFrameOperate_Enable;
-   ETH_InitStructure.ETH_AddressAlignedBeats = ETH_AddressAlignedBeats_Enable;
-   ETH_InitStructure.ETH_FixedBurst = ETH_FixedBurst_Enable;
-   ETH_InitStructure.ETH_RxDMABurstLength = ETH_RxDMABurstLength_32Beat;
-   ETH_InitStructure.ETH_TxDMABurstLength = ETH_TxDMABurstLength_32Beat;
-   ETH_InitStructure.ETH_DMAArbitration = ETH_DMAArbitration_RoundRobin_RxTx_2_1;
+   ETH_InitStructure.ETH_SecondFrameOperate        = ETH_SecondFrameOperate_Enable;
+   ETH_InitStructure.ETH_AddressAlignedBeats       = ETH_AddressAlignedBeats_Enable;
+   ETH_InitStructure.ETH_FixedBurst                = ETH_FixedBurst_Enable;
+   ETH_InitStructure.ETH_RxDMABurstLength          = ETH_RxDMABurstLength_32Beat;
+   ETH_InitStructure.ETH_TxDMABurstLength          = ETH_TxDMABurstLength_32Beat;
+   ETH_InitStructure.ETH_DMAArbitration            = ETH_DMAArbitration_RoundRobin_RxTx_2_1;
 
    /* Configure Ethernet */
    EthInitStatus = ETH_Init(&ETH_InitStructure, DP83848_PHY_ADDRESS);
@@ -158,26 +157,23 @@ static void ETH_MACDMA_Config(void)
    ETH_DMAITConfig(ETH_DMA_IT_NIS | ETH_DMA_IT_R | ETH_DMA_IT_T, ENABLE);
 }
 
-/**
- * @brief  Configures the different GPIO ports.
- * @param  None
- * @retval None
- */
-void ETH_GPIO_Config(void)
+/******************************************************************************/
+void ETH_GPIO_Config( void )
 {
    GPIO_InitTypeDef GPIO_InitStructure;
-
-   /* Configure MCO (PA8) */
-//   GPIO_InitStructure.GPIO_Pin = GPIO_Pin_8;
-//   GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;
-//   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
-//   GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-//   GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL ;
-//   GPIO_Init(GPIOA, &GPIO_InitStructure);
 
    /* MII/RMII Media interface selection --------------------------------------*/
 #ifdef MII_MODE /* Mode MII with STM324xG-EVAL  */
 #ifdef PHY_CLOCK_MCO
+
+   /* Configure MCO (PA8) - This pin is only needed if using an internal
+    * oscillator instead of a crystal. */
+   GPIO_InitStructure.GPIO_Pin = GPIO_Pin_8;
+   GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;
+   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+   GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+   GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL ;
+   GPIO_Init(GPIOA, &GPIO_InitStructure);
 
    /* Output HSE clock (25MHz) on MCO pin (PA8) to clock the PHY */
    RCC_MCO1Config(RCC_MCO1Source_HSE, RCC_MCO1Div_1);
@@ -194,18 +190,24 @@ void ETH_GPIO_Config(void)
    RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
 
    /* Enable GPIOs clocks */
-   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA | RCC_AHB1Periph_GPIOB |
-         RCC_AHB1Periph_GPIOC | RCC_AHB1Periph_GPIOI |
-         RCC_AHB1Periph_GPIOG | RCC_AHB1Periph_GPIOH |
-         RCC_AHB1Periph_GPIOF, ENABLE);
+   RCC_AHB1PeriphClockCmd(
+         RCC_AHB1Periph_GPIOA |
+         RCC_AHB1Periph_GPIOB |
+         RCC_AHB1Periph_GPIOC |
+         RCC_AHB1Periph_GPIOF |
+         RCC_AHB1Periph_GPIOG |
+         RCC_AHB1Periph_GPIOH |
+         RCC_AHB1Periph_GPIOI,
+         ENABLE
+   );
 
-   /* Ethernet pins configuration ************************************************/
+   /* Ethernet pins configuration *********************************************/
    /*
         ETH_MDIO -------------------------> PA2
         ETH_MDC --------------------------> PC1
         ETH_PPS_OUT ----------------------> PB5
-        ETH_MII_CRS ----------------------> PH2 x PA0
-        ETH_MII_COL ----------------------> PH3
+        ETH_MII_CRS ----------------------> PH2 - not used
+        ETH_MII_COL ----------------------> PH3 - not used
         ETH_MII_RX_ER --------------------> PI10
         ETH_MII_RXD2 ---------------------> PH6
         ETH_MII_RXD3 ---------------------> PH7
@@ -264,23 +266,16 @@ void ETH_GPIO_Config(void)
 
 }
 
-/**
- * @brief  Configure the PHY to generate an interrupt on change of link status.
- * @param PHYAddress: external PHY address
- * @retval None
- */
-uint32_t Eth_Link_PHYITConfig(uint16_t PHYAddress)
+/******************************************************************************/
+uint32_t Eth_Link_PHYITConfig( uint16_t PHYAddress )
 {
    uint32_t tmpreg = 0;
 
    /* Read MICR register */
    tmpreg = ETH_ReadPHYRegister(PHYAddress, PHY_MICR);
 
-   dbg_slow_printf("PHY_MICR: 0x%08\n", tmpreg);
-
    /* Enable output interrupt events to signal via the INT pin */
    tmpreg |= (uint32_t)PHY_MICR_INT_EN | PHY_MICR_INT_OE;
-   dbg_slow_printf("Attempting to write 0x%08x to PHY_MICR\n", tmpreg);
    if(!(ETH_WritePHYRegister(PHYAddress, PHY_MICR, tmpreg)))
    {
       /* Return ERROR in case of write timeout */
@@ -288,13 +283,9 @@ uint32_t Eth_Link_PHYITConfig(uint16_t PHYAddress)
       return ETH_ERROR;
    }
 
-   tmpreg = ETH_ReadPHYRegister(PHYAddress, PHY_MICR);
-
-   dbg_slow_printf("PHY_MICR: 0x%08x\n", tmpreg);
-
    /* Read MISR register */
    tmpreg = ETH_ReadPHYRegister(PHYAddress, PHY_MISR);
-   dbg_slow_printf("PHY_MISR: 0x%08x\n", tmpreg);
+
    /* Enable Interrupt on change of link status */
    tmpreg |= (uint32_t)PHY_MISR_LINK_INT_EN;
    if(!(ETH_WritePHYRegister(PHYAddress, PHY_MISR, tmpreg)))
@@ -304,24 +295,15 @@ uint32_t Eth_Link_PHYITConfig(uint16_t PHYAddress)
       return ETH_ERROR;
    }
 
-   tmpreg = ETH_ReadPHYRegister(PHYAddress, PHY_MISR);
-
-   dbg_slow_printf("PHY_MISR: 0x%08x\n", tmpreg);
-
    /* Return SUCCESS */
    return ETH_SUCCESS;
 }
 
-/**
- * @brief  EXTI configuration for Ethernet link status.
- * @param PHYAddress: external PHY address
- * @retval None
- */
-void Eth_Link_EXTIConfig(void)
+/******************************************************************************/
+void Eth_Link_EXTIConfig( void )
 {
    GPIO_InitTypeDef GPIO_InitStructure;
    EXTI_InitTypeDef EXTI_InitStructure;
-//   NVIC_InitTypeDef NVIC_InitStructure;
 
    /* Enable the INT (PB14) Clock */
    RCC_AHB1PeriphClockCmd(ETH_LINK_GPIO_CLK, ENABLE);
@@ -343,30 +325,17 @@ void Eth_Link_EXTIConfig(void)
    EXTI_InitStructure.EXTI_LineCmd = ENABLE;
    EXTI_Init(&EXTI_InitStructure);
 
-   /* Enable and set the EXTI interrupt to the highest priority */
-//   NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);
-//   NVIC_InitStructure.NVIC_IRQChannel = EXTI15_10_IRQn;
-//   NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
-//   NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
-//   NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-//   NVIC_Init(&NVIC_InitStructure);
-
+   /* Enable and set the EXTI interrupt */
    NVIC_Config( EXTI15_10_IRQn, ETH_LINK_PRIO );
 }
 
-/**
- * @brief  This function handles Ethernet link status.
- * @param  None
- * @retval None
- */
-void Eth_Link_ITHandler(uint16_t PHYAddress)
+/******************************************************************************/
+void Eth_Link_ITHandler( uint16_t PHYAddress )
 {
-   printf("EthLinkH\n");
    /* Check whether the link interrupt has occurred or not */
    if(((ETH_ReadPHYRegister(PHYAddress, PHY_MISR)) & PHY_LINK_STATUS) != 0)
    {
       EthLinkStatus = ~EthLinkStatus;
-
 
       if(EthLinkStatus != 0) {
          log_slow_printf("Network cable unplugged\n");
@@ -374,8 +343,6 @@ void Eth_Link_ITHandler(uint16_t PHYAddress)
          log_slow_printf("Network cable plugged in\n");
       }
    }
-
-
 }
 
 /******************* (C) COPYRIGHT 2011 STMicroelectronics *****END OF FILE****/
