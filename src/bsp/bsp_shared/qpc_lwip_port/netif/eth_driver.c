@@ -246,7 +246,6 @@ void low_level_transmit(struct netif *netif, struct pbuf *p)
 {
 	struct pbuf *q;
 	u32_t l = 0;
-	err_t res = ERR_OK;
 	u8 *buffer;
 
 	/**
@@ -272,7 +271,7 @@ void low_level_transmit(struct netif *netif, struct pbuf *p)
         l += q->len;
     }
 
-    res = ETH_Prepare_Transmit_Descriptors(l);
+    ETH_Prepare_Transmit_Descriptors(l);
 
 #if ETH_PAD_SIZE
 	pbuf_header(p, ETH_PAD_SIZE); /* reclaim the padding word */
