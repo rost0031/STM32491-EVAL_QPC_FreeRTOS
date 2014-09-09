@@ -88,12 +88,11 @@ int main(void)
     /* Enable debugging for select modules */
 
     dbg_slow_printf("glbDbgConfig is 0x%08x before enabling any debugging\n", glbDbgConfig);
-//    CON_enableDbgForModule(DBG_MODL_GENERAL);
-//    CON_enableDbgForModule(DBG_MODL_SERIAL);
-//    CON_enableDbgForModule(DBG_MODL_TIME);
-//    CON_enableDbgForModule(DBG_MODL_ETH);
-//    CON_enableDbgForModule(DBG_MODL_I2C);
-    DBG_ENABLE_DEBUG_FOR_MODULE( DBG_MODL_GENERAL );
+    DBG_ENABLE_DEBUG_FOR_MODULE(DBG_MODL_GENERAL);
+    DBG_ENABLE_DEBUG_FOR_MODULE(DBG_MODL_SERIAL);
+    DBG_ENABLE_DEBUG_FOR_MODULE(DBG_MODL_TIME);
+    DBG_ENABLE_DEBUG_FOR_MODULE(DBG_MODL_ETH);
+    DBG_ENABLE_DEBUG_FOR_MODULE(DBG_MODL_I2C);
 
     dbg_slow_printf("glbDbgConfig is 0x%08x after enabling any debugging\n", glbDbgConfig);
 
