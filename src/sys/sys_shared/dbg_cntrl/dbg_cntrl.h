@@ -223,6 +223,9 @@ extern uint32_t  glbDbgConfig; /**< Allow global access to debug info */
  * This macro behaves just like a printf function but prepends "DBG:", time,
  * function name, line number, and finally, the user passed in message.
  *
+ * @note: This macro checks the DEBUG flag (compile time) and global debug
+ * control to allow filtering.
+ *
  * Usage Example:
  *
  * @code
@@ -399,6 +402,9 @@ extern uint32_t  glbDbgConfig; /**< Allow global access to debug info */
  * This macro behaves just like a printf function but prepends "DBG-SLOW!", time,
  * function name, line number, and finally, the user passed in message.
  *
+ * @note: This macro checks the DEBUG flag (compile time) and global debug
+ * control to allow filtering.
+ *
  * Usage Example:
  *
  * @code
@@ -424,8 +430,13 @@ extern uint32_t  glbDbgConfig; /**< Allow global access to debug info */
  * @return None
  */
 #define dbg_slow_printf(fmt, ...) \
-      do { if (DEBUG) CON_slow_output(DBG, __func__, __LINE__, fmt, \
-            ##__VA_ARGS__); \
+      do { \
+         if (DEBUG) { \
+            if ( glbDbgConfig & DBG_this_module_ ) { \
+               CON_slow_output(DBG, __func__, __LINE__, fmt, \
+                     ##__VA_ARGS__); \
+            } \
+         } \
       } while (0)
 
 /**
