@@ -122,11 +122,11 @@ SERIAL_DIR				= $(BSP_DIR)/bsp_shared/serial
 I2C_DIR					= $(BSP_DIR)/bsp_shared/i2c
 
 # QPC directories
-QPC 					= $(SYS_DIR)/qpc_shared
-QP_PORT_DIR 			= $(QPC)/ports/arm-cm/qk/gnu
+QPC_DIR					= $(SYS_DIR)/qpc_shared
+QP_PORT_DIR 			= $(QPC_DIR)/ports/arm-cm/qk/gnu
 
 # STM32 Drivers
-STM32F4XX_STD_PERIPH	= $(BSP_DIR)/bsp_shared/STM32F4xx_StdPeriph_Driver
+STM32F4XX_STD_PERIPH_DIR= $(BSP_DIR)/bsp_shared/STM32F4xx_StdPeriph_Driver
 
 # LWIP
 LWIP_DIR				= $(SYS_DIR)/lwip_shared
@@ -139,12 +139,18 @@ LWIP_PORT_FOR_LWIP		= ../../bsp/bsp_shared/qpc_lwip_port
 BSP_DIR_FOR_LWIP		= ../../bsp/bsp_shared/runtime
 LWIP_SRC_DIR			= ../../
 
-# Common state machines directory
-COMM_SM					= $(APP_DIR)/StateMachines
+# Application state machines directory
+APP_SM_DIR				= $(APP_DIR)/StateMachines
+
+# Console output directory
+CON_OUT_DIR				= $(SYS_DIR)/sys_shared/con_out
+
+# Debug control directory
+DBG_CNTRL_DIR			= $(SYS_DIR)/sys_shared/dbg_cntrl
 
 # Source virtual directories
 VPATH 					= $(APP_DIR) \
-						  $(COMM_SM) \
+						  $(APP_SM_DIR) \
 						  \
 						  $(BSP_DIR) \
 						  $(BSP_DIR)/bsp_shared \
@@ -158,16 +164,19 @@ VPATH 					= $(APP_DIR) \
 						  $(BASE64_DIR) \
 						  $(BSP_DIR)/bsp_shared/runtime \
 						  \
-						  $(STM32F4XX_STD_PERIPH)/src
+						  $(STM32F4XX_STD_PERIPH_DIR)/src \
+						  \
+						  $(CON_OUT_DIR) \
+						  $(DBG_CNTRL_DIR)
 
 # include directories
 INCLUDES  				= -I$(SRC_DIR) \
 						  -I$(APP_DIR) \
 						  \
-						  -I$(COMM_SM) \
+						  -I$(APP_SM_DIR) \
 						  \
-						  -I$(QPC)/include \
-						  -I$(QPC)/qf/source \
+						  -I$(QPC_DIR)/include \
+						  -I$(QPC_DIR)/qf/source \
 						  -I$(QP_PORT_DIR) \
 						  \
 						  -I$(BSP_DIR)  \
@@ -190,7 +199,10 @@ INCLUDES  				= -I$(SRC_DIR) \
 						  -I$(QP_LWIP_PORT_DIR)/arch \
 						  -I$(QP_LWIP_PORT_DIR)/netif \
 						  \
-						  -I$(STM32F4XX_STD_PERIPH)/inc
+						  -I$(STM32F4XX_STD_PERIPH_DIR)/inc \
+						  \
+						  -I$(CON_OUT_DIR) \
+						  -I$(DBG_CNTRL_DIR)
 
 #-----------------------------------------------------------------------------
 # defines
@@ -240,6 +252,7 @@ C_SRCS					:= \
 						console_output.c \
 						time.c \
 						i2c.c \
+						dbg_cntrl.c \
 						\
 						LWIPMgr.c \
 						I2CMgr.c \

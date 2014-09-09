@@ -14,7 +14,6 @@
  * @addtogroup groupSerial
  * @{
  */
-//#define QP_IMPL           /* this is QP implementation */
 /* Includes ------------------------------------------------------------------*/
 #include "console_output.h"
 #include "qp_port.h"                                        /* for QP support */
@@ -23,8 +22,6 @@
 #include "Shared.h"                                   /*  Common Declarations */
 #include "time.h"
 #include "SerialMgr.h"
-//#include "qk.h"
-//#include "qf_pkg.h"                             /* For crit entry/exit macros */
 
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */
@@ -33,13 +30,6 @@ Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */
 /* Private defines -----------------------------------------------------------*/
 /* Private macros ------------------------------------------------------------*/
 /* Private variables and Local objects ---------------------------------------*/
-
-/**< This "global" variable is used to keep track of all the modules which have
- * debugging enabled throughout the system.
- * @note 1: this var should not be accessed directly by the developer.
- * @note 2: this var should be set/cleared by the #DBG_ENABLE_DEBUG_FOR_MODULE()
- * and #DBG_DISABLE_DEBUG_FOR_MODULE(), respectively */
-uint32_t  glbDbgConfig = 0;
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
