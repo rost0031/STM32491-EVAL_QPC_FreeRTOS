@@ -114,6 +114,10 @@
 #ifndef DBG_CNTRL_H_
 #define DBG_CNTRL_H_
 
+#ifdef __cplusplus
+ extern "C" {
+#endif
+
 /* Includes ------------------------------------------------------------------*/
 #include <stdint.h>
 #include <stdarg.h>
@@ -168,11 +172,6 @@ extern uint32_t  glbDbgConfig; /**< Allow global access to debug info */
 
 /* Exported constants --------------------------------------------------------*/
 /* Exported functions --------------------------------------------------------*/
-
-/** @addtogroup groupDbgCntrl
- * @{
- */
-
 /* Exported macros -----------------------------------------------------------*/
 
 /**
@@ -213,6 +212,10 @@ extern uint32_t  glbDbgConfig; /**< Allow global access to debug info */
  */
 #define DBG_DISABLE_DEBUG_FOR_ALL_MODULES( ) \
       glbDbgConfig = 0x00000000;
+
+/** @addtogroup groupDbgFast
+ * @{
+ */
 
 /**
  * @brief Debug print function.
@@ -381,6 +384,14 @@ extern uint32_t  glbDbgConfig; /**< Allow global access to debug info */
       do { CON_output(CON, __func__, __LINE__, fmt, \
             ##__VA_ARGS__); \
       } while (0)
+
+/**
+ * @} end group groupDbgFast
+ */
+
+/** @addtogroup groupDbgSlow
+ * @{
+ */
 
 /**
  * @brief Slow debug print function.
@@ -557,9 +568,12 @@ extern uint32_t  glbDbgConfig; /**< Allow global access to debug info */
             ##__VA_ARGS__); \
       } while (0)
 
-/**
- * @} end addtogroup groupDbgCntrl
- */
+#ifdef __cplusplus
+}
+#endif
 
+/**
+ * @} end group groupDbgFast
+ */
 #endif                                                        /* DBG_CNTRL_H_ */
 /******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/

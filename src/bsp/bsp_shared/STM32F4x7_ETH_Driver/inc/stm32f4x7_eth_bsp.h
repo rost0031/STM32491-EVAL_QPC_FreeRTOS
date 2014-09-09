@@ -1,23 +1,18 @@
 /**
-  ******************************************************************************
-  * @file    stm32f4x7_eth_bsp.h
-  * @author  MCD Application Team
-  * @version V1.0.0
-  * @date    31-October-2011 
-  * @brief   Header for stm32f4x7_eth_bsp.c file.
-  ******************************************************************************
-  * @attention
-  *
-  * THE PRESENT FIRMWARE WHICH IS FOR GUIDANCE ONLY AIMS AT PROVIDING CUSTOMERS
-  * WITH CODING INFORMATION REGARDING THEIR PRODUCTS IN ORDER FOR THEM TO SAVE
-  * TIME. AS A RESULT, STMICROELECTRONICS SHALL NOT BE HELD LIABLE FOR ANY
-  * DIRECT, INDIRECT OR CONSEQUENTIAL DAMAGES WITH RESPECT TO ANY CLAIMS ARISING
-  * FROM THE CONTENT OF SUCH FIRMWARE AND/OR THE USE MADE BY CUSTOMERS OF THE
-  * CODING INFORMATION CONTAINED HEREIN IN CONNECTION WITH THEIR PRODUCTS.
-  *
-  * <h2><center>&copy; COPYRIGHT 2011 STMicroelectronics</center></h2>
-  ******************************************************************************
-  */
+ * @file    stm32f4x7_eth_bsp.c
+ * @brief   Driver for the DP83848 Ethernet PHY.
+ *
+ * This file contains the definitions for the driver for the DP83848 Ethernet PHY
+ * as connected to the STM324x9I-EVAL2 dev board.
+ *
+ * @date   06/09/2014
+ * @author Harry Rostovtsev
+ * @email  harry_rostovtsev@datacard.com
+ * Copyright (C) 2014 Datacard. All rights reserved.
+ *
+ * @addtogroup groupEthernet
+ * @{
+ */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef __STM32F4x7_ETH_BSP_H
@@ -33,10 +28,12 @@
 /* Exported constants --------------------------------------------------------*/
 #define MII_MODE
 #ifdef  MII_MODE
+ /* Uncomment if you want to use the internal oscillator.  Make sure to set the
+  * jumper on the eval kit appropriately. */
 //    #define PHY_CLOCK_MCO
 #endif
 
-#define DP83848_PHY_ADDRESS       0x01 /* Relative to STM324xG-EVAL Board */
+#define DP83848_PHY_ADDRESS       0x01 /* Relative to STM324x9I-EVAL Board */
 
 /* Specific defines for EXTI line, used to manage Ethernet link status */
 #define ETH_LINK_EXTI_LINE             EXTI_Line14
@@ -92,5 +89,8 @@ void Eth_Link_ITHandler( uint16_t PHYAddress );
 }
 #endif
 
+/**
+ * @} end group groupEthernet
+ */
 #endif                                               /* __STM32F4x7_ETH_BSP_H */
-/******************* (C) COPYRIGHT 2011 STMicroelectronics *****END OF FILE****/
+/******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/

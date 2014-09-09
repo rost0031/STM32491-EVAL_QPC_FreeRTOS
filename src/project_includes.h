@@ -1,6 +1,6 @@
 /**
  * @file   project_includes.h
- * @brief  Project specific includes.
+ * @brief  Doxygen main page and project specific includes.
  * This file contains some common includes needed by multiple files.  This file
  * is project specific and should not be shared by multiple modules.  Each
  * project, whether embedded app, bootloader, or simulator, should have its own
@@ -17,11 +17,12 @@
 #define PROJECT_INCLUDES_H_
 
 /**
- * \mainpage Coupler Board Bootloader Firmware
+ * \mainpage STM324x9I-EVAL2 QPC port with LWIP.
  *
  * <b>Introduction</b>
  *
- * This user manual describes the Coupler Board Bootloader FW.
+ * This user manual describes the FW for the STM324x9I-EVAL2 developement kit 
+ * from ST Micro.
  *
  * The FW is divided into a number of modules each covering a specific category:
  * - Application
@@ -29,31 +30,35 @@
  * - BSP - Bootloader specific BSP that pulls in the shared BSP
  *    - Shared BSP
  *       - CMSIS
- *       - STM32F2xx device drivers
+ *       - STM32F4xx device drivers
  *       - Serial/UART
  *       - Time/RTC
- *       - Ethernet (KSZ8863 MAC-MAC switch) driver
+ *       - Ethernet (STM32 MAC) driver
+ *       - QPC implementation of the LWIP network driver interface
+ *       - STM32 specific init and optimizations.
  *    - Flash driver
+ *    - DP83848 Ethernet PHY driver
  *    - ISR implementations
  *    - Linker script
- * - System - RTOS, network stacks, encryption stacks, etc.
+ * - System - RTOS, network stacks, encryption stacks, console debugging, etc.
  *    - QPC RTOS/Framework
  *    - LWIP network stack
  *    - Shared System
- *       - QPC implementation of the LWIP network driver interface
- *       - STM32 specific init and optimizations.
+ *       
+ *       
  *
  * <b>Processor and board support</b>
  * TODO: Update this when the final board is released.
- * The code is completely written in C and is fully CMSIS compliant.  All BSP
- * code is STM32F217 compatible using an external oscillator.  The code will not
- * run without minor modifications on the STM3220G-Eval board.
+ * The code is completely written in C and is fully CMSIS compliant.
  *
  * <b>Toolchain Support</b>
  *
  * The code has been developed and tested with CodeSourcery Lite before being
- * upgraded to gcc-arm-none-eabi-4_6-2012q4.  Newer version of gcc-arm should
- * not be used due to a bug in the newer versions of the compiler.
+ * upgraded to gcc-arm-none-eabi-4_6-2012q4.
+ * @note: Newer version of gcc-arm should not be used due to a bug in the newer
+ * versions of the compiler.  If you do upgrade, you will not be able to use the
+ * custom ASM STM32 specific and very fast version of MEMCPY that comes with
+ * this project.
  *
  *
  * <b>Building the Bootloader</b>
@@ -77,11 +82,11 @@
 
 
 /**
- * @defgroup groupApp Bootloader Application
+ * @defgroup groupApp Application
  */
 
 /**
- * @defgroup groupBSP Bootloader BSP
+ * @defgroup groupBSP BSP
  */
 
    /**
@@ -95,7 +100,7 @@
        */
 
       /**
-       * @defgroup STM32F2xx_StdPeriph_Driver STM32F2XX Std Peripheral Drivers
+       * @defgroup STM32F4xx_StdPeriph_Driver STM32F4XX Std Peripheral Drivers
        * @ingroup groupSharedBSP
        */
 
@@ -103,16 +108,6 @@
        * @defgroup groupSerial UART/Serial
        * @ingroup groupSharedBSP
        */
-
-         /**
-          * @defgroup groupSerialFast Fast DMA Serial output functions
-          * @ingroup groupSerial
-          */
-
-         /**
-          * @defgroup groupSerialSlow Slow blocking Serial output functions
-          * @ingroup groupSerial
-          */
 
       /**
        * @defgroup groupI2C I2C Bus Driver
@@ -125,7 +120,7 @@
        */
 
       /**
-       * @defgroup groupKSZ8863 Ethernet (KSZ8863 MAC-MAC switch) driver.
+       * @defgroup groupEthernet Ethernet (DP83848 PHY) driver.
        * @ingroup groupSharedBSP
        */
 
@@ -150,12 +145,12 @@
     */
 
    /**
-    * @defgroup groupLinker Linker script
+    * @defgroup groupLinker Linker script specific to this image (can be different depending on whether used for the bootloader or application).
     * @ingroup groupBSP
     */
 
 /**
- * @defgroup groupSYS Bootloader System
+ * @defgroup groupSYS System level software.  RTOSes, IP stacks, debugging frameworks, etc.
  */
 
    /**
@@ -164,9 +159,34 @@
     */
 
    /**
-    * @defgroup groupLWIP LWIP network stack
+    * @defgroup groupLWIP LWIP TCP/IP network stack
     * @ingroup groupSYS
     */
+   
+   /**
+    * @defgroup groupSharedSYS Shared system level files
+    * @ingroup groupSYS
+    */
+   
+       /**
+        * @defgroup groupDbgCntrl Debugging Framework
+        * @ingroup groupSharedSYS
+        */
+           
+           /**
+            * @defgroup groupConOut Console output framework.
+            * @ingroup groupDbgCntrl
+            */
+   
+           /**
+            * @defgroup groupDbgFast Fast (non-blocking and buffered) Debugging framework.
+            * @ingroup groupDbgCntrl
+            */
+
+           /**
+            * @defgroup groupDbgSlow Slow (blocking and non-buffered) Debugging framework
+            * @ingroup groupDbgCntrl
+            */
 
 
 /* Includes ------------------------------------------------------------------*/

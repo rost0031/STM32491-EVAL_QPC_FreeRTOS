@@ -1,22 +1,17 @@
 /**
- ******************************************************************************
- * @file    stm32f4x7_eth_bsp.c
- * @author  MCD Application Team
- * @version V1.0.0
- * @date    31-October-2011
- * @brief   STM32F4x7 Ethernet hardware configuration.
- ******************************************************************************
- * @attention
+ * @file    stm32f4x7_eth_bsp.h
+ * @brief   Driver for the DP83848 Ethernet PHY.
  *
- * THE PRESENT FIRMWARE WHICH IS FOR GUIDANCE ONLY AIMS AT PROVIDING CUSTOMERS
- * WITH CODING INFORMATION REGARDING THEIR PRODUCTS IN ORDER FOR THEM TO SAVE
- * TIME. AS A RESULT, STMICROELECTRONICS SHALL NOT BE HELD LIABLE FOR ANY
- * DIRECT, INDIRECT OR CONSEQUENTIAL DAMAGES WITH RESPECT TO ANY CLAIMS ARISING
- * FROM THE CONTENT OF SUCH FIRMWARE AND/OR THE USE MADE BY CUSTOMERS OF THE
- * CODING INFORMATION CONTAINED HEREIN IN CONNECTION WITH THEIR PRODUCTS.
+ * This file contains the definitions for the driver for the DP83848 Ethernet PHY
+ * as connected to the STM324x9I-EVAL2 dev board.
  *
- * <h2><center>&copy; COPYRIGHT 2011 STMicroelectronics</center></h2>
- ******************************************************************************
+ * @date   06/09/2014
+ * @author Harry Rostovtsev
+ * @email  harry_rostovtsev@datacard.com
+ * Copyright (C) 2014 Datacard. All rights reserved.
+ *
+ * @addtogroup groupEthernet
+ * @{
  */
 
 /* Includes ------------------------------------------------------------------*/
@@ -345,4 +340,8 @@ void Eth_Link_ITHandler( uint16_t PHYAddress )
    }
 }
 
-/******************* (C) COPYRIGHT 2011 STMicroelectronics *****END OF FILE****/
+/**
+ * @} end group groupEthernet
+ */
+
+/******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/

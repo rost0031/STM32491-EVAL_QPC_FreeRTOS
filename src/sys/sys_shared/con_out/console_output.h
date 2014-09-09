@@ -1,115 +1,18 @@
 /**
- * @file   console_output.h
- * @brief  Declarations for debug and output functions over DMA serial console.
+ * @file    console_output.h
+ * @brief   Serial output to the UART.
+ *
+ * This file contains the declarations for debug and output functions over the
+ * serial DMA console and over regular serial blocking.
+ *
  * @date   06/09/2014
  * @author Harry Rostovtsev
  * @email  harry_rostovtsev@datacard.com
  * Copyright (C) 2014 Datacard. All rights reserved.
  *
- * @addtogroup groupSerial
+ * @addtogroup groupConOut
  * @{
- * <b> Introduction </b>
- *
- * The 2 sets of macros defined here should be used for all output to the serial
- * debug console.  The 2 categories of printf-like macros are:
- *
- *    -# XXX_printf()
- *    -# xxx_slow_printf().
- *
- * <b> XXX_printf macro description </b>
- *
- * The XXX_printf() macros should only be used after the BSP has been properly
- * initialized and the RTOS (QPC) running.  These macros are non-blocking and
- * return almost instantly, causing very little speed decrease in the running of
- * the actual application.  Instead of waiting until the data is done printing
- * over the serial port, these macros copy the data to an event which gets
- * published and received by SerialMgr Active Object (AO).  SerialMgr AO then
- * either:
- *    - Sets up a DMA write out to the serial console and the data then proceeds
- *    to get output.
- *    - Queues up the event if it's currently busy doing a previous DMA serial
- *    write and takes care of it when it's finished.
- *
- * @note 1: Since the buffer space in SerialMgr is finite, if you have too many
- * consecutive calls to a XXX_printf() macro, you can overrun the queue.  This
- * will cause an Q_assert.
- *
- * @note 2: SerialMgr AO must be up and the BSP must have finished configuring
- * DMA serial interface.  Before this point, only the xxx_slow_debug() macros
- * should be used.
- *
- * @note 3: Some XXX_printf macros are automatically compiled out when doing a
- * release build.
- *
- * <b> XXX_printf macro usage and examples </b>
- *
- * Use the following macros for printf style debugging.  Some of them will be
- * automatically disabled via macros when a "rel" build is done (as opposed to
- * a dbg or a spy build).
- * Examples of how to use:
- * @code
- * int i = 0;
- *
- * DBG_printf("Debug print test %d\n",i);
- * LOG_printf("Logging print test %d\n",i);
- * WRN_printf("Warning print test %d\n",i);
- * ERR_printf("Error print test %d\n",i);
- * MENU_printf("Console print test %d\n",i);
- *
- * will output:
- * DBG-00:04:09:00459-function_name():219: Debug print test 0
- * LOG-00:04:09:00459-function_name():219: Logging print test 0
- * WRN-00:04:09:00459-function_name():219: Warning print test 0
- * ERR-00:04:09:00459-function_name():219: Error print test 0
- * Console print test 0
- * @endcode
- *
- * <b> xxx_slow_printf macro description </b>
- *
- * These macros print printing directly to the serial console and are fairly
- * slow.  Use the DBG/LOG/WRN/ERR_printf macros instead.  These macros should
- * only in the initializations before the QPC RTOS is running and should
- * not be used after.
- *
- * <b> xxx_slow_printf macro usage and examples </b>
- *
- * Use the following functions for printf style debugging only before the AOs of
- * the QPC have been started.  These output directly to the serial console
- * without using DMA and will adversely affect the performance of the system.
- * These will be automatically disabled via macros when a "rel" build is done
- * (as opposed to a dbg or a spy build). xxx_slow_printf will print a lot more info
- * than isr_debug_printf
- * Examples of how to use:
- * @code
- * int i = 0;
- *
- * dbg_slow_printf("Debug print test\n");
- * dbg_slow_printf("Debug print test %d\n",i);
- * log_slow_printf("Logging print test %d\n",i);
- * wrn_slow_printf("Warning print test %d\n",i);
- * err_slow_printf("Error print test %d\n",i);
- *
- *
- * will output:
- * DBG-SLOW!-00:04:09:00459-function_name():219: Debug print test
- * DBG-SLOW!-00:04:09:00459-function_name():219: Debug print test 0
- * LOG-SLOW!-00:04:09:00459-function_name():219: Logging print test 0
- * WRN-SLOW!-00:04:09:00459-function_name():219: Warning print test 0
- * ERR-SLOW!-00:04:09:00459-function_name():219: Error print test 0
- * @endcode
- *
- *
- * @code
- * isr_debug_slow_printf("ISR Debug print test\n");
- * isr_debug_slow_printf("ISR Debug print test %d\n", i);
- *
- * will output:
- * D ISR Debug print test
- * D ISR Debug print test 0
- *
- * @endcode
  */
-
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef CONSOLE_OUTPUT_H_
 #define CONSOLE_OUTPUT_H_
@@ -254,7 +157,7 @@ void CON_slow_output(
 );
 
 /**
- * @} end addtogroup groupSerial
+ * @} end group groupConOut
  */
 
 #endif                                                   /* CONSOLE_OUTPUT_H_ */

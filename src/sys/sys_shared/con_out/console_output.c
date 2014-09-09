@@ -1,17 +1,16 @@
 /**
  * @file    console_output.c
- * @brief   Non blocking, DMA output over UART.
+ * @brief   Serial output to the UART.
  *
  * This file contains the definitions for debug and output functions over the
- * serial DMA console.
- *
+ * serial DMA console and over regular serial blocking.
  *
  * @date   06/09/2014
  * @author Harry Rostovtsev
  * @email  harry_rostovtsev@datacard.com
  * Copyright (C) 2014 Datacard. All rights reserved.
  *
- * @addtogroup groupSerial
+ * @addtogroup groupConOut
  * @{
  */
 /* Includes ------------------------------------------------------------------*/
@@ -25,12 +24,12 @@
 
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */
+DBG_DEFINE_THIS_MODULE( DBG_MODL_SERIAL ); /* For debug system to ID this module */
 
 /* Private typedefs ----------------------------------------------------------*/
 /* Private defines -----------------------------------------------------------*/
 /* Private macros ------------------------------------------------------------*/
 /* Private variables and Local objects ---------------------------------------*/
-
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
 
@@ -51,8 +50,6 @@ void CON_output(
     * pool */
    SerialDataEvt *serDataEvt = Q_NEW(SerialDataEvt, UART_DMA_START_SIG);
    serDataEvt->wBufferLen = 0;
-//   sprintf(serDataEvt->buffer, "test\n");
-//   QF_PUBLISH((QEvent *)serDataEvt, 0);
 
    /* 3. Based on the debug level specified by the calling macro, decide what to
     * prepend (if anything). */
@@ -238,6 +235,6 @@ void CON_slow_output(
 }
 
 /**
- * @} end addtogroup groupSerial
+ * @} end group groupConOut
  */
 /******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/
