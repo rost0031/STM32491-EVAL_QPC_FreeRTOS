@@ -234,7 +234,7 @@ C_SRCS					:= \
 						eth_driver.c \
 						lwip.c \
 						\
-						syscalls.c\
+						syscalls.c \
 						\
 						serial.c \
 						console_output.c \

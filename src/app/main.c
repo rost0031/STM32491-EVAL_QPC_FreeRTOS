@@ -27,6 +27,7 @@
 
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */
+DBG_DEFINE_THIS_MODULE( DBG_MODL_GENERAL ); /* For debug system to ID this module */
 
 /* Private typedefs ----------------------------------------------------------*/
 /* Private defines -----------------------------------------------------------*/
@@ -83,6 +84,19 @@ int main(void)
 
     /* initialize the Board Support Package */
     BSP_init();
+
+    /* Enable debugging for select modules */
+
+    dbg_slow_printf("glbDbgConfig is 0x%08x before enabling any debugging\n", glbDbgConfig);
+//    CON_enableDbgForModule(DBG_MODL_GENERAL);
+//    CON_enableDbgForModule(DBG_MODL_SERIAL);
+//    CON_enableDbgForModule(DBG_MODL_TIME);
+//    CON_enableDbgForModule(DBG_MODL_ETH);
+//    CON_enableDbgForModule(DBG_MODL_I2C);
+    DBG_ENABLE_DEBUG_FOR_MODULE( DBG_MODL_GENERAL );
+
+    dbg_slow_printf("glbDbgConfig is 0x%08x after enabling any debugging\n", glbDbgConfig);
+
     dbg_slow_printf("Initialized BSP\n");
     log_slow_printf("Starting Bootloader version %s built on %s\n", FW_VER, BUILD_DATE);
 

@@ -57,10 +57,10 @@
  * MENU_printf("Console print test %d\n",i);
  *
  * will output:
- * DBG-00:04:09:00459-LWIPMgr_Running():219: Debug print test 0
- * LOG-00:04:09:00459-LWIPMgr_Running():219: Logging print test 0
- * WRN-00:04:09:00459-LWIPMgr_Running():219: Warning print test 0
- * ERR-00:04:09:00459-LWIPMgr_Running():219: Error print test 0
+ * DBG-00:04:09:00459-function_name():219: Debug print test 0
+ * LOG-00:04:09:00459-function_name():219: Logging print test 0
+ * WRN-00:04:09:00459-function_name():219: Warning print test 0
+ * ERR-00:04:09:00459-function_name():219: Error print test 0
  * Console print test 0
  * @endcode
  *
@@ -91,11 +91,11 @@
  *
  *
  * will output:
- * DBG-SLOW!-00:04:09:00459-LWIPMgr_Running():219: Debug print test
- * DBG-SLOW!-00:04:09:00459-LWIPMgr_Running():219: Debug print test 0
- * LOG-SLOW!-00:04:09:00459-LWIPMgr_Running():219: Logging print test 0
- * WRN-SLOW!-00:04:09:00459-LWIPMgr_Running():219: Warning print test 0
- * ERR-SLOW!-00:04:09:00459-LWIPMgr_Running():219: Error print test 0
+ * DBG-SLOW!-00:04:09:00459-function_name():219: Debug print test
+ * DBG-SLOW!-00:04:09:00459-function_name():219: Debug print test 0
+ * LOG-SLOW!-00:04:09:00459-function_name():219: Logging print test 0
+ * WRN-SLOW!-00:04:09:00459-function_name():219: Warning print test 0
+ * ERR-SLOW!-00:04:09:00459-function_name():219: Error print test 0
  * @endcode
  *
  *
@@ -119,7 +119,6 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
-//#include "serial.h"
 
 /* Exported defines ----------------------------------------------------------*/
 /**
@@ -135,10 +134,10 @@
 #endif
 
 /* Exported types ------------------------------------------------------------*/
-/*! \enum DEBUG_LEVEL_T
+/*! \enum DBG_LEVEL_T
  * These are the various levels of debug that are available on the system.
  */
-typedef enum DEBUG_LEVEL {
+typedef enum DBG_LEVEL {
    DBG = 0, /**< Lowest level of debugging.  Everything printed. */
    LOG,     /**< Basic logging. */
    WRN,     /**< Warnings. Always printed. */
@@ -146,7 +145,26 @@ typedef enum DEBUG_LEVEL {
    CON,     /**< This is reserved for printing to the console as part of
                  regular operation and nothing will be prepended */
    ISR,     /**< Use this with isr_debug_slow_printf to get smaller printout */
-} DEBUG_LEVEL_T;
+} DBG_LEVEL_T;
+
+/*! \enum DEBUG_MOD_T
+ * These are the various system modules for which debugging can be
+ * enabled/disabled.
+ *
+ * These are limited to 32 bit and must be maskable.  These enum masks will be
+ * used for both naming the various modules and for checking whether their
+ * debug capabilities have been enabled.
+ */
+typedef enum DBG_MODULES {
+   DBG_MODL_GENERAL  = 0x00000001, /**< General module debugging (main, bsp, etc) */
+   DBG_MODL_SERIAL   = 0x00000002, /**< Serial module debugging. */
+   DBG_MODL_TIME     = 0x00000004, /**< Time module debugging. */
+   DBG_MODL_ETH      = 0x00000008, /**< Ethernet module debugging. */
+   DBG_MODL_I2C      = 0x00000010, /**< I2C module debugging. */
+} DBG_MODL_T;
+
+/* Exported variables --------------------------------------------------------*/
+extern uint32_t  glbDbgConfig; /**< Allow global access to debug info */
 
 /* Exported constants --------------------------------------------------------*/
 /* Exported functions --------------------------------------------------------*/
@@ -192,7 +210,7 @@ typedef enum DEBUG_LEVEL {
  * SerDataEvt and sends the data to be output to serial via DMA.  This prevents
  * slow downs due to regular printf() to serial.
  *
- * @param  [in] dbgLvl: a DEBUG_LEVEL_T variable that specifies the logging
+ * @param  [in] dbgLvl: a DBG_LEVEL_T variable that specifies the logging
  * level to use.
  *   @arg DBG: Lowest level of debugging.  Everything above this level is
  *   printed.  Disabled in Release builds.  Prints "DBG" in place of "DBG_LEVEL".
@@ -218,7 +236,7 @@ typedef enum DEBUG_LEVEL {
  * @return None
  */
 void CON_output(
-      DEBUG_LEVEL_T dbgLvl,
+      DBG_LEVEL_T dbgLvl,
       const char *pFuncName,
       uint16_t wLineNumber,
       char *fmt,
@@ -226,6 +244,45 @@ void CON_output(
 );
 
 /* Exported macros -----------------------------------------------------------*/
+
+/**
+ * @brief   Defines a module for grouping debugging functionality.
+ *
+ * @description
+ * Macro to be placed at the top of each C/C++ module to define the single
+ * instance of the module name string to be used in printing of debugging
+ * information.
+ *
+ * @param[in] @c name_: DBG_MODL_T enum representing the module.
+ *
+ * @note 1: This macro should __not__ be terminated by a semicolon.
+ * @note 2: This macro MUST be present in the file if DBG_printf() or
+ * LOG_printf() functions are called.  The code will not compile without this.
+ */
+#define DBG_DEFINE_THIS_MODULE( name_ ) \
+      static DBG_MODL_T const Q_ROM DBG_this_module_ = name_;
+
+/**
+ * @brief   Enable debugging output for a given module.
+ *
+ * @param [in] @c name_: DBG_MODL_T enum representing the module.
+ */
+#define DBG_ENABLE_DEBUG_FOR_MODULE( name_ ) \
+      glbDbgConfig |= name_;
+
+/**
+ * @brief   Disable debugging output for a given module.
+ *
+ * @param [in] @c name_: DBG_MODL_T enum representing the module.
+ */
+#define DBG_DISABLE_DEBUG_FOR_MODULE( name_ ) \
+      glbDbgConfig &= ~name_;
+
+/**
+ * @brief   Disable debugging output for all modules.
+ */
+#define DBG_DISABLE_DEBUG_FOR_ALL_MODULES( ) \
+      glbDbgConfig = 0x00000000;
 
 /**
  * @brief Debug print function.
@@ -240,7 +297,7 @@ void CON_output(
  * DBG_printf("Debug print test %d\n", i);
  *
  * will output:
- * DBG-00:04:09:459-LWIPMgr_Running():219: Debug print test 0
+ * DBG-00:04:09:459-function_name():219: Debug print test 0
  * @endcode
  *
  * @note 1: This macro is disabled in Rel builds.
@@ -255,8 +312,13 @@ void CON_output(
  * @return None
  */
 #define DBG_printf(fmt, ...) \
-      do { if (DEBUG) CON_output(DBG, __func__, __LINE__, fmt, \
-            ##__VA_ARGS__); \
+      do { \
+         if (DEBUG) { \
+            if ( glbDbgConfig & DBG_this_module_ ) { \
+               CON_output(DBG, __func__, __LINE__, fmt, \
+                  ##__VA_ARGS__); \
+            } \
+         } \
       } while (0)
 
 /**
@@ -272,7 +334,7 @@ void CON_output(
  * LOG_printf("Logging print test %d\n", i);
  *
  * will output:
- * LOG-00:04:09:459-LWIPMgr_Running():219: Logging print test 0
+ * LOG-00:04:09:459-function_name():219: Logging print test 0
  * @endcode
  *
  * @note 1: This macro is disabled in Rel builds.
@@ -304,7 +366,7 @@ void CON_output(
  * WRN_printf("Warning print test %d\n", i);
  *
  * will output:
- * WRN-00:04:09:459-LWIPMgr_Running():219: Warning print test 0
+ * WRN-00:04:09:459-function_name():219: Warning print test 0
  * @endcode
  *
  * @note 1: This macro is enabled in Rel builds.
@@ -336,7 +398,7 @@ void CON_output(
  * WRN_printf("Error print test %d\n", i);
  *
  * will output:
- * ERR-00:04:09:459-LWIPMgr_Running():219: Error print test 0
+ * ERR-00:04:09:459-function_name():219: Error print test 0
  * @endcode
  *
  * @note 1: This macro is enabled in Rel builds.
@@ -423,7 +485,7 @@ void CON_output(
  * called by the slow macros which have to be called in the initializations
  * before the QPC RTOS is running and should not be used after.
  *
- * @param  [in] dbgLvl: a DEBUG_LEVEL_T variable that specifies the logging
+ * @param  [in] dbgLvl: a DBG_LEVEL_T variable that specifies the logging
  * level to use.
  *   @arg DBG: Lowest level of debugging.  Everything above this level is
  *   printed.  Disabled in Release builds.
@@ -446,7 +508,7 @@ void CON_output(
  * @return None
  */
 void CON_slow_output(
-      DEBUG_LEVEL_T dbgLvl,
+      DBG_LEVEL_T dbgLvl,
       const char *pFuncName,
       uint16_t wLineNumber,
       char *fmt,
@@ -466,7 +528,7 @@ void CON_slow_output(
  * dbg_slow_printf("Slow debug print test %d\n", i);
  *
  * will output:
- * DBG-SLOW!-00:04:09:459-LWIPMgr_Running():219: Slow debug print test 0
+ * DBG-SLOW!-00:04:09:459-function_name():219: Slow debug print test 0
  * @endcode
  *
  * @note 1. Don't use this after the BSP and RTOS has been initialized since it
@@ -501,7 +563,7 @@ void CON_slow_output(
  * log_slow_printf("Slow logging print test %d\n", i);
  *
  * will output:
- * LOG-SLOW!-00:04:09:459-LWIPMgr_Running():219: Slow logging print test 0
+ * LOG-SLOW!-00:04:09:459-function_name():219: Slow logging print test 0
  * @endcode
  *
  * @note 1. Don't use this after the BSP and RTOS has been initialized since it
@@ -536,7 +598,7 @@ void CON_slow_output(
  * log_slow_printf("Slow warning print test %d\n", i);
  *
  * will output:
- * WRN-SLOW!-00:04:09:459-LWIPMgr_Running():219: Slow warning print test 0
+ * WRN-SLOW!-00:04:09:459-function_name():219: Slow warning print test 0
  * @endcode
  *
  * @note 1. Don't use this after the BSP and RTOS has been initialized since it
@@ -571,7 +633,7 @@ void CON_slow_output(
  * err_slow_printf("Slow error print test %d\n", i);
  *
  * will output:
- * ERR-SLOW!-00:04:09:459-LWIPMgr_Running():219: Slow error print test 0
+ * ERR-SLOW!-00:04:09:459-function_name():219: Slow error print test 0
  * @endcode
  *
  * @note 1. Don't use this after the BSP and RTOS has been initialized since it
