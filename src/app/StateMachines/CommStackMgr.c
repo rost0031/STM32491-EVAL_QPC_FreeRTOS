@@ -40,6 +40,7 @@
 #include "stm32f4x7_eth.h"
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE;                 /* For QSPY to know the name of this file */
+DBG_DEFINE_THIS_MODULE( DBG_MODL_GENERAL ); /* For debug system to ID this module */
 
 /* Private typedefs ----------------------------------------------------------*/
 typedef void (*pFunction)(void);
@@ -163,14 +164,14 @@ static QState CommStackMgr_Active(CommStackMgr * const me, QEvt const * const e)
         }
         /* ${AOs::CommStackMgr::SM::Active::TIME_TEST} */
         case TIME_TEST_SIG: {
-            //DBG_printf("I2C read test\n");
+            DBG_printf("I2C read test\n");
 
             /* Create event to request i2c data and publish it. */
-            //I2CReqEvt *i2cReqEvt = Q_NEW(I2CReqEvt, I2C_READ_START_SIG);
-            //i2cReqEvt->i2cDevice = EEPROM;
-            //i2cReqEvt->wReadAddr = 0x00;
-            //i2cReqEvt->nReadLen  = 10;
-            //QF_PUBLISH((QEvent *)i2cReqEvt, AO_CommStackMgr);
+            I2CReqEvt *i2cReqEvt = Q_NEW(I2CReqEvt, I2C_READ_START_SIG);
+            i2cReqEvt->i2cDevice = EEPROM;
+            i2cReqEvt->wReadAddr = 0x00;
+            i2cReqEvt->nReadLen  = 10;
+            QF_PUBLISH((QEvent *)i2cReqEvt, AO_CommStackMgr);
 
             /*
             I2CReqEvt *i2cReqEvt1 = Q_NEW(I2CReqEvt, I2C_READ_START_SIG);

@@ -84,35 +84,8 @@ void BSP_init( void )
    /* 3. Initialize Ethernet */
    ETH_BSP_Config();
 
-
-
-//
-//   /* Enable TIM clocks on APB2 bus */
-//   RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM1, ENABLE);
-//   RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM8, ENABLE);
-//   RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM9, ENABLE);
-//   RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM10, ENABLE);
-//   RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM11, ENABLE);
-//
-//   /* Enable TIM clocks on APB1 bus */
-//   RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
-//   RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
-//   RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4, ENABLE);
-//   RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM5, ENABLE);
-//   RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM6, ENABLE);
-//   RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM7, ENABLE);
-//   RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM12, ENABLE);
-//   RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM13, ENABLE);
-//   RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM14, ENABLE);
-//
-//   /* Enable CRC clock */
-//   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_CRC, ENABLE);
-
-//   /* Initialize the I2C devices and associated busses */
-//   I2C_BusInit( I2CBus1 );
-
-
-
+   /* 4. Initialize the I2C devices and associated busses */
+   I2C_BusInit( I2CBus1 );
 }
 
 /******************************************************************************/

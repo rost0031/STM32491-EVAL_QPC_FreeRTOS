@@ -74,14 +74,14 @@ QTimeEvt_postEvery(
       </tran_glyph>
      </tran>
      <tran trig="TIME_TEST">
-      <action>//DBG_printf(&quot;I2C read test\n&quot;);
+      <action>DBG_printf(&quot;I2C read test\n&quot;);
 
 /* Create event to request i2c data and publish it. */
-//I2CReqEvt *i2cReqEvt = Q_NEW(I2CReqEvt, I2C_READ_START_SIG);
-//i2cReqEvt-&gt;i2cDevice = EEPROM;
-//i2cReqEvt-&gt;wReadAddr = 0x00;
-//i2cReqEvt-&gt;nReadLen  = 10;
-//QF_PUBLISH((QEvent *)i2cReqEvt, AO_CommStackMgr);
+I2CReqEvt *i2cReqEvt = Q_NEW(I2CReqEvt, I2C_READ_START_SIG);
+i2cReqEvt-&gt;i2cDevice = EEPROM;
+i2cReqEvt-&gt;wReadAddr = 0x00;
+i2cReqEvt-&gt;nReadLen  = 10;
+QF_PUBLISH((QEvent *)i2cReqEvt, AO_CommStackMgr);
 
 /*
 I2CReqEvt *i2cReqEvt1 = Q_NEW(I2CReqEvt, I2C_READ_START_SIG);
@@ -177,6 +177,7 @@ QTimeEvt_ctor(&amp;me-&gt;timeTestTimerEvt, TIME_TEST_SIG);</code>
 #include &quot;stm32f4x7_eth.h&quot;
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE;                 /* For QSPY to know the name of this file */
+DBG_DEFINE_THIS_MODULE( DBG_MODL_GENERAL ); /* For debug system to ID this module */
 
 /* Private typedefs ----------------------------------------------------------*/
 typedef void (*pFunction)(void);

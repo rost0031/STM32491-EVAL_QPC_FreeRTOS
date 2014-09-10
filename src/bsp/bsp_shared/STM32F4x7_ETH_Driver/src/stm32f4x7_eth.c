@@ -24,7 +24,9 @@
 #include "stm32f4x7_eth.h"
 #include "stm32f4xx_rcc.h"
 #include <string.h>
-#include "console_output.h"
+#include "project_includes.h"
+
+DBG_DEFINE_THIS_MODULE( DBG_MODL_ETH ); /* For debug system to ID this module */
 
 /** @addtogroup STM32F4x7_ETH_Driver
   * @brief ETH driver modules

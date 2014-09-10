@@ -29,9 +29,13 @@
 #include "console_output.h"                         /* Console output support */
 #include "lwipopts.h"                        /* LWIP options for this project */
 #include "bsp.h"
+#include "project_includes.h"
+
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
+DBG_DEFINE_THIS_MODULE( DBG_MODL_ETH ); /* For debug system to ID this module */
+
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 __IO uint32_t  EthInitStatus = 0;

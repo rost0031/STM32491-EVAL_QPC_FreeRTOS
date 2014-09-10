@@ -117,17 +117,20 @@ typedef struct I2C_BusSettings
    const uint16_t          scl_pin;                          /**< I2C SCL pin */
    const uint16_t          scl_af_pin_source;/**< I2C SCL alt function source */
    const uint16_t          scl_af;                  /**< I2C SCL alt function */
+   const uint32_t          scl_clk;                   /**< I2C SCL GPIO clock */
 
    /* I2C GPIO settings for SDA */
    GPIO_TypeDef *          sda_port;                        /**< I2C SDA port */
    const uint16_t          sda_pin;                          /**< I2C SDA pin */
    const uint16_t          sda_af_pin_source;/**< I2C SDA alt function source */
    const uint16_t          sda_af;                  /**< I2C SDA alt function */
+   const uint32_t          sda_clk;                   /**< I2C SDA GPIO clock */
 
    /* I2C DMA settings */
    DMA_TypeDef *           i2c_dma;                       /**< I2C DMA device */
    const uint32_t          i2c_dma_channel;              /**< I2C DMA channel */
    const uint32_t          i2c_dma_dr_addr;           /**< I2C DMA DR address */
+   const uint32_t          i2c_dma_clk;               /**< I2C DMA Clk source */
 
    DMA_Stream_TypeDef *    i2c_dma_tx_stream;      /**< I2C DMA stream for TX */
    IRQn_Type               i2c_dma_tx_irq_num;     /**< I2C DMA TX IRQ number */
