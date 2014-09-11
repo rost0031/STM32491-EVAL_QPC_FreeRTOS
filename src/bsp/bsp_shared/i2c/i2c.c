@@ -85,16 +85,18 @@ I2C_BusSettings_t s_I2C_Bus[MAX_I2C_BUS] =
             GPIO_AF_I2C1,              /**< sda_af */
             RCC_AHB1Periph_GPIOB,      /**< sda_clk */
 
-            /* I2C DMA settings */
+            /* Common I2C DMA settings */
             DMA1,                      /**< i2c_dma */
             DMA_Channel_1,             /**< i2c_dma_channel */
             ((uint32_t)0x40005410),    /**< i2c_dma_dr_addr */
             RCC_AHB1Periph_DMA1,       /**< i2c_dma_clk */
 
+            /* TX I2C DMA settings */
             DMA1_Stream6,              /**< i2c_dma_tx_stream */
             DMA1_Stream6_IRQn,         /**< i2c_dma_tx_irq_num */
             DMA1_Stream6_PRIO,         /**< i2c_dma_tx_irq_prio */
 
+            /* RX I2C DMA settings */
             DMA1_Stream0,              /**< i2c_dma_rx_stream */
             DMA1_Stream0_IRQn,         /**< i2c_dma_rx_irq_num */
             DMA1_Stream0_PRIO,         /**< i2c_dma_rx_irq_prio */
@@ -131,11 +133,18 @@ void I2C_BusInit( I2C_Bus_t iBus )
          ENABLE
    );
 
+   /* Enable the SYSCFG clock */
+   RCC_APB2PeriphClockCmd( RCC_APB2Periph_SYSCFG, ENABLE );
+
    /* Enable I2C DMA clock */
    RCC_APB1PeriphClockCmd( s_I2C_Bus[iBus].i2c_dma_clk, ENABLE );
 
-   /* Enable the SYSCFG clock */
-   RCC_APB2PeriphClockCmd( RCC_APB2Periph_SYSCFG, ENABLE );
+   /* Reset the I2C Bus */
+   RCC_APB1PeriphResetCmd( s_I2C_Bus[iBus].i2c_dma_clk, ENABLE ); /* assert reset */
+   RCC_APB1PeriphResetCmd( s_I2C_Bus[iBus].i2c_dma_clk, DISABLE );/* and release  */
+
+   /* Reset I2C IP */
+   I2C_DeInit( s_I2C_Bus[iBus].i2c_bus );
 
    /* Connect PXx to I2C SCL alt function. */
    GPIO_PinAFConfig(
@@ -151,30 +160,20 @@ void I2C_BusInit( I2C_Bus_t iBus )
          s_I2C_Bus[iBus].sda_af
    );
 
-   /* Configure I2C pins: SCL */
+   /* Configure common elements of the SDA and SCL pins */
    GPIO_InitTypeDef  GPIO_InitStructure;
-   GPIO_InitStructure.GPIO_Pin      = s_I2C_Bus[iBus].scl_pin;
    GPIO_InitStructure.GPIO_Mode     = GPIO_Mode_AF;
    GPIO_InitStructure.GPIO_Speed    = GPIO_Speed_50MHz;
    GPIO_InitStructure.GPIO_OType    = GPIO_OType_OD;
    GPIO_InitStructure.GPIO_PuPd     = GPIO_PuPd_NOPULL;
+
+   /* Configure SCL specific settings for I2C */
+   GPIO_InitStructure.GPIO_Pin      = s_I2C_Bus[iBus].scl_pin;
    GPIO_Init(s_I2C_Bus[iBus].scl_port, &GPIO_InitStructure);
 
-   /* Configure I2C pins: SDA */
+   /* Configure SDA specific settings for I2C */
    GPIO_InitStructure.GPIO_Pin = s_I2C_Bus[iBus].sda_pin;
    GPIO_Init(s_I2C_Bus[iBus].sda_port, &GPIO_InitStructure);
-
-   /* Reset I2C IP */
-   I2C_DeInit( s_I2C_Bus[iBus].i2c_bus );
-
-   /* I2C configuration */
-   I2C_InitTypeDef  I2C_InitStructure;
-   I2C_InitStructure.I2C_Mode                = I2C_Mode_SMBusHost;
-   I2C_InitStructure.I2C_DutyCycle           = I2C_DutyCycle_2;
-   I2C_InitStructure.I2C_OwnAddress1         = s_I2C_Bus[iBus].i2c_cur_dev_addr;
-   I2C_InitStructure.I2C_Ack                 = I2C_Ack_Enable;
-   I2C_InitStructure.I2C_AcknowledgedAddress = I2C_AcknowledgedAddress_7bit;
-   I2C_InitStructure.I2C_ClockSpeed          = s_I2C_Bus[iBus].i2c_bus_speed;
 
    /* Set up Interrupt controller to handle I2C Event interrupts */
    NVIC_Config(
@@ -183,10 +182,10 @@ void I2C_BusInit( I2C_Bus_t iBus )
    );
 
    /* Set up Interrupt controller to handle I2C Error interrupts */
-   //   NVIC_Config(
-   //         s_I2C_Bus[iBus].i2c_er_irq_num,
-   //         s_I2C_Bus[iBus].i2c_er_irq_prio
-   //   );
+      NVIC_Config(
+            s_I2C_Bus[iBus].i2c_er_irq_num,
+            s_I2C_Bus[iBus].i2c_er_irq_prio
+      );
 
    /* Enable All I2C Interrupts */
    I2C_ITConfig(
@@ -196,15 +195,26 @@ void I2C_BusInit( I2C_Bus_t iBus )
    );
 
    /* Initialize the IRQ and priorities for I2C DMA */
-   NVIC_Config(
-         s_I2C_Bus[iBus].i2c_dma_rx_irq_num,
-         s_I2C_Bus[iBus].i2c_dma_rx_irq_prio
-   );
+//   NVIC_Config(
+//         s_I2C_Bus[iBus].i2c_dma_rx_irq_num,
+//         s_I2C_Bus[iBus].i2c_dma_rx_irq_prio
+//   );
 //
 //      NVIC_Config(
 //            s_I2C_Bus[iBus].i2c_dma_tx_irq_num,
 //            s_I2C_Bus[iBus].i2c_dma_tx_irq_prio
 //      );
+
+
+   /* I2C configuration */
+   I2C_InitTypeDef  I2C_InitStructure;
+//   I2C_InitStructure.I2C_Mode                = I2C_Mode_SMBusHost; /* Mode for the EEPROM that is normally usegfggd by Datacard */
+   I2C_InitStructure.I2C_Mode                = I2C_Mode_I2C; /* Mode for the M24CXX EEPROM used by the STM324x9I-EVAL2 dev kit */
+   I2C_InitStructure.I2C_DutyCycle           = I2C_DutyCycle_2;
+   I2C_InitStructure.I2C_OwnAddress1         = s_I2C_Bus[iBus].i2c_cur_dev_addr;
+   I2C_InitStructure.I2C_Ack                 = I2C_Ack_Enable;
+   I2C_InitStructure.I2C_AcknowledgedAddress = I2C_AcknowledgedAddress_7bit;
+   I2C_InitStructure.I2C_ClockSpeed          = s_I2C_Bus[iBus].i2c_bus_speed;
 
    /* Apply I2C configuration */
    I2C_Init( s_I2C_Bus[iBus].i2c_bus, &I2C_InitStructure );
@@ -368,7 +378,7 @@ void I2C1_EV_IRQHandler( void )
             s_I2C_Bus[I2CBus1].i2c_cur_st = I2C_MASTER_TX_MODE_SELECTED_ST;
 
 //            isr_dbg_slow_printf("Selecting master\n");
-            DBG_printf("Selecting master\n");
+//            DBG_printf("Selecting master\n");
             /* Send slave Address for write */
             I2C_Send7bitAddress(
                   I2C1,                                  // This is always the bus used in this ISR

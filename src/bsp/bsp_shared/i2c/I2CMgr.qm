@@ -174,10 +174,10 @@ s_I2C_Bus[me-&gt;iBus].i2c_cur_st = I2C_IDLE_ST;</entry>
        </tran_glyph>
       </tran>
       <state name="BusBeingUsed">
-       <entry>//DBG_printf(&quot;Generating I2C start\n&quot;);
+       <entry>DBG_printf(&quot;Generating I2C start\n&quot;);
 
 /* Send START condition */
-//I2C_GenerateSTART(s_I2C_Bus[me-&gt;iBus].i2c_bus, ENABLE);</entry>
+I2C_GenerateSTART(s_I2C_Bus[me-&gt;iBus].i2c_bus, ENABLE);</entry>
        <state name="Reading">
         <tran trig="I2C_READ_DONE" target="../../../../1">
          <action>DBG_printf(&quot;Read finished successfully: read %d bytes\n&quot;, ((I2CDataEvt const *)e)-&gt;wBufferLen);</action>
@@ -577,13 +577,13 @@ QF_PUBLISH((QEvt *)qEvt, AO_I2CMgr);</entry>
        <tran trig="I2C_CHECK_EV">
         <action>/* Check if bus is busy.  If free, go on to the next state.  Otherwise,
  * try again until number of retries is out */</action>
-        <choice target="../../../2/5">
+        <choice target="../../../2/1">
          <guard brief="Bus Free?">RESET == I2C_GetFlagStatus( s_I2C_Bus[me-&gt;iBus].i2c_bus, I2C_FLAG_BUSY )</guard>
          <action>DBG_printf(&quot;Bus free after %d retries\n&quot;, MAX_I2C_TIMEOUT - me-&gt;nI2CLoopTimeout);
 
 /* Reset the maximum number of times to poll the I2C bus for an event */
 me-&gt;nI2CLoopTimeout = MAX_I2C_TIMEOUT;</action>
-         <choice_glyph conn="60,26,4,0,9,50,2">
+         <choice_glyph conn="60,26,4,0,10">
           <action box="0,2,14,2"/>
          </choice_glyph>
         </choice>

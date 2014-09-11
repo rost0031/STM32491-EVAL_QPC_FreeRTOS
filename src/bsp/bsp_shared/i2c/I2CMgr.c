@@ -330,10 +330,10 @@ static QState I2CMgr_BusBeingUsed(I2CMgr * const me, QEvt const * const e) {
     switch (e->sig) {
         /* ${AOs::I2CMgr::SM::Active::Busy::BusBeingUsed} */
         case Q_ENTRY_SIG: {
-            //DBG_printf("Generating I2C start\n");
+            DBG_printf("Generating I2C start\n");
 
             /* Send START condition */
-            //I2C_GenerateSTART(s_I2C_Bus[me->iBus].i2c_bus, ENABLE);
+            I2C_GenerateSTART(s_I2C_Bus[me->iBus].i2c_bus, ENABLE);
             status_ = Q_HANDLED();
             break;
         }
@@ -794,7 +794,7 @@ static QState I2CMgr_StartI2CComm(I2CMgr * const me, QEvt const * const e) {
 
                 /* Reset the maximum number of times to poll the I2C bus for an event */
                 me->nI2CLoopTimeout = MAX_I2C_TIMEOUT;
-                status_ = Q_TRAN(&I2CMgr_SetupI2CDevice);
+                status_ = Q_TRAN(&I2CMgr_WaitFor_I2C_EV5);
             }
             /* ${AOs::I2CMgr::SM::Active::Busy::StartI2CComm::I2C_CHECK_EV::[else]} */
             else {

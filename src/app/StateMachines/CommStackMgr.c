@@ -180,7 +180,7 @@ static QState CommStackMgr_Active(CommStackMgr * const me, QEvt const * const e)
             i2cReqEvt1->nReadLen  = 5;
             QF_PUBLISH((QEvent *)i2cReqEvt1, AO_CommStackMgr);
             */
-            //QTimeEvt_disarm( &me->timeTestTimerEvt );
+            QTimeEvt_disarm( &me->timeTestTimerEvt );
 
             /*
             time_T fast_print_start_time = TIME_getTime();

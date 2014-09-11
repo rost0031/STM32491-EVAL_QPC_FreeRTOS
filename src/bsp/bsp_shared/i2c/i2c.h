@@ -126,16 +126,18 @@ typedef struct I2C_BusSettings
    const uint16_t          sda_af;                  /**< I2C SDA alt function */
    const uint32_t          sda_clk;                   /**< I2C SDA GPIO clock */
 
-   /* I2C DMA settings */
+   /* Common I2C DMA settings */
    DMA_TypeDef *           i2c_dma;                       /**< I2C DMA device */
    const uint32_t          i2c_dma_channel;              /**< I2C DMA channel */
    const uint32_t          i2c_dma_dr_addr;           /**< I2C DMA DR address */
    const uint32_t          i2c_dma_clk;               /**< I2C DMA Clk source */
 
+   /* TX I2C DMA settings */
    DMA_Stream_TypeDef *    i2c_dma_tx_stream;      /**< I2C DMA stream for TX */
    IRQn_Type               i2c_dma_tx_irq_num;     /**< I2C DMA TX IRQ number */
    ISR_Priority            i2c_dma_tx_irq_prio;  /**< I2C DMA TX IRQ priority */
 
+   /* RX I2C DMA settings */
    DMA_Stream_TypeDef *    i2c_dma_rx_stream;      /**< I2C DMA stream for RX */
    IRQn_Type               i2c_dma_rx_irq_num;     /**< I2C DMA RX IRQ number */
    ISR_Priority            i2c_dma_rx_irq_prio;  /**< I2C DMA RX IRQ priority */
