@@ -16,6 +16,7 @@
 #include "bsp.h"
 #include "bsp_defs.h"
 #include "stm32f4xx.h"                                     /* STM32F4 support */
+#include "stm32f4xx_conf.h"
 #include "stm32f4x7_eth_bsp.h"                     /* DP83848 ETH PHY support */
 #include "stm32f4x7_eth.h"                         /* STM32F4 ETH MAC support */
 #include "qp_port.h"                                            /* QP support */
@@ -204,9 +205,10 @@ void QK_onIdle(void)
  * @param [in] line: int indicating the line where the assert occurred.
  * @return  None
  */
-void assert_failed(char const *file, int line)
+void assert_failed(uint8_t *file, uint32_t line)
 {
-   Q_onAssert(file, line);
+
+   Q_onAssert((const char *)file, line);
 }
 
 /******************************************************************************/
@@ -224,6 +226,7 @@ void Q_onAssert(char const * const file, int line)
 {
    (void)file;                                   /* avoid compiler warning */
    (void)line;                                   /* avoid compiler warning */
+   printf("ASSERT FAILED in %s at line %d\n", file, line);
    QF_INT_DISABLE();         /* make sure that all interrupts are disabled */
    for (;;) {       /* NOTE: replace the loop with reset for final version */
    }
