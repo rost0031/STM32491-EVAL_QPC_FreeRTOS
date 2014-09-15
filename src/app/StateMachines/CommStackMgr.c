@@ -170,7 +170,7 @@ static QState CommStackMgr_Active(CommStackMgr * const me, QEvt const * const e)
             I2CReqEvt *i2cReqEvt = Q_NEW(I2CReqEvt, I2C_READ_START_SIG);
             i2cReqEvt->i2cDevice = EEPROM;
             i2cReqEvt->wReadAddr = 0x00;
-            i2cReqEvt->nReadLen  = 20;
+            i2cReqEvt->nReadLen  = 2;
             QF_PUBLISH((QEvent *)i2cReqEvt, AO_CommStackMgr);
 
             /*

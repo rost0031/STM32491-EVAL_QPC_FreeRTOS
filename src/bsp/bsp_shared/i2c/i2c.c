@@ -36,7 +36,7 @@ DBG_DEFINE_THIS_MODULE( DBG_MODL_I2C ); /* For debug system to ID this module */
 /**
  * @brief Buffer for I2C device
  */
-static uint8_t          i2c1RxBuffer[MAX_MSG_LEN];
+uint8_t          i2c1RxBuffer[MAX_MSG_LEN];
 
 /**
  * @brief An internal structure that holds settings for I2C devices on all I2C
@@ -93,7 +93,7 @@ I2C_BusSettings_t s_I2C_Bus[MAX_I2C_BUS] =
             /* Common I2C DMA settings */
             DMA1,                      /**< i2c_dma */
             DMA_Channel_1,             /**< i2c_dma_channel */
-            ((uint32_t)0x40005410),    /**< i2c_dma_dr_addr */
+            (uint32_t)&(I2C1->DR),     /**< i2c_dma_dr_addr */
             RCC_AHB1Periph_DMA1,       /**< i2c_dma_clk */
 
             /* TX I2C DMA settings */
@@ -134,7 +134,7 @@ void I2C_BusInit( I2C_Bus_t iBus )
    RCC_APB1PeriphClockCmd( s_I2C_Bus[iBus].i2c_clk, ENABLE );
 
    /* Enable I2C GPIO clocks */
-   RCC_APB1PeriphClockCmd(
+   RCC_AHB1PeriphClockCmd(
          s_I2C_Bus[iBus].scl_clk | s_I2C_Bus[iBus].sda_clk,
          ENABLE
    );
@@ -143,7 +143,8 @@ void I2C_BusInit( I2C_Bus_t iBus )
    RCC_APB2PeriphClockCmd( RCC_APB2Periph_SYSCFG, ENABLE );
 
    /* Enable I2C DMA clock */
-   RCC_APB1PeriphClockCmd( s_I2C_Bus[iBus].i2c_dma_clk, ENABLE );
+   RCC_AHB1PeriphClockCmd( s_I2C_Bus[iBus].i2c_dma_clk, ENABLE );
+
 
 //   /* Reset the I2C Bus */
 //   RCC_APB1PeriphResetCmd( s_I2C_Bus[iBus].i2c_dma_clk, ENABLE ); /* assert reset */
@@ -190,24 +191,26 @@ void I2C_BusInit( I2C_Bus_t iBus )
    DMA_DeInit( s_I2C_Bus[iBus].i2c_dma_tx_stream );
 
    /* Set up a common DMA structure */
-   DMA_InitStructure.DMA_Channel             = s_I2C_Bus[iBus].i2c_dma_channel;
-   DMA_InitStructure.DMA_PeripheralBaseAddr  = s_I2C_Bus[iBus].i2c_dma_dr_addr;
-   DMA_InitStructure.DMA_PeripheralInc       = DMA_PeripheralInc_Disable;
-   DMA_InitStructure.DMA_MemoryInc           = DMA_MemoryInc_Enable;
-   DMA_InitStructure.DMA_PeripheralDataSize  = DMA_PeripheralDataSize_Byte;
-   DMA_InitStructure.DMA_MemoryDataSize      = DMA_MemoryDataSize_Byte;
-   DMA_InitStructure.DMA_Mode                = DMA_Mode_Normal;
-   DMA_InitStructure.DMA_Priority            = DMA_Priority_VeryHigh;
-   DMA_InitStructure.DMA_FIFOMode            = DMA_FIFOMode_Enable;
-   DMA_InitStructure.DMA_FIFOThreshold       = DMA_FIFOThreshold_Full;
-   DMA_InitStructure.DMA_MemoryBurst         = DMA_MemoryBurst_Single;
-   DMA_InitStructure.DMA_PeripheralBurst     = DMA_PeripheralBurst_Single;
-
-   /* Initialize the DMA RX stream */
-   DMA_InitStructure.DMA_DIR                 = DMA_DIR_PeripheralToMemory;
-   DMA_InitStructure.DMA_Memory0BaseAddr     = (uint32_t)s_I2C_Bus[iBus].pRxBuffer;
-   DMA_InitStructure.DMA_BufferSize          = s_I2C_Bus[iBus].nBytesExpected;
-   DMA_Init( s_I2C_Bus[iBus].i2c_dma_rx_stream, &DMA_InitStructure );
+//   DMA_InitStructure.DMA_Channel             = s_I2C_Bus[iBus].i2c_dma_channel;
+//   DMA_InitStructure.DMA_PeripheralBaseAddr  = s_I2C_Bus[iBus].i2c_dma_dr_addr;
+//   DMA_InitStructure.DMA_PeripheralInc       = DMA_PeripheralInc_Disable;
+//   DMA_InitStructure.DMA_MemoryInc           = DMA_MemoryInc_Enable;
+//   DMA_InitStructure.DMA_PeripheralDataSize  = DMA_PeripheralDataSize_Byte;
+//   DMA_InitStructure.DMA_MemoryDataSize      = DMA_MemoryDataSize_Byte;
+//   DMA_InitStructure.DMA_Mode                = DMA_Mode_Normal;
+//   DMA_InitStructure.DMA_Priority            = DMA_Priority_VeryHigh;
+//   DMA_InitStructure.DMA_FIFOMode            = DMA_FIFOMode_Enable;
+//   DMA_InitStructure.DMA_FIFOThreshold       = DMA_FIFOThreshold_Full;
+//   DMA_InitStructure.DMA_MemoryBurst         = DMA_MemoryBurst_Single;
+//   DMA_InitStructure.DMA_PeripheralBurst     = DMA_PeripheralBurst_Single;
+//
+//   /* Initialize the DMA RX stream */
+//   DMA_InitStructure.DMA_DIR                 = DMA_DIR_PeripheralToMemory;
+//   DMA_InitStructure.DMA_Memory0BaseAddr     = (uint32_t)s_I2C_Bus[iBus].pRxBuffer;
+//   DMA_InitStructure.DMA_BufferSize          = s_I2C_Bus[iBus].nBytesExpected;
+//   DMA_Init( s_I2C_Bus[iBus].i2c_dma_rx_stream, &DMA_InitStructure );
+//
+//   dbg_slow_printf("DMA1_St0 periphBaseAddr: 0x%08x and should be 0x%08x\n", DMA_InitStructure.DMA_PeripheralBaseAddr, (uint32_t)&(I2C1->DR));
 
    /* Initialize the DMA TX stream */
 //   DMA_InitStructure.DMA_DIR                 = DMA_DIR_MemoryToPeripheral;
@@ -224,10 +227,14 @@ void I2C_BusInit( I2C_Bus_t iBus )
 //   );
 
    /* Set up Interrupt controller to handle I2C Error interrupts */
-      NVIC_Config(
-            s_I2C_Bus[iBus].i2c_er_irq_num,
-            s_I2C_Bus[iBus].i2c_er_irq_prio
-      );
+   NVIC_Config(
+         s_I2C_Bus[iBus].i2c_er_irq_num,
+         s_I2C_Bus[iBus].i2c_er_irq_prio
+   );
+
+
+   /* Enable the TransferComplete interrupt in the DMA */
+//   DMA_ITConfig( s_I2C_Bus[iBus].i2c_dma_rx_stream, DMA_IT_TC | DMA_IT_HT | DMA_IT_TE | DMA_IT_FE | DMA_IT_DME, ENABLE );
 
    /* Enable All I2C Interrupts */
    I2C_ITConfig(
@@ -301,18 +308,22 @@ void I2C_DMARead( I2C_Bus_t iBus, uint16_t wReadAddr, uint16_t wReadLen )
    s_I2C_Bus[iBus].nBytesCurrent  = 0;
    s_I2C_Bus[iBus].nRxindex       = 0;
 
-   /* Clear any pending flags on RX Stream */
-   DMA_ClearFlag(
-         s_I2C_Bus[iBus].i2c_dma_rx_stream,
-         DMA_FLAG_TCIF0 |
-         DMA_FLAG_FEIF0 |
-         DMA_FLAG_DMEIF0 |
-         DMA_FLAG_TEIF0 |
-         DMA_FLAG_HTIF0
-   );
-
    /* Clear out the DMA settings */
    DMA_Cmd( s_I2C_Bus[iBus].i2c_dma_rx_stream, DISABLE );
+   uint32_t tmpTimeout1 = 0xFFFF;
+   while (
+         (DISABLE != DMA_GetCmdStatus(s_I2C_Bus[iBus].i2c_dma_rx_stream)) &&
+         (tmpTimeout1 != 0 )
+   ) {
+      --tmpTimeout1;
+   }
+   if ( tmpTimeout1 == 0 ) {
+      DBG_printf("Couldn't disable DMA stream after %x cycles\n", tmpTimeout1);
+   } else {
+      DBG_printf("DMA1_St0 disabled after %x cycles\n", tmpTimeout1);
+      DBG_printf("DMA1_St0 state is still %d\n", DMA_GetCmdStatus(s_I2C_Bus[iBus].i2c_dma_rx_stream));
+   }
+
    DMA_DeInit( s_I2C_Bus[iBus].i2c_dma_rx_stream );
 
    /* Set up a new DMA structure for reading */
@@ -329,70 +340,33 @@ void I2C_DMARead( I2C_Bus_t iBus, uint16_t wReadAddr, uint16_t wReadLen )
    DMA_InitStructure.DMA_FIFOThreshold       = DMA_FIFOThreshold_Full;
    DMA_InitStructure.DMA_MemoryBurst         = DMA_MemoryBurst_Single;
    DMA_InitStructure.DMA_PeripheralBurst     = DMA_PeripheralBurst_Single;
-   DMA_InitStructure.DMA_Memory0BaseAddr     = (uint32_t)&i2c1RxBuffer[0]; //s_I2C_Bus[iBus].pRxBuffer;
+   DMA_InitStructure.DMA_Memory0BaseAddr     = s_I2C_Bus[iBus].pRxBuffer;
    DMA_InitStructure.DMA_BufferSize          = s_I2C_Bus[iBus].nBytesExpected;
 
-   /* Initialize the DMA with the filled in structure */
+   DBG_printf("Attempting to read via DMA %d bytes\n", DMA_InitStructure.DMA_BufferSize);
+
+      /* Initialize the DMA with the filled in structure */
    DMA_Init( s_I2C_Bus[iBus].i2c_dma_rx_stream, &DMA_InitStructure );
 
-
-
    /* Enable the TransferComplete interrupt in the DMA */
-   DMA_ITConfig( s_I2C_Bus[iBus].i2c_dma_rx_stream, DMA_IT_TC | DMA_IT_HT | DMA_IT_TE | DMA_IT_FE | DMA_IT_DME, ENABLE );
+   DMA_ITConfig( s_I2C_Bus[iBus].i2c_dma_rx_stream, DMA_IT_TC, ENABLE );
+
+   /* Clear any pending flags on RX Stream */
+   DMA_ClearFlag(
+         s_I2C_Bus[iBus].i2c_dma_rx_stream,
+         DMA_FLAG_TCIF0 |
+         DMA_FLAG_FEIF0 |
+         DMA_FLAG_DMEIF0 |
+         DMA_FLAG_TEIF0 |
+         DMA_FLAG_HTIF0
+   );
 
    /* I2Cx DMA Enable */
    I2C_DMACmd( s_I2C_Bus[iBus].i2c_bus, ENABLE );
 
-   DBG_printf("Sending DMA read\n");
    /* Finally, activate DMA */
    DMA_Cmd( s_I2C_Bus[iBus].i2c_dma_rx_stream, ENABLE );
 
-
-   /* TODO: remove this Debug stuff */
-//   uint16_t tmpTimeout = 0xFFFF;
-//   while ( DMA_GetCmdStatus(s_I2C_Bus[iBus].i2c_dma_rx_stream)!= ENABLE && tmpTimeout-- != 0 ) {
-//   }
-//   if ( tmpTimeout == 0 ) {
-//      ERR_printf("Couldn't enable DMA stream\n");
-//   }
-//   tmpTimeout = 0xFFFF;
-//   while ((DMA_GetFlagStatus(s_I2C_Bus[iBus].i2c_dma_rx_stream,DMA_IT_TCIF0)==RESET) && (tmpTimeout-- != 0))
-//   {}
-//   if ( tmpTimeout == 0 ) {
-//      ERR_printf("Timed out getting data on DMA stream\n");
-//   } else {
-//      WRN_printf("!!NO TIMEOUT ON DMA! Int is 0x%08x\n", DMA_GetITStatus(DMA1_Stream0, DMA_IT_TCIF0));
-//   }
-//
-//   /* Send I2Cx STOP Condition */
-//   I2C_GenerateSTOP(I2C1, ENABLE);
-//
-//   /* Disable DMA RX Channel */
-//   DMA_Cmd(DMA1_Stream0, DISABLE);
-//
-//   tmpTimeout = 0xFFFF;
-//   while ( DMA_GetCmdStatus(s_I2C_Bus[iBus].i2c_dma_rx_stream)!= DISABLE && tmpTimeout-- != 0 ) {
-//   }
-//   if ( tmpTimeout == 0 ) {
-//      ERR_printf("Couldn't disable DMA stream\n");
-//   }
-//
-//   I2C_DMACmd(I2C1,DISABLE);
-//   DMA_ClearFlag(
-//         s_I2C_Bus[iBus].i2c_dma_rx_stream,
-//         DMA_FLAG_TCIF0 |
-//         DMA_FLAG_FEIF0 |
-//         DMA_FLAG_DMEIF0 |
-//         DMA_FLAG_TEIF0 |
-//         DMA_FLAG_HTIF0
-//   );
-//   DMA_ClearITPendingBit( DMA1_Stream0, DMA_IT_TCIF0 );
-//
-//   dbg_slow_printf("Got ");
-//   for (uint8_t i = 0; i < s_I2C_Bus[I2CBus1].nBytesExpected; i++) {
-//      printf("0x%02x ", s_I2C_Bus[I2CBus1].pRxBuffer[i]);
-//   }
-//   printf(" in the RX buffer\n");
 }
 
 /**
@@ -404,7 +378,7 @@ void I2C_DMARead( I2C_Bus_t iBus, uint16_t wReadAddr, uint16_t wReadLen )
 void DMA1_Stream0_IRQHandler( void )
 {
    QK_ISR_ENTRY();                         /* inform QK about entering an ISR */
-   printf("\n\n DMA!!!\n\n");
+//   printf("\n\n DMA!!!\n\n");
    /* Test on DMA Stream Transfer Complete interrupt */
    if ( RESET != DMA_GetITStatus(DMA1_Stream0, DMA_IT_TCIF0) ) {
       /* Start of STM32 I2C HW bug workaround:
@@ -412,8 +386,8 @@ void DMA1_Stream0_IRQHandler( void )
        * the STOP bit before receiving the last byte.  In the case of DMA xfers,
        * this means doing it before you shut off the DMA stream.
        * See the STM32 errata for more details. - HR */
-
-      I2C_AcknowledgeConfig( I2C1, DISABLE);        /* Disable Acknowledgment */
+      DMA_Cmd( DMA1_Stream0, DISABLE );
+//      I2C_AcknowledgeConfig( I2C1, DISABLE);        /* Disable Acknowledgment */
 
       I2C_GenerateSTOP(I2C1, ENABLE);                        /* Generate Stop */
 
@@ -422,19 +396,19 @@ void DMA1_Stream0_IRQHandler( void )
        * outside of the ISR since you have to do this BEFORE you shut off DMA
        * which has to be done in this ISR. Thankfully, this flag gets reset
        * fairly quickly (189 times through the loop). - HR. */
-      uint16_t nI2CBusTimeout = MAX_I2C_TIMEOUT;
-      while(I2C_GetFlagStatus(I2C1, I2C_FLAG_RXNE) == RESET) {
-         if((nI2CBusTimeout--) == 0) {
-            ERR_printf("Timeout waiting for I2C Stop bit flag reset!\n");
-            return;
-         }
-      }
+//      uint16_t nI2CBusTimeout = MAX_I2C_TIMEOUT;
+//      while(I2C_GetFlagStatus(I2C1, I2C_FLAG_RXNE) == RESET) {
+//         if((nI2CBusTimeout--) == 0) {
+//            ERR_printf("Timeout waiting for I2C Stop bit flag reset!\n");
+//            return;
+//         }
+//      }
 
-      I2C_AcknowledgeConfig(I2C1, ENABLE);        /* Re-enable Acknowledgment */
+//      I2C_AcknowledgeConfig(I2C1, ENABLE);        /* Re-enable Acknowledgment */
       /* End of STM32 I2C HW bug workaround */
 
       /* Disable DMA so it doesn't keep outputting the buffer. */
-      DMA_Cmd( DMA1_Stream0, DISABLE );
+//      DMA_Cmd( DMA1_Stream0, DISABLE );
 
       /* Publish event stating that the count has been reached */
       I2CDataEvt *i2cDataEvt = Q_NEW( I2CDataEvt, I2C_READ_DONE_SIG );

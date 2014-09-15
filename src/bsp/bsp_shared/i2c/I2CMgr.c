@@ -390,7 +390,13 @@ static QState I2CMgr_WaitFor_I2C_EV6_R(I2CMgr * const me, QEvt const * const e) 
 
                 /* Reset the number of bytes already read to 0 */
                 me->nRead = 0;
-                status_ = Q_TRAN(&I2CMgr_ReadI2CByte);
+                /* Start the DMA read operation */
+                I2C_DMARead(
+                    me->iBus,
+                    me->wAddr,
+                    me->nLen
+                );
+                status_ = Q_TRAN(&I2CMgr_WaitForDMAData);
             }
             /* ${AOs::I2CMgr::SM::Active::Busy::BusBeingUsed::Reading::WaitFor_I2C_EV6_R::I2C_CHECK_EV::[else]} */
             else {
@@ -427,11 +433,13 @@ static QState I2CMgr_WaitForDMAData(I2CMgr * const me, QEvt const * const e) {
             );
 
             /* Start the DMA read operation */
+            /*
             I2C_DMARead(
                 me->iBus,
                 me->wAddr,
                 me->nLen
             );
+            */
             status_ = Q_HANDLED();
             break;
         }
@@ -444,6 +452,19 @@ static QState I2CMgr_WaitForDMAData(I2CMgr * const me, QEvt const * const e) {
         /* ${AOs::I2CMgr::SM::Active::Busy::BusBeingUsed::Reading::WaitForDMAData::I2C_DMA_TIMEOUT} */
         case I2C_DMA_TIMEOUT_SIG: {
             ERR_printf("Timeout while waiting for DMA read timeout\n");
+
+            /* TODO: DEBUG STUFF - remove */
+            ERR_printf("DMA1_St0 fifo is at %d\n", DMA_GetFIFOStatus(DMA1_Stream0) );
+            ERR_printf("DMA1_St0 TC flag: %d\n", DMA_GetFlagStatus(DMA1_Stream0,DMA_IT_TCIF0) );
+            ERR_printf("DMA1_St0 FE flag: %d\n", DMA_GetFlagStatus(DMA1_Stream0,DMA_FLAG_FEIF0) );
+            ERR_printf("DMA1_St0 DM flag: %d\n", DMA_GetFlagStatus(DMA1_Stream0,DMA_FLAG_DMEIF0) );
+            ERR_printf("DMA1_St0 TE flag: %d\n", DMA_GetFlagStatus(DMA1_Stream0,DMA_FLAG_TEIF0) );
+            ERR_printf("DMA1_St0 HT flag: %d\n", DMA_GetFlagStatus(DMA1_Stream0,DMA_FLAG_HTIF0) );
+
+            if (DMA_GetCmdStatus(DMA1_Stream0)== ENABLE) {
+                ERR_printf("DMA1_Stream0 still enabled, turning off\n");
+                DMA_Cmd( DMA1_Stream0, DISABLE );
+            }
 
             /* Disable Acknowledgment */
             I2C_AcknowledgeConfig(s_I2C_Bus[me->iBus].i2c_bus, DISABLE);
