@@ -486,7 +486,7 @@ I2C_SendData(
 /* Send the single byte address to the device */
 I2C_SendData(
     s_I2C_Bus[me-&gt;iBus].i2c_bus,
-    (uint8_t)(me-&gt;wAddr &amp; 0xFF00)
+    (uint8_t)(me-&gt;wAddr &amp; 0x00FF)
 );</action>
            <choice_glyph conn="88,59,4,1,15,-23">
             <action box="-14,13,13,4"/>
@@ -630,10 +630,7 @@ me-&gt;nI2CLoopTimeout = MAX_I2C_TIMEOUT;</action>
 s_I2C_Bus[me-&gt;iBus].i2c_cur_st = I2C_GEN_START_ST;
 
 /* Set the direction to transmit the address */
-I2C_SetDirection( me-&gt;iBus,  I2C_Direction_Transmitter);
-
-/* Send START condition */
-I2C_GenerateSTART(s_I2C_Bus[me-&gt;iBus].i2c_bus, ENABLE);</entry>
+I2C_SetDirection( me-&gt;iBus,  I2C_Direction_Transmitter);</entry>
         <tran trig="I2C_EV_MASTER_MODE_SELECT">
          <action>DBG_printf(&quot;Got I2C_EV_MASTER_MODE_SELECT\n&quot;);</action>
          <tran_glyph conn="105,42,3,-1,28">
@@ -679,7 +676,7 @@ QF_PUBLISH((QEvt *)qEvt, AO_I2CMgr);</entry>
 
 /* Reset the maximum number of times to poll the I2C bus for an event */
 me-&gt;nI2CLoopTimeout = MAX_I2C_TIMEOUT;</action>
-         <choice_glyph conn="60,26,4,0,10">
+         <choice_glyph conn="60,26,4,0,4,-3,6">
           <action box="0,2,14,2"/>
          </choice_glyph>
         </choice>

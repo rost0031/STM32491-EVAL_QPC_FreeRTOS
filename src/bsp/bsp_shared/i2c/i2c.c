@@ -129,6 +129,7 @@ DMA_InitTypeDef    DMA_InitStructure;        /**< For I2C DMA initialization. */
 /******************************************************************************/
 void I2C_BusInit( I2C_Bus_t iBus )
 {
+   /* 1. Enable clocks ------------------------------------------------------ */
    /* Enable I2C clock */
    RCC_APB1PeriphClockCmd( s_I2C_Bus[iBus].i2c_clk, ENABLE );
 
@@ -151,6 +152,7 @@ void I2C_BusInit( I2C_Bus_t iBus )
    /* Reset I2C IP */
    I2C_DeInit( s_I2C_Bus[iBus].i2c_bus );
 
+   /* 2. Set up GPIO -------------------------------------------------------- */
    /* Connect PXx to I2C SCL alt function. */
    GPIO_PinAFConfig(
          s_I2C_Bus[iBus].scl_port,
@@ -180,22 +182,57 @@ void I2C_BusInit( I2C_Bus_t iBus )
    GPIO_InitStructure.GPIO_Pin = s_I2C_Bus[iBus].sda_pin;
    GPIO_Init(s_I2C_Bus[iBus].sda_port, &GPIO_InitStructure);
 
-//   /* Set up Interrupt controller to handle I2C Event interrupts */
+   /* 3. Set up common DMA I2C settings ------------------------------------- */
+   DMA_Cmd( s_I2C_Bus[iBus].i2c_dma_rx_stream, DISABLE );
+   DMA_DeInit( s_I2C_Bus[iBus].i2c_dma_rx_stream );
+
+   DMA_Cmd( s_I2C_Bus[iBus].i2c_dma_tx_stream, DISABLE );
+   DMA_DeInit( s_I2C_Bus[iBus].i2c_dma_tx_stream );
+
+   /* Set up a common DMA structure */
+   DMA_InitStructure.DMA_Channel             = s_I2C_Bus[iBus].i2c_dma_channel;
+   DMA_InitStructure.DMA_PeripheralBaseAddr  = s_I2C_Bus[iBus].i2c_dma_dr_addr;
+   DMA_InitStructure.DMA_PeripheralInc       = DMA_PeripheralInc_Disable;
+   DMA_InitStructure.DMA_MemoryInc           = DMA_MemoryInc_Enable;
+   DMA_InitStructure.DMA_PeripheralDataSize  = DMA_PeripheralDataSize_Byte;
+   DMA_InitStructure.DMA_MemoryDataSize      = DMA_MemoryDataSize_Byte;
+   DMA_InitStructure.DMA_Mode                = DMA_Mode_Normal;
+   DMA_InitStructure.DMA_Priority            = DMA_Priority_VeryHigh;
+   DMA_InitStructure.DMA_FIFOMode            = DMA_FIFOMode_Enable;
+   DMA_InitStructure.DMA_FIFOThreshold       = DMA_FIFOThreshold_Full;
+   DMA_InitStructure.DMA_MemoryBurst         = DMA_MemoryBurst_Single;
+   DMA_InitStructure.DMA_PeripheralBurst     = DMA_PeripheralBurst_Single;
+
+   /* Initialize the DMA RX stream */
+   DMA_InitStructure.DMA_DIR                 = DMA_DIR_PeripheralToMemory;
+   DMA_InitStructure.DMA_Memory0BaseAddr     = (uint32_t)s_I2C_Bus[iBus].pRxBuffer;
+   DMA_InitStructure.DMA_BufferSize          = s_I2C_Bus[iBus].nBytesExpected;
+   DMA_Init( s_I2C_Bus[iBus].i2c_dma_rx_stream, &DMA_InitStructure );
+
+   /* Initialize the DMA TX stream */
+//   DMA_InitStructure.DMA_DIR                 = DMA_DIR_MemoryToPeripheral;
+//   DMA_InitStructure.DMA_Memory0BaseAddr     = (uint32_t)s_I2C_Bus[iBus].pRxBuffer;
+//   DMA_InitStructure.DMA_BufferSize          = s_I2C_Bus[iBus].nBytesExpected;
+//   DMA_Init( s_I2C_Bus[iBus].i2c_dma_tx_stream, &DMA_InitStructure );
+
+
+   /* 4. Set up interrupts -------------------------------------------------- */
+   /* Set up Interrupt controller to handle I2C Event interrupts */
 //   NVIC_Config(
 //         s_I2C_Bus[iBus].i2c_ev_irq_num,
 //         s_I2C_Bus[iBus].i2c_ev_irq_prio
 //   );
-//
-//   /* Set up Interrupt controller to handle I2C Error interrupts */
-//      NVIC_Config(
-//            s_I2C_Bus[iBus].i2c_er_irq_num,
-//            s_I2C_Bus[iBus].i2c_er_irq_prio
-//      );
-//
+
+   /* Set up Interrupt controller to handle I2C Error interrupts */
+      NVIC_Config(
+            s_I2C_Bus[iBus].i2c_er_irq_num,
+            s_I2C_Bus[iBus].i2c_er_irq_prio
+      );
+
    /* Enable All I2C Interrupts */
    I2C_ITConfig(
          s_I2C_Bus[iBus].i2c_bus,
-         I2C_IT_EVT | I2C_IT_BUF, // | I2C_IT_ERR,
+         I2C_IT_ERR, //I2C_IT_EVT | I2C_IT_BUF |
          ENABLE
    );
 
@@ -204,11 +241,11 @@ void I2C_BusInit( I2C_Bus_t iBus )
          s_I2C_Bus[iBus].i2c_dma_rx_irq_num,
          s_I2C_Bus[iBus].i2c_dma_rx_irq_prio
    );
-//
-//      NVIC_Config(
-//            s_I2C_Bus[iBus].i2c_dma_tx_irq_num,
-//            s_I2C_Bus[iBus].i2c_dma_tx_irq_prio
-//      );
+
+//   NVIC_Config(
+//         s_I2C_Bus[iBus].i2c_dma_tx_irq_num,
+//         s_I2C_Bus[iBus].i2c_dma_tx_irq_prio
+//   );
 
 
    /* I2C configuration */
@@ -229,7 +266,7 @@ void I2C_BusInit( I2C_Bus_t iBus )
    I2C_DigitalFilterConfig( s_I2C_Bus[iBus].i2c_bus, 0x0F );
 
    /* I2C Peripheral Enable */
-   I2C_Cmd( s_I2C_Bus[iBus].i2c_bus, ENABLE );
+//   I2C_Cmd( s_I2C_Bus[iBus].i2c_bus, ENABLE );
 
 }
 
@@ -264,6 +301,16 @@ void I2C_DMARead( I2C_Bus_t iBus, uint16_t wReadAddr, uint16_t wReadLen )
    s_I2C_Bus[iBus].nBytesCurrent  = 0;
    s_I2C_Bus[iBus].nRxindex       = 0;
 
+   /* Clear any pending flags on RX Stream */
+   DMA_ClearFlag(
+         s_I2C_Bus[iBus].i2c_dma_rx_stream,
+         DMA_FLAG_TCIF0 |
+         DMA_FLAG_FEIF0 |
+         DMA_FLAG_DMEIF0 |
+         DMA_FLAG_TEIF0 |
+         DMA_FLAG_HTIF0
+   );
+
    /* Clear out the DMA settings */
    DMA_Cmd( s_I2C_Bus[iBus].i2c_dma_rx_stream, DISABLE );
    DMA_DeInit( s_I2C_Bus[iBus].i2c_dma_rx_stream );
@@ -282,21 +329,13 @@ void I2C_DMARead( I2C_Bus_t iBus, uint16_t wReadAddr, uint16_t wReadLen )
    DMA_InitStructure.DMA_FIFOThreshold       = DMA_FIFOThreshold_Full;
    DMA_InitStructure.DMA_MemoryBurst         = DMA_MemoryBurst_Single;
    DMA_InitStructure.DMA_PeripheralBurst     = DMA_PeripheralBurst_Single;
-   DMA_InitStructure.DMA_Memory0BaseAddr     = s_I2C_Bus[iBus].pRxBuffer;
+   DMA_InitStructure.DMA_Memory0BaseAddr     = (uint32_t)&i2c1RxBuffer[0]; //s_I2C_Bus[iBus].pRxBuffer;
    DMA_InitStructure.DMA_BufferSize          = s_I2C_Bus[iBus].nBytesExpected;
 
    /* Initialize the DMA with the filled in structure */
    DMA_Init( s_I2C_Bus[iBus].i2c_dma_rx_stream, &DMA_InitStructure );
 
-      /* Clear any pending flags on RX Stream */
-   DMA_ClearFlag(
-         s_I2C_Bus[iBus].i2c_dma_rx_stream,
-         DMA_FLAG_TCIF0 |
-         DMA_FLAG_FEIF0 |
-         DMA_FLAG_DMEIF0 |
-         DMA_FLAG_TEIF0 |
-         DMA_FLAG_HTIF0
-   );
+
 
    /* Enable the TransferComplete interrupt in the DMA */
    DMA_ITConfig( s_I2C_Bus[iBus].i2c_dma_rx_stream, DMA_IT_TC | DMA_IT_HT | DMA_IT_TE | DMA_IT_FE | DMA_IT_DME, ENABLE );
@@ -442,8 +481,8 @@ void I2C1_EV_IRQHandler( void )
             /* Set new state */
             s_I2C_Bus[I2CBus1].i2c_cur_st = I2C_MASTER_TX_MODE_SELECTED_ST;
 
-//            isr_dbg_slow_printf("Selecting master\n");
-            DBG_printf("Selecting master\n");
+            isr_dbg_slow_printf("Selecting master\n");
+//            DBG_printf("Selecting master\n");
             /* Send slave Address for write */
             I2C_Send7bitAddress(
                   I2C1,                                  // This is always the bus used in this ISR
@@ -462,9 +501,9 @@ void I2C1_EV_IRQHandler( void )
                   s_I2C_Bus[I2CBus1].bTransDirection    /* Direction of data on this bus */
             );
 
-//            isr_dbg_slow_printf("Selecting master again\n");
+            isr_dbg_slow_printf("Selecting master again\n");
 
-            DBG_printf("Selecting master again\n");
+//            DBG_printf("Selecting master again\n");
          }
 
          /* Create and publish event for I2CMgr */
@@ -475,30 +514,48 @@ void I2C1_EV_IRQHandler( void )
          break;
 
       case I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED:
-//         isr_dbg_slow_printf("I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED\n");
-         DBG_printf("I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED\n");
+         isr_dbg_slow_printf("I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED\n");
+//         DBG_printf("I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED\n");
          break;
 
       /* Check on EV6 */
       case I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED: /* BUSY, MSL, ADDR, TXE and TRA flags */
-//         isr_dbg_slow_printf("I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED\n");
-         DBG_printf("I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED\n");
+         isr_dbg_slow_printf("I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED\n");
+//         DBG_printf("I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED\n");
          if ( I2C_MASTER_TX_MODE_SELECTED_ST == s_I2C_Bus[I2CBus1].i2c_cur_st ) {
 
-//            isr_dbg_slow_printf("MSB\n");
+            /* 2 byte address for device */
+            if ( 2 == I2C_getDevAddrSize(s_I2C_Bus[I2CBus1].i2c_cur_dev) ) {
+            isr_dbg_slow_printf("MSB\n");
 
-            /* Set new state */
-            s_I2C_Bus[I2CBus1].i2c_cur_st = I2C_SENT_MSB_ADDR_ST;
+               /* Set new state */
+               s_I2C_Bus[I2CBus1].i2c_cur_st = I2C_SENT_MSB_ADDR_ST;
 
-            /* Create and publish event for I2CMgr */
+               /* Create and publish event for I2CMgr */
 //            QEvt *qEvt1 = Q_NEW( QEvt, I2C_EV_MASTER_TX_MODE_SELECTED_SIG );
 //            QF_PUBLISH( (QEvt *)qEvt1, AO_I2CMgr );
 
-            /* Send the MSB of the address first to the I2C device */
-            I2C_SendData(
-                  I2C1,
-                  (uint8_t)((s_I2C_Bus[I2CBus1].i2c_cur_dev_addr & 0xFF00) >> 8)
-            );
+               /* Send the MSB of the address first to the I2C device */
+               I2C_SendData(
+                     I2C1,
+                     (uint8_t)((s_I2C_Bus[I2CBus1].i2c_cur_dev_addr & 0xFF00) >> 8)
+               );
+            } else { /* Single byte address for device */
+               isr_dbg_slow_printf("Single byte address\n");
+               /* Set new state and use the LSB state so we can skip to the next
+                * step */
+               s_I2C_Bus[I2CBus1].i2c_cur_st = I2C_SENT_LSB_ADDR_ST;
+
+               /* Create and publish event for I2CMgr */
+//            QEvt *qEvt1 = Q_NEW( QEvt, I2C_EV_MASTER_TX_MODE_SELECTED_SIG );
+//            QF_PUBLISH( (QEvt *)qEvt1, AO_I2CMgr );
+
+               /* Send the entire 1 byte address to the I2C device */
+               I2C_SendData(
+                     I2C1,
+                     (uint8_t)((s_I2C_Bus[I2CBus1].i2c_cur_dev_addr & 0x00FF))
+               );
+            }
 
 //            I2C_GetITStatus()
 //            I2C_GetFlagStatus( I2C1, I2C_FLAG_MSL | I2C_FLAG_ADDR | I2C_FLAG_TXE | I2C_FLAG_TRA );
@@ -576,13 +633,13 @@ void I2C1_EV_IRQHandler( void )
          break;
 
       case I2C_EVENT_MASTER_BYTE_TRANSMITTED:
-         DBG_printf("I2C_EVENT_MASTER_BYTE_TRANSMITTED\n");
+         isr_dbg_slow_printf("I2C_EVENT_MASTER_BYTE_TRANSMITTED\n");
 
          if ( I2C_SENT_MSB_ADDR_ST == s_I2C_Bus[I2CBus1].i2c_cur_st ) {
 
             /* Create and publish event for I2CMgr */
-//            QEvt *qEvt2 = Q_NEW( QEvt, I2C_SENT_MSB_ADDR_SIG );
-//            QF_PUBLISH( (QEvt *)qEvt2, AO_I2CMgr );
+            QEvt *qEvt2 = Q_NEW( QEvt, I2C_SENT_MSB_ADDR_SIG );
+            QF_PUBLISH( (QEvt *)qEvt2, AO_I2CMgr );
 
             /* Set new state */
             s_I2C_Bus[I2CBus1].i2c_cur_st = I2C_SENT_LSB_ADDR_ST;
@@ -592,9 +649,9 @@ void I2C1_EV_IRQHandler( void )
                   I2C1,
                   (uint8_t)(s_I2C_Bus[I2CBus1].i2c_cur_dev_addr & 0xFF00)
             );
-//            isr_dbg_slow_printf("Sent LSB\n");
+            isr_dbg_slow_printf("Sent LSB\n");
          } else if ( I2C_SENT_LSB_ADDR_ST == s_I2C_Bus[I2CBus1].i2c_cur_st ) {
-//            isr_dbg_slow_printf("Ready to send second start\n");
+            isr_dbg_slow_printf("Ready to send second start\n");
             /* Set new state */
             s_I2C_Bus[I2CBus1].i2c_cur_st = I2C_GEN_2ND_START_ST;
 

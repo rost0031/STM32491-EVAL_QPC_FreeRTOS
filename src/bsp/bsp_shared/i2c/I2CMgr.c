@@ -680,7 +680,7 @@ static QState I2CMgr_WaitFor_I2C_EV6(I2CMgr * const me, QEvt const * const e) {
                     /* Send the single byte address to the device */
                     I2C_SendData(
                         s_I2C_Bus[me->iBus].i2c_bus,
-                        (uint8_t)(me->wAddr & 0xFF00)
+                        (uint8_t)(me->wAddr & 0x00FF)
                     );
                     status_ = Q_TRAN(&I2CMgr_WaitFor_I2C_EV8_LSB);
                 }
@@ -821,9 +821,6 @@ static QState I2CMgr_SetupI2CDevice(I2CMgr * const me, QEvt const * const e) {
 
             /* Set the direction to transmit the address */
             I2C_SetDirection( me->iBus,  I2C_Direction_Transmitter);
-
-            /* Send START condition */
-            I2C_GenerateSTART(s_I2C_Bus[me->iBus].i2c_bus, ENABLE);
             status_ = Q_HANDLED();
             break;
         }
