@@ -175,6 +175,8 @@ void I2C1_EV_IRQHandler( void ) __attribute__((__interrupt__));
  */
 void I2C1_ER_IRQHandler( void ) __attribute__((__interrupt__));
 
+void DMA1_Stream0_IRQHandler( void ) __attribute__((__interrupt__));
+
 #ifdef __cplusplus
 }
 #endif

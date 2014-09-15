@@ -46,7 +46,7 @@ static QSubscrList   l_subscrSto[MAX_PUB_SIG];     /**< Storage for subscribe/pu
 static union SmallEvents {
     void   *e0;                                       /* minimum event size */
     uint8_t e1[sizeof(QEvt)];
-} l_smlPoolSto[20];                     /* storage for the small event pool */
+} l_smlPoolSto[50];                     /* storage for the small event pool */
 
 /**
  * \union Medium Events.
@@ -55,7 +55,7 @@ static union SmallEvents {
 static union MediumEvents {
     void   *e0;                                       /* minimum event size */
     uint8_t e1[sizeof(I2CReqEvt)];
-} l_medPoolSto[20];                    /* storage for the medium event pool */
+} l_medPoolSto[50];                    /* storage for the medium event pool */
 
 /**
  * \union Large Events.
@@ -67,7 +67,7 @@ static union LargeEvents {
     uint8_t e2[sizeof(EthEvt)];
     uint8_t e3[sizeof(SerialDataEvt)];
     uint8_t e4[sizeof(I2CDataEvt)];
-} l_lrgPoolSto[20];                    /* storage for the large event pool */
+} l_lrgPoolSto[50];                    /* storage for the large event pool */
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
@@ -82,19 +82,15 @@ int main(void)
        function, refer to system_stm32f4xx.c file
      */
 
-    /* initialize the Board Support Package */
-    BSP_init();
-
     /* Enable debugging for select modules */
-
-    dbg_slow_printf("glbDbgConfig is 0x%08x before enabling any debugging\n", glbDbgConfig);
     DBG_ENABLE_DEBUG_FOR_MODULE(DBG_MODL_GENERAL);
     DBG_ENABLE_DEBUG_FOR_MODULE(DBG_MODL_SERIAL);
     DBG_ENABLE_DEBUG_FOR_MODULE(DBG_MODL_TIME);
     DBG_ENABLE_DEBUG_FOR_MODULE(DBG_MODL_ETH);
     DBG_ENABLE_DEBUG_FOR_MODULE(DBG_MODL_I2C);
 
-    dbg_slow_printf("glbDbgConfig is 0x%08x after enabling any debugging\n", glbDbgConfig);
+    /* initialize the Board Support Package */
+    BSP_init();
 
     dbg_slow_printf("Initialized BSP\n");
     log_slow_printf("Starting Bootloader version %s built on %s\n", FW_VER, BUILD_DATE);
@@ -158,9 +154,7 @@ int main(void)
           (QEvt *)0                                /* no initialization event */
     );
 
-
-    log_slow_printf("Bootloader started successfully.\n");
-    log_slow_printf("Starting QPC.  All logging from here on out should not show 'SLOW'!!!\n");
+    log_slow_printf("Starting QPC. All logging from here on out shouldn't show 'SLOW'!!!\n\n");
     QF_run();                                       /* run the QF application */
 
     return(0);

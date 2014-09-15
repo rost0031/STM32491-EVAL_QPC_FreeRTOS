@@ -80,7 +80,7 @@ QTimeEvt_postEvery(
 I2CReqEvt *i2cReqEvt = Q_NEW(I2CReqEvt, I2C_READ_START_SIG);
 i2cReqEvt-&gt;i2cDevice = EEPROM;
 i2cReqEvt-&gt;wReadAddr = 0x00;
-i2cReqEvt-&gt;nReadLen  = 10;
+i2cReqEvt-&gt;nReadLen  = 20;
 QF_PUBLISH((QEvent *)i2cReqEvt, AO_CommStackMgr);
 
 /*
@@ -90,7 +90,7 @@ i2cReqEvt1-&gt;wReadAddr = 0x30;
 i2cReqEvt1-&gt;nReadLen  = 5;
 QF_PUBLISH((QEvent *)i2cReqEvt1, AO_CommStackMgr);
 */
-//QTimeEvt_disarm( &amp;me-&gt;timeTestTimerEvt );
+QTimeEvt_disarm( &amp;me-&gt;timeTestTimerEvt );
 
 /*
 time_T fast_print_start_time = TIME_getTime();

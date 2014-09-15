@@ -65,22 +65,6 @@ void BSP_init( void )
    RCC_GetClocksFreq(&RCC_Clocks);
    dbg_slow_printf("Clock speed: %d\n", RCC_Clocks.SYSCLK_Frequency);
 
-
-//   /* ENABLE GPIO clocks */
-//   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, ENABLE);
-//   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE);
-//   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOC, ENABLE);
-//   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOD, ENABLE);
-//   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOE, ENABLE);
-//   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOF, ENABLE);
-//   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOG, ENABLE);
-//   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOH, ENABLE);
-//   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOI, ENABLE);
-//
-   /* DMA clock enable */
-//   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA1 , ENABLE);
-//   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA2 , ENABLE);
-
    /* 3. Initialize Ethernet */
    ETH_BSP_Config();
 
@@ -155,20 +139,7 @@ void QF_onStartup( void )
     */
    NVIC_SetPriority(SysTick_IRQn,   SYSTICK_PRIO);
 
-//   DBG_printf("ETH->DMAOMR before enabling ETH irqs: 0x%08x\n", ETH->DMAOMR );
-//   DBG_printf("ETH->DMAIER before enabling ETH irqs: 0x%08x\n", ETH->DMAIER );
-//   DBG_printf("ETH->MACSR before enabling ETH irqs: 0x%08x\n", ETH->MACSR );
-//   DBG_printf("ETH->DMASR before enabling ETH irqs: 0x%08x\n", ETH->DMASR);
-
    NVIC_Config(ETH_IRQn, ETH_PRIO);
-
-//   if ( ETH_GetDMAFlagStatus(ETH_DMA_FLAG_R) == SET) {
-//      ETH_DMAClearITPendingBit(ETH_DMA_IT_NIS | ETH_DMA_IT_R);/* clear the interrupt sources */
-//   }
-//
-//   if ( ETH_GetDMAFlagStatus(ETH_DMA_FLAG_T) == SET) {
-//      ETH_DMAClearITPendingBit(ETH_DMA_IT_NIS | ETH_DMA_IT_T);/* clear the interrupt sources */
-//   }
 
    DBG_printf("Enabled ETH IRQ\n");
 }

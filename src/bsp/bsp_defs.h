@@ -85,15 +85,14 @@ enum KernelUnawareISRs {                                        /* see NOTE00 */
 Q_ASSERT_COMPILE(MAX_KERNEL_UNAWARE_CMSIS_PRI <= QF_AWARE_ISR_CMSIS_PRI);
 
 typedef enum KernelAwareISRs {   /* ISR priorities starting from the highest urgency */
-	ETH_PRIO = QF_AWARE_ISR_CMSIS_PRI,                         /* see NOTE00 */
-	SYSTICK_PRIO,                      /* Ethernet should take the lowest priority */
+	SYSTICK_PRIO = QF_AWARE_ISR_CMSIS_PRI,                         /* see NOTE00 */
 	DMA2_Stream7_PRIO,
 	DMA1_Stream6_PRIO,
 	DMA1_Stream0_PRIO,
 	USART1_PRIO,
    I2C1_ER_PRIO,
 	I2C1_EV_PRIO,
-
+	ETH_PRIO,                      /* Ethernet should take the lowest priority */
 	ETH_LINK_PRIO,
 	/* ... */
 	MAX_KERNEL_AWARE_CMSIS_PRI                             /* keep always last */

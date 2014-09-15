@@ -85,10 +85,14 @@ typedef enum I2C_Busses {
  */
 typedef struct I2C_BusDevices
 {
-   I2C_Device_t            i2c_dev;          /**< System I2C device specifier */
-   I2C_TypeDef *           i2c_bus;        /**< I2C bus device is attached to */
+   /* "External" device settings */
+   const I2C_Device_t      i2c_dev;          /**< System I2C device specifier */
+   const I2C_TypeDef *     i2c_bus;        /**< I2C bus device is attached to */
+   const uint8_t           i2c_dev_addr;  /**< I2C Device address of the device */
 
-   uint8_t                 i2c_address;  /**< I2C Slave address of the device */
+   /* Internal device settings */
+   const uint8_t           i2c_mem_addr_size; /**< How many bytes are used to specify internal mem addr of the device */
+   uint16_t                i2c_mem_addr;  /**< I2C last accessed mem address  */
 
 } I2C_BusDevice_t;
 
@@ -187,6 +191,19 @@ void I2C_BusInit( I2C_Bus_t iBus );
  * @return: None
  */
 void I2C_SetDirection( I2C_Bus_t iBus,  uint8_t I2C_Direction);
+
+/**
+ * @brief   Get the number of bytes used to address a device.
+ *
+ * Some devices use 2 byte addresses, others use 1.  This function checks the
+ * array of devices and returns the size of the memory addresses.
+ *
+ * @param [in]  iDev: I2C_Device_t identifier for I2C device
+ *    @arg  EEPROM
+ * @return uint8_t: number of bytes used to address the internal memory of the
+ * I2C device.  1 or 2 bytes.
+ */
+uint8_t I2C_getDevAddrSize( I2C_Device_t iDev );
 
 /**
  * @brief   Set the direction on the I2C bus.
