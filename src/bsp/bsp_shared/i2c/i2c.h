@@ -45,6 +45,17 @@ extern "C" {
 /* Exported types ------------------------------------------------------------*/
 
 /**
+ * \enum I2C_Operation_t
+ * I2C Operations available on the system.
+ */
+typedef enum I2C_Operations {
+   I2C_OP_READ  = 0,                          /**< Reading from an I2C device */
+   I2C_OP_WRITE,                                /**< Writing to an I2C device */
+   /* Insert more I2C operations here... */
+   MAX_I2C_OPS                /**< Maximum number of available I2C operations */
+} I2C_Operation_t;
+
+/**
  * \enum I2C_Device_t
  * I2C Devices available on the system.
  */
@@ -162,6 +173,9 @@ typedef struct I2C_BusSettings
 
 /* Exported macros -----------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
+/* Exported variables --------------------------------------------------------*/
+extern uint8_t i2c1RxBuffer[];          /**< Exported to I2CMgr I2C RX buffer */
+extern uint8_t i2c1TxBuffer[];          /**< Exported to I2CMgr I2C TX buffer */
 /* Exported functions --------------------------------------------------------*/
 
 /**

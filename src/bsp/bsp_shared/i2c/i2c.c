@@ -28,15 +28,20 @@ DBG_DEFINE_THIS_MODULE( DBG_MODL_I2C ); /* For debug system to ID this module */
 
 /* Private typedefs ----------------------------------------------------------*/
 /* Private defines -----------------------------------------------------------*/
-#define EE_START_ADDR      0x00 /**< EEProms internal memory starting address */
-#define EE_PAGESIZE        32    /**< EEProm's internal page size (in bytes). */
+#define EE_PAGESIZE        16    /**< EEProm's internal page size (in bytes). */
 
 /* Private macros ------------------------------------------------------------*/
 /* Private variables and Local objects ---------------------------------------*/
+
 /**
- * @brief Buffer for I2C device
+ * @brief RX Buffer for I2C device
  */
 uint8_t          i2c1RxBuffer[MAX_MSG_LEN];
+
+/**
+ * @brief TX Buffer for I2C device
+ */
+uint8_t          i2c1TxBuffer[MAX_MSG_LEN];
 
 /**
  * @brief An internal structure that holds settings for I2C devices on all I2C
@@ -310,20 +315,6 @@ void I2C_DMARead( I2C_Bus_t iBus, uint16_t wReadAddr, uint16_t wReadLen )
 
    /* Clear out the DMA settings */
    DMA_Cmd( s_I2C_Bus[iBus].i2c_dma_rx_stream, DISABLE );
-   uint32_t tmpTimeout1 = 0xFFFF;
-   while (
-         (DISABLE != DMA_GetCmdStatus(s_I2C_Bus[iBus].i2c_dma_rx_stream)) &&
-         (tmpTimeout1 != 0 )
-   ) {
-      --tmpTimeout1;
-   }
-   if ( tmpTimeout1 == 0 ) {
-      DBG_printf("Couldn't disable DMA stream after %x cycles\n", tmpTimeout1);
-   } else {
-      DBG_printf("DMA1_St0 disabled after %x cycles\n", tmpTimeout1);
-      DBG_printf("DMA1_St0 state is still %d\n", DMA_GetCmdStatus(s_I2C_Bus[iBus].i2c_dma_rx_stream));
-   }
-
    DMA_DeInit( s_I2C_Bus[iBus].i2c_dma_rx_stream );
 
    /* Set up a new DMA structure for reading */
@@ -340,7 +331,7 @@ void I2C_DMARead( I2C_Bus_t iBus, uint16_t wReadAddr, uint16_t wReadLen )
    DMA_InitStructure.DMA_FIFOThreshold       = DMA_FIFOThreshold_Full;
    DMA_InitStructure.DMA_MemoryBurst         = DMA_MemoryBurst_Single;
    DMA_InitStructure.DMA_PeripheralBurst     = DMA_PeripheralBurst_Single;
-   DMA_InitStructure.DMA_Memory0BaseAddr     = s_I2C_Bus[iBus].pRxBuffer;
+   DMA_InitStructure.DMA_Memory0BaseAddr     = (uint32_t)s_I2C_Bus[iBus].pRxBuffer;
    DMA_InitStructure.DMA_BufferSize          = s_I2C_Bus[iBus].nBytesExpected;
 
    DBG_printf("Attempting to read via DMA %d bytes\n", DMA_InitStructure.DMA_BufferSize);
@@ -413,11 +404,11 @@ void DMA1_Stream0_IRQHandler( void )
       /* Publish event stating that the count has been reached */
       I2CDataEvt *i2cDataEvt = Q_NEW( I2CDataEvt, I2C_READ_DONE_SIG );
       i2cDataEvt->i2cDevice = s_I2C_Bus[I2CBus1].i2c_cur_dev;
-      i2cDataEvt->wBufferLen = s_I2C_Bus[I2CBus1].nBytesExpected;
+      i2cDataEvt->wDataLen = s_I2C_Bus[I2CBus1].nBytesExpected;
       MEMCPY(
-            i2cDataEvt->buffer,
+            i2cDataEvt->bufData,
             s_I2C_Bus[I2CBus1].pRxBuffer,
-            i2cDataEvt->wBufferLen
+            i2cDataEvt->wDataLen
       );
       QF_PUBLISH( (QEvent *)i2cDataEvt, AO_SerialMgr );
 

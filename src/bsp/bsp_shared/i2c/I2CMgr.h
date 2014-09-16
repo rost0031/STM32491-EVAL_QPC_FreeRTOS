@@ -60,10 +60,13 @@ typedef struct {
     I2C_Device_t i2cDevice;
 
     /**< Buffer that holds the data. */
-    char buffer[MAX_MSG_LEN];
+    char bufData[MAX_MSG_LEN];
 
     /**< Length of data in the buffer. */
-    uint16_t wBufferLen;
+    uint16_t wDataLen;
+
+    /**< Address on the I2C device read/written to. */
+    uint16_t wAddr;
 } I2CDataEvt;
 
 /**

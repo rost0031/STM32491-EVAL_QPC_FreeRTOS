@@ -9,11 +9,14 @@
    <attribute name="i2cDevice" type="I2C_Device_t" visibility="0x01" properties="0x00">
     <documentation>/**&lt; Which I2C device data is from. */</documentation>
    </attribute>
-   <attribute name="buffer[MAX_MSG_LEN]" type="char" visibility="0x01" properties="0x00">
+   <attribute name="bufData[MAX_MSG_LEN]" type="char" visibility="0x01" properties="0x00">
     <documentation>/**&lt; Buffer that holds the data. */</documentation>
    </attribute>
-   <attribute name="wBufferLen" type="uint16_t" visibility="0x01" properties="0x00">
+   <attribute name="wDataLen" type="uint16_t" visibility="0x01" properties="0x00">
     <documentation>/**&lt; Length of data in the buffer. */</documentation>
+   </attribute>
+   <attribute name="wAddr" type="uint16_t" visibility="0x01" properties="0x00">
+    <documentation>/**&lt; Address on the I2C device read/written to. */</documentation>
    </attribute>
   </class>
   <class name="I2CReqEvt" superclass="qpc::QEvt">
@@ -158,7 +161,7 @@ s_I2C_Bus[me-&gt;iBus].i2c_cur_st = I2C_IDLE_ST;</entry>
       <exit>QTimeEvt_disarm( &amp;me-&gt;i2cTimerEvt ); /* Disarm timer on exit */</exit>
       <tran trig="I2C_TIMEOUT" target="../../1">
        <action>ERR_printf(&quot;I2C timeout occurred\n&quot;);</action>
-       <tran_glyph conn="40,20,3,1,-16">
+       <tran_glyph conn="40,35,3,1,-16">
         <action box="-13,-2,13,2"/>
        </tran_glyph>
       </tran>
@@ -183,7 +186,7 @@ s_I2C_Bus[me-&gt;iBus].i2c_cur_st = I2C_IDLE_ST;</entry>
 I2C_GenerateSTART(s_I2C_Bus[me-&gt;iBus].i2c_bus, ENABLE);</entry>
        <state name="Reading">
         <tran trig="I2C_READ_DONE" target="../../../../1">
-         <action>DBG_printf(&quot;Read finished successfully: read %d bytes\n&quot;, ((I2CDataEvt const *)e)-&gt;wBufferLen);</action>
+         <action>DBG_printf(&quot;Read finished successfully: read %d bytes\n&quot;, ((I2CDataEvt const *)e)-&gt;wDataLen);</action>
          <tran_glyph conn="44,117,3,1,-20">
           <action box="-18,-2,15,2"/>
          </tran_glyph>
@@ -200,16 +203,7 @@ QF_PUBLISH((QEvt *)qEvt, AO_I2CMgr);</entry>
            <action>DBG_printf(&quot;Starting to read the I2C Device data...\n&quot;);
 
 /* Reset the maximum number of times to poll the I2C bus for an event */
-me-&gt;nI2CLoopTimeout = MAX_I2C_TIMEOUT;
-
-/* Reset the number of bytes already read to 0 */
-me-&gt;nRead = 0;
-/* Start the DMA read operation */
-I2C_DMARead(
-    me-&gt;iBus,
-    me-&gt;wAddr,
-    me-&gt;nLen
-);</action>
+me-&gt;nI2CLoopTimeout = MAX_I2C_TIMEOUT;</action>
            <choice_glyph conn="90,109,4,0,5,-40,22">
             <action box="0,2,14,2"/>
            </choice_glyph>
@@ -249,14 +243,15 @@ QTimeEvt_rearm(
     SEC_TO_TICKS( LL_MAX_TIMEOUT_I2C_DMA_READ_SEC )
 );
 
+/* Reset the number of bytes already read to 0 */
+me-&gt;nRead = 0;
+
 /* Start the DMA read operation */
-/*
 I2C_DMARead(
     me-&gt;iBus,
     me-&gt;wAddr,
     me-&gt;nLen
-);
-*/</entry>
+);</entry>
          <exit>QTimeEvt_disarm( &amp;me-&gt;i2cDMATimerEvt );</exit>
          <tran trig="I2C_DMA_TIMEOUT" target="../../../../../1">
           <action>ERR_printf(&quot;Timeout while waiting for DMA read timeout\n&quot;);
@@ -365,7 +360,7 @@ me-&gt;nRead++; /* Increment number of bytes read */
 DBG_printf(&quot;Read byte 0x%02x\n&quot;, bRead);</action>
            <choice target="../../..">
             <guard brief="&gt; 1 byte left?">(me-&gt;nLen - me-&gt;nRead) &gt; 1</guard>
-            <choice_glyph conn="101,130,5,3,-26,-12,12">
+            <choice_glyph conn="80,130,5,3,-26,-12,12">
              <action box="-12,0,10,2"/>
             </choice_glyph>
            </choice>
@@ -374,7 +369,7 @@ DBG_printf(&quot;Read byte 0x%02x\n&quot;, bRead);</action>
             <action>DBG_printf(&quot;Done Reading\n&quot;);
 I2C_AcknowledgeConfig( I2C1, DISABLE);        /* Disable Acknowledgment */
 I2C_GenerateSTOP(I2C1, ENABLE);                        /* Generate Stop */</action>
-            <choice_glyph conn="101,130,5,1,15,-12,-11">
+            <choice_glyph conn="80,130,5,1,15,-12,-11">
              <action box="1,0,13,2"/>
             </choice_glyph>
            </choice>
@@ -382,11 +377,11 @@ I2C_GenerateSTOP(I2C1, ENABLE);                        /* Generate Stop */</acti
             <guard>else</guard>
             <action>I2C_AcknowledgeConfig(I2C1, ENABLE);        /* Re-enable Acknowledgment */
 DBG_printf(&quot;Done reading I2C data\n&quot;);</action>
-            <choice_glyph conn="101,130,4,1,4,-77">
+            <choice_glyph conn="80,130,4,1,4,-56">
              <action box="-6,4,6,2"/>
             </choice_glyph>
            </choice>
-           <choice_glyph conn="101,125,4,-1,5">
+           <choice_glyph conn="80,125,4,-1,5">
             <action box="0,1,13,2"/>
            </choice_glyph>
           </choice>
@@ -395,30 +390,30 @@ DBG_printf(&quot;Done reading I2C data\n&quot;);</action>
            <action>me-&gt;nI2CLoopTimeout--;                 /* Decrement counter */</action>
            <choice target="../../..">
             <guard brief="Retries left?">me-&gt;nI2CLoopTimeout != 0</guard>
-            <choice_glyph conn="90,125,4,0,-4">
+            <choice_glyph conn="69,125,4,0,-4">
              <action box="-10,-3,12,2"/>
             </choice_glyph>
            </choice>
            <choice target="../../../../../../../1">
             <guard brief="else"/>
             <action>ERR_printf(&quot;Timeout waiting for I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED (EV6)\n&quot;);</action>
-            <choice_glyph conn="90,125,5,1,-66">
+            <choice_glyph conn="69,125,5,1,-45">
              <action box="-8,0,7,2"/>
             </choice_glyph>
            </choice>
-           <choice_glyph conn="101,125,5,-1,-11">
+           <choice_glyph conn="80,125,5,-1,-11">
             <action box="-7,0,6,2"/>
            </choice_glyph>
           </choice>
-          <tran_glyph conn="101,121,2,-1,4">
+          <tran_glyph conn="80,121,2,-1,4">
            <action box="0,0,14,2"/>
           </tran_glyph>
          </tran>
-         <state_glyph node="87,115,18,6">
+         <state_glyph node="66,115,18,6">
           <entry box="1,2,6,2"/>
          </state_glyph>
         </state>
-        <state_glyph node="44,87,92,66"/>
+        <state_glyph node="44,87,60,66"/>
        </state>
        <state name="WaitFor_I2C_EV5">
         <entry>/* Post an event to check for EV5 event */
@@ -654,33 +649,36 @@ s_I2C_Bus[me-&gt;iBus].i2c_cur_st = I2C_GEN_START_ST;
 I2C_SetDirection( me-&gt;iBus,  I2C_Direction_Transmitter);</entry>
         <tran trig="I2C_EV_MASTER_MODE_SELECT">
          <action>DBG_printf(&quot;Got I2C_EV_MASTER_MODE_SELECT\n&quot;);</action>
-         <tran_glyph conn="105,42,3,-1,28">
+         <tran_glyph conn="133,46,3,-1,28">
           <action box="0,-2,24,2"/>
          </tran_glyph>
         </tran>
         <tran trig="I2C_EV_MASTER_TX_MODE_SELECTED">
          <action>DBG_printf(&quot;Got I2C_EV_MASTER_TX_MODE_SELECTED\n&quot;);</action>
-         <tran_glyph conn="105,45,3,-1,28">
+         <tran_glyph conn="133,49,3,-1,28">
           <action box="0,-2,30,2"/>
          </tran_glyph>
         </tran>
         <tran trig="I2C_SENT_MSB_ADDR">
          <action>DBG_printf(&quot;Got I2C_SENT_MSB_ADDR\n&quot;);</action>
-         <tran_glyph conn="105,48,3,-1,28">
+         <tran_glyph conn="133,52,3,-1,28">
           <action box="0,-2,19,2"/>
          </tran_glyph>
         </tran>
         <tran trig="I2C_SENT_LSB_ADDR">
          <action>DBG_printf(&quot;Got I2C_SENT_LSB_ADDR\n&quot;);</action>
-         <tran_glyph conn="105,51,3,-1,28">
+         <tran_glyph conn="133,55,3,-1,28">
           <action box="0,-2,19,2"/>
          </tran_glyph>
         </tran>
-        <state_glyph node="105,35,32,25">
+        <state_glyph node="133,39,30,25">
          <entry box="1,2,6,2"/>
         </state_glyph>
        </state>
-       <state_glyph node="42,32,98,123">
+       <state name="Writing">
+        <state_glyph node="115,87,60,66"/>
+       </state>
+       <state_glyph node="42,32,141,123">
         <entry box="1,2,6,2"/>
        </state_glyph>
       </state>
@@ -732,7 +730,7 @@ DBG_printf(&quot;I2C bus reset\n&quot;);</action>
         <entry box="1,2,6,2"/>
        </state_glyph>
       </state>
-      <state_glyph node="40,10,113,157">
+      <state_glyph node="40,10,145,157">
        <entry box="1,2,5,2"/>
        <exit box="1,4,5,2"/>
       </state_glyph>
@@ -770,15 +768,31 @@ me-&gt;nI2CLoopTimeout = MAX_I2C_TIMEOUT;</action>
         <action box="0,-2,15,2"/>
        </tran_glyph>
       </tran>
+      <tran trig="I2C_WRITE_START" target="../../0/3">
+       <action>DBG_printf(&quot;Got I2C_WRITE_START\n&quot;);
+
+/* Store the device */
+me-&gt;iDevice = ((I2CDataEvt const *)e)-&gt;i2cDevice;
+
+/* Store the address */
+me-&gt;wAddr = ((I2CDataEvt const *)e)-&gt;wAddr;
+me-&gt;nLen  = ((I2CDataEvt const *)e)-&gt;wDataLen;
+
+/* Reset the maximum number of times to poll the I2C bus for an event */
+me-&gt;nI2CLoopTimeout = MAX_I2C_TIMEOUT;</action>
+       <tran_glyph conn="24,18,1,3,19">
+        <action box="0,-2,15,2"/>
+       </tran_glyph>
+      </tran>
       <state_glyph node="5,10,19,157">
        <entry box="1,2,5,2"/>
       </state_glyph>
      </state>
-     <state_glyph node="3,6,151,162">
+     <state_glyph node="3,6,184,162">
       <entry box="1,2,5,2"/>
      </state_glyph>
     </state>
-    <state_diagram size="155,169"/>
+    <state_diagram size="189,169"/>
    </statechart>
   </class>
   <attribute name="AO_I2CMgr" type="QActive * const" visibility="0x00" properties="0x00">
