@@ -167,20 +167,20 @@ static QState CommStackMgr_Active(CommStackMgr * const me, QEvt const * const e)
             DBG_printf("I2C read test\n");
 
             /* Create event to request i2c data and publish it. */
-			
+
             I2CReqEvt *i2cReqEvt = Q_NEW(I2CReqEvt, I2C_READ_START_SIG);
             i2cReqEvt->i2cDevice = EEPROM;
             i2cReqEvt->wReadAddr = 0x00;
             i2cReqEvt->nReadLen  = 17;
             QF_PUBLISH((QEvent *)i2cReqEvt, AO_CommStackMgr);
-			
-            /*
+
+
             I2CReqEvt *i2cReqEvt1 = Q_NEW(I2CReqEvt, I2C_READ_START_SIG);
             i2cReqEvt1->i2cDevice = EEPROM;
-            i2cReqEvt1->wReadAddr = 0x30;
-            i2cReqEvt1->nReadLen  = 5;
+            i2cReqEvt1->wReadAddr = 0x00;
+            i2cReqEvt1->nReadLen  = 17;
             QF_PUBLISH((QEvent *)i2cReqEvt1, AO_CommStackMgr);
-            */
+
 
             /* Write some data to the i2c EEPROM */
             /*
@@ -198,15 +198,15 @@ static QState CommStackMgr_Active(CommStackMgr * const me, QEvt const * const e)
             i2cDataEvt->bufData[7] = 0x07;
             i2cDataEvt->bufData[8] = 0x08;
             i2cDataEvt->bufData[9] = 0x09;
-			i2cDataEvt->bufData[10] =0x0A;
-			i2cDataEvt->bufData[11] =0x0B;
-			i2cDataEvt->bufData[12] =0x0C;
-			i2cDataEvt->bufData[13] =0x0D;
-			i2cDataEvt->bufData[14] =0x0E;
-			i2cDataEvt->bufData[15] =0x0F;
-			i2cDataEvt->bufData[16] =0x10;
+            i2cDataEvt->bufData[10] =0x0A;
+            i2cDataEvt->bufData[11] =0x0B;
+            i2cDataEvt->bufData[12] =0x0C;
+            i2cDataEvt->bufData[13] =0x0D;
+            i2cDataEvt->bufData[14] =0x0E;
+            i2cDataEvt->bufData[15] =0x0F;
+            i2cDataEvt->bufData[16] =0x10;
             QF_PUBLISH((QEvent *)i2cDataEvt, AO_CommStackMgr);
-			*/            
+            */
             QTimeEvt_disarm( &me->timeTestTimerEvt );
 
             /*

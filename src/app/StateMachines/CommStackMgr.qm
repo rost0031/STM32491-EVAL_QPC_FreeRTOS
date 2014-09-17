@@ -81,23 +81,23 @@ QTimeEvt_postEvery(
 I2CReqEvt *i2cReqEvt = Q_NEW(I2CReqEvt, I2C_READ_START_SIG);
 i2cReqEvt-&gt;i2cDevice = EEPROM;
 i2cReqEvt-&gt;wReadAddr = 0x00;
-i2cReqEvt-&gt;nReadLen  = 10;
+i2cReqEvt-&gt;nReadLen  = 17;
 QF_PUBLISH((QEvent *)i2cReqEvt, AO_CommStackMgr);
 
-/*
+
 I2CReqEvt *i2cReqEvt1 = Q_NEW(I2CReqEvt, I2C_READ_START_SIG);
 i2cReqEvt1-&gt;i2cDevice = EEPROM;
-i2cReqEvt1-&gt;wReadAddr = 0x30;
-i2cReqEvt1-&gt;nReadLen  = 5;
+i2cReqEvt1-&gt;wReadAddr = 0x00;
+i2cReqEvt1-&gt;nReadLen  = 17;
 QF_PUBLISH((QEvent *)i2cReqEvt1, AO_CommStackMgr);
-*/
+
 
 /* Write some data to the i2c EEPROM */
 /*
 I2CDataEvt *i2cDataEvt = Q_NEW(I2CDataEvt, I2C_WRITE_START_SIG);
 i2cDataEvt-&gt;i2cDevice = EEPROM;
 i2cDataEvt-&gt;wAddr = 0x00;
-i2cDataEvt-&gt;wDataLen  = 10;
+i2cDataEvt-&gt;wDataLen  = 17;
 i2cDataEvt-&gt;bufData[0] = 0x00;
 i2cDataEvt-&gt;bufData[1] = 0x01;
 i2cDataEvt-&gt;bufData[2] = 0x02;
@@ -108,6 +108,13 @@ i2cDataEvt-&gt;bufData[6] = 0x06;
 i2cDataEvt-&gt;bufData[7] = 0x07;
 i2cDataEvt-&gt;bufData[8] = 0x08;
 i2cDataEvt-&gt;bufData[9] = 0x09;
+i2cDataEvt-&gt;bufData[10] =0x0A;
+i2cDataEvt-&gt;bufData[11] =0x0B;
+i2cDataEvt-&gt;bufData[12] =0x0C;
+i2cDataEvt-&gt;bufData[13] =0x0D;
+i2cDataEvt-&gt;bufData[14] =0x0E;
+i2cDataEvt-&gt;bufData[15] =0x0F;
+i2cDataEvt-&gt;bufData[16] =0x10;
 QF_PUBLISH((QEvent *)i2cDataEvt, AO_CommStackMgr);
 */
 QTimeEvt_disarm( &amp;me-&gt;timeTestTimerEvt );
