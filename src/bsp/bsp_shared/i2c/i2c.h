@@ -49,10 +49,10 @@ extern "C" {
  * I2C Operations available on the system.
  */
 typedef enum I2C_Operations {
-   I2C_OP_READ  = 0,                          /**< Reading from an I2C device */
+   I2C_OP_NONE  = 0,                                /**< No current operation */
+   I2C_OP_READ,                               /**< Reading from an I2C device */
    I2C_OP_WRITE,                                /**< Writing to an I2C device */
    /* Insert more I2C operations here... */
-   MAX_I2C_OPS                /**< Maximum number of available I2C operations */
 } I2C_Operation_t;
 
 /**
