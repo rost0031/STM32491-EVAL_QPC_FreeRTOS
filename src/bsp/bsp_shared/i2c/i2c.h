@@ -159,7 +159,9 @@ typedef struct I2C_BusSettings
 
    /* Buffer management */
    uint8_t                 *pRxBuffer;                   /**< I2C data buffer.*/
-   uint16_t                nRxindex;         /**< I2C data buffer used length.*/
+   uint16_t                nRxIndex;         /**< I2C data buffer used length.*/
+   uint8_t                 *pTxBuffer;                   /**< I2C data buffer.*/
+   uint16_t                nTxIndex;         /**< I2C data buffer used length.*/
 
    /* Device management */
    I2C_Device_t            i2c_cur_dev;     /**< Current I2C device specifier.*/

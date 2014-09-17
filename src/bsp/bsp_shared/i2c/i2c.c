@@ -113,8 +113,10 @@ I2C_BusSettings_t s_I2C_Bus[MAX_I2C_BUS] =
 
 
             /* Buffer management */
-            &i2c1RxBuffer[0],          /**< *pRXBuffer */
-            0,                         /**< nRXindex */
+            &i2c1RxBuffer[0],          /**< *pRxBuffer */
+            0,                         /**< nRxindex */
+            &i2c1TxBuffer[0],          /**< *pTxBuffer */
+            0,                         /**< nTxindex */
 
             /* Device management */
             EEPROM,                    /**< i2c_cur_dev */
@@ -273,7 +275,7 @@ void I2C_DMARead( I2C_Bus_t iBus, uint16_t wReadAddr, uint16_t wReadLen )
     * many are currently there (none). */
    s_I2C_Bus[iBus].nBytesExpected = wReadLen;
    s_I2C_Bus[iBus].nBytesCurrent  = 0;
-   s_I2C_Bus[iBus].nRxindex       = 0;
+   s_I2C_Bus[iBus].nRxIndex       = 0;
 
    /* Clear out the DMA settings */
    DMA_Cmd( s_I2C_Bus[iBus].i2c_dma_rx_stream, DISABLE );
