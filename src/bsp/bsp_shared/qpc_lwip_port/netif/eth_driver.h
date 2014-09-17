@@ -209,6 +209,22 @@ struct pbuf *low_level_receive( void );
  */
 void low_level_transmit(struct netif *netif, struct pbuf *p);
 
+
+/**
+ * @brief   Ethernet callback function
+ *
+ * This function should only be called from the ISR that handles the Ethernet
+ * ISR that handles ethernet events.
+ *
+ * @note: this function is defined as "inline" but not declared as such.  This
+ * is so it can be called externally (by the file that contains the actual ISRs)
+ * and they can still be inlined so as not incur any function call overhead.
+ *
+ * @param   None
+ * @return: None
+ */
+void ETH_EventCallback( void );
+
 #ifdef Q_SPY
     static uint8_t l_Ethernet_IRQHandler;
 #endif

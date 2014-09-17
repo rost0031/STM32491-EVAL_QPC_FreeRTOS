@@ -369,17 +369,8 @@ void QS_onFlush(void) {
 #endif                                                             /* Q_SPY */
 /*--------------------------------------------------------------------------*/
 
-/**
- * @} end addtogroup groupBSP
- */
-
-/**
- * @addtogroup groupISR
- * @{
- */
-
 /******************************************************************************/
-void SysTick_Handler( void )
+inline void BSP_SysTickCallback( void )
 {
    QK_ISR_ENTRY();                          /* inform QK-nano about ISR entry */
 #ifdef Q_SPY
@@ -393,9 +384,7 @@ void SysTick_Handler( void )
 }
 
 /**
- * @} end addtogroup groupISR
+ * @} end addtogroup groupBSP
  */
-
-
 
 /******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/

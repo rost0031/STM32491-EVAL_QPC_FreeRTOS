@@ -595,9 +595,8 @@ QTimeEvt_rearm(
 me-&gt;nRead = 0;
 
 /* Start the DMA read operation */
-I2C_DMARead(
+I2C_StartDMARead(
     me-&gt;iBus,
-    me-&gt;wAddr,
     me-&gt;nLen
 );</entry>
          <exit>QTimeEvt_disarm( &amp;me-&gt;i2cDMATimerEvt );</exit>

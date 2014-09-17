@@ -28,6 +28,9 @@
 #include "CBSignals.h"                            /*  For signal declarations */
 #include "SerialMgr.h"                                 /* for SerialMgr types */
 #include "time.h"                          /* for processor date/time support */
+#include "i2c.h"                                /* For I2C callback functions */
+#include "serial.h"                          /* For Serial callback functions */
+#include "eth_driver.h"                    /* For Ethernet callback functions */
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -131,31 +134,68 @@ void DebugMon_Handler(void)
 /******************************************************************************/
 
 /******************************************************************************/
+void DMA1_Stream0_IRQHandler( void )
+{
+   /* Issue the callback function which does the actual work. */
+   I2C1_DMAReadCallback();
+}
+
+/******************************************************************************/
+void DMA1_Stream6_IRQHandler( void )
+{
+   /* Issue the callback function which does the actual work. */
+   I2C1_DMAWriteCallback();
+}
+
+/******************************************************************************/
 void DMA2_Stream7_IRQHandler( void )
 {
-   QK_ISR_ENTRY();                         /* inform QK about entering an ISR */
-   /* Test on DMA Stream Transfer Complete interrupt */
-   if ( RESET != DMA_GetITStatus(DMA2_Stream7, DMA_IT_TCIF7) ) {
-      /* Disable DMA so it doesn't keep outputting the buffer. */
-      DMA_Cmd(DMA2_Stream7, DISABLE);
+   /* Issue the callback function which does the actual work. */
+   Serial_DMASendCallback();
+}
 
-      /* Publish event stating that the count has been reached */
-      QEvt *qEvt = Q_NEW(QEvt, UART_DMA_DONE_SIG);
-      QF_PUBLISH((QEvent *)qEvt, AO_SerialMgr );
+void ETH_IRQHandler( void )
+{
+   /* Issue the callback function which does the actual work. */
+   ETH_EventCallback();
+}
 
-      /* Clear DMA Stream Transfer Complete interrupt pending bit */
-      DMA_ClearITPendingBit(DMA2_Stream7, DMA_IT_TCIF7);
+/******************************************************************************/
+void I2C1_ER_IRQHandler( void )
+{
+   /* Issue the callback function which does the actual work. */
+   I2C1_ErrorEventCallback();
+}
+
+/******************************************************************************/
+void I2C1_EV_IRQHandler( void )
+{
+   /* Issue the callback function which does the actual work. */
+   I2C1_EventCallback();
+}
+
+/******************************************************************************/
+void RTC_WKUP_IRQHandler( void )
+{
+    if( RESET != RTC_GetITStatus(RTC_IT_WUT) ) {
+
+       /* Clear the pending bits so the interrupt fires again next time. */
+      RTC_ClearITPendingBit(RTC_IT_WUT);
+      EXTI_ClearITPendingBit(EXTI_Line22);
    }
+}
 
-   QK_ISR_EXIT();                           /* inform QK about exiting an ISR */
+/******************************************************************************/
+void SysTick_Handler( void )
+{
+   /* Issue the callback function which does the actual work. */
+   BSP_SysTickCallback();
 }
 
 /******************************************************************************/
 extern __IO unsigned long uwPeriodValue;     /**< external reference to period value used by TIME_getLSIFrequency() */
 extern __IO unsigned long uwCaptureNumber;   /**< external reference to capture number used by TIME_getLSIFrequency() */
 uint16_t tmpCC4[2] = {0, 0};                 /**< Local storage for TIM5_IRQHandler() to temporarily store timer counts for frequency calculation */
-
-/******************************************************************************/
 void TIM5_IRQHandler( void )
 {
    /* This is for measuring the LSI frequency for configuring the RTC */
@@ -171,50 +211,6 @@ void TIM5_IRQHandler( void )
          uwPeriodValue = (uint16_t)(0xFFFF - tmpCC4[0] + tmpCC4[1] + 1);
       }
    }
-}
-
-/******************************************************************************/
-void RTC_WKUP_IRQHandler( void )
-{
-   //   QK_ISR_ENTRY();                        /* inform QK about entering an ISR */
-
-   if( RESET != RTC_GetITStatus(RTC_IT_WUT) ) {
-
-      //      t_Time time = TIME_getTime();
-
-      /* Reset the subSecond counter on the timer used to keep track of time */
-//      TIM7->CNT = 0;
-
-      //      /* 1. Construct a new msg event indicating that a msg has been received */
-      //      SerialDataEvt *serDataEvt = Q_NEW(SerialDataEvt, UART_DMA_START_SIG);
-      //
-      //
-      //      /* 2. Fill the msg payload and get the msg source and length */
-      //      serDataEvt->wBufferLen = snprintf(
-      //            serDataEvt->buffer,
-      //            MAX_MSG_LEN,
-      //            "Time in ISR before reset of subsecond: %02d:%02d:%02d:%d\n",
-      //            time.hour_min_sec.RTC_Hours,
-      //            time.hour_min_sec.RTC_Minutes,
-      //            time.hour_min_sec.RTC_Seconds,
-      //            (int)time.sub_sec
-      //      );
-      //
-      //      QF_PUBLISH((QEvent *)serDataEvt, AO_CommStackMgr);
-
-//      time_T time = TIME_getTime();
-//       printf("Time in ISR is %02d:%02d:%02d:%04d\n",
-//               time.hour_min_sec.RTC_Hours,
-//               time.hour_min_sec.RTC_Minutes,
-//               time.hour_min_sec.RTC_Seconds,
-//               (int)time.sub_sec);
-
-      /* Clear the pending bits so the interrupt fires again next time. */
-      RTC_ClearITPendingBit(RTC_IT_WUT);
-      EXTI_ClearITPendingBit(EXTI_Line22);
-   }
-
-   //   QK_ISR_EXIT();                          /* inform QK about exiting an ISR */
 }
 
 /**

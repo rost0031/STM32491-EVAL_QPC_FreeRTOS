@@ -222,20 +222,81 @@ void I2C_SetDirection( I2C_Bus_t iBus,  uint8_t I2C_Direction);
 uint8_t I2C_getDevAddrSize( I2C_Device_t iDev );
 
 /**
- * @brief   Set the direction on the I2C bus.
+ * @brief   Start the DMA read operation on the specified I2C bus.
  *
- * This function sets the direction in the I2C internal structure so the ISR will
- * know what to do when an interrupt fires.
+ * This function kicks off the DMA read operation on the passed in I2C bus.
+ * Once the operation has completed, the DMA ISR should call the handler
+ * function, which in turn will post the event with the data to whoever is
+ * subscribed to it.
  *
  * @param [in]  iBus: I2C_Bus_t identifier for I2C bus
  *    @arg  I2CBus1
- * @param [in]  wReadAddr: uint16_t for internal I2C device address where to
- * read from.
  * @param [in]  wReadLen: uint16_t for how many bytes to read from the I2C
  * device.
  * @return: None
  */
-void I2C_DMARead( I2C_Bus_t iBus, uint16_t wReadAddr, uint16_t wReadLen );
+void I2C_StartDMARead( I2C_Bus_t iBus, uint16_t wReadLen );
+
+/**
+ * @brief   I2C DMA read callback function
+ *
+ * This function should only be called from the ISR that handles the DMA ISR
+ * that handles the DMA stream that handles this functionality.
+ *
+ * @note: this function is defined as "inline" but not declared as such.  This
+ * is so it can be called externally (by the file that contains the actual ISRs)
+ * and they can still be inlined so as not incur any function call overhead.
+ *
+ * @param   None
+ * @return: None
+ */
+void I2C1_DMAReadCallback( void );
+
+/**
+ * @brief   I2C DMA write callback function
+ *
+ * This function should only be called from the ISR that handles the DMA ISR
+ * that handles the DMA stream that handles this functionality.
+ *
+ * @note: this function is defined as "inline" but not declared as such.  This
+ * is so it can be called externally (by the file that contains the actual ISRs)
+ * and they can still be inlined so as not incur any function call overhead.
+ *
+ * @param   None
+ * @return: None
+ */
+void I2C1_DMAWriteCallback( void );
+
+/**
+ * @brief   I2C1 Error Event callback function
+ *
+ * This function should only be called from the ISR that handles the I2C1 ISR
+ * that handles the I2C bus error interrupts.
+ *
+ * @note: this function is defined as "inline" but not declared as such.  This
+ * is so it can be called externally (by the file that contains the actual ISRs)
+ * and they can still be inlined so as not incur any function call overhead.
+ *
+ * @param   None
+ * @return: None
+ */
+void I2C1_ErrorEventCallback( void );
+
+/**
+ * @brief   I2C1 Event callback function
+ *
+ * This function should only be called from the ISR that handles the I2C1 ISR
+ * that handles the I2C1 bus regular event interrupts.
+ *
+ * @note: this function is defined as "inline" but not declared as such.  This
+ * is so it can be called externally (by the file that contains the actual ISRs)
+ * and they can still be inlined so as not incur any function call overhead.
+ *
+ * @param   None
+ * @return: None
+ */
+void I2C1_EventCallback( void );
+
 /**
  * @}
  * end addtogroup groupI2C

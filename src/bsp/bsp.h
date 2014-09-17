@@ -67,6 +67,20 @@ void NVIC_Config( uint8_t irq, uint8_t priority );
 void BSP_Delay(uint32_t nCount);
 
 /**
+ * @brief   Systick callback function
+ *
+ * This function should only be called from the ISR that handles the SysTick ISR
+ *
+ * @note: this function is defined as "inline" but not declared as such.  This
+ * is so it can be called externally (by the file that contains the actual ISRs)
+ * and they can still be inlined so as not incur any function call overhead.
+ *
+ * @param   None
+ * @return: None
+ */
+void BSP_SysTickCallback( void );
+
+/**
  * @} end addtogroup groupBSP
  */
 

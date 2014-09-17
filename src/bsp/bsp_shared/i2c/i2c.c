@@ -128,8 +128,6 @@ I2C_BusSettings_t s_I2C_Bus[MAX_I2C_BUS] =
       }
 };
 
-DMA_InitTypeDef    DMA_InitStructure;        /**< For I2C DMA initialization. */
-
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
 
@@ -218,10 +216,10 @@ void I2C_BusInit( I2C_Bus_t iBus )
          s_I2C_Bus[iBus].i2c_dma_rx_irq_prio
    );
 
-//   NVIC_Config(
-//         s_I2C_Bus[iBus].i2c_dma_tx_irq_num,
-//         s_I2C_Bus[iBus].i2c_dma_tx_irq_prio
-//   );
+   NVIC_Config(
+         s_I2C_Bus[iBus].i2c_dma_tx_irq_num,
+         s_I2C_Bus[iBus].i2c_dma_tx_irq_prio
+   );
 
 
    /* I2C configuration */
@@ -266,7 +264,7 @@ uint8_t I2C_getDevAddrSize( I2C_Device_t iDev )
 }
 
 /******************************************************************************/
-void I2C_DMARead( I2C_Bus_t iBus, uint16_t wReadAddr, uint16_t wReadLen )
+void I2C_StartDMARead( I2C_Bus_t iBus, uint16_t wReadLen )
 {
    /* Check inputs */
    assert_param( IS_I2C_BUS( iBus ) );
@@ -282,6 +280,7 @@ void I2C_DMARead( I2C_Bus_t iBus, uint16_t wReadAddr, uint16_t wReadLen )
    DMA_DeInit( s_I2C_Bus[iBus].i2c_dma_rx_stream );
 
    /* Set up a new DMA structure for reading */
+   DMA_InitTypeDef    DMA_InitStructure;
    DMA_InitStructure.DMA_Channel             = s_I2C_Bus[iBus].i2c_dma_channel;
    DMA_InitStructure.DMA_PeripheralBaseAddr  = s_I2C_Bus[iBus].i2c_dma_dr_addr;
    DMA_InitStructure.DMA_DIR                 = DMA_DIR_PeripheralToMemory;
@@ -324,13 +323,69 @@ void I2C_DMARead( I2C_Bus_t iBus, uint16_t wReadAddr, uint16_t wReadLen )
 
 }
 
-/**
- * @}
- * end addtogroup groupI2C
- */
+/******************************************************************************/
+void I2C_StartDMAWrite( I2C_Bus_t iBus, uint16_t wWriteLen )
+{
+   /* Check inputs */
+   assert_param( IS_I2C_BUS( iBus ) );
+
+   /* Set the structure buffer management for how many bytes to expect and how
+    * many are currently there (none). */
+   s_I2C_Bus[iBus].nBytesExpected = wWriteLen;
+   s_I2C_Bus[iBus].nBytesCurrent  = 0;
+   s_I2C_Bus[iBus].nTxIndex       = 0;
+
+   /* Clear out the DMA settings */
+   DMA_Cmd( s_I2C_Bus[iBus].i2c_dma_tx_stream, DISABLE );
+   DMA_DeInit( s_I2C_Bus[iBus].i2c_dma_tx_stream );
+
+   /* Set up a new DMA structure for reading */
+   DMA_InitTypeDef    DMA_InitStructure;
+   DMA_InitStructure.DMA_Channel             = s_I2C_Bus[iBus].i2c_dma_channel;
+   DMA_InitStructure.DMA_PeripheralBaseAddr  = s_I2C_Bus[iBus].i2c_dma_dr_addr;
+   DMA_InitStructure.DMA_DIR                 = DMA_DIR_MemoryToPeripheral;
+   DMA_InitStructure.DMA_PeripheralInc       = DMA_PeripheralInc_Disable;
+   DMA_InitStructure.DMA_MemoryInc           = DMA_MemoryInc_Enable;
+   DMA_InitStructure.DMA_PeripheralDataSize  = DMA_PeripheralDataSize_Byte;
+   DMA_InitStructure.DMA_MemoryDataSize      = DMA_MemoryDataSize_Byte;
+   DMA_InitStructure.DMA_Mode                = DMA_Mode_Normal;
+   DMA_InitStructure.DMA_Priority            = DMA_Priority_VeryHigh;
+   DMA_InitStructure.DMA_FIFOMode            = DMA_FIFOMode_Enable;
+   DMA_InitStructure.DMA_FIFOThreshold       = DMA_FIFOThreshold_Full;
+   DMA_InitStructure.DMA_MemoryBurst         = DMA_MemoryBurst_Single;
+   DMA_InitStructure.DMA_PeripheralBurst     = DMA_PeripheralBurst_Single;
+   DMA_InitStructure.DMA_Memory0BaseAddr     = (uint32_t)s_I2C_Bus[iBus].pTxBuffer;
+   DMA_InitStructure.DMA_BufferSize          = s_I2C_Bus[iBus].nBytesExpected;
+
+   DBG_printf("Attempting to write via DMA %d bytes\n", DMA_InitStructure.DMA_BufferSize);
+
+   /* Initialize the DMA with the filled in structure */
+   DMA_Init( s_I2C_Bus[iBus].i2c_dma_tx_stream, &DMA_InitStructure );
+
+   /* Enable the TransferComplete interrupt in the DMA */
+   DMA_ITConfig( s_I2C_Bus[iBus].i2c_dma_tx_stream, DMA_IT_TC, ENABLE );
+
+   /* Clear any pending flags on RX Stream */
+   DMA_ClearFlag(
+         s_I2C_Bus[iBus].i2c_dma_tx_stream,
+         DMA_FLAG_TCIF0 |
+         DMA_FLAG_FEIF0 |
+         DMA_FLAG_DMEIF0 |
+         DMA_FLAG_TEIF0 |
+         DMA_FLAG_HTIF0
+   );
+
+   /* I2Cx DMA Enable */
+   I2C_DMACmd( s_I2C_Bus[iBus].i2c_bus, ENABLE );
+
+   /* Finally, activate DMA */
+   DMA_Cmd( s_I2C_Bus[iBus].i2c_dma_tx_stream, ENABLE );
+
+}
+
 
 /******************************************************************************/
-void DMA1_Stream0_IRQHandler( void )
+inline void I2C1_DMAReadCallback( void )
 {
    QK_ISR_ENTRY();                         /* inform QK about entering an ISR */
 //   isr_dbg_slow_printf("\n\n DMA!!!\n\n");
@@ -359,7 +414,36 @@ void DMA1_Stream0_IRQHandler( void )
 }
 
 /******************************************************************************/
-void I2C1_EV_IRQHandler( void )
+inline void I2C1_DMAWriteCallback( void )
+{
+   QK_ISR_ENTRY();                         /* inform QK about entering an ISR */
+//   isr_dbg_slow_printf("\n\n DMA!!!\n\n");
+   /* Test on DMA Stream Transfer Complete interrupt */
+   if ( RESET != DMA_GetITStatus(DMA1_Stream0, DMA_IT_TCIF0) ) {
+      DMA_Cmd( DMA1_Stream0, DISABLE );
+
+      I2C_GenerateSTOP(I2C1, ENABLE);                        /* Generate Stop */
+
+      /* Publish event with the read data */
+      I2CDataEvt *i2cDataEvt = Q_NEW( I2CDataEvt, I2C_READ_DONE_SIG );
+      i2cDataEvt->i2cDevice = s_I2C_Bus[I2CBus1].i2c_cur_dev;
+      i2cDataEvt->wDataLen = s_I2C_Bus[I2CBus1].nBytesExpected;
+      MEMCPY(
+            i2cDataEvt->bufData,
+            s_I2C_Bus[I2CBus1].pRxBuffer,
+            i2cDataEvt->wDataLen
+      );
+      QF_PUBLISH( (QEvent *)i2cDataEvt, AO_SerialMgr );
+
+      /* Clear DMA Stream Transfer Complete interrupt pending bit */
+      DMA_ClearITPendingBit( DMA1_Stream0, DMA_IT_TCIF0 );
+   }
+
+   QK_ISR_EXIT();                           /* inform QK about exiting an ISR */
+}
+
+/******************************************************************************/
+inline void I2C1_EventCallback( void )
 {
    QK_ISR_ENTRY();                         /* inform QK about entering an ISR */
 
@@ -629,7 +713,7 @@ void I2C1_EV_IRQHandler( void )
 }
 
 /******************************************************************************/
-void I2C1_ER_IRQHandler( void )
+inline void I2C1_ErrorEventCallback( void )
 {
    QK_ISR_ENTRY();                         /* inform QK about entering an ISR */
 
@@ -643,5 +727,10 @@ void I2C1_ER_IRQHandler( void )
    }
    QK_ISR_EXIT();                           /* inform QK about exiting an ISR */
 }
+
+/**
+ * @}
+ * end addtogroup groupI2C
+ */
 
 /******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/

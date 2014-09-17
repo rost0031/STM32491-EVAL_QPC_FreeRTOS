@@ -305,6 +305,26 @@ uint32_t Serial_send_raw_msg(
    return ERR_NONE;
 }
 
+/******************************************************************************/
+inline void Serial_DMASendCallback( void )
+{
+   QK_ISR_ENTRY();                         /* inform QK about entering an ISR */
+   /* Test on DMA Stream Transfer Complete interrupt */
+   if ( RESET != DMA_GetITStatus(DMA2_Stream7, DMA_IT_TCIF7) ) {
+      /* Disable DMA so it doesn't keep outputting the buffer. */
+      DMA_Cmd(DMA2_Stream7, DISABLE);
+
+      /* Publish event stating that the count has been reached */
+      QEvt *qEvt = Q_NEW(QEvt, UART_DMA_DONE_SIG);
+      QF_PUBLISH((QEvent *)qEvt, AO_SerialMgr );
+
+      /* Clear DMA Stream Transfer Complete interrupt pending bit */
+      DMA_ClearITPendingBit(DMA2_Stream7, DMA_IT_TCIF7);
+   }
+
+   QK_ISR_EXIT();                           /* inform QK about exiting an ISR */
+}
+
 /**
  * @brief   ISR that handles incoming data on UART4 (debug serial) port.
  *

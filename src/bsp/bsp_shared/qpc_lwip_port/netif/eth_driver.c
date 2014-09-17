@@ -536,9 +536,8 @@ void low_level_init(struct netif *netif)
  */
 
 /******************************************************************************/
-/* Ethernet Interrupt handler.  It is located here because it uses a lot of
- * the shared objects from QP */
-void ETH_IRQHandler(void) {
+inline void ETH_EventCallback( void )
+{
     QK_ISR_ENTRY();                      /* inform QK about entering an ISR */
 
     if ( ETH_GetDMAFlagStatus(ETH_DMA_FLAG_R) == SET) {

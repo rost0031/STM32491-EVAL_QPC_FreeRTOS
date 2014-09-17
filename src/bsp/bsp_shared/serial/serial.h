@@ -175,6 +175,21 @@ uint32_t Serial_send_raw_msg(
 );
 
 /**
+ * @brief   Serial DMA send callback function
+ *
+ * This function should only be called from the ISR that handles the DMA ISR
+ * that handles this UART.
+ *
+ * @note: this function is defined as "inline" but not declared as such.  This
+ * is so it can be called externally (by the file that contains the actual ISRs)
+ * and they can still be inlined so as not incur any function call overhead.
+ *
+ * @param   None
+ * @return: None
+ */
+void Serial_DMASendCallback( void );
+
+/**
  * @}
  * end addtogroup groupSerial
  */

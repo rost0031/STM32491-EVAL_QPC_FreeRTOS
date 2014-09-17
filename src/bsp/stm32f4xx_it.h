@@ -102,17 +102,28 @@ void DebugMon_Handler( void ) __attribute__((__interrupt__));
  */
 void PendSV_Handler( void ) __attribute__((__interrupt__));
 
+
+/******************************************************************************/
+/*                 STM32F4xx Peripherals Interrupt Handlers                   */
+/*  Add here the Interrupt Handler for the used peripheral(s) (PPP), for the  */
+/*  available peripheral interrupt handler's name please refer to the startup */
+/*  file (startup_stm32f4xx.s).                                               */
+/******************************************************************************/
+
+
 /**
- * @brief   This ISR function handles the SysTick global interrupt request.
- *
- * This ISR function mostly just processes all the QPC events that are ready to
- * be executed.  If QSPY is compiled in, it also handles its timing and clock
- * rollover.  The SysTick interrupt is fired @def BSP_TICKS_PER_SEC / second.
- *
- * @param     None
- * @retval    None
+ * @brief   This ISR function handles DMA1 Stream0 interrupt requests.
+ * @param  None
+ * @retval None
  */
-void SysTick_Handler( void ) __attribute__((__interrupt__));
+void DMA1_Stream0_IRQHandler( void ) __attribute__((__interrupt__));
+
+/**
+ * @brief   This ISR function handles DMA1 Stream6 interrupt requests.
+ * @param  None
+ * @retval None
+ */
+void DMA1_Stream6_IRQHandler( void ) __attribute__((__interrupt__));
 
 /**
  * @brief   This ISR function handles DMA2_Stream7 global interrupt requests.
@@ -124,36 +135,8 @@ void SysTick_Handler( void ) __attribute__((__interrupt__));
 void DMA2_Stream7_IRQHandler( void ) __attribute__((__interrupt__));
 
 /**
- * @brief   This ISR function handles TIM5 global interrupt requests.
- *
- * This ISR is used to sample and time the clock rate of the RTC clock and is
- * part of the (QF) kernel unaware interrupts.
- *
- * @note 1: Since this is a (QF) kernel unaware ISR, this handler may not access
- * any QPC functionality.
- *
- * @param     None
- * @retval    None
- */
-void TIM5_IRQHandler( void ) __attribute__((__interrupt__));
-
-/**
- * @brief   This ISR function handles RTC Wakeup global interrupt request.
- *
- * This ISR fires every second change of the RTC and resets TIM7 which is used
- * for subsecond timer functionality.
- *
- * @note 1: Since this is a (QF) kernel unaware ISR, this handler may not access
- * any QPC functionality.
- *
- * @param  None
- * @retval None
- */
-void RTC_WKUP_IRQHandler( void ) __attribute__((__interrupt__));
-
-/**
  * @brief   This ISR function handles Ethernet global interrupt request.
- * See eth_driver.c for implementation.
+ *
  * @param  None
  * @retval None
  */
@@ -175,7 +158,46 @@ void I2C1_EV_IRQHandler( void ) __attribute__((__interrupt__));
  */
 void I2C1_ER_IRQHandler( void ) __attribute__((__interrupt__));
 
-void DMA1_Stream0_IRQHandler( void ) __attribute__((__interrupt__));
+/**
+ * @brief   This ISR function handles RTC Wakeup global interrupt request.
+ *
+ * This ISR fires every second change of the RTC and resets TIM7 which is used
+ * for subsecond timer functionality.
+ *
+ * @note 1: Since this is a (QF) kernel unaware ISR, this handler may not access
+ * any QPC functionality.
+ *
+ * @param  None
+ * @retval None
+ */
+void RTC_WKUP_IRQHandler( void ) __attribute__((__interrupt__));
+
+/**
+ * @brief   This ISR function handles the SysTick global interrupt request.
+ *
+ * This ISR function mostly just processes all the QPC events that are ready to
+ * be executed.  If QSPY is compiled in, it also handles its timing and clock
+ * rollover.  The SysTick interrupt is fired @def BSP_TICKS_PER_SEC / second.
+ *
+ * @param     None
+ * @retval    None
+ */
+void SysTick_Handler( void ) __attribute__((__interrupt__));
+
+/**
+ * @brief   This ISR function handles TIM5 global interrupt requests.
+ *
+ * This ISR is used to sample and time the clock rate of the RTC clock and is
+ * part of the (QF) kernel unaware interrupts.
+ *
+ * @note 1: Since this is a (QF) kernel unaware ISR, this handler may not access
+ * any QPC functionality.
+ *
+ * @param     None
+ * @retval    None
+ */
+void TIM5_IRQHandler( void ) __attribute__((__interrupt__));
+
 
 #ifdef __cplusplus
 }

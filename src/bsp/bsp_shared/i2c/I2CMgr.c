@@ -784,9 +784,8 @@ static QState I2CMgr_WaitForDMAData(I2CMgr * const me, QEvt const * const e) {
             me->nRead = 0;
 
             /* Start the DMA read operation */
-            I2C_DMARead(
+            I2C_StartDMARead(
                 me->iBus,
-                me->wAddr,
                 me->nLen
             );
             status_ = Q_HANDLED();
