@@ -223,6 +223,7 @@ static QState SerialMgr_Idle(SerialMgr * const me, QEvt const * const e) {
                 (QActive *)me,
                 &me->deferredEvtQueue
             );
+            rq = 0; /* To prevent compiler warning about unused var */
             status_ = Q_HANDLED();
             break;
         }

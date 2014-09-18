@@ -3,7 +3,7 @@
 <project>
    <paths>
       <left>Z:\home\developer\workspace\STM324391_QP\src\bsp\bsp_shared\serial\SerialMgr_gen.c</left>
-      <right>Z:\home\developer\workspace\STM324391_QP\src\bsp\bsp_shared\serial\SerialMgr_gen.c</right>
+      <right>Z:\home\developer\workspace\STM324391_QP\src\bsp\bsp_shared\serial\SerialMgr.c</right>
       <filter>*.*</filter>
       <subfolders>0</subfolders>
       <left-readonly>0</left-readonly>

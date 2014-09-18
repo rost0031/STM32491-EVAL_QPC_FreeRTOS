@@ -85,7 +85,8 @@ QTimeEvt_disarm(&amp;me-&gt;serialTimerEvt);</entry>
 SerialDataEvt const *rq = (SerialDataEvt const *) (uint32_t) QActive_recall(
     (QActive *)me,
     &amp;me-&gt;deferredEvtQueue
-);</entry>
+);
+rq = 0; /* To prevent compiler warning about unused var */</entry>
       <tran trig="UART_DMA_START" target="../../1">
        <action>/* Set up the DMA buffer here.  This copies the data from the event to the UART's
  * private buffer as well to avoid someone overwriting it */

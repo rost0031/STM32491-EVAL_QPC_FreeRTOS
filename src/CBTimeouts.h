@@ -57,10 +57,11 @@
     * These are the timeouts used by the low level I2CMgr AO.
     *@{*/
    #define LL_MAX_TIMEOUT_I2C_BUS_BUSY_RETRY_SEC                           0.01
-   #define LL_MAX_TIMEOUT_I2C_DMA_READ_SEC                                 10.0
-   #define LL_MAX_TIMEOUT_I2C_BUSY_SEC                                     33.0
-   #define LL_MAX_TIMEOUT_I2C_READ_OP_SEC                                  33.0
-   #define LL_MAX_TIMEOUT_I2C_WRITE_OP_SEC                                 33.0
+   #define LL_MAX_TIMEOUT_I2C_DMA_READ_SEC                                 0.5
+   #define LL_MAX_TIMEOUT_I2C_DMA_WRITE_SEC                                0.5
+   #define LL_MAX_TIMEOUT_I2C_BUSY_SEC                                     3.0
+   #define LL_MAX_TIMEOUT_I2C_READ_OP_SEC                                  3.0
+   #define LL_MAX_TIMEOUT_I2C_WRITE_OP_SEC                                 3.0
    /*@} I2C Timeouts */
 
 

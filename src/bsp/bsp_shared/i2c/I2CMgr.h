@@ -70,9 +70,10 @@ typedef struct {
 } I2CDataEvt;
 
 /**
- * \struct Event struct type for requesting I2C data.
+ * \struct Event struct type for requesting I2C data reads and notifying of finished
+ * writes.
  */
-/*${Events::I2CReqEvt} .....................................................*/
+/*${Events::I2CEvt} ........................................................*/
 typedef struct {
 /* protected: */
     QEvt super;
@@ -80,12 +81,12 @@ typedef struct {
     /**< Which I2C device is being accessed. */
     I2C_Device_t i2cDevice;
 
-    /**< Address on the I2C device to read. */
-    uint16_t wReadAddr;
+    /**< Address on the I2C device. */
+    uint16_t wAddr;
 
-    /**< Number of bytes to read from I2C device. */
-    uint16_t nReadLen;
-} I2CReqEvt;
+    /**< Number of bytes to read/written from I2C device. */
+    uint16_t wDataLen;
+} I2CEvt;
 
 
 /* Exported constants --------------------------------------------------------*/

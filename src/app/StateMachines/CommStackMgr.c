@@ -164,26 +164,20 @@ static QState CommStackMgr_Active(CommStackMgr * const me, QEvt const * const e)
         }
         /* ${AOs::CommStackMgr::SM::Active::TIME_TEST} */
         case TIME_TEST_SIG: {
-            DBG_printf("I2C read test\n");
+            DBG_printf("I2C write/read test\n");
+
 
             /* Create event to request i2c data and publish it. */
 
-            I2CReqEvt *i2cReqEvt = Q_NEW(I2CReqEvt, I2C_READ_START_SIG);
-            i2cReqEvt->i2cDevice = EEPROM;
-            i2cReqEvt->wReadAddr = 0x00;
-            i2cReqEvt->nReadLen  = 17;
-            QF_PUBLISH((QEvent *)i2cReqEvt, AO_CommStackMgr);
-
-
-            I2CReqEvt *i2cReqEvt1 = Q_NEW(I2CReqEvt, I2C_READ_START_SIG);
-            i2cReqEvt1->i2cDevice = EEPROM;
-            i2cReqEvt1->wReadAddr = 0x00;
-            i2cReqEvt1->nReadLen  = 17;
-            QF_PUBLISH((QEvent *)i2cReqEvt1, AO_CommStackMgr);
+            I2CEvt *i2cEvt = Q_NEW(I2CEvt, I2C_READ_START_SIG);
+            i2cEvt->i2cDevice = EEPROM;
+            i2cEvt->wAddr = 0x00;
+            i2cEvt->wDataLen  = 17;
+            QF_PUBLISH((QEvent *)i2cEvt, AO_CommStackMgr);
 
 
             /* Write some data to the i2c EEPROM */
-            /*
+
             I2CDataEvt *i2cDataEvt = Q_NEW(I2CDataEvt, I2C_WRITE_START_SIG);
             i2cDataEvt->i2cDevice = EEPROM;
             i2cDataEvt->wAddr = 0x00;
@@ -206,7 +200,15 @@ static QState CommStackMgr_Active(CommStackMgr * const me, QEvt const * const e)
             i2cDataEvt->bufData[15] =0x0F;
             i2cDataEvt->bufData[16] =0x10;
             QF_PUBLISH((QEvent *)i2cDataEvt, AO_CommStackMgr);
-            */
+
+            I2CEvt *i2cEvt1 = Q_NEW(I2CEvt, I2C_READ_START_SIG);
+            i2cEvt1->i2cDevice = EEPROM;
+            i2cEvt1->wAddr = 0x00;
+            i2cEvt1->wDataLen  = 17;
+            QF_PUBLISH((QEvent *)i2cEvt1, AO_CommStackMgr);
+
+
+
             QTimeEvt_disarm( &me->timeTestTimerEvt );
 
             /*

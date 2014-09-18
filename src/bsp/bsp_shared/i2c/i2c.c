@@ -381,7 +381,6 @@ void I2C_StartDMAWrite( I2C_Bus_t iBus, uint16_t wWriteLen )
 
    /* Finally, activate DMA */
    DMA_Cmd( s_I2C_Bus[iBus].i2c_dma_tx_stream, ENABLE );
-
 }
 
 
@@ -405,7 +404,7 @@ inline void I2C1_DMAReadCallback( void )
             s_I2C_Bus[I2CBus1].pRxBuffer,
             i2cDataEvt->wDataLen
       );
-      QF_PUBLISH( (QEvent *)i2cDataEvt, AO_SerialMgr );
+      QF_PUBLISH( (QEvent *)i2cDataEvt, AO_I2CMgr );
 
       /* Clear DMA Stream Transfer Complete interrupt pending bit */
       DMA_ClearITPendingBit( DMA1_Stream0, DMA_IT_TCIF0 );
@@ -426,15 +425,10 @@ inline void I2C1_DMAWriteCallback( void )
       I2C_GenerateSTOP(I2C1, ENABLE);                        /* Generate Stop */
 
       /* Publish event with the read data */
-      I2CDataEvt *i2cDataEvt = Q_NEW( I2CDataEvt, I2C_WRITE_DONE_SIG );
-      i2cDataEvt->i2cDevice = s_I2C_Bus[I2CBus1].i2c_cur_dev;
-      i2cDataEvt->wDataLen = s_I2C_Bus[I2CBus1].nBytesExpected;
-      MEMCPY(
-            i2cDataEvt->bufData,
-            s_I2C_Bus[I2CBus1].pRxBuffer,
-            i2cDataEvt->wDataLen
-      );
-      QF_PUBLISH( (QEvent *)i2cDataEvt, AO_SerialMgr );
+      I2CEvt *i2cEvt = Q_NEW( I2CEvt, I2C_WRITE_DONE_SIG );
+      i2cEvt->i2cDevice = s_I2C_Bus[I2CBus1].i2c_cur_dev;
+      i2cEvt->wDataLen = s_I2C_Bus[I2CBus1].nBytesExpected;
+      QF_PUBLISH( (QEvent *)i2cEvt, AO_I2CMgr );
 
       /* Clear DMA Stream Transfer Complete interrupt pending bit */
       DMA_ClearITPendingBit( DMA1_Stream6, DMA_IT_TCIF6 );

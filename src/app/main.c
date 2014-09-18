@@ -54,7 +54,7 @@ static union SmallEvents {
  */
 static union MediumEvents {
     void   *e0;                                       /* minimum event size */
-    uint8_t e1[sizeof(I2CReqEvt)];
+    uint8_t e1[sizeof(I2CEvt)];
 } l_medPoolSto[50];                    /* storage for the medium event pool */
 
 /**

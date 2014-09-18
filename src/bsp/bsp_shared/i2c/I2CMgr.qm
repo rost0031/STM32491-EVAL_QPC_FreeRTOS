@@ -19,18 +19,19 @@
     <documentation>/**&lt; Address on the I2C device read/written to. */</documentation>
    </attribute>
   </class>
-  <class name="I2CReqEvt" superclass="qpc::QEvt">
+  <class name="I2CEvt" superclass="qpc::QEvt">
    <documentation>/**
- * \struct Event struct type for requesting I2C data.
+ * \struct Event struct type for requesting I2C data reads and notifying of finished
+ * writes.
  */</documentation>
    <attribute name="i2cDevice" type="I2C_Device_t" visibility="0x01" properties="0x00">
     <documentation>/**&lt; Which I2C device is being accessed. */</documentation>
    </attribute>
-   <attribute name="wReadAddr" type="uint16_t" visibility="0x01" properties="0x00">
-    <documentation>/**&lt; Address on the I2C device to read. */</documentation>
+   <attribute name="wAddr" type="uint16_t" visibility="0x01" properties="0x00">
+    <documentation>/**&lt; Address on the I2C device. */</documentation>
    </attribute>
-   <attribute name="nReadLen" type="uint16_t" visibility="0x01" properties="0x00">
-    <documentation>/**&lt; Number of bytes to read from I2C device. */</documentation>
+   <attribute name="wDataLen" type="uint16_t" visibility="0x01" properties="0x00">
+    <documentation>/**&lt; Number of bytes to read/written from I2C device. */</documentation>
    </attribute>
   </class>
  </package>
@@ -105,6 +106,7 @@ QActive_subscribe((QActive *)me, I2C_WRITE_START_SIG);
 QActive_subscribe((QActive *)me, I2C_TIMEOUT_SIG);
 QActive_subscribe((QActive *)me, I2C_CHECK_EV_SIG);
 QActive_subscribe((QActive *)me, I2C_READ_DONE_SIG);
+QActive_subscribe((QActive *)me, I2C_WRITE_DONE_SIG);
 QActive_subscribe((QActive *)me, I2C_DMA_TIMEOUT_SIG);
 QActive_subscribe((QActive *)me, I2C_EV_MASTER_MODE_SELECT_SIG);
 QActive_subscribe((QActive *)me, I2C_EV_MASTER_TX_MODE_SELECTED_SIG);
@@ -392,9 +394,9 @@ I2C_GenerateSTART(s_I2C_Bus[me-&gt;iBus].i2c_bus, ENABLE);</action>
             <action box="-7,-2,6,2"/>
            </choice_glyph>
           </choice>
-          <choice target="../../../../5/0">
+          <choice target="../../../../5/1">
            <guard brief="WRITE?">I2C_OP_WRITE == me-&gt;i2cCurrOperation</guard>
-           <choice_glyph conn="92,84,5,0,61,10">
+           <choice_glyph conn="92,84,5,0,30,51">
             <action box="5,-2,8,2"/>
            </choice_glyph>
           </choice>
@@ -465,6 +467,59 @@ I2C_SetDirection( me-&gt;iBus,  I2C_Direction_Transmitter);</entry>
         </state_glyph>
        </state>
        <state name="Writing">
+        <tran trig="I2C_WRITE_DONE" target="../../../../1">
+         <action>DBG_printf(&quot;I2C Write finished successfully: wrote %d bytes\n&quot;, ((I2CEvt const *)e)-&gt;wDataLen);</action>
+         <tran_glyph conn="115,151,3,1,-91">
+          <action box="-18,-2,15,2"/>
+         </tran_glyph>
+        </tran>
+        <state name="WaitForDMAWriteDone">
+         <entry>/* Post a timer on entry */
+QTimeEvt_rearm(
+    &amp;me-&gt;i2cDMATimerEvt,
+    SEC_TO_TICKS( LL_MAX_TIMEOUT_I2C_DMA_WRITE_SEC )
+);
+
+/* Start the DMA write operation */
+I2C_StartDMAWrite(
+    me-&gt;iBus,
+    me-&gt;nLen
+);</entry>
+         <exit>QTimeEvt_disarm( &amp;me-&gt;i2cDMATimerEvt );</exit>
+         <tran trig="I2C_DMA_TIMEOUT" target="../../../../../1">
+          <action>ERR_printf(&quot;Timeout while waiting for DMA read timeout\n&quot;);
+
+/* TODO: DEBUG STUFF - remove */
+ERR_printf(&quot;DMA1_St6 fifo is at %d\n&quot;, DMA_GetFIFOStatus(DMA1_Stream6) );
+ERR_printf(&quot;DMA1_St6 TC flag: %d\n&quot;, DMA_GetFlagStatus(DMA1_Stream0,DMA_IT_TCIF6) );
+ERR_printf(&quot;DMA1_St6 FE flag: %d\n&quot;, DMA_GetFlagStatus(DMA1_Stream0,DMA_FLAG_FEIF6) );
+ERR_printf(&quot;DMA1_St6 DM flag: %d\n&quot;, DMA_GetFlagStatus(DMA1_Stream0,DMA_FLAG_DMEIF6) );
+ERR_printf(&quot;DMA1_St6 TE flag: %d\n&quot;, DMA_GetFlagStatus(DMA1_Stream0,DMA_FLAG_TEIF6) );
+ERR_printf(&quot;DMA1_St6 HT flag: %d\n&quot;, DMA_GetFlagStatus(DMA1_Stream0,DMA_FLAG_HTIF6) );
+
+if (DMA_GetCmdStatus(DMA1_Stream6)== ENABLE) {
+    ERR_printf(&quot;DMA1_Stream6 still enabled, turning off\n&quot;);
+    DMA_Cmd( DMA1_Stream0, DISABLE );
+}
+
+/* Disable Acknowledgment */
+I2C_AcknowledgeConfig(s_I2C_Bus[me-&gt;iBus].i2c_bus, DISABLE);
+
+I2C_GenerateSTOP(s_I2C_Bus[me-&gt;iBus].i2c_bus, ENABLE);
+
+/* Re-Enable Acknowledgment to be ready for another reception */
+I2C_AcknowledgeConfig(s_I2C_Bus[me-&gt;iBus].i2c_bus, ENABLE);
+
+DBG_printf(&quot;Generating I2C stop\n&quot;);</action>
+          <tran_glyph conn="118,137,3,1,-6,8,-86,-1,-2">
+           <action box="-23,5,16,2"/>
+          </tran_glyph>
+         </tran>
+         <state_glyph node="118,135,25,15">
+          <entry box="1,2,6,2"/>
+          <exit box="1,4,6,2"/>
+         </state_glyph>
+        </state>
         <state name="WriteI2CByte">
          <entry>/* Post an event to check for EV5 event */
 QEvt *qEvt = Q_NEW(QEvt, I2C_CHECK_EV_SIG);
@@ -486,7 +541,7 @@ I2C_SendData(
     s_I2C_Bus[me-&gt;iBus].i2c_bus,
     s_I2C_Bus[me-&gt;iBus].pTxBuffer[ s_I2C_Bus[me-&gt;iBus].nTxIndex++ ]
 );</action>
-            <choice_glyph conn="155,109,5,0,15,-12,-11">
+            <choice_glyph conn="158,109,5,0,15,-12,-11">
              <action box="1,0,6,2"/>
             </choice_glyph>
            </choice>
@@ -494,11 +549,11 @@ I2C_SendData(
             <guard brief="No more bytes?">0 == (me-&gt;nLen - s_I2C_Bus[me-&gt;iBus].nTxIndex)</guard>
             <action>I2C_GenerateSTOP(I2C1, ENABLE);                        /* Generate Stop */
 DBG_printf(&quot;Done writing I2C data\n&quot;);</action>
-            <choice_glyph conn="155,109,4,1,3,-131">
+            <choice_glyph conn="158,109,4,1,3,-134">
              <action box="-6,4,13,2"/>
             </choice_glyph>
            </choice>
-           <choice_glyph conn="155,104,4,-1,5">
+           <choice_glyph conn="158,104,4,-1,5">
             <action box="0,1,13,2"/>
            </choice_glyph>
           </choice>
@@ -507,26 +562,26 @@ DBG_printf(&quot;Done writing I2C data\n&quot;);</action>
            <action>me-&gt;nI2CLoopTimeout--;                 /* Decrement counter */</action>
            <choice target="../../..">
             <guard brief="Retries left?">me-&gt;nI2CLoopTimeout != 0</guard>
-            <choice_glyph conn="144,104,4,0,-4">
+            <choice_glyph conn="147,104,4,0,-4">
              <action box="-10,-3,12,2"/>
             </choice_glyph>
            </choice>
            <choice target="../../../../../../../1">
             <guard brief="else"/>
             <action>ERR_printf(&quot;Timeout waiting for I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED (EV6)\n&quot;);</action>
-            <choice_glyph conn="144,104,5,1,-120">
+            <choice_glyph conn="147,104,5,1,-123">
              <action box="-8,0,7,2"/>
             </choice_glyph>
            </choice>
-           <choice_glyph conn="155,104,5,-1,-11">
+           <choice_glyph conn="158,104,5,-1,-11">
             <action box="-7,0,6,2"/>
            </choice_glyph>
           </choice>
-          <tran_glyph conn="155,100,2,-1,4">
+          <tran_glyph conn="158,100,2,-1,4">
            <action box="0,0,14,2"/>
           </tran_glyph>
          </tran>
-         <state_glyph node="141,94,18,6">
+         <state_glyph node="144,94,18,6">
           <entry box="1,2,6,2"/>
          </state_glyph>
         </state>
@@ -534,7 +589,7 @@ DBG_printf(&quot;Done writing I2C data\n&quot;);</action>
        </state>
        <state name="Reading">
         <tran trig="I2C_READ_DONE" target="../../../../1">
-         <action>DBG_printf(&quot;Read finished successfully: read %d bytes\n&quot;, ((I2CDataEvt const *)e)-&gt;wDataLen);</action>
+         <action>DBG_printf(&quot;I2C Read finished successfully: read %d bytes\n&quot;, ((I2CDataEvt const *)e)-&gt;wDataLen);</action>
          <tran_glyph conn="44,117,3,1,-20">
           <action box="-18,-2,15,2"/>
          </tran_glyph>
@@ -584,7 +639,7 @@ me-&gt;nI2CLoopTimeout = MAX_I2C_TIMEOUT;</action>
           <entry box="1,2,6,2"/>
          </state_glyph>
         </state>
-        <state name="WaitForDMAData">
+        <state name="WaitForDMAReadDone">
          <entry>/* Post a timer on entry */
 QTimeEvt_rearm(
     &amp;me-&gt;i2cDMATimerEvt,
@@ -830,10 +885,12 @@ DBG_printf(&quot;I2C bus reset\n&quot;);</action>
  * machine is going next.
  */</documentation>
       <entry>/* recall the request from the private requestQueue */
-I2CReqEvt const *rq = (I2CReqEvt const *) (uint32_t) QActive_recall(
+I2CEvt const *rq = (I2CEvt const *) (uint32_t) QActive_recall(
     (QActive *)me,
     &amp;me-&gt;deferredEvtQueue
 );
+
+rq = 0; /* To prevent compiler warning about unused var. */
 
 /* Clear out current operation */
 me-&gt;i2cCurrOperation = I2C_OP_NONE;
@@ -846,11 +903,11 @@ DBG_printf(&quot;back in Idle\n&quot;);</entry>
 me-&gt;i2cCurrOperation = I2C_OP_READ;
 
 /* Store the device */
-me-&gt;iDevice = ((I2CReqEvt const *)e)-&gt;i2cDevice;
+me-&gt;iDevice = ((I2CEvt const *)e)-&gt;i2cDevice;
 
 /* Store the address */
-me-&gt;wAddr = ((I2CReqEvt const *)e)-&gt;wReadAddr;
-me-&gt;nLen  = ((I2CReqEvt const *)e)-&gt;nReadLen;
+me-&gt;wAddr = ((I2CEvt const *)e)-&gt;wAddr;
+me-&gt;nLen  = ((I2CEvt const *)e)-&gt;wDataLen;
 
 /* Reset the maximum number of times to poll the I2C bus for an event */
 me-&gt;nI2CLoopTimeout = MAX_I2C_TIMEOUT;</action>

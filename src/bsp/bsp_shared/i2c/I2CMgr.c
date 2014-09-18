@@ -135,10 +135,11 @@ static QState I2CMgr_WaitFor_I2C_EV8_MSB(I2CMgr * const me, QEvt const * const e
 static QState I2CMgr_WaitFor_I2C_EV8_LSB(I2CMgr * const me, QEvt const * const e);
 static QState I2CMgr_SetupI2CDevice(I2CMgr * const me, QEvt const * const e);
 static QState I2CMgr_Writing(I2CMgr * const me, QEvt const * const e);
+static QState I2CMgr_WaitForDMAWriteDone(I2CMgr * const me, QEvt const * const e);
 static QState I2CMgr_WriteI2CByte(I2CMgr * const me, QEvt const * const e);
 static QState I2CMgr_Reading(I2CMgr * const me, QEvt const * const e);
 static QState I2CMgr_WaitFor_I2C_EV6_R(I2CMgr * const me, QEvt const * const e);
-static QState I2CMgr_WaitForDMAData(I2CMgr * const me, QEvt const * const e);
+static QState I2CMgr_WaitForDMAReadDone(I2CMgr * const me, QEvt const * const e);
 static QState I2CMgr_WaitFor_I2C_EV5_R(I2CMgr * const me, QEvt const * const e);
 static QState I2CMgr_ReadI2CByte(I2CMgr * const me, QEvt const * const e);
 static QState I2CMgr_StartI2CComm(I2CMgr * const me, QEvt const * const e);
@@ -220,6 +221,7 @@ static QState I2CMgr_initial(I2CMgr * const me, QEvt const * const e) {
     QActive_subscribe((QActive *)me, I2C_TIMEOUT_SIG);
     QActive_subscribe((QActive *)me, I2C_CHECK_EV_SIG);
     QActive_subscribe((QActive *)me, I2C_READ_DONE_SIG);
+    QActive_subscribe((QActive *)me, I2C_WRITE_DONE_SIG);
     QActive_subscribe((QActive *)me, I2C_DMA_TIMEOUT_SIG);
     QActive_subscribe((QActive *)me, I2C_EV_MASTER_MODE_SELECT_SIG);
     QActive_subscribe((QActive *)me, I2C_EV_MASTER_TX_MODE_SELECTED_SIG);
@@ -558,7 +560,7 @@ static QState I2CMgr_WaitFor_I2C_EV8_LSB(I2CMgr * const me, QEvt const * const e
                 }
                 /* ${AOs::I2CMgr::SM::Active::Busy::BusBeingUsed::WaitFor_I2C_EV8_LSB::I2C_CHECK_EV::[EV8Happened?]::[WRITE?]} */
                 else if (I2C_OP_WRITE == me->i2cCurrOperation) {
-                    status_ = Q_TRAN(&I2CMgr_WriteI2CByte);
+                    status_ = Q_TRAN(&I2CMgr_WaitForDMAWriteDone);
                 }
                 /* ${AOs::I2CMgr::SM::Active::Busy::BusBeingUsed::WaitFor_I2C_EV8_LSB::I2C_CHECK_EV::[EV8Happened?]::[else]} */
                 else {
@@ -637,8 +639,76 @@ static QState I2CMgr_SetupI2CDevice(I2CMgr * const me, QEvt const * const e) {
 static QState I2CMgr_Writing(I2CMgr * const me, QEvt const * const e) {
     QState status_;
     switch (e->sig) {
+        /* ${AOs::I2CMgr::SM::Active::Busy::BusBeingUsed::Writing::I2C_WRITE_DONE} */
+        case I2C_WRITE_DONE_SIG: {
+            DBG_printf("I2C Write finished successfully: wrote %d bytes\n", ((I2CEvt const *)e)->wDataLen);
+            status_ = Q_TRAN(&I2CMgr_Idle);
+            break;
+        }
         default: {
             status_ = Q_SUPER(&I2CMgr_BusBeingUsed);
+            break;
+        }
+    }
+    return status_;
+}
+/*${AOs::I2CMgr::SM::Active::Busy::BusBeingUsed::Writing::WaitForDMAWriteDone} */
+static QState I2CMgr_WaitForDMAWriteDone(I2CMgr * const me, QEvt const * const e) {
+    QState status_;
+    switch (e->sig) {
+        /* ${AOs::I2CMgr::SM::Active::Busy::BusBeingUsed::Writing::WaitForDMAWriteDone} */
+        case Q_ENTRY_SIG: {
+            /* Post a timer on entry */
+            QTimeEvt_rearm(
+                &me->i2cDMATimerEvt,
+                SEC_TO_TICKS( LL_MAX_TIMEOUT_I2C_DMA_WRITE_SEC )
+            );
+
+            /* Start the DMA write operation */
+            I2C_StartDMAWrite(
+                me->iBus,
+                me->nLen
+            );
+            status_ = Q_HANDLED();
+            break;
+        }
+        /* ${AOs::I2CMgr::SM::Active::Busy::BusBeingUsed::Writing::WaitForDMAWriteDone} */
+        case Q_EXIT_SIG: {
+            QTimeEvt_disarm( &me->i2cDMATimerEvt );
+            status_ = Q_HANDLED();
+            break;
+        }
+        /* ${AOs::I2CMgr::SM::Active::Busy::BusBeingUsed::Writing::WaitForDMAWriteDone::I2C_DMA_TIMEOUT} */
+        case I2C_DMA_TIMEOUT_SIG: {
+            ERR_printf("Timeout while waiting for DMA read timeout\n");
+
+            /* TODO: DEBUG STUFF - remove */
+            ERR_printf("DMA1_St6 fifo is at %d\n", DMA_GetFIFOStatus(DMA1_Stream6) );
+            ERR_printf("DMA1_St6 TC flag: %d\n", DMA_GetFlagStatus(DMA1_Stream0,DMA_IT_TCIF6) );
+            ERR_printf("DMA1_St6 FE flag: %d\n", DMA_GetFlagStatus(DMA1_Stream0,DMA_FLAG_FEIF6) );
+            ERR_printf("DMA1_St6 DM flag: %d\n", DMA_GetFlagStatus(DMA1_Stream0,DMA_FLAG_DMEIF6) );
+            ERR_printf("DMA1_St6 TE flag: %d\n", DMA_GetFlagStatus(DMA1_Stream0,DMA_FLAG_TEIF6) );
+            ERR_printf("DMA1_St6 HT flag: %d\n", DMA_GetFlagStatus(DMA1_Stream0,DMA_FLAG_HTIF6) );
+
+            if (DMA_GetCmdStatus(DMA1_Stream6)== ENABLE) {
+                ERR_printf("DMA1_Stream6 still enabled, turning off\n");
+                DMA_Cmd( DMA1_Stream0, DISABLE );
+            }
+
+            /* Disable Acknowledgment */
+            I2C_AcknowledgeConfig(s_I2C_Bus[me->iBus].i2c_bus, DISABLE);
+
+            I2C_GenerateSTOP(s_I2C_Bus[me->iBus].i2c_bus, ENABLE);
+
+            /* Re-Enable Acknowledgment to be ready for another reception */
+            I2C_AcknowledgeConfig(s_I2C_Bus[me->iBus].i2c_bus, ENABLE);
+
+            DBG_printf("Generating I2C stop\n");
+            status_ = Q_TRAN(&I2CMgr_Idle);
+            break;
+        }
+        default: {
+            status_ = Q_SUPER(&I2CMgr_Writing);
             break;
         }
     }
@@ -711,7 +781,7 @@ static QState I2CMgr_Reading(I2CMgr * const me, QEvt const * const e) {
     switch (e->sig) {
         /* ${AOs::I2CMgr::SM::Active::Busy::BusBeingUsed::Reading::I2C_READ_DONE} */
         case I2C_READ_DONE_SIG: {
-            DBG_printf("Read finished successfully: read %d bytes\n", ((I2CDataEvt const *)e)->wDataLen);
+            DBG_printf("I2C Read finished successfully: read %d bytes\n", ((I2CDataEvt const *)e)->wDataLen);
             status_ = Q_TRAN(&I2CMgr_Idle);
             break;
         }
@@ -744,7 +814,7 @@ static QState I2CMgr_WaitFor_I2C_EV6_R(I2CMgr * const me, QEvt const * const e) 
 
                 /* Reset the maximum number of times to poll the I2C bus for an event */
                 me->nI2CLoopTimeout = MAX_I2C_TIMEOUT;
-                status_ = Q_TRAN(&I2CMgr_WaitForDMAData);
+                status_ = Q_TRAN(&I2CMgr_WaitForDMAReadDone);
             }
             /* ${AOs::I2CMgr::SM::Active::Busy::BusBeingUsed::Reading::WaitFor_I2C_EV6_R::I2C_CHECK_EV::[else]} */
             else {
@@ -768,11 +838,11 @@ static QState I2CMgr_WaitFor_I2C_EV6_R(I2CMgr * const me, QEvt const * const e) 
     }
     return status_;
 }
-/*${AOs::I2CMgr::SM::Active::Busy::BusBeingUsed::Reading::WaitForDMAData} ..*/
-static QState I2CMgr_WaitForDMAData(I2CMgr * const me, QEvt const * const e) {
+/*${AOs::I2CMgr::SM::Active::Busy::BusBeingUsed::Reading::WaitForDMAReadDone} */
+static QState I2CMgr_WaitForDMAReadDone(I2CMgr * const me, QEvt const * const e) {
     QState status_;
     switch (e->sig) {
-        /* ${AOs::I2CMgr::SM::Active::Busy::BusBeingUsed::Reading::WaitForDMAData} */
+        /* ${AOs::I2CMgr::SM::Active::Busy::BusBeingUsed::Reading::WaitForDMAReadDone} */
         case Q_ENTRY_SIG: {
             /* Post a timer on entry */
             QTimeEvt_rearm(
@@ -791,13 +861,13 @@ static QState I2CMgr_WaitForDMAData(I2CMgr * const me, QEvt const * const e) {
             status_ = Q_HANDLED();
             break;
         }
-        /* ${AOs::I2CMgr::SM::Active::Busy::BusBeingUsed::Reading::WaitForDMAData} */
+        /* ${AOs::I2CMgr::SM::Active::Busy::BusBeingUsed::Reading::WaitForDMAReadDone} */
         case Q_EXIT_SIG: {
             QTimeEvt_disarm( &me->i2cDMATimerEvt );
             status_ = Q_HANDLED();
             break;
         }
-        /* ${AOs::I2CMgr::SM::Active::Busy::BusBeingUsed::Reading::WaitForDMAData::I2C_DMA_TIMEOUT} */
+        /* ${AOs::I2CMgr::SM::Active::Busy::BusBeingUsed::Reading::WaitForDMAReadDone::I2C_DMA_TIMEOUT} */
         case I2C_DMA_TIMEOUT_SIG: {
             ERR_printf("Timeout while waiting for DMA read timeout\n");
 
@@ -1020,10 +1090,12 @@ static QState I2CMgr_Idle(I2CMgr * const me, QEvt const * const e) {
         /* ${AOs::I2CMgr::SM::Active::Idle} */
         case Q_ENTRY_SIG: {
             /* recall the request from the private requestQueue */
-            I2CReqEvt const *rq = (I2CReqEvt const *) (uint32_t) QActive_recall(
+            I2CEvt const *rq = (I2CEvt const *) (uint32_t) QActive_recall(
                 (QActive *)me,
                 &me->deferredEvtQueue
             );
+
+            rq = 0; /* To prevent compiler warning about unused var. */
 
             /* Clear out current operation */
             me->i2cCurrOperation = I2C_OP_NONE;
@@ -1040,11 +1112,11 @@ static QState I2CMgr_Idle(I2CMgr * const me, QEvt const * const e) {
             me->i2cCurrOperation = I2C_OP_READ;
 
             /* Store the device */
-            me->iDevice = ((I2CReqEvt const *)e)->i2cDevice;
+            me->iDevice = ((I2CEvt const *)e)->i2cDevice;
 
             /* Store the address */
-            me->wAddr = ((I2CReqEvt const *)e)->wReadAddr;
-            me->nLen  = ((I2CReqEvt const *)e)->nReadLen;
+            me->wAddr = ((I2CEvt const *)e)->wAddr;
+            me->nLen  = ((I2CEvt const *)e)->wDataLen;
 
             /* Reset the maximum number of times to poll the I2C bus for an event */
             me->nI2CLoopTimeout = MAX_I2C_TIMEOUT;
