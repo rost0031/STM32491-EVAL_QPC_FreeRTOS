@@ -105,12 +105,21 @@ I2C_BusSettings_t s_I2C_Bus[MAX_I2C_BUS] =
             DMA1_Stream6,              /**< i2c_dma_tx_stream */
             DMA1_Stream6_IRQn,         /**< i2c_dma_tx_irq_num */
             DMA1_Stream6_PRIO,         /**< i2c_dma_tx_irq_prio */
+            DMA_FLAG_TCIF6 |
+            DMA_FLAG_FEIF6 |
+            DMA_FLAG_DMEIF6 |
+            DMA_FLAG_TEIF6 |
+            DMA_FLAG_HTIF6,            /**< i2c_dma_tx_flags */
 
             /* RX I2C DMA settings */
             DMA1_Stream0,              /**< i2c_dma_rx_stream */
             DMA1_Stream0_IRQn,         /**< i2c_dma_rx_irq_num */
             DMA1_Stream0_PRIO,         /**< i2c_dma_rx_irq_prio */
-
+            DMA_FLAG_TCIF0 |
+            DMA_FLAG_FEIF0 |
+            DMA_FLAG_DMEIF0 |
+            DMA_FLAG_TEIF0 |
+            DMA_FLAG_HTIF0,            /**< i2c_dma_rx_flags */
 
             /* Buffer management */
             &i2c1RxBuffer[0],          /**< *pRxBuffer */
@@ -308,11 +317,7 @@ void I2C_StartDMARead( I2C_Bus_t iBus, uint16_t wReadLen )
    /* Clear any pending flags on RX Stream */
    DMA_ClearFlag(
          s_I2C_Bus[iBus].i2c_dma_rx_stream,
-         DMA_FLAG_TCIF0 |
-         DMA_FLAG_FEIF0 |
-         DMA_FLAG_DMEIF0 |
-         DMA_FLAG_TEIF0 |
-         DMA_FLAG_HTIF0
+         s_I2C_Bus[iBus].i2c_dma_rx_flags
    );
 
    /* I2Cx DMA Enable */
@@ -368,11 +373,7 @@ void I2C_StartDMAWrite( I2C_Bus_t iBus, uint16_t wWriteLen )
    /* Clear any pending flags on RX Stream */
    DMA_ClearFlag(
          s_I2C_Bus[iBus].i2c_dma_tx_stream,
-         DMA_FLAG_TCIF0 |
-         DMA_FLAG_FEIF0 |
-         DMA_FLAG_DMEIF0 |
-         DMA_FLAG_TEIF0 |
-         DMA_FLAG_HTIF0
+         s_I2C_Bus[iBus].i2c_dma_tx_flags
    );
 
    /* I2Cx DMA Enable */
@@ -419,13 +420,13 @@ inline void I2C1_DMAWriteCallback( void )
    QK_ISR_ENTRY();                         /* inform QK about entering an ISR */
 //   isr_dbg_slow_printf("\n\n DMA!!!\n\n");
    /* Test on DMA Stream Transfer Complete interrupt */
-   if ( RESET != DMA_GetITStatus(DMA1_Stream0, DMA_IT_TCIF0) ) {
-      DMA_Cmd( DMA1_Stream0, DISABLE );
+   if ( RESET != DMA_GetITStatus(DMA1_Stream6, DMA_IT_TCIF6) ) {
+      DMA_Cmd( DMA1_Stream6, DISABLE );
 
       I2C_GenerateSTOP(I2C1, ENABLE);                        /* Generate Stop */
 
       /* Publish event with the read data */
-      I2CDataEvt *i2cDataEvt = Q_NEW( I2CDataEvt, I2C_READ_DONE_SIG );
+      I2CDataEvt *i2cDataEvt = Q_NEW( I2CDataEvt, I2C_WRITE_DONE_SIG );
       i2cDataEvt->i2cDevice = s_I2C_Bus[I2CBus1].i2c_cur_dev;
       i2cDataEvt->wDataLen = s_I2C_Bus[I2CBus1].nBytesExpected;
       MEMCPY(
@@ -436,7 +437,7 @@ inline void I2C1_DMAWriteCallback( void )
       QF_PUBLISH( (QEvent *)i2cDataEvt, AO_SerialMgr );
 
       /* Clear DMA Stream Transfer Complete interrupt pending bit */
-      DMA_ClearITPendingBit( DMA1_Stream0, DMA_IT_TCIF0 );
+      DMA_ClearITPendingBit( DMA1_Stream6, DMA_IT_TCIF6 );
    }
 
    QK_ISR_EXIT();                           /* inform QK about exiting an ISR */

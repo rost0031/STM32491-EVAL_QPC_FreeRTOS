@@ -151,11 +151,13 @@ typedef struct I2C_BusSettings
    DMA_Stream_TypeDef *    i2c_dma_tx_stream;      /**< I2C DMA stream for TX */
    IRQn_Type               i2c_dma_tx_irq_num;     /**< I2C DMA TX IRQ number */
    ISR_Priority            i2c_dma_tx_irq_prio;  /**< I2C DMA TX IRQ priority */
+   const uint32_t          i2c_dma_tx_flags;            /**< I2C DMA TX Flags */
 
    /* RX I2C DMA settings */
    DMA_Stream_TypeDef *    i2c_dma_rx_stream;      /**< I2C DMA stream for RX */
    IRQn_Type               i2c_dma_rx_irq_num;     /**< I2C DMA RX IRQ number */
    ISR_Priority            i2c_dma_rx_irq_prio;  /**< I2C DMA RX IRQ priority */
+   const uint32_t          i2c_dma_rx_flags;            /**< I2C DMA TX Flags */
 
    /* Buffer management */
    uint8_t                 *pRxBuffer;                   /**< I2C data buffer.*/
