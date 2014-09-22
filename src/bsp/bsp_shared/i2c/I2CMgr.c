@@ -90,6 +90,9 @@ typedef struct {
     /**< Specifies what the current I2C bus operation is happening.  Gets set upon
          reception of I2C_READ_START_SIG and I2C_WRITE_START_SIG */
     I2C_Operation_t i2cCurrOperation;
+
+    /**< QPC timer Used to timeout I2C bus recovery wait states. */
+    QTimeEvt i2cRecoveryTimerEvt;
 } I2CMgr;
 
 /* protected: */
@@ -181,6 +184,7 @@ void I2CMgr_ctor(I2C_Bus_t iBus) {
     QActive_ctor( &me->super, (QStateHandler)&I2CMgr_initial );
     QTimeEvt_ctor( &me->i2cTimerEvt, I2C_TIMEOUT_SIG );
     QTimeEvt_ctor( &me->i2cDMATimerEvt, I2C_DMA_TIMEOUT_SIG );
+    QTimeEvt_ctor( &me->i2cRecoveryTimerEvt, I2C_RECOVERY_TIMEOUT_SIG );
 
     /* Initialize the deferred event queue and storage for it */
     QEQueue_init(
@@ -224,6 +228,7 @@ static QState I2CMgr_initial(I2CMgr * const me, QEvt const * const e) {
     QActive_subscribe((QActive *)me, I2C_EV_MASTER_TX_MODE_SELECTED_SIG);
     QActive_subscribe((QActive *)me, I2C_SENT_MSB_ADDR_SIG);
     QActive_subscribe((QActive *)me, I2C_SENT_LSB_ADDR_SIG);
+    QActive_subscribe((QActive *)me, I2C_RECOVERY_TIMEOUT_SIG);
     return Q_TRAN(&I2CMgr_Idle);
 }
 
@@ -258,6 +263,13 @@ static QState I2CMgr_Active(I2CMgr * const me, QEvt const * const e) {
                 SEC_TO_TICKS( LL_MAX_TIMEOUT_I2C_READ_OP_SEC )
             );
             QTimeEvt_disarm(&me->i2cDMATimerEvt);
+
+            QTimeEvt_postIn(
+                &me->i2cRecoveryTimerEvt,
+                (QActive *)me,
+                SEC_TO_TICKS( LL_MAX_TIMEOUT_I2C_BUS_RECOVERY_SEC )
+            );
+            QTimeEvt_disarm(&me->i2cRecoveryTimerEvt);
 
             /* Initialize the I2C devices and associated busses */
             I2C_BusInit( me->iBus );
@@ -387,7 +399,7 @@ static QState I2CMgr_TogglingSCL(I2CMgr * const me, QEvt const * const e) {
              * try again until number of retries is out */
             /* ${AOs::I2CMgr::SM::Active::Busy::WaitForBusRecovery::TogglingSCL::I2C_CHECK_EV::[BusFree?]} */
             if (SET == GPIO_ReadInputDataBit( s_I2C_Bus[me->iBus].sda_port, s_I2C_Bus[me->iBus].sda_pin  )) {
-                WRN_printf("Bus free after %d SCL toggles", MAX_I2C_TIMEOUT - me->nI2CLoopTimeout);
+                WRN_printf("Bus free after %d SCL toggles\n", MAX_I2C_TIMEOUT - me->nI2CLoopTimeout);
 
                 /* Make sure to leave the SCL line high after exit */
                 GPIO_SetBits( s_I2C_Bus[me->iBus].scl_port, s_I2C_Bus[me->iBus].scl_pin );
@@ -429,7 +441,7 @@ static QState I2CMgr_WaitForBusToSettleAfterReset(I2CMgr * const me, QEvt const 
         case Q_ENTRY_SIG: {
             /* Post a timer on entry */
             QTimeEvt_rearm(
-                &me->i2cDMATimerEvt,
+                &me->i2cRecoveryTimerEvt,
                 SEC_TO_TICKS( LL_MAX_TIMEOUT_I2C_DMA_READ_SEC )
             );
             status_ = Q_HANDLED();
@@ -437,13 +449,13 @@ static QState I2CMgr_WaitForBusToSettleAfterReset(I2CMgr * const me, QEvt const 
         }
         /* ${AOs::I2CMgr::SM::Active::Busy::WaitForBusRecovery::WaitForBusToSettleAfterReset} */
         case Q_EXIT_SIG: {
-            QTimeEvt_disarm( &me->i2cDMATimerEvt );
+            QTimeEvt_disarm( &me->i2cRecoveryTimerEvt );
             status_ = Q_HANDLED();
             break;
         }
-        /* ${AOs::I2CMgr::SM::Active::Busy::WaitForBusRecovery::WaitForBusToSettleAfterReset::I2C_DMA_TIMEOUT} */
-        case I2C_DMA_TIMEOUT_SIG: {
-            DBG_printf("Finished waiting for bus to settle after manual toggle\n");
+        /* ${AOs::I2CMgr::SM::Active::Busy::WaitForBusRecovery::WaitForBusToSettleAfterReset::I2C_RECOVERY_TIMEOUT} */
+        case I2C_RECOVERY_TIMEOUT_SIG: {
+            WRN_printf("Finished waiting for bus to settle after manual toggle\n");
             status_ = Q_TRAN(&I2CMgr_WaitForBusToSettle);
             break;
         }
@@ -1160,7 +1172,7 @@ static QState I2CMgr_WaitFor_I2C_EV5_REC(I2CMgr * const me, QEvt const * const e
              * try again until number of retries is out */
             /* ${AOs::I2CMgr::SM::Active::Busy::WaitFor_I2C_EV5_REC::I2C_CHECK_EV::[EV5Happened?]} */
             if (I2C_CheckEvent(s_I2C_Bus[me->iBus].i2c_bus, I2C_EVENT_MASTER_MODE_SELECT)) {
-                DBG_printf("Selecting slave I2C Device\n");
+                WRN_printf("Selecting slave I2C Device\n");
 
                 /* Set the direction to transmit the address */
                 I2C_SetDirection( me->iBus,  I2C_Direction_Transmitter);
@@ -1185,7 +1197,7 @@ static QState I2CMgr_WaitFor_I2C_EV5_REC(I2CMgr * const me, QEvt const * const e
                 }
                 /* ${AOs::I2CMgr::SM::Active::Busy::WaitFor_I2C_EV5_REC::I2C_CHECK_EV::[else]::[else]} */
                 else {
-                    ERR_printf("Timeout waiting for I2C_EVENT_MASTER_MODE_SELECT (EV5)\n");
+                    WRN_printf("Expected timeout waiting for EV5 after bus recovery\n");
                     status_ = Q_TRAN(&I2CMgr_StartI2CComm);
                 }
             }
@@ -1227,7 +1239,7 @@ static QState I2CMgr_WaitFor_I2C_EV6_REC(I2CMgr * const me, QEvt const * const e
                 }
                 /* ${AOs::I2CMgr::SM::Active::Busy::WaitFor_I2C_EV6_REC::I2C_CHECK_EV::[else]::[else]} */
                 else {
-                    ERR_printf("Timeout waiting for I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED (EV6)\n");
+                    WRN_printf("Expected timeout waiting for I2C EV6 after bus recovery\n");
                     status_ = Q_TRAN(&I2CMgr_StartI2CComm);
                 }
             }
@@ -1285,7 +1297,7 @@ static QState I2CMgr_WaitForBusToSettle(I2CMgr * const me, QEvt const * const e)
         case Q_ENTRY_SIG: {
             /* Post a timer on entry */
             QTimeEvt_rearm(
-                &me->i2cDMATimerEvt,
+                &me->i2cRecoveryTimerEvt,
                 SEC_TO_TICKS( LL_MAX_TIMEOUT_I2C_BUS_RECOVERY_SEC )
             );
 
@@ -1302,16 +1314,16 @@ static QState I2CMgr_WaitForBusToSettle(I2CMgr * const me, QEvt const * const e)
         }
         /* ${AOs::I2CMgr::SM::Active::Busy::WaitForBusToSettle} */
         case Q_EXIT_SIG: {
-            QTimeEvt_disarm( &me->i2cDMATimerEvt );
+            QTimeEvt_disarm( &me->i2cRecoveryTimerEvt );
             status_ = Q_HANDLED();
             break;
         }
-        /* ${AOs::I2CMgr::SM::Active::Busy::WaitForBusToSettle::I2C_DMA_TIMEOUT} */
-        case I2C_DMA_TIMEOUT_SIG: {
-            DBG_printf("Finished waiting for bus to settle after reset and intentional failure\n");
+        /* ${AOs::I2CMgr::SM::Active::Busy::WaitForBusToSettle::I2C_RECOVERY_TIMEOUT} */
+        case I2C_RECOVERY_TIMEOUT_SIG: {
+            WRN_printf("Finished waiting for bus to settle after reset and intentional failure\n");
 
             /* Send START condition */
-            DBG_printf("Generating I2C start after bus reset\n");
+            WRN_printf("Generating I2C start after bus reset\n");
             I2C_GenerateSTART(s_I2C_Bus[me->iBus].i2c_bus, ENABLE);
             status_ = Q_TRAN(&I2CMgr_WaitFor_I2C_EV5_REC);
             break;

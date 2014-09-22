@@ -79,6 +79,9 @@
     <documentation>/**&lt; Specifies what the current I2C bus operation is happening.  Gets set upon
      reception of I2C_READ_START_SIG and I2C_WRITE_START_SIG */</documentation>
    </attribute>
+   <attribute name="i2cRecoveryTimerEvt" type="QTimeEvt" visibility="0x01" properties="0x00">
+    <documentation>/**&lt; QPC timer Used to timeout I2C bus recovery wait states. */</documentation>
+   </attribute>
    <statechart>
     <initial target="../1/1">
      <action>(void)e;        /* suppress the compiler warning about unused parameter */
@@ -101,7 +104,8 @@ QActive_subscribe((QActive *)me, I2C_DMA_TIMEOUT_SIG);
 QActive_subscribe((QActive *)me, I2C_EV_MASTER_MODE_SELECT_SIG);
 QActive_subscribe((QActive *)me, I2C_EV_MASTER_TX_MODE_SELECTED_SIG);
 QActive_subscribe((QActive *)me, I2C_SENT_MSB_ADDR_SIG);
-QActive_subscribe((QActive *)me, I2C_SENT_LSB_ADDR_SIG);</action>
+QActive_subscribe((QActive *)me, I2C_SENT_LSB_ADDR_SIG);
+QActive_subscribe((QActive *)me, I2C_RECOVERY_TIMEOUT_SIG);</action>
      <initial_glyph conn="1,2,4,3,14,4">
       <action box="0,-2,6,2"/>
      </initial_glyph>
@@ -132,6 +136,13 @@ QTimeEvt_postIn(
     SEC_TO_TICKS( LL_MAX_TIMEOUT_I2C_READ_OP_SEC )
 );
 QTimeEvt_disarm(&amp;me-&gt;i2cDMATimerEvt);
+
+QTimeEvt_postIn(
+    &amp;me-&gt;i2cRecoveryTimerEvt,
+    (QActive *)me,
+    SEC_TO_TICKS( LL_MAX_TIMEOUT_I2C_BUS_RECOVERY_SEC )
+);
+QTimeEvt_disarm(&amp;me-&gt;i2cRecoveryTimerEvt);
 
 /* Initialize the I2C devices and associated busses */
 I2C_BusInit( me-&gt;iBus );</entry>
@@ -200,7 +211,7 @@ QF_PUBLISH((QEvt *)qEvt, AO_I2CMgr);</entry>
  * try again until number of retries is out */</action>
          <choice target="../../../1">
           <guard brief="Bus Free?">SET == GPIO_ReadInputDataBit( s_I2C_Bus[me-&gt;iBus].sda_port, s_I2C_Bus[me-&gt;iBus].sda_pin  )</guard>
-          <action>WRN_printf(&quot;Bus free after %d SCL toggles&quot;, MAX_I2C_TIMEOUT - me-&gt;nI2CLoopTimeout);
+          <action>WRN_printf(&quot;Bus free after %d SCL toggles\n&quot;, MAX_I2C_TIMEOUT - me-&gt;nI2CLoopTimeout);
 
 /* Make sure to leave the SCL line high after exit */
 GPIO_SetBits( s_I2C_Bus[me-&gt;iBus].scl_port, s_I2C_Bus[me-&gt;iBus].scl_pin );
@@ -245,12 +256,12 @@ DBG_printf(&quot;I2C bus reset\n&quot;);</action>
        <state name="WaitForBusToSettleAfterReset">
         <entry>/* Post a timer on entry */
 QTimeEvt_rearm(
-    &amp;me-&gt;i2cDMATimerEvt,
+    &amp;me-&gt;i2cRecoveryTimerEvt,
     SEC_TO_TICKS( LL_MAX_TIMEOUT_I2C_DMA_READ_SEC )
 );</entry>
-        <exit>QTimeEvt_disarm( &amp;me-&gt;i2cDMATimerEvt );</exit>
-        <tran trig="I2C_DMA_TIMEOUT" target="../../../7">
-         <action>DBG_printf(&quot;Finished waiting for bus to settle after manual toggle\n&quot;);</action>
+        <exit>QTimeEvt_disarm( &amp;me-&gt;i2cRecoveryTimerEvt );</exit>
+        <tran trig="I2C_RECOVERY_TIMEOUT" target="../../../7">
+         <action>WRN_printf(&quot;Finished waiting for bus to settle after manual toggle\n&quot;);</action>
          <tran_glyph conn="154,19,3,1,-15">
           <action box="-16,-2,16,2"/>
          </tran_glyph>
@@ -910,7 +921,7 @@ QF_PUBLISH((QEvt *)qEvt, AO_I2CMgr);</entry>
  * try again until number of retries is out */</action>
         <choice target="../../../5">
          <guard brief="EV5 Happened?">I2C_CheckEvent(s_I2C_Bus[me-&gt;iBus].i2c_bus, I2C_EVENT_MASTER_MODE_SELECT)</guard>
-         <action brief="Send 7bit address">DBG_printf(&quot;Selecting slave I2C Device\n&quot;);
+         <action brief="Send 7bit address">WRN_printf(&quot;Selecting slave I2C Device\n&quot;);
 
 /* Set the direction to transmit the address */
 I2C_SetDirection( me-&gt;iBus,  I2C_Direction_Transmitter);
@@ -939,7 +950,7 @@ me-&gt;nI2CLoopTimeout = MAX_I2C_TIMEOUT;</action>
          </choice>
          <choice target="../../../../6">
           <guard brief="else"/>
-          <action>ERR_printf(&quot;Timeout waiting for I2C_EVENT_MASTER_MODE_SELECT (EV5)\n&quot;);</action>
+          <action>WRN_printf(&quot;Expected timeout waiting for EV5 after bus recovery\n&quot;);</action>
           <choice_glyph conn="89,26,5,1,-6,-8,-21">
            <action box="-7,0,6,2"/>
           </choice_glyph>
@@ -980,7 +991,7 @@ QF_PUBLISH((QEvt *)qEvt, AO_I2CMgr);</entry>
          </choice>
          <choice target="../../../../6">
           <guard brief="else"/>
-          <action>ERR_printf(&quot;Timeout waiting for I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED (EV6)\n&quot;);</action>
+          <action>WRN_printf(&quot;Expected timeout waiting for I2C EV6 after bus recovery\n&quot;);</action>
           <choice_glyph conn="89,40,5,1,-7,-21,-20">
            <action box="-8,0,7,2"/>
           </choice_glyph>
@@ -1031,7 +1042,7 @@ me-&gt;nI2CLoopTimeout = MAX_I2C_TIMEOUT;</action>
       <state name="WaitForBusToSettle">
        <entry>/* Post a timer on entry */
 QTimeEvt_rearm(
-    &amp;me-&gt;i2cDMATimerEvt,
+    &amp;me-&gt;i2cRecoveryTimerEvt,
     SEC_TO_TICKS( LL_MAX_TIMEOUT_I2C_BUS_RECOVERY_SEC )
 );
 
@@ -1043,12 +1054,12 @@ QTimeEvt_rearm(
     SEC_TO_TICKS( LL_MAX_TIMEOUT_I2C_BUSY_SEC + LL_MAX_TIMEOUT_I2C_BUS_RECOVERY_SEC )
 );
 </entry>
-       <exit>QTimeEvt_disarm( &amp;me-&gt;i2cDMATimerEvt );</exit>
-       <tran trig="I2C_DMA_TIMEOUT" target="../../4">
-        <action>DBG_printf(&quot;Finished waiting for bus to settle after reset and intentional failure\n&quot;);
+       <exit>QTimeEvt_disarm( &amp;me-&gt;i2cRecoveryTimerEvt );</exit>
+       <tran trig="I2C_RECOVERY_TIMEOUT" target="../../4">
+        <action>WRN_printf(&quot;Finished waiting for bus to settle after reset and intentional failure\n&quot;);
 
 /* Send START condition */
-DBG_printf(&quot;Generating I2C start after bus reset\n&quot;);
+WRN_printf(&quot;Generating I2C start after bus reset\n&quot;);
 I2C_GenerateSTART(s_I2C_Bus[me-&gt;iBus].i2c_bus, ENABLE);</action>
         <tran_glyph conn="120,19,3,1,-16">
          <action box="-16,-2,16,2"/>
@@ -1171,6 +1182,7 @@ me-&gt;iBus = iBus;
 QActive_ctor( &amp;me-&gt;super, (QStateHandler)&amp;I2CMgr_initial );
 QTimeEvt_ctor( &amp;me-&gt;i2cTimerEvt, I2C_TIMEOUT_SIG );
 QTimeEvt_ctor( &amp;me-&gt;i2cDMATimerEvt, I2C_DMA_TIMEOUT_SIG );
+QTimeEvt_ctor( &amp;me-&gt;i2cRecoveryTimerEvt, I2C_RECOVERY_TIMEOUT_SIG );
 
 /* Initialize the deferred event queue and storage for it */
 QEQueue_init(
