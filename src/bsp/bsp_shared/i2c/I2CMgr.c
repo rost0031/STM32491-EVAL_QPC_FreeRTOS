@@ -123,7 +123,6 @@ static QState I2CMgr_Active(I2CMgr * const me, QEvt const * const e);
 static QState I2CMgr_Busy(I2CMgr * const me, QEvt const * const e);
 static QState I2CMgr_WaitForBusRecovery(I2CMgr * const me, QEvt const * const e);
 static QState I2CMgr_TogglingSCL(I2CMgr * const me, QEvt const * const e);
-static QState I2CMgr_WaitForBusToSettleAfterReset(I2CMgr * const me, QEvt const * const e);
 static QState I2CMgr_BusBeingUsed(I2CMgr * const me, QEvt const * const e);
 static QState I2CMgr_WaitFor_I2C_EV6(I2CMgr * const me, QEvt const * const e);
 static QState I2CMgr_SetupI2CDevice(I2CMgr * const me, QEvt const * const e);
@@ -406,7 +405,7 @@ static QState I2CMgr_TogglingSCL(I2CMgr * const me, QEvt const * const e) {
 
                 /* Reset the maximum number of times to poll the I2C bus for an event */
                 me->nI2CLoopTimeout = MAX_I2C_TIMEOUT;
-                status_ = Q_TRAN(&I2CMgr_WaitForBusToSettleAfterReset);
+                status_ = Q_TRAN(&I2CMgr_WaitForBusToSettle);
             }
             /* ${AOs::I2CMgr::SM::Active::Busy::WaitForBusRecovery::TogglingSCL::I2C_CHECK_EV::[else]} */
             else {
@@ -424,42 +423,6 @@ static QState I2CMgr_TogglingSCL(I2CMgr * const me, QEvt const * const e) {
                     status_ = Q_TRAN(&I2CMgr_Idle);
                 }
             }
-            break;
-        }
-        default: {
-            status_ = Q_SUPER(&I2CMgr_WaitForBusRecovery);
-            break;
-        }
-    }
-    return status_;
-}
-/*${AOs::I2CMgr::SM::Active::Busy::WaitForBusRecovery::WaitForBusToSettleAfterReset} */
-static QState I2CMgr_WaitForBusToSettleAfterReset(I2CMgr * const me, QEvt const * const e) {
-    QState status_;
-    switch (e->sig) {
-        /* ${AOs::I2CMgr::SM::Active::Busy::WaitForBusRecovery::WaitForBusToSettleAfterReset} */
-        case Q_ENTRY_SIG: {
-            /* Post a timer on entry */
-            /*QTimeEvt_rearm(
-                &me->i2cRecoveryTimerEvt,
-                SEC_TO_TICKS( LL_MAX_TIMEOUT_I2C_DMA_READ_SEC )
-            );*/
-
-            QEvt *qEvt = Q_NEW(QEvt, I2C_CHECK_EV_SIG);
-            QF_PUBLISH((QEvt *)qEvt, AO_I2CMgr);
-            status_ = Q_HANDLED();
-            break;
-        }
-        /* ${AOs::I2CMgr::SM::Active::Busy::WaitForBusRecovery::WaitForBusToSettleAfterReset} */
-        case Q_EXIT_SIG: {
-            /*QTimeEvt_disarm( &me->i2cRecoveryTimerEvt ); */
-            status_ = Q_HANDLED();
-            break;
-        }
-        /* ${AOs::I2CMgr::SM::Active::Busy::WaitForBusRecovery::WaitForBusToSettleAfterReset::I2C_CHECK_EV} */
-        case I2C_CHECK_EV_SIG: {
-            WRN_printf("Finished waiting for bus to settle after manual toggle\n");
-            status_ = Q_TRAN(&I2CMgr_WaitForBusToSettle);
             break;
         }
         default: {
@@ -669,7 +632,7 @@ static QState I2CMgr_WaitForDMAWriteDone(I2CMgr * const me, QEvt const * const e
             I2C_AcknowledgeConfig(s_I2C_Bus[me->iBus].i2c_bus, ENABLE);
 
             DBG_printf("Generating I2C stop\n");
-            status_ = Q_HANDLED();
+            status_ = Q_TRAN(&I2CMgr_Idle);
             break;
         }
         default: {

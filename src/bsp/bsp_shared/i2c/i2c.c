@@ -842,7 +842,7 @@ inline void I2C1_ErrorEventCallback( void )
       /* Clears error flags */
       I2C1->SR1 &= 0x00FF;
 
-      ERR_printf("I2C Error: 0x%04x\n", regVal);
+      ERR_printf("I2C Error: 0x%04x.  Resetting error bits\n", regVal);
       I2C_BusInit( I2CBus1 );
    }
    QK_ISR_EXIT();                           /* inform QK about exiting an ISR */
