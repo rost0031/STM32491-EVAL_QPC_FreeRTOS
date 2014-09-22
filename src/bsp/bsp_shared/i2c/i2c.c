@@ -47,17 +47,37 @@ uint8_t          i2c1TxBuffer[MAX_MSG_LEN];
  * @brief An internal structure that holds settings for I2C devices on all I2C
  * busses.
  */
-static I2C_BusDevice_t s_I2C_Dev[MAX_I2C_DEV] =
+I2C_BusDevice_t s_I2C_Dev[MAX_I2C_DEV] =
 {
       {
             /* "External" device settings */
             EEPROM,                    /**< i2c_dev */
             I2C1,                      /**< i2c_bus */
-            0xA0,                      /**< i2c_address */
+            0xA0,                      /**< i2c_dev_addr */
 
             /* Internal device settings */
             1,                         /**< i2c_mem_addr_size */
             0x00                       /**< i2c_mem_addr */
+      },
+      {
+            /* "External" device settings */
+            SN_ROM,                    /**< i2c_dev */
+            I2C1,                      /**< i2c_bus */
+            0xB0,                      /**< i2c_dev_addr */
+
+            /* Internal device settings */
+            1,                         /**< i2c_mem_addr_size */
+            0x80                       /**< i2c_mem_addr */
+      },
+      {
+            /* "External" device settings */
+            UIE_ROM,                   /**< i2c_dev */
+            I2C1,                      /**< i2c_bus */
+            0xB0,                      /**< i2c_dev_addr */
+
+            /* Internal device settings */
+            1,                         /**< i2c_mem_addr_size */
+            0x90                       /**< i2c_mem_addr */
       }
 };
 
@@ -130,7 +150,6 @@ I2C_BusSettings_t s_I2C_Bus[MAX_I2C_BUS] =
             /* Device management */
             EEPROM,                    /**< i2c_cur_dev */
             I2C_IDLE_ST,               /**< i2c_cur_st */
-            0xA0,                      /**< i2c_cur_dev_addr */
             I2C_Direction_Transmitter, /**< bTransDirection */
             0,                         /**< nBytesExpected */
             0,                         /**< nBytesCurrent */
@@ -143,6 +162,9 @@ I2C_BusSettings_t s_I2C_Bus[MAX_I2C_BUS] =
 /******************************************************************************/
 void I2C_BusInit( I2C_Bus_t iBus )
 {
+   /* Deinit the bus just in case. */
+   I2C_BusDeInit( iBus );
+
    /* 1. Enable clocks ------------------------------------------------------ */
    /* Enable I2C clock */
    RCC_APB1PeriphClockCmd( s_I2C_Bus[iBus].i2c_clk, ENABLE );
@@ -158,9 +180,6 @@ void I2C_BusInit( I2C_Bus_t iBus )
 
    /* Enable I2C DMA clock */
    RCC_AHB1PeriphClockCmd( s_I2C_Bus[iBus].i2c_dma_clk, ENABLE );
-
-   /* Reset I2C IP */
-   I2C_DeInit( s_I2C_Bus[iBus].i2c_bus );
 
    /* 2. Set up GPIO -------------------------------------------------------- */
    /* Connect PXx to I2C SCL alt function. */
@@ -235,7 +254,7 @@ void I2C_BusInit( I2C_Bus_t iBus )
    I2C_InitTypeDef  I2C_InitStructure;
    I2C_InitStructure.I2C_Mode                = I2C_Mode_I2C; /* Mode for the M24CXX EEPROM used by the STM324x9I-EVAL2 dev kit */
    I2C_InitStructure.I2C_DutyCycle           = I2C_DutyCycle_2;
-   I2C_InitStructure.I2C_OwnAddress1         = s_I2C_Bus[iBus].i2c_cur_dev_addr;
+   I2C_InitStructure.I2C_OwnAddress1         = 0x00;
    I2C_InitStructure.I2C_Ack                 = I2C_Ack_Enable;
    I2C_InitStructure.I2C_AcknowledgedAddress = I2C_AcknowledgedAddress_7bit;
    I2C_InitStructure.I2C_ClockSpeed          = s_I2C_Bus[iBus].i2c_bus_speed;
@@ -250,6 +269,80 @@ void I2C_BusInit( I2C_Bus_t iBus )
 
    /* I2C Peripheral Enable */
 //   I2C_Cmd( s_I2C_Bus[iBus].i2c_bus, ENABLE );
+
+}
+
+/******************************************************************************/
+void I2C_BusDeInit( I2C_Bus_t iBus )
+{
+   /* DeInit the I2C IP ----------------------------------------------------- */
+   I2C_DeInit( s_I2C_Bus[iBus].i2c_bus );
+
+   /* Disable I2C GPIO clocks */
+   RCC_AHB1PeriphClockCmd(
+         s_I2C_Bus[iBus].scl_clk | s_I2C_Bus[iBus].sda_clk,
+         DISABLE
+   );
+
+   /* Disable I2C DMA clock */
+   RCC_AHB1PeriphClockCmd( s_I2C_Bus[iBus].i2c_dma_clk, DISABLE );
+
+   /* 2. Set up GPIO for input ---------------------------------------------- */
+
+   /* Configure common elements of the SDA and SCL pins to not use I2C periph */
+   GPIO_InitTypeDef  GPIO_InitStructure;
+   GPIO_InitStructure.GPIO_Mode     = GPIO_Mode_IN;
+   GPIO_InitStructure.GPIO_Speed    = GPIO_Speed_50MHz;
+   GPIO_InitStructure.GPIO_OType    = GPIO_OType_PP;
+   GPIO_InitStructure.GPIO_PuPd     = GPIO_PuPd_NOPULL;
+
+   /* Configure SCL specific settings for I2C */
+   GPIO_InitStructure.GPIO_Pin      = s_I2C_Bus[iBus].scl_pin;
+   GPIO_Init(s_I2C_Bus[iBus].scl_port, &GPIO_InitStructure);
+
+   /* Configure SDA specific settings for I2C */
+   GPIO_InitStructure.GPIO_Pin = s_I2C_Bus[iBus].sda_pin;
+   GPIO_Init(s_I2C_Bus[iBus].sda_port, &GPIO_InitStructure);
+
+   /* 3. DeInit DMA I2C ----------------------------------------------------- */
+   DMA_Cmd( s_I2C_Bus[iBus].i2c_dma_rx_stream, DISABLE );
+   DMA_DeInit( s_I2C_Bus[iBus].i2c_dma_rx_stream );
+
+   DMA_Cmd( s_I2C_Bus[iBus].i2c_dma_tx_stream, DISABLE );
+   DMA_DeInit( s_I2C_Bus[iBus].i2c_dma_tx_stream );
+}
+
+/******************************************************************************/
+void I2C_BusInitForRecovery( I2C_Bus_t iBus )
+{
+   /* 1. DeInit the I2C bus */
+   I2C_BusDeInit( iBus );
+
+   /* 2. Set up GPIO for output --------------------------------------------- */
+
+   /* Enable I2C GPIO clocks */
+   RCC_AHB1PeriphClockCmd(
+         s_I2C_Bus[iBus].scl_clk | s_I2C_Bus[iBus].sda_clk,
+         ENABLE
+   );
+
+   /* Configure common elements of the SDA and SCL pins to not use I2C periph */
+   GPIO_InitTypeDef  GPIO_InitStructure;
+   GPIO_InitStructure.GPIO_Speed    = GPIO_Speed_50MHz;
+   GPIO_InitStructure.GPIO_OType    = GPIO_OType_PP;
+   GPIO_InitStructure.GPIO_PuPd     = GPIO_PuPd_NOPULL;
+
+   /* Configure SCL specific settings for I2C - Output for this pin since SCL
+    * is the pin that will be toggled */
+   GPIO_InitStructure.GPIO_Mode     = GPIO_Mode_OUT;
+   GPIO_InitStructure.GPIO_Pin      = s_I2C_Bus[iBus].scl_pin;
+   GPIO_Init(s_I2C_Bus[iBus].scl_port, &GPIO_InitStructure);
+
+   /* Configure SDA specific settings for I2C - Input for this pin since SDA
+    * needs to be checked to see if it's cleared after toggling the SCL line */
+   GPIO_InitStructure.GPIO_Mode     = GPIO_Mode_IN;
+   GPIO_InitStructure.GPIO_Pin = s_I2C_Bus[iBus].sda_pin;
+   GPIO_Init(s_I2C_Bus[iBus].sda_port, &GPIO_InitStructure);
 
 }
 
@@ -391,9 +484,36 @@ inline void I2C1_DMAReadCallback( void )
 //   isr_dbg_slow_printf("\n\n DMA!!!\n\n");
    /* Test on DMA Stream Transfer Complete interrupt */
    if ( RESET != DMA_GetITStatus(DMA1_Stream0, DMA_IT_TCIF0) ) {
-      DMA_Cmd( DMA1_Stream0, DISABLE );
+      /* Start of STM32 I2C HW bug workaround:
+       * This is a workaround for the STM32 I2C hardware bug.  You have to send
+       * the STOP bit before receiving the last byte.  In the case of DMA xfers,
+       * this means doing it before you shut off the DMA stream.
+       * See the STM32 errata for more details. - HR */
+
+      I2C_AcknowledgeConfig( I2C1, DISABLE);        /* Disable Acknowledgment */
 
       I2C_GenerateSTOP(I2C1, ENABLE);                        /* Generate Stop */
+
+      /* Wait for the byte to be received.
+       * Note: There's really no way around waiting for this flag to be reset
+       * outside of the ISR since you have to do this BEFORE you shut off DMA
+       * which has to be done in this ISR. Thankfully, this flag gets reset
+       * fairly quickly (125 times through the loop). - HR. */
+//      uint16_t nI2CBusTimeout = MAX_I2C_TIMEOUT;
+//      while(I2C_GetFlagStatus(I2C1, I2C_FLAG_RXNE) == RESET) {
+//         if((nI2CBusTimeout--) == 0) {
+//            ERR_printf("Timeout waiting for I2C Stop bit flag reset!\n");
+//
+//            /* Error condition.  Make sure to do proper cleanup*/
+//            goto I2C1_DMAReadCallback_cleanup;
+//         }
+//      }
+
+      I2C_AcknowledgeConfig(I2C1, ENABLE);        /* Re-enable Acknowledgment */
+      /* End of STM32 I2C HW bug workaround */
+
+      /* Disable DMA so it doesn't keep outputting the buffer. */
+      DMA_Cmd( DMA1_Stream0, DISABLE );
 
       /* Publish event with the read data */
       I2CDataEvt *i2cDataEvt = Q_NEW( I2CDataEvt, I2C_READ_DONE_SIG );
@@ -405,6 +525,10 @@ inline void I2C1_DMAReadCallback( void )
             i2cDataEvt->wDataLen
       );
       QF_PUBLISH( (QEvent *)i2cDataEvt, AO_I2CMgr );
+
+//      DBG_printf("%d loop iters\n", MAX_I2C_TIMEOUT - nI2CBusTimeout);
+
+I2C1_DMAReadCallback_cleanup:
 
       /* Clear DMA Stream Transfer Complete interrupt pending bit */
       DMA_ClearITPendingBit( DMA1_Stream0, DMA_IT_TCIF0 );
@@ -467,7 +591,7 @@ inline void I2C1_EventCallback( void )
             /* Send slave Address for write */
             I2C_Send7bitAddress(
                   I2C1,                                  // This is always the bus used in this ISR
-                  s_I2C_Bus[I2CBus1].i2c_cur_dev_addr,   // Look up the current device address for this bus
+                  s_I2C_Dev[s_I2C_Bus[I2CBus1].i2c_cur_dev].i2c_dev_addr,   // Look up the current device address for this bus
                   s_I2C_Bus[I2CBus1].bTransDirection     // Direction of data on this bus
             );
          } else if ( I2C_GEN_2ND_START_ST == s_I2C_Bus[I2CBus1].i2c_cur_st ) {
@@ -478,7 +602,7 @@ inline void I2C1_EventCallback( void )
             /* Send slave Address for read */
             I2C_Send7bitAddress(
                   I2C1,           /* This is always the bus used in this ISR */
-                  s_I2C_Bus[I2CBus1].i2c_cur_dev_addr,  /* Look up the current device address for this bus */
+                  s_I2C_Dev[s_I2C_Bus[I2CBus1].i2c_cur_dev].i2c_dev_addr,  /* Look up the current device address for this bus */
                   s_I2C_Bus[I2CBus1].bTransDirection    /* Direction of data on this bus */
             );
 
@@ -519,7 +643,7 @@ inline void I2C1_EventCallback( void )
                /* Send the MSB of the address first to the I2C device */
                I2C_SendData(
                      I2C1,
-                     (uint8_t)((s_I2C_Bus[I2CBus1].i2c_cur_dev_addr & 0xFF00) >> 8)
+                     (uint8_t)((s_I2C_Dev[s_I2C_Bus[I2CBus1].i2c_cur_dev].i2c_mem_addr & 0xFF00) >> 8)
                );
             } else { /* Single byte address for device */
                isr_dbg_slow_printf("Single byte address\n");
@@ -534,7 +658,7 @@ inline void I2C1_EventCallback( void )
                /* Send the entire 1 byte address to the I2C device */
                I2C_SendData(
                      I2C1,
-                     (uint8_t)((s_I2C_Bus[I2CBus1].i2c_cur_dev_addr & 0x00FF))
+                     (uint8_t)((s_I2C_Dev[s_I2C_Bus[I2CBus1].i2c_cur_dev].i2c_mem_addr & 0x00FF))
                );
             }
 
@@ -628,7 +752,7 @@ inline void I2C1_EventCallback( void )
             /* Send the LSB of the address to the I2C device */
             I2C_SendData(
                   I2C1,
-                  (uint8_t)(s_I2C_Bus[I2CBus1].i2c_cur_dev_addr & 0xFF00)
+                  (uint8_t)(s_I2C_Dev[s_I2C_Bus[I2CBus1].i2c_cur_dev].i2c_mem_addr & 0xFF00)
             );
             isr_dbg_slow_printf("Sent LSB\n");
          } else if ( I2C_SENT_LSB_ADDR_ST == s_I2C_Bus[I2CBus1].i2c_cur_st ) {
@@ -719,6 +843,7 @@ inline void I2C1_ErrorEventCallback( void )
       I2C1->SR1 &= 0x00FF;
 
       isr_dbg_slow_printf("I2C Error: 0x%04x\n", regVal);
+      I2C_BusInit( I2CBus1 );
    }
    QK_ISR_EXIT();                           /* inform QK about exiting an ISR */
 }

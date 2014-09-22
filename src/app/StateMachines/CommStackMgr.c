@@ -168,16 +168,15 @@ static QState CommStackMgr_Active(CommStackMgr * const me, QEvt const * const e)
 
 
             /* Create event to request i2c data and publish it. */
-
+            /*
             I2CEvt *i2cEvt = Q_NEW(I2CEvt, I2C_READ_START_SIG);
             i2cEvt->i2cDevice = EEPROM;
             i2cEvt->wAddr = 0x00;
-            i2cEvt->wDataLen  = 17;
+            i2cEvt->wDataLen  = 20;
             QF_PUBLISH((QEvent *)i2cEvt, AO_CommStackMgr);
-
-
+            */
             /* Write some data to the i2c EEPROM */
-
+            /*
             I2CDataEvt *i2cDataEvt = Q_NEW(I2CDataEvt, I2C_WRITE_START_SIG);
             i2cDataEvt->i2cDevice = EEPROM;
             i2cDataEvt->wAddr = 0x00;
@@ -200,11 +199,12 @@ static QState CommStackMgr_Active(CommStackMgr * const me, QEvt const * const e)
             i2cDataEvt->bufData[15] =0x0F;
             i2cDataEvt->bufData[16] =0x10;
             QF_PUBLISH((QEvent *)i2cDataEvt, AO_CommStackMgr);
+            */
 
             I2CEvt *i2cEvt1 = Q_NEW(I2CEvt, I2C_READ_START_SIG);
-            i2cEvt1->i2cDevice = EEPROM;
-            i2cEvt1->wAddr = 0x00;
-            i2cEvt1->wDataLen  = 17;
+            i2cEvt1->i2cDevice = SN_ROM;
+            i2cEvt1->wAddr = 0x80;
+            i2cEvt1->wDataLen  = 16;
             QF_PUBLISH((QEvent *)i2cEvt1, AO_CommStackMgr);
 
 

@@ -62,6 +62,7 @@
    #define LL_MAX_TIMEOUT_I2C_BUSY_SEC                                     3.0
    #define LL_MAX_TIMEOUT_I2C_READ_OP_SEC                                  3.0
    #define LL_MAX_TIMEOUT_I2C_WRITE_OP_SEC                                 3.0
+   #define LL_MAX_TIMEOUT_I2C_BUS_RECOVERY_SEC                             1.2
    /*@} I2C Timeouts */
 
 

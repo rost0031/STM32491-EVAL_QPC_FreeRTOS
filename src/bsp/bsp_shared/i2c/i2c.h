@@ -31,7 +31,7 @@ extern "C" {
  *    1: Device exists and is valid
  *    0: Device doesn't exist or isn't defined
  */
-#define IS_I2C_DEVICE(DEV) ((DEV) == EEPROM)
+#define IS_I2C_DEVICE(DEV) ((DEV) == EEPROM || (DEV) == SN_ROM || (DEV) == UIE_ROM)
 
 /**
  * @brief   Macro to determine if an I2C bus is defined in the system
@@ -76,6 +76,8 @@ typedef enum I2C_States {
  */
 typedef enum I2C_Devices {
    EEPROM  = 0,                         /**< EEPROM attached to I2C */
+   SN_ROM,
+   UIE_ROM,
    /* Insert more I2C device enumerations here... */
    MAX_I2C_DEV     /**< Maximum number of available I2C devices on the system */
 } I2C_Device_t;
@@ -99,7 +101,7 @@ typedef struct I2C_BusDevices
    /* "External" device settings */
    const I2C_Device_t      i2c_dev;          /**< System I2C device specifier */
    const I2C_TypeDef *     i2c_bus;        /**< I2C bus device is attached to */
-   const uint8_t           i2c_dev_addr;  /**< I2C Device address of the device */
+   const uint16_t          i2c_dev_addr;  /**< I2C Device address of the device */
 
    /* Internal device settings */
    const uint8_t           i2c_mem_addr_size; /**< How many bytes are used to specify internal mem addr of the device */
@@ -168,7 +170,6 @@ typedef struct I2C_BusSettings
    /* Device management */
    I2C_Device_t            i2c_cur_dev;     /**< Current I2C device specifier.*/
    I2C_State_t             i2c_cur_st;             /**< Current I2C bus state.*/
-   uint8_t                 i2c_cur_dev_addr;      /**< I2C device bus address.*/
    uint8_t                 bTransDirection;    /**< Transmitting or Receiving */
    uint16_t                nBytesExpected; /**< How many bytes expected to TX or RX. */
    uint16_t                nBytesCurrent; /**< How many bytes have already been TXed or RXed. */
@@ -193,6 +194,32 @@ extern uint8_t i2c1TxBuffer[];          /**< Exported to I2CMgr I2C TX buffer */
  * @return: None
  */
 void I2C_BusInit( I2C_Bus_t iBus );
+
+/**
+ * @brief   DeInitialize specified I2C bus
+ *
+ * This function initializes GPIO used by I2C for input, disables clocks (except
+ * for the SYSCFG clock), and all the associated hardware for a specified I2C
+ * bus interface.
+ *
+ * @param [in]  iBus: I2C_Bus_t identifier for I2C bus to de-initialize
+ *    @arg
+ * @return: None
+ */
+void I2C_BusDeInit( I2C_Bus_t iBus );
+
+/**
+ * @brief   Initialize specified I2C bus for recovery.
+ *
+ * This function sets up I2C used GPIO for manual toggling.  This is SHOULDN'T
+ * be necessary but if there's ever a case of a STOP bit not making it to the
+ * I2C slave device, this is the only way to reset the bus.
+ *
+ * @param [in]  iBus: I2C_Bus_t identifier for I2C bus to initialize for recovery.
+ *    @arg
+ * @return: None
+ */
+void I2C_BusInitForRecovery( I2C_Bus_t iBus );
 
 /**
  * @brief   Set the direction on the I2C bus.
@@ -238,6 +265,27 @@ uint8_t I2C_getDevAddrSize( I2C_Device_t iDev );
  * @return: None
  */
 void I2C_StartDMARead( I2C_Bus_t iBus, uint16_t wReadLen );
+
+/**
+ * @brief   Start the DMA write operation on the specified I2C bus.
+ *
+ * This function kicks off the DMA write operation on the passed in I2C bus.
+ * Once the operation has completed, the DMA ISR should call the handler
+ * function, which in turn will post the event with the data to whoever is
+ * subscribed to it.
+ *
+ * @param [in]  iBus: I2C_Bus_t identifier for I2C bus
+ *    @arg  I2CBus1
+ * @param [in]  wReadLen: uint16_t for how many bytes to write from the I2C
+ * device.
+ *
+ * @note: The data must already be copied into the s_I2C_Bus[iBus].pTxBuffer
+ * buffer.  This should happen the moment that the event that kicks off the
+ * write (usually I2C_WRITE_START_SIG) gets read from the I2CMgr AO queue.
+ *
+ * @return: None
+ */
+void I2C_StartDMAWrite( I2C_Bus_t iBus, uint16_t wWriteLen );
 
 /**
  * @brief   I2C DMA read callback function
