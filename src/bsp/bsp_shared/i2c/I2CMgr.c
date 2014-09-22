@@ -440,21 +440,24 @@ static QState I2CMgr_WaitForBusToSettleAfterReset(I2CMgr * const me, QEvt const 
         /* ${AOs::I2CMgr::SM::Active::Busy::WaitForBusRecovery::WaitForBusToSettleAfterReset} */
         case Q_ENTRY_SIG: {
             /* Post a timer on entry */
-            QTimeEvt_rearm(
+            /*QTimeEvt_rearm(
                 &me->i2cRecoveryTimerEvt,
                 SEC_TO_TICKS( LL_MAX_TIMEOUT_I2C_DMA_READ_SEC )
-            );
+            );*/
+
+            QEvt *qEvt = Q_NEW(QEvt, I2C_CHECK_EV_SIG);
+            QF_PUBLISH((QEvt *)qEvt, AO_I2CMgr);
             status_ = Q_HANDLED();
             break;
         }
         /* ${AOs::I2CMgr::SM::Active::Busy::WaitForBusRecovery::WaitForBusToSettleAfterReset} */
         case Q_EXIT_SIG: {
-            QTimeEvt_disarm( &me->i2cRecoveryTimerEvt );
+            /*QTimeEvt_disarm( &me->i2cRecoveryTimerEvt ); */
             status_ = Q_HANDLED();
             break;
         }
-        /* ${AOs::I2CMgr::SM::Active::Busy::WaitForBusRecovery::WaitForBusToSettleAfterReset::I2C_RECOVERY_TIMEOUT} */
-        case I2C_RECOVERY_TIMEOUT_SIG: {
+        /* ${AOs::I2CMgr::SM::Active::Busy::WaitForBusRecovery::WaitForBusToSettleAfterReset::I2C_CHECK_EV} */
+        case I2C_CHECK_EV_SIG: {
             WRN_printf("Finished waiting for bus to settle after manual toggle\n");
             status_ = Q_TRAN(&I2CMgr_WaitForBusToSettle);
             break;

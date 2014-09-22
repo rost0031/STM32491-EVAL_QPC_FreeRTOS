@@ -255,12 +255,15 @@ DBG_printf(&quot;I2C bus reset\n&quot;);</action>
        </state>
        <state name="WaitForBusToSettleAfterReset">
         <entry>/* Post a timer on entry */
-QTimeEvt_rearm(
+/*QTimeEvt_rearm(
     &amp;me-&gt;i2cRecoveryTimerEvt,
     SEC_TO_TICKS( LL_MAX_TIMEOUT_I2C_DMA_READ_SEC )
-);</entry>
-        <exit>QTimeEvt_disarm( &amp;me-&gt;i2cRecoveryTimerEvt );</exit>
-        <tran trig="I2C_RECOVERY_TIMEOUT" target="../../../7">
+);*/
+
+QEvt *qEvt = Q_NEW(QEvt, I2C_CHECK_EV_SIG);
+QF_PUBLISH((QEvt *)qEvt, AO_I2CMgr);</entry>
+        <exit>/*QTimeEvt_disarm( &amp;me-&gt;i2cRecoveryTimerEvt ); */</exit>
+        <tran trig="I2C_CHECK_EV" target="../../../7">
          <action>WRN_printf(&quot;Finished waiting for bus to settle after manual toggle\n&quot;);</action>
          <tran_glyph conn="154,19,3,1,-15">
           <action box="-16,-2,16,2"/>
