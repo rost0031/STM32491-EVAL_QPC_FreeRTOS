@@ -121,30 +121,371 @@ static QState I2CMgr_Active(I2CMgr * const me, QEvt const * const e);
  * machine is going next.
  */
 static QState I2CMgr_Busy(I2CMgr * const me, QEvt const * const e);
+
+/**
+ * @brief This state initiates I2C bus recovery.
+ * The bus can become stuck if slave device is misbehaving (or not correctly
+ * implementing I2C protocol, or simply by being buggy). Most problems on the
+ * I2C bus are caused by a timing issue of the STOP bit being sent and the slave
+ * ends up locking the bus waiting for the STOP bit to arrive while the bus
+ * master is unable to send it.  The only way to really resolve the issue is to
+ * either reset the slave (not always possible) or to manually clock the bits in.
+ *
+ * This state does exactly that.  Upon entry, it changes the GPIO from I2C
+ * configuration to regular GPIO and manually toggles the SCL line until the
+ * SDA line is released by the slave.
+ * On exit, this state reconfigures the GPIO back to I2C configuration.
+ *
+ * @param  [in,out] me: Pointer to the state machine
+ * @param  [in,out] e:  Pointer to the event being processed.
+ * @return status_: QState type that specifies where the state
+ * machine is going next.
+ */
 static QState I2CMgr_WaitForBusRecovery(I2CMgr * const me, QEvt const * const e);
+
+/**
+ * @brief This state manually toggles SCL line for I2C bus recovery.
+ * The bus can become stuck if slave device is misbehaving (or not correctly
+ * implementing I2C protocol, or simply by being buggy). Most problems on the
+ * I2C bus are caused by a timing issue of the STOP bit being sent and the slave
+ * ends up locking the bus waiting for the STOP bit to arrive while the bus
+ * master is unable to send it.  The only way to really resolve the issue is to
+ * either reset the slave (not always possible) or to manually clock the bits in.
+ *
+ * This state manually toggles the SCL line until the SDA line is released
+ * by the slave.
+ *
+ * @param  [in,out] me: Pointer to the state machine
+ * @param  [in,out] e:  Pointer to the event being processed.
+ * @return status_: QState type that specifies where the state
+ * machine is going next.
+ */
 static QState I2CMgr_TogglingSCL(I2CMgr * const me, QEvt const * const e);
+
+/**
+ * @brief This state is a parent state that indicates that the I2C bus is busy.
+ *
+ * Upon entry to this state, a START bit is generated on the I2C bus which
+ * makes it impossible for any other devices to talk on it.  Any new READ or
+ * WRITE requests will be deferred until the state machine is back in Idle state.
+ *
+ * @param  [in,out] me: Pointer to the state machine
+ * @param  [in,out] e:  Pointer to the event being processed.
+ * @return status_: QState type that specifies where the state
+ * machine is going next.
+ */
 static QState I2CMgr_BusBeingUsed(I2CMgr * const me, QEvt const * const e);
+
+/**
+ * @brief This is a Wait state for polling for MASTER MODE (I2C EV6).
+ *
+ * This state posts an event to check for the
+ * I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED (EV6) which is triggerred by
+ * sending the 7 bit address to the device in the previous state.
+ * It also checks if the system is out of retries for this action and exits
+ * if true.
+ * If EV6 occurred, the state decides whether to send a 2 or 1 byte address to
+ * the slave device and sends the address internal memory address of the device
+ * from where we want to read/write.
+ *
+ * @param  [in,out] me: Pointer to the state machine
+ * @param  [in,out] e:  Pointer to the event being processed.
+ * @return status_: QState type that specifies where the state
+ * machine is going next.
+ */
 static QState I2CMgr_WaitFor_I2C_EV6(I2CMgr * const me, QEvt const * const e);
+
+/**
+ * @brief This is a Wait state for interrupt driven setup of the I2C bus.
+ *
+ * This state simply listense for events posted from the I2C event ISR.  It's only
+ * here for experimentation purposes and is not currently used.
+ *
+ * @param  [in,out] me: Pointer to the state machine
+ * @param  [in,out] e:  Pointer to the event being processed.
+ * @return status_: QState type that specifies where the state
+ * machine is going next.
+ */
 static QState I2CMgr_SetupI2CDevice(I2CMgr * const me, QEvt const * const e);
+
+/**
+ * @brief This state is a parent state that indicates that the I2C bus is writing.
+ *
+ * This state contains a handler for the I2C_WRITE_DONE_SIG which will be
+ * posted when either the manual byte write or the DMA write are finished.
+ *
+ * @note: currently, the state machine contains both ways of writing I2C data:
+ * DMA and manual byte polling.  Only one is used and it's manually selected by
+ * modifying the state machine to use one or the other.  DMA generally works with
+ * less processor resources but the single byte method is left in for debugging
+ * or experimentation purposes.
+ *
+ * @param  [in,out] me: Pointer to the state machine
+ * @param  [in,out] e:  Pointer to the event being processed.
+ * @return status_: QState type that specifies where the state
+ * machine is going next.
+ */
 static QState I2CMgr_Writing(I2CMgr * const me, QEvt const * const e);
+
+/**
+ * @brief This is a Wait state for DMA I2C write.
+ *
+ * This state issues a DMA write command which does all the work and posts a timer
+ * to make sure it happens in a timely manner.  The callback from the ISR for the
+ * associated DMA stream will post the event with the confirmation event, which
+ * will also take the state machine out of this state and back to Idle.
+ *
+ * @note: this state is WRITE operation specific.
+ * @note: some devices on I2C bus, such as EEPROMs, require a post write delay
+ * during which the device will not respond to any data. This should be accounted
+ * for by the user of this AO since this AO is not device specific.
+ *
+ * @param  [in,out] me: Pointer to the state machine
+ * @param  [in,out] e:  Pointer to the event being processed.
+ * @return status_: QState type that specifies where the state
+ * machine is going next.
+ */
 static QState I2CMgr_WaitForDMAWriteDone(I2CMgr * const me, QEvt const * const e);
+
+/**
+ * @brief This is a Wait state for polling for writing I2C bytes manually.
+ *
+ * This state posts an event to check for the I2C_EVENT_MASTER_BYTE_TRANSMITTED
+ * I2C event which indicates that I2C data is ready to be written out.
+ * It also checks if the system is out of retries for this action and exits
+ * if true.
+ * If data is ready to write, the state machine writes the byte of data and
+ * loops back into the state to wait for next I2C event until no more bytes are
+ * left to be written.  It then issues a STOP bit on the I2C bus and returns to
+ * Idle.
+ *
+ * @note: this state is WRITE operation specific.
+ * @note: some devices on I2C bus, such as EEPROMs, require a post write delay
+ * during which the device will not respond to any data. This should be accounted
+ * for by the user of this AO since this AO is not device specific.
+ *
+ * @param  [in,out] me: Pointer to the state machine
+ * @param  [in,out] e:  Pointer to the event being processed.
+ * @return status_: QState type that specifies where the state
+ * machine is going next.
+ */
 static QState I2CMgr_WriteI2CByte(I2CMgr * const me, QEvt const * const e);
+
+/**
+ * @brief This is a Wait state for polling for MASTER MODE (I2C EV5).
+ *
+ * This state posts an event to check for the I2C_EVENT_MASTER_MODE_SELECT (EV5)
+ * which is triggerred by posting a START bit on the I2C bus. It also checks if
+ * the system is out of retries for this action and exits if true.
+ *
+ * If the I2C flags indicate that EV5 occurred, the state machine sends the
+ * 7 bit address (saved when the I2C_READ/WRITE_START_SIG event started being
+ * processed in Idle state) to select the I2C device on the bus. The state machine
+ * then goes to the next state.
+ *
+ * @param  [in,out] me: Pointer to the state machine
+ * @param  [in,out] e:  Pointer to the event being processed.
+ * @return status_: QState type that specifies where the state
+ * machine is going next.
+ */
 static QState I2CMgr_WaitFor_I2C_EV5(I2CMgr * const me, QEvt const * const e);
+
+/**
+ * @brief This is a Wait state for polling for EV8 (MSB of the 2 byte address)
+ *
+ * This state posts an event to check for the
+ * I2C_EVENT_MASTER_BYTE_TRANSMITTING (EV8) which is triggerred by
+ * sending the MSByte of the memory address of the device in the previous state.
+ * It also checks if the system is out of retries for this action and exits
+ * if true.
+ * If EV8 occurred, the state sends the LSByte of internal memory address of the
+ * device from where we want to read/write.
+ *
+ * @param  [in,out] me: Pointer to the state machine
+ * @param  [in,out] e:  Pointer to the event being processed.
+ * @return status_: QState type that specifies where the state
+ * machine is going next.
+ */
 static QState I2CMgr_WaitFor_I2C_EV8_MSB(I2CMgr * const me, QEvt const * const e);
+
+/**
+ * @brief This is a Wait state for polling for EV8 (LSB of the 2 byte address)
+ *
+ * This state posts an event to check for the I2C_FLAG_BTF being set (partial EV8)
+ * which is triggerred by
+ * sending the LSByte (or the only byte) of the memory address of the device in
+ * the previous state.
+ * It also checks if the system is out of retries for this action and exits
+ * if true.
+ * If partial EV8 occurred, the state checks if the operation requested is a
+ * read or write and goes to the appropriate state based on that.
+ *
+ * @param  [in,out] me: Pointer to the state machine
+ * @param  [in,out] e:  Pointer to the event being processed.
+ * @return status_: QState type that specifies where the state
+ * machine is going next.
+ */
 static QState I2CMgr_WaitFor_I2C_EV8_LSB(I2CMgr * const me, QEvt const * const e);
+
+/**
+ * @brief This state is a parent state that indicates that the I2C bus is reading.
+ *
+ * Upon entry to this state, a second START bit is generated on the I2C bus which
+ * is required when doing random access reads from most I2C devices.  This state
+ * also contains a handler for the I2C_READ_DONE_SIG which will be posted when
+ * either the manual byte read or the DMA read are finished.
+ *
+ * @note: currently, the state machine contains both ways of reading I2C data:
+ * DMA and manual byte polling.  Only one is used and it's manually selected by
+ * modifying the state machine to use one or the other.  DMA generally works with
+ * less processor resources but the single byte method is left in for debugging
+ * or experimentation purposes.
+ *
+ * @param  [in,out] me: Pointer to the state machine
+ * @param  [in,out] e:  Pointer to the event being processed.
+ * @return status_: QState type that specifies where the state
+ * machine is going next.
+ */
 static QState I2CMgr_Reading(I2CMgr * const me, QEvt const * const e);
+
+/**
+ * @brief This is a Wait state for polling for MASTER MODE (I2C EV6).
+ *
+ * This state posts an event to check for the
+ * I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED (EV6) which is triggerred by
+ * sending the 7 bit address to the device in the previous state.
+ * It also checks if the system is out of retries for this action and exits
+ * if true.
+ * If EV6 occurred, the state machine goes to the next state to read actual data
+ * from the I2C bus.
+ *
+ * @note: this state is READ operation specific.
+ *
+ * @param  [in,out] me: Pointer to the state machine
+ * @param  [in,out] e:  Pointer to the event being processed.
+ * @return status_: QState type that specifies where the state
+ * machine is going next.
+ */
 static QState I2CMgr_WaitFor_I2C_EV6_R(I2CMgr * const me, QEvt const * const e);
+
+/**
+ * @brief This is a Wait state for DMA I2C read.
+ *
+ * This state issues a DMA read command which does all the work and posts a timer
+ * to make sure it happens in a timely manner.  The callback from the ISR for the
+ * associated DMA stream will post the event with the read data, which will also
+ * take the state machine out of this state and back to Idle.
+ *
+ * @note: this state is READ operation specific.
+ *
+ * @param  [in,out] me: Pointer to the state machine
+ * @param  [in,out] e:  Pointer to the event being processed.
+ * @return status_: QState type that specifies where the state
+ * machine is going next.
+ */
 static QState I2CMgr_WaitForDMAReadDone(I2CMgr * const me, QEvt const * const e);
+
+/**
+ * @brief This is a Wait state for polling for MASTER MODE (I2C EV5).
+ *
+ * This state posts an event to check for the I2C_EVENT_MASTER_MODE_SELECT (EV5)
+ * which is triggerred by posting a START bit on the I2C bus. It also checks if
+ * the system is out of retries for this action and exits if true.
+ *
+ * If the I2C flags indicate that EV5 occurred, the state machine sends the
+ * 7 bit address (saved when the I2C_READ_START_SIG event started being
+ * processed in Idle state) to select the I2C device on the bus. The state machine
+ * then goes to the next state.
+ * @note: this state is READ operation specific.
+ *
+ * @param  [in,out] me: Pointer to the state machine
+ * @param  [in,out] e:  Pointer to the event being processed.
+ * @return status_: QState type that specifies where the state
+ * machine is going next.
+ */
 static QState I2CMgr_WaitFor_I2C_EV5_R(I2CMgr * const me, QEvt const * const e);
+
+/**
+ * @brief This is a Wait state for polling for reading I2C bytes manually.
+ *
+ * This state posts an event to check for the I2C_FLAG_RXNE flag has been set
+ * which indicates that I2C data is ready to be read out.
+ * It also checks if the system is out of retries for this action and exits
+ * if true.
+ * If data is ready to read, the state machine reads the byte of data and stores
+ * it in the buffer.  It then checks whether there is 1 byte left to read and if
+ * so, issues a STOP bit on the bus.  This is due to a bug in the STM32 I2C IP
+ * which requires that the STOP bit be sent before the last byte is read out.
+ *
+ * @note: this state is READ operation specific.
+ *
+ * @param  [in,out] me: Pointer to the state machine
+ * @param  [in,out] e:  Pointer to the event being processed.
+ * @return status_: QState type that specifies where the state
+ * machine is going next.
+ */
 static QState I2CMgr_ReadI2CByte(I2CMgr * const me, QEvt const * const e);
+
+/**
+ * @brief This state waits selects I2C master.
+ * After a recovering the bus, the it needs to error out properly.  In order to
+ * do this, a new communication has to be attempted.  This state initiates the
+ * communication as if it is going to talk to a slave EEPROM.  An error is
+ * expected and the I2C1_ER_IRQHandler ISR will clear it by calling the
+ * I2C1_ErrorEventCallback function.
+ *
+ * @param  [in,out] me: Pointer to the state machine
+ * @param  [in,out] e:  Pointer to the event being processed.
+ * @return status_: QState type that specifies where the state
+ * machine is going next.
+ */
 static QState I2CMgr_WaitFor_I2C_EV5_REC(I2CMgr * const me, QEvt const * const e);
+
+/**
+ * @brief This state selects I2C transmitter mode.
+ * After a recovering the bus, the it needs to error out properly.  In order to
+ * do this, a new communication has to be attempted.  This state continues after
+ * previous state, because sometimes the error can happen a little later.
+ * An error is expected and the I2C1_ER_IRQHandler ISR will clear it by
+ * calling the I2C1_ErrorEventCallback function.
+ *
+ * @param  [in,out] me: Pointer to the state machine
+ * @param  [in,out] e:  Pointer to the event being processed.
+ * @return status_: QState type that specifies where the state
+ * machine is going next.
+ */
 static QState I2CMgr_WaitFor_I2C_EV6_REC(I2CMgr * const me, QEvt const * const e);
+
+/**
+ * @brief This state initiates I2C communication by checking if I2C bus busy
+ * flag is set.  If the flag is set, it attempts to recover the bus (see
+ * WaitForBusRecovery state for details), otherwise, it continues.
+ *
+ * @param  [in,out] me: Pointer to the state machine
+ * @param  [in,out] e:  Pointer to the event being processed.
+ * @return status_: QState type that specifies where the state
+ * machine is going next.
+ */
 static QState I2CMgr_StartI2CComm(I2CMgr * const me, QEvt const * const e);
+
+/**
+ * @brief This state waits for the bus to settle after being reconfigured to I2C.
+ *
+ * @param  [in,out] me: Pointer to the state machine
+ * @param  [in,out] e:  Pointer to the event being processed.
+ * @return status_: QState type that specifies where the state
+ * machine is going next.
+ */
 static QState I2CMgr_WaitForBusToSettle(I2CMgr * const me, QEvt const * const e);
 
 /**
  * @brief This state indicates that the I2C bus is currently idle and the
  * incoming msg can be handled.
+ * This state is the default rest state of the state machine and can handle
+ * various I2C requests.  Upon entry, it also checks the deferred queue to see
+ * if any request events are waiting which were posted while I2C bus was busy.
+ * if there are any waiting, it will read them out, which automatically posts
+ * them and the state machine will go and handle them.
  *
  * @param  [in,out] me: Pointer to the state machine
  * @param  [in,out] e:  Pointer to the event being processed.
@@ -344,6 +685,26 @@ static QState I2CMgr_Busy(I2CMgr * const me, QEvt const * const e) {
     }
     return status_;
 }
+
+/**
+ * @brief This state initiates I2C bus recovery.
+ * The bus can become stuck if slave device is misbehaving (or not correctly
+ * implementing I2C protocol, or simply by being buggy). Most problems on the
+ * I2C bus are caused by a timing issue of the STOP bit being sent and the slave
+ * ends up locking the bus waiting for the STOP bit to arrive while the bus
+ * master is unable to send it.  The only way to really resolve the issue is to
+ * either reset the slave (not always possible) or to manually clock the bits in.
+ *
+ * This state does exactly that.  Upon entry, it changes the GPIO from I2C
+ * configuration to regular GPIO and manually toggles the SCL line until the
+ * SDA line is released by the slave.
+ * On exit, this state reconfigures the GPIO back to I2C configuration.
+ *
+ * @param  [in,out] me: Pointer to the state machine
+ * @param  [in,out] e:  Pointer to the event being processed.
+ * @return status_: QState type that specifies where the state
+ * machine is going next.
+ */
 /*${AOs::I2CMgr::SM::Active::Busy::WaitForBusRecovery} .....................*/
 static QState I2CMgr_WaitForBusRecovery(I2CMgr * const me, QEvt const * const e) {
     QState status_;
@@ -377,6 +738,24 @@ static QState I2CMgr_WaitForBusRecovery(I2CMgr * const me, QEvt const * const e)
     }
     return status_;
 }
+
+/**
+ * @brief This state manually toggles SCL line for I2C bus recovery.
+ * The bus can become stuck if slave device is misbehaving (or not correctly
+ * implementing I2C protocol, or simply by being buggy). Most problems on the
+ * I2C bus are caused by a timing issue of the STOP bit being sent and the slave
+ * ends up locking the bus waiting for the STOP bit to arrive while the bus
+ * master is unable to send it.  The only way to really resolve the issue is to
+ * either reset the slave (not always possible) or to manually clock the bits in.
+ *
+ * This state manually toggles the SCL line until the SDA line is released
+ * by the slave.
+ *
+ * @param  [in,out] me: Pointer to the state machine
+ * @param  [in,out] e:  Pointer to the event being processed.
+ * @return status_: QState type that specifies where the state
+ * machine is going next.
+ */
 /*${AOs::I2CMgr::SM::Active::Busy::WaitForBusRecovery::TogglingSCL} ........*/
 static QState I2CMgr_TogglingSCL(I2CMgr * const me, QEvt const * const e) {
     QState status_;
@@ -432,6 +811,19 @@ static QState I2CMgr_TogglingSCL(I2CMgr * const me, QEvt const * const e) {
     }
     return status_;
 }
+
+/**
+ * @brief This state is a parent state that indicates that the I2C bus is busy.
+ *
+ * Upon entry to this state, a START bit is generated on the I2C bus which
+ * makes it impossible for any other devices to talk on it.  Any new READ or
+ * WRITE requests will be deferred until the state machine is back in Idle state.
+ *
+ * @param  [in,out] me: Pointer to the state machine
+ * @param  [in,out] e:  Pointer to the event being processed.
+ * @return status_: QState type that specifies where the state
+ * machine is going next.
+ */
 /*${AOs::I2CMgr::SM::Active::Busy::BusBeingUsed} ...........................*/
 static QState I2CMgr_BusBeingUsed(I2CMgr * const me, QEvt const * const e) {
     QState status_;
@@ -452,6 +844,24 @@ static QState I2CMgr_BusBeingUsed(I2CMgr * const me, QEvt const * const e) {
     }
     return status_;
 }
+
+/**
+ * @brief This is a Wait state for polling for MASTER MODE (I2C EV6).
+ *
+ * This state posts an event to check for the
+ * I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED (EV6) which is triggerred by
+ * sending the 7 bit address to the device in the previous state.
+ * It also checks if the system is out of retries for this action and exits
+ * if true.
+ * If EV6 occurred, the state decides whether to send a 2 or 1 byte address to
+ * the slave device and sends the address internal memory address of the device
+ * from where we want to read/write.
+ *
+ * @param  [in,out] me: Pointer to the state machine
+ * @param  [in,out] e:  Pointer to the event being processed.
+ * @return status_: QState type that specifies where the state
+ * machine is going next.
+ */
 /*${AOs::I2CMgr::SM::Active::Busy::BusBeingUsed::WaitFor_I2C_EV6} ..........*/
 static QState I2CMgr_WaitFor_I2C_EV6(I2CMgr * const me, QEvt const * const e) {
     QState status_;
@@ -518,6 +928,18 @@ static QState I2CMgr_WaitFor_I2C_EV6(I2CMgr * const me, QEvt const * const e) {
     }
     return status_;
 }
+
+/**
+ * @brief This is a Wait state for interrupt driven setup of the I2C bus.
+ *
+ * This state simply listense for events posted from the I2C event ISR.  It's only
+ * here for experimentation purposes and is not currently used.
+ *
+ * @param  [in,out] me: Pointer to the state machine
+ * @param  [in,out] e:  Pointer to the event being processed.
+ * @return status_: QState type that specifies where the state
+ * machine is going next.
+ */
 /*${AOs::I2CMgr::SM::Active::Busy::BusBeingUsed::SetupI2CDevice} ...........*/
 static QState I2CMgr_SetupI2CDevice(I2CMgr * const me, QEvt const * const e) {
     QState status_;
@@ -563,6 +985,24 @@ static QState I2CMgr_SetupI2CDevice(I2CMgr * const me, QEvt const * const e) {
     }
     return status_;
 }
+
+/**
+ * @brief This state is a parent state that indicates that the I2C bus is writing.
+ *
+ * This state contains a handler for the I2C_WRITE_DONE_SIG which will be
+ * posted when either the manual byte write or the DMA write are finished.
+ *
+ * @note: currently, the state machine contains both ways of writing I2C data:
+ * DMA and manual byte polling.  Only one is used and it's manually selected by
+ * modifying the state machine to use one or the other.  DMA generally works with
+ * less processor resources but the single byte method is left in for debugging
+ * or experimentation purposes.
+ *
+ * @param  [in,out] me: Pointer to the state machine
+ * @param  [in,out] e:  Pointer to the event being processed.
+ * @return status_: QState type that specifies where the state
+ * machine is going next.
+ */
 /*${AOs::I2CMgr::SM::Active::Busy::BusBeingUsed::Writing} ..................*/
 static QState I2CMgr_Writing(I2CMgr * const me, QEvt const * const e) {
     QState status_;
@@ -570,6 +1010,8 @@ static QState I2CMgr_Writing(I2CMgr * const me, QEvt const * const e) {
         /* ${AOs::I2CMgr::SM::Active::Busy::BusBeingUsed::Writing::I2C_WRITE_DONE} */
         case I2C_WRITE_DONE_SIG: {
             DBG_printf("I2C Write finished successfully: wrote %d bytes\n", ((I2CEvt const *)e)->wDataLen);
+            //dbg_slow_printf("Wasting sometime to see if the 2 writes back to back too quickly screw stuff up.  Maybe... but this slow ass serial write should delay stuff quite a bit\n");
+            //DBG_printf("I2C waste of time end\n");
             status_ = Q_TRAN(&I2CMgr_Idle);
             break;
         }
@@ -580,6 +1022,25 @@ static QState I2CMgr_Writing(I2CMgr * const me, QEvt const * const e) {
     }
     return status_;
 }
+
+/**
+ * @brief This is a Wait state for DMA I2C write.
+ *
+ * This state issues a DMA write command which does all the work and posts a timer
+ * to make sure it happens in a timely manner.  The callback from the ISR for the
+ * associated DMA stream will post the event with the confirmation event, which
+ * will also take the state machine out of this state and back to Idle.
+ *
+ * @note: this state is WRITE operation specific.
+ * @note: some devices on I2C bus, such as EEPROMs, require a post write delay
+ * during which the device will not respond to any data. This should be accounted
+ * for by the user of this AO since this AO is not device specific.
+ *
+ * @param  [in,out] me: Pointer to the state machine
+ * @param  [in,out] e:  Pointer to the event being processed.
+ * @return status_: QState type that specifies where the state
+ * machine is going next.
+ */
 /*${AOs::I2CMgr::SM::Active::Busy::BusBeingUsed::Writing::WaitForDMAWriteDone} */
 static QState I2CMgr_WaitForDMAWriteDone(I2CMgr * const me, QEvt const * const e) {
     QState status_;
@@ -642,6 +1103,29 @@ static QState I2CMgr_WaitForDMAWriteDone(I2CMgr * const me, QEvt const * const e
     }
     return status_;
 }
+
+/**
+ * @brief This is a Wait state for polling for writing I2C bytes manually.
+ *
+ * This state posts an event to check for the I2C_EVENT_MASTER_BYTE_TRANSMITTED
+ * I2C event which indicates that I2C data is ready to be written out.
+ * It also checks if the system is out of retries for this action and exits
+ * if true.
+ * If data is ready to write, the state machine writes the byte of data and
+ * loops back into the state to wait for next I2C event until no more bytes are
+ * left to be written.  It then issues a STOP bit on the I2C bus and returns to
+ * Idle.
+ *
+ * @note: this state is WRITE operation specific.
+ * @note: some devices on I2C bus, such as EEPROMs, require a post write delay
+ * during which the device will not respond to any data. This should be accounted
+ * for by the user of this AO since this AO is not device specific.
+ *
+ * @param  [in,out] me: Pointer to the state machine
+ * @param  [in,out] e:  Pointer to the event being processed.
+ * @return status_: QState type that specifies where the state
+ * machine is going next.
+ */
 /*${AOs::I2CMgr::SM::Active::Busy::BusBeingUsed::Writing::WriteI2CByte} ....*/
 static QState I2CMgr_WriteI2CByte(I2CMgr * const me, QEvt const * const e) {
     QState status_;
@@ -703,6 +1187,24 @@ static QState I2CMgr_WriteI2CByte(I2CMgr * const me, QEvt const * const e) {
     }
     return status_;
 }
+
+/**
+ * @brief This is a Wait state for polling for MASTER MODE (I2C EV5).
+ *
+ * This state posts an event to check for the I2C_EVENT_MASTER_MODE_SELECT (EV5)
+ * which is triggerred by posting a START bit on the I2C bus. It also checks if
+ * the system is out of retries for this action and exits if true.
+ *
+ * If the I2C flags indicate that EV5 occurred, the state machine sends the
+ * 7 bit address (saved when the I2C_READ/WRITE_START_SIG event started being
+ * processed in Idle state) to select the I2C device on the bus. The state machine
+ * then goes to the next state.
+ *
+ * @param  [in,out] me: Pointer to the state machine
+ * @param  [in,out] e:  Pointer to the event being processed.
+ * @return status_: QState type that specifies where the state
+ * machine is going next.
+ */
 /*${AOs::I2CMgr::SM::Active::Busy::BusBeingUsed::WaitFor_I2C_EV5} ..........*/
 static QState I2CMgr_WaitFor_I2C_EV5(I2CMgr * const me, QEvt const * const e) {
     QState status_;
@@ -759,6 +1261,23 @@ static QState I2CMgr_WaitFor_I2C_EV5(I2CMgr * const me, QEvt const * const e) {
     }
     return status_;
 }
+
+/**
+ * @brief This is a Wait state for polling for EV8 (MSB of the 2 byte address)
+ *
+ * This state posts an event to check for the
+ * I2C_EVENT_MASTER_BYTE_TRANSMITTING (EV8) which is triggerred by
+ * sending the MSByte of the memory address of the device in the previous state.
+ * It also checks if the system is out of retries for this action and exits
+ * if true.
+ * If EV8 occurred, the state sends the LSByte of internal memory address of the
+ * device from where we want to read/write.
+ *
+ * @param  [in,out] me: Pointer to the state machine
+ * @param  [in,out] e:  Pointer to the event being processed.
+ * @return status_: QState type that specifies where the state
+ * machine is going next.
+ */
 /*${AOs::I2CMgr::SM::Active::Busy::BusBeingUsed::WaitFor_I2C_EV8_MSB} ......*/
 static QState I2CMgr_WaitFor_I2C_EV8_MSB(I2CMgr * const me, QEvt const * const e) {
     QState status_;
@@ -811,6 +1330,24 @@ static QState I2CMgr_WaitFor_I2C_EV8_MSB(I2CMgr * const me, QEvt const * const e
     }
     return status_;
 }
+
+/**
+ * @brief This is a Wait state for polling for EV8 (LSB of the 2 byte address)
+ *
+ * This state posts an event to check for the I2C_FLAG_BTF being set (partial EV8)
+ * which is triggerred by
+ * sending the LSByte (or the only byte) of the memory address of the device in
+ * the previous state.
+ * It also checks if the system is out of retries for this action and exits
+ * if true.
+ * If partial EV8 occurred, the state checks if the operation requested is a
+ * read or write and goes to the appropriate state based on that.
+ *
+ * @param  [in,out] me: Pointer to the state machine
+ * @param  [in,out] e:  Pointer to the event being processed.
+ * @return status_: QState type that specifies where the state
+ * machine is going next.
+ */
 /*${AOs::I2CMgr::SM::Active::Busy::BusBeingUsed::WaitFor_I2C_EV8_LSB} ......*/
 static QState I2CMgr_WaitFor_I2C_EV8_LSB(I2CMgr * const me, QEvt const * const e) {
     QState status_;
@@ -833,10 +1370,6 @@ static QState I2CMgr_WaitFor_I2C_EV8_LSB(I2CMgr * const me, QEvt const * const e
                 me->nI2CLoopTimeout = MAX_I2C_TIMEOUT;
                 /* ${AOs::I2CMgr::SM::Active::Busy::BusBeingUsed::WaitFor_I2C_EV8_LSB::I2C_CHECK_EV::[EV8Happened?]::[READ?]} */
                 if (I2C_OP_READ == me->i2cCurrOperation) {
-                    DBG_printf("Sending a second START bit to the I2C Device\n");
-
-                    /* Send START condition */
-                    I2C_GenerateSTART(s_I2C_Bus[me->iBus].i2c_bus, ENABLE);
                     status_ = Q_TRAN(&I2CMgr_WaitFor_I2C_EV5_R);
                 }
                 /* ${AOs::I2CMgr::SM::Active::Busy::BusBeingUsed::WaitFor_I2C_EV8_LSB::I2C_CHECK_EV::[EV8Happened?]::[WRITE?]} */
@@ -871,10 +1404,39 @@ static QState I2CMgr_WaitFor_I2C_EV8_LSB(I2CMgr * const me, QEvt const * const e
     }
     return status_;
 }
+
+/**
+ * @brief This state is a parent state that indicates that the I2C bus is reading.
+ *
+ * Upon entry to this state, a second START bit is generated on the I2C bus which
+ * is required when doing random access reads from most I2C devices.  This state
+ * also contains a handler for the I2C_READ_DONE_SIG which will be posted when
+ * either the manual byte read or the DMA read are finished.
+ *
+ * @note: currently, the state machine contains both ways of reading I2C data:
+ * DMA and manual byte polling.  Only one is used and it's manually selected by
+ * modifying the state machine to use one or the other.  DMA generally works with
+ * less processor resources but the single byte method is left in for debugging
+ * or experimentation purposes.
+ *
+ * @param  [in,out] me: Pointer to the state machine
+ * @param  [in,out] e:  Pointer to the event being processed.
+ * @return status_: QState type that specifies where the state
+ * machine is going next.
+ */
 /*${AOs::I2CMgr::SM::Active::Busy::BusBeingUsed::Reading} ..................*/
 static QState I2CMgr_Reading(I2CMgr * const me, QEvt const * const e) {
     QState status_;
     switch (e->sig) {
+        /* ${AOs::I2CMgr::SM::Active::Busy::BusBeingUsed::Reading} */
+        case Q_ENTRY_SIG: {
+            DBG_printf("Sending a second START bit to the I2C Device\n");
+
+            /* Send START condition */
+            I2C_GenerateSTART(s_I2C_Bus[me->iBus].i2c_bus, ENABLE);
+            status_ = Q_HANDLED();
+            break;
+        }
         /* ${AOs::I2CMgr::SM::Active::Busy::BusBeingUsed::Reading::I2C_READ_DONE} */
         case I2C_READ_DONE_SIG: {
             DBG_printf("I2C Read finished successfully: read %d bytes\n", ((I2CDataEvt const *)e)->wDataLen);
@@ -888,6 +1450,25 @@ static QState I2CMgr_Reading(I2CMgr * const me, QEvt const * const e) {
     }
     return status_;
 }
+
+/**
+ * @brief This is a Wait state for polling for MASTER MODE (I2C EV6).
+ *
+ * This state posts an event to check for the
+ * I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED (EV6) which is triggerred by
+ * sending the 7 bit address to the device in the previous state.
+ * It also checks if the system is out of retries for this action and exits
+ * if true.
+ * If EV6 occurred, the state machine goes to the next state to read actual data
+ * from the I2C bus.
+ *
+ * @note: this state is READ operation specific.
+ *
+ * @param  [in,out] me: Pointer to the state machine
+ * @param  [in,out] e:  Pointer to the event being processed.
+ * @return status_: QState type that specifies where the state
+ * machine is going next.
+ */
 /*${AOs::I2CMgr::SM::Active::Busy::BusBeingUsed::Reading::WaitFor_I2C_EV6_R} */
 static QState I2CMgr_WaitFor_I2C_EV6_R(I2CMgr * const me, QEvt const * const e) {
     QState status_;
@@ -934,6 +1515,22 @@ static QState I2CMgr_WaitFor_I2C_EV6_R(I2CMgr * const me, QEvt const * const e) 
     }
     return status_;
 }
+
+/**
+ * @brief This is a Wait state for DMA I2C read.
+ *
+ * This state issues a DMA read command which does all the work and posts a timer
+ * to make sure it happens in a timely manner.  The callback from the ISR for the
+ * associated DMA stream will post the event with the read data, which will also
+ * take the state machine out of this state and back to Idle.
+ *
+ * @note: this state is READ operation specific.
+ *
+ * @param  [in,out] me: Pointer to the state machine
+ * @param  [in,out] e:  Pointer to the event being processed.
+ * @return status_: QState type that specifies where the state
+ * machine is going next.
+ */
 /*${AOs::I2CMgr::SM::Active::Busy::BusBeingUsed::Reading::WaitForDMAReadDone} */
 static QState I2CMgr_WaitForDMAReadDone(I2CMgr * const me, QEvt const * const e) {
     QState status_;
@@ -999,6 +1596,25 @@ static QState I2CMgr_WaitForDMAReadDone(I2CMgr * const me, QEvt const * const e)
     }
     return status_;
 }
+
+/**
+ * @brief This is a Wait state for polling for MASTER MODE (I2C EV5).
+ *
+ * This state posts an event to check for the I2C_EVENT_MASTER_MODE_SELECT (EV5)
+ * which is triggerred by posting a START bit on the I2C bus. It also checks if
+ * the system is out of retries for this action and exits if true.
+ *
+ * If the I2C flags indicate that EV5 occurred, the state machine sends the
+ * 7 bit address (saved when the I2C_READ_START_SIG event started being
+ * processed in Idle state) to select the I2C device on the bus. The state machine
+ * then goes to the next state.
+ * @note: this state is READ operation specific.
+ *
+ * @param  [in,out] me: Pointer to the state machine
+ * @param  [in,out] e:  Pointer to the event being processed.
+ * @return status_: QState type that specifies where the state
+ * machine is going next.
+ */
 /*${AOs::I2CMgr::SM::Active::Busy::BusBeingUsed::Reading::WaitFor_I2C_EV5_R} */
 static QState I2CMgr_WaitFor_I2C_EV5_R(I2CMgr * const me, QEvt const * const e) {
     QState status_;
@@ -1055,6 +1671,26 @@ static QState I2CMgr_WaitFor_I2C_EV5_R(I2CMgr * const me, QEvt const * const e) 
     }
     return status_;
 }
+
+/**
+ * @brief This is a Wait state for polling for reading I2C bytes manually.
+ *
+ * This state posts an event to check for the I2C_FLAG_RXNE flag has been set
+ * which indicates that I2C data is ready to be read out.
+ * It also checks if the system is out of retries for this action and exits
+ * if true.
+ * If data is ready to read, the state machine reads the byte of data and stores
+ * it in the buffer.  It then checks whether there is 1 byte left to read and if
+ * so, issues a STOP bit on the bus.  This is due to a bug in the STM32 I2C IP
+ * which requires that the STOP bit be sent before the last byte is read out.
+ *
+ * @note: this state is READ operation specific.
+ *
+ * @param  [in,out] me: Pointer to the state machine
+ * @param  [in,out] e:  Pointer to the event being processed.
+ * @return status_: QState type that specifies where the state
+ * machine is going next.
+ */
 /*${AOs::I2CMgr::SM::Active::Busy::BusBeingUsed::Reading::ReadI2CByte} .....*/
 static QState I2CMgr_ReadI2CByte(I2CMgr * const me, QEvt const * const e) {
     QState status_;
@@ -1120,6 +1756,20 @@ static QState I2CMgr_ReadI2CByte(I2CMgr * const me, QEvt const * const e) {
     }
     return status_;
 }
+
+/**
+ * @brief This state waits selects I2C master.
+ * After a recovering the bus, the it needs to error out properly.  In order to
+ * do this, a new communication has to be attempted.  This state initiates the
+ * communication as if it is going to talk to a slave EEPROM.  An error is
+ * expected and the I2C1_ER_IRQHandler ISR will clear it by calling the
+ * I2C1_ErrorEventCallback function.
+ *
+ * @param  [in,out] me: Pointer to the state machine
+ * @param  [in,out] e:  Pointer to the event being processed.
+ * @return status_: QState type that specifies where the state
+ * machine is going next.
+ */
 /*${AOs::I2CMgr::SM::Active::Busy::WaitFor_I2C_EV5_REC} ....................*/
 static QState I2CMgr_WaitFor_I2C_EV5_REC(I2CMgr * const me, QEvt const * const e) {
     QState status_;
@@ -1176,6 +1826,20 @@ static QState I2CMgr_WaitFor_I2C_EV5_REC(I2CMgr * const me, QEvt const * const e
     }
     return status_;
 }
+
+/**
+ * @brief This state selects I2C transmitter mode.
+ * After a recovering the bus, the it needs to error out properly.  In order to
+ * do this, a new communication has to be attempted.  This state continues after
+ * previous state, because sometimes the error can happen a little later.
+ * An error is expected and the I2C1_ER_IRQHandler ISR will clear it by
+ * calling the I2C1_ErrorEventCallback function.
+ *
+ * @param  [in,out] me: Pointer to the state machine
+ * @param  [in,out] e:  Pointer to the event being processed.
+ * @return status_: QState type that specifies where the state
+ * machine is going next.
+ */
 /*${AOs::I2CMgr::SM::Active::Busy::WaitFor_I2C_EV6_REC} ....................*/
 static QState I2CMgr_WaitFor_I2C_EV6_REC(I2CMgr * const me, QEvt const * const e) {
     QState status_;
@@ -1218,6 +1882,17 @@ static QState I2CMgr_WaitFor_I2C_EV6_REC(I2CMgr * const me, QEvt const * const e
     }
     return status_;
 }
+
+/**
+ * @brief This state initiates I2C communication by checking if I2C bus busy
+ * flag is set.  If the flag is set, it attempts to recover the bus (see
+ * WaitForBusRecovery state for details), otherwise, it continues.
+ *
+ * @param  [in,out] me: Pointer to the state machine
+ * @param  [in,out] e:  Pointer to the event being processed.
+ * @return status_: QState type that specifies where the state
+ * machine is going next.
+ */
 /*${AOs::I2CMgr::SM::Active::Busy::StartI2CComm} ...........................*/
 static QState I2CMgr_StartI2CComm(I2CMgr * const me, QEvt const * const e) {
     QState status_;
@@ -1255,6 +1930,15 @@ static QState I2CMgr_StartI2CComm(I2CMgr * const me, QEvt const * const e) {
     }
     return status_;
 }
+
+/**
+ * @brief This state waits for the bus to settle after being reconfigured to I2C.
+ *
+ * @param  [in,out] me: Pointer to the state machine
+ * @param  [in,out] e:  Pointer to the event being processed.
+ * @return status_: QState type that specifies where the state
+ * machine is going next.
+ */
 /*${AOs::I2CMgr::SM::Active::Busy::WaitForBusToSettle} .....................*/
 static QState I2CMgr_WaitForBusToSettle(I2CMgr * const me, QEvt const * const e) {
     QState status_;
@@ -1305,6 +1989,11 @@ static QState I2CMgr_WaitForBusToSettle(I2CMgr * const me, QEvt const * const e)
 /**
  * @brief This state indicates that the I2C bus is currently idle and the
  * incoming msg can be handled.
+ * This state is the default rest state of the state machine and can handle
+ * various I2C requests.  Upon entry, it also checks the deferred queue to see
+ * if any request events are waiting which were posted while I2C bus was busy.
+ * if there are any waiting, it will read them out, which automatically posts
+ * them and the state machine will go and handle them.
  *
  * @param  [in,out] me: Pointer to the state machine
  * @param  [in,out] e:  Pointer to the event being processed.
@@ -1322,14 +2011,6 @@ static QState I2CMgr_Idle(I2CMgr * const me, QEvt const * const e) {
                 (QActive *)me,
                 &me->deferredEvtQueue
             );
-
-            /*
-            I2CEvt const *rq = (I2CEvt const *) (uint32_t) QActive_recall(
-                (QActive *)me,
-                &me->deferredEvtQueue
-            );
-            rq = 0; // To prevent compiler warning about unused var.
-            */
 
             /* Clear out current operation */
             me->i2cCurrOperation = I2C_OP_NONE;

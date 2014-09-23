@@ -168,14 +168,12 @@ static QState CommStackMgr_Active(CommStackMgr * const me, QEvt const * const e)
 
 
             /* Create event to request i2c data and publish it. */
-            /*
-            I2CEvt *i2cEvt = Q_NEW(I2CEvt, I2C_READ_START_SIG);
-            i2cEvt->i2cDevice = EEPROM;
-            i2cEvt->wAddr = 0x00;
-            i2cEvt->wDataLen  = 20;
-            QF_PUBLISH((QEvent *)i2cEvt, AO_CommStackMgr);
-            */
-            /* Write some data to the i2c EEPROM */
+
+            /* Write some data to the i2c EEPROM.  Note that after each write,
+             * there's a 5ms write time delay on the eeprom.  The I2CMgr AO doesn't
+             * handle that since it's device specific and will be handled by the
+             * AO that handles the I2CBus1 devices. */
+
             /*
             I2CDataEvt *i2cDataEvt = Q_NEW(I2CDataEvt, I2C_WRITE_START_SIG);
             i2cDataEvt->i2cDevice = EEPROM;
@@ -200,6 +198,25 @@ static QState CommStackMgr_Active(CommStackMgr * const me, QEvt const * const e)
             i2cDataEvt->bufData[16] =0x10;
             QF_PUBLISH((QEvent *)i2cDataEvt, AO_CommStackMgr);
             */
+
+            /*
+            I2CDataEvt *i2cDataEvt1 = Q_NEW(I2CDataEvt, I2C_WRITE_START_SIG);
+            i2cDataEvt1->i2cDevice = EEPROM;
+            i2cDataEvt1->wAddr = 0x00;
+            i2cDataEvt1->wDataLen  = 2;
+            i2cDataEvt1->bufData[0] = 0x00;
+            i2cDataEvt1->bufData[1] = 0x01;
+            QF_PUBLISH((QEvent *)i2cDataEvt1, AO_CommStackMgr);
+            */
+
+
+            I2CEvt *i2cEvt = Q_NEW(I2CEvt, I2C_READ_START_SIG);
+            i2cEvt->i2cDevice = EEPROM;
+            i2cEvt->wAddr = 0x00;
+            i2cEvt->wDataLen  = 20;
+            QF_PUBLISH((QEvent *)i2cEvt, AO_CommStackMgr);
+
+
 
             I2CEvt *i2cEvt1 = Q_NEW(I2CEvt, I2C_READ_START_SIG);
             i2cEvt1->i2cDevice = SN_ROM;

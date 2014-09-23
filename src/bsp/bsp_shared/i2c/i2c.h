@@ -297,6 +297,13 @@ void I2C_StartDMAWrite( I2C_Bus_t iBus, uint16_t wWriteLen );
  * is so it can be called externally (by the file that contains the actual ISRs)
  * and they can still be inlined so as not incur any function call overhead.
  *
+ * @note: There is a I2C1_DMAReadCallback_cleanup tag defined within this
+ * handler.  Use it for a common exit from this handler.  DON'T call return.
+ * Instead, use
+ * goto I2C1_DMAReadCallback_cleanup;
+ * This allows for always correctly clearing the interrupt status bits. Else
+ * things will lock up.
+ *
  * @param   None
  * @return: None
  */

@@ -481,7 +481,7 @@ void I2C_StartDMAWrite( I2C_Bus_t iBus, uint16_t wWriteLen )
 inline void I2C1_DMAReadCallback( void )
 {
    QK_ISR_ENTRY();                         /* inform QK about entering an ISR */
-//   isr_dbg_slow_printf("\n\n DMA!!!\n\n");
+
    /* Test on DMA Stream Transfer Complete interrupt */
    if ( RESET != DMA_GetITStatus(DMA1_Stream0, DMA_IT_TCIF0) ) {
       /* Start of STM32 I2C HW bug workaround:
@@ -499,15 +499,15 @@ inline void I2C1_DMAReadCallback( void )
        * outside of the ISR since you have to do this BEFORE you shut off DMA
        * which has to be done in this ISR. Thankfully, this flag gets reset
        * fairly quickly (125 times through the loop). - HR. */
-//      uint16_t nI2CBusTimeout = MAX_I2C_TIMEOUT;
-//      while(I2C_GetFlagStatus(I2C1, I2C_FLAG_RXNE) == RESET) {
-//         if((nI2CBusTimeout--) == 0) {
-//            ERR_printf("Timeout waiting for I2C Stop bit flag reset!\n");
-//
-//            /* Error condition.  Make sure to do proper cleanup*/
-//            goto I2C1_DMAReadCallback_cleanup;
-//         }
-//      }
+      uint16_t nI2CBusTimeout = MAX_I2C_TIMEOUT;
+      while(I2C_GetFlagStatus(I2C1, I2C_FLAG_RXNE) == RESET) {
+         if((nI2CBusTimeout--) == 0) {
+            ERR_printf("Timeout waiting for I2C Stop bit flag reset!\n");
+
+            /* Error condition.  Make sure to do proper cleanup*/
+            goto I2C1_DMAReadCallback_cleanup;
+         }
+      }
 
       I2C_AcknowledgeConfig(I2C1, ENABLE);        /* Re-enable Acknowledgment */
       /* End of STM32 I2C HW bug workaround */
@@ -528,6 +528,10 @@ inline void I2C1_DMAReadCallback( void )
 
 //      DBG_printf("%d loop iters\n", MAX_I2C_TIMEOUT - nI2CBusTimeout);
 
+/* Tag for a common exit from this handler.  DON'T call return.  Instead, use
+ * goto I2C1_DMAReadCallback_cleanup;
+ * This allows for always correctly clearing the interrupt status bits. Else
+ * things will lock up. */
 I2C1_DMAReadCallback_cleanup:
 
       /* Clear DMA Stream Transfer Complete interrupt pending bit */
@@ -541,7 +545,7 @@ I2C1_DMAReadCallback_cleanup:
 inline void I2C1_DMAWriteCallback( void )
 {
    QK_ISR_ENTRY();                         /* inform QK about entering an ISR */
-//   isr_dbg_slow_printf("\n\n DMA!!!\n\n");
+
    /* Test on DMA Stream Transfer Complete interrupt */
    if ( RESET != DMA_GetITStatus(DMA1_Stream6, DMA_IT_TCIF6) ) {
       DMA_Cmd( DMA1_Stream6, DISABLE );
@@ -554,6 +558,11 @@ inline void I2C1_DMAWriteCallback( void )
       i2cEvt->wDataLen = s_I2C_Bus[I2CBus1].nBytesExpected;
       QF_PUBLISH( (QEvent *)i2cEvt, AO_I2CMgr );
 
+/* Tag for a common exit from this handler.  DON'T call return.  Instead, use
+ * goto I2C1_DMAWriteCallback_cleanup;
+ * This allows for always correctly clearing the interrupt status bits. Else
+ * things will lock up. */
+I2C1_DMAWriteCallback_cleanup:
       /* Clear DMA Stream Transfer Complete interrupt pending bit */
       DMA_ClearITPendingBit( DMA1_Stream6, DMA_IT_TCIF6 );
    }
