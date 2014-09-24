@@ -38,6 +38,7 @@
 #include "I2CMgr.h"                                         /* For I2CDataEvt */
 #include "time.h"
 #include "stm32f4x7_eth.h"
+#include "nor.h"
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE;                 /* For QSPY to know the name of this file */
 DBG_DEFINE_THIS_MODULE( DBG_MODL_GENERAL ); /* For debug system to ID this module */
@@ -209,7 +210,7 @@ static QState CommStackMgr_Active(CommStackMgr * const me, QEvt const * const e)
             QF_PUBLISH((QEvent *)i2cDataEvt1, AO_CommStackMgr);
             */
 
-
+            /*
             I2CEvt *i2cEvt = Q_NEW(I2CEvt, I2C_READ_START_SIG);
             i2cEvt->i2cDevice = EEPROM;
             i2cEvt->wAddr = 0x00;
@@ -223,8 +224,11 @@ static QState CommStackMgr_Active(CommStackMgr * const me, QEvt const * const e)
             i2cEvt1->wAddr = 0x80;
             i2cEvt1->wDataLen  = 16;
             QF_PUBLISH((QEvent *)i2cEvt1, AO_CommStackMgr);
+            */
 
-
+            DBG_printf("Starting destructive NOR Flash test\n");
+            NOR_TestDestructive();
+            DBG_printf("Finished destructive NOR Flash test\n");
 
             QTimeEvt_disarm( &me->timeTestTimerEvt );
 

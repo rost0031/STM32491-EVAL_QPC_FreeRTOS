@@ -186,8 +186,8 @@ extern uint8_t i2c1TxBuffer[];          /**< Exported to I2CMgr I2C TX buffer */
 /**
  * @brief   Initialize specified I2C bus
  *
- * This function initializes GPIO, clocks (except for the GPIO clocks), and all
- * the associated hardware for a specified I2C bus interface.
+ * This function initializes GPIO, clocks, and all the associated hardware for
+ * a specified I2C bus interface.
  *
  * @param [in]  iBus: I2C_Bus_t identifier for I2C bus to initialize
  *    @arg

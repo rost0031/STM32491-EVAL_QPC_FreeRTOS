@@ -165,6 +165,7 @@ typedef enum DBG_MODULES {
    DBG_MODL_TIME     = 0x00000004, /**< Time module debugging. */
    DBG_MODL_ETH      = 0x00000008, /**< Ethernet module debugging. */
    DBG_MODL_I2C      = 0x00000010, /**< I2C module debugging. */
+   DBG_MODL_NOR      = 0x00000020, /**< NOR Flash module debugging. */
 } DBG_MODL_T;
 
 /* Exported variables --------------------------------------------------------*/

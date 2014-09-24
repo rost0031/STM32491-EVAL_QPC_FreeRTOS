@@ -121,6 +121,9 @@ SERIAL_DIR				= $(BSP_DIR)/bsp_shared/serial
 # I2C Driver and AO
 I2C_DIR					= $(BSP_DIR)/bsp_shared/i2c
 
+# NOR Driver and AO
+NOR_DIR					= $(BSP_DIR)/nor
+
 # QPC directories
 QPC_DIR					= $(SYS_DIR)/qpc_shared
 QP_PORT_DIR 			= $(QPC_DIR)/ports/arm-cm/qk/gnu
@@ -157,6 +160,7 @@ VPATH 					= $(APP_DIR) \
 						  $(ETH_DRV_DIR)/src \
 						  $(SERIAL_DIR) \
 						  $(I2C_DIR) \
+						  $(NOR_DIR) \
 						  \
 						  $(QP_LWIP_PORT_DIR) \
 						  $(QP_LWIP_PORT_DIR)/netif \
@@ -186,6 +190,7 @@ INCLUDES  				= -I$(SRC_DIR) \
 						  -I$(BSP_DIR)/bsp_shared/runtime \
 						  -I$(SERIAL_DIR) \
 						  -I$(I2C_DIR) \
+						  -I$(NOR_DIR) \
 						  \
 						  -I$(LWIP_DIR)/src/include \
 						  -I$(LWIP_DIR)/src/include/netif \
@@ -252,6 +257,7 @@ C_SRCS					:= \
 						console_output.c \
 						time.c \
 						i2c.c \
+						nor.c \
 						dbg_cntrl.c \
 						\
 						LWIPMgr.c \
@@ -264,6 +270,7 @@ C_SRCS					:= \
 			      		stm32f4xx_dma.c \
 			      		stm32f4xx_exti.c \
 			      		stm32f4xx_flash.c \
+			      		stm32f4xx_fmc.c \
 			      		stm32f4xx_i2c.c \
 						stm32f4xx_gpio.c \
 			      		stm32f4xx_pwr.c \
@@ -289,7 +296,6 @@ C_SRCS					:= \
 #			      		stm32f4xx_dbgmcu.c \
 #			      		stm32f4xx_dcmi.c \
 #			      		stm32f4xx_dmad2.c \
-#			      		stm32f4xx_fmc.c \
 #			      		stm32f4xx_fsmc.c \
 #			      		stm32f4xx_hash.c \
 #			      		stm32f4xx_hash_md5.c \

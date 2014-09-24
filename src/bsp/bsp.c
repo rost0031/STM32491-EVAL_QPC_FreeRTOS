@@ -24,6 +24,7 @@
 #include "time.h"                              /* processor date/time support */
 #include "i2c.h"                                               /* I2C support */
 #include "serial.h"
+#include "nor.h"                               /* M29WV128G NOR Flash support */
 
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */
@@ -71,6 +72,27 @@ void BSP_init( void )
 
    /* 4. Initialize the I2C devices and associated busses */
    I2C_BusInit( I2CBus1 );
+
+   /* 5. Initialize the NOR flash */
+   NOR_Init();
+
+   /* Return to read mode */
+   NOR_ReturnToReadMode();
+
+   /* NOR IDs structure */
+   NOR_IDTypeDef pNOR_ID;
+   /* Initialize the ID structure */
+   pNOR_ID.Manufacturer_Code = (uint16_t)0x00;
+   pNOR_ID.Device_Code1 = (uint16_t)0x00;
+   pNOR_ID.Device_Code2 = (uint16_t)0x00;
+   pNOR_ID.Device_Code3 = (uint16_t)0x00;
+
+   /* Read the NOR memory ID */
+   NOR_ReadID(&pNOR_ID);
+   dbg_slow_printf("NOR ID: MfgCode  : 0x%02x\n", pNOR_ID.Manufacturer_Code);
+   dbg_slow_printf("NOR ID: DevCode1 : 0x%02x\n", pNOR_ID.Device_Code1);
+   dbg_slow_printf("NOR ID: DevCode2 : 0x%02x\n", pNOR_ID.Device_Code2);
+   dbg_slow_printf("NOR ID: DevCode3 : 0x%02x\n", pNOR_ID.Device_Code3);
 }
 
 /******************************************************************************/
