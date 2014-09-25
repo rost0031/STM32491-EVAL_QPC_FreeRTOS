@@ -135,9 +135,16 @@ i2cEvt1-&gt;wDataLen  = 16;
 QF_PUBLISH((QEvent *)i2cEvt1, AO_CommStackMgr);
 */
 
+/*
 DBG_printf(&quot;Starting destructive NOR Flash test\n&quot;);
 NOR_TestDestructive();
 DBG_printf(&quot;Finished destructive NOR Flash test\n&quot;);
+*/
+
+
+DBG_printf(&quot;Starting destructive SDRAM test\n&quot;);
+SDRAM_TestDestructive();
+DBG_printf(&quot;Finished destructive SDRAM test\n&quot;);
 
 QTimeEvt_disarm( &amp;me-&gt;timeTestTimerEvt );
 

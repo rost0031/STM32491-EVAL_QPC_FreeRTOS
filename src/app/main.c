@@ -89,6 +89,7 @@ int main(void)
     DBG_ENABLE_DEBUG_FOR_MODULE(DBG_MODL_ETH);
     DBG_ENABLE_DEBUG_FOR_MODULE(DBG_MODL_I2C);
     DBG_ENABLE_DEBUG_FOR_MODULE(DBG_MODL_NOR);
+    DBG_ENABLE_DEBUG_FOR_MODULE(DBG_MODL_SDRAM);
 
     /* initialize the Board Support Package */
     BSP_init();

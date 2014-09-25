@@ -124,6 +124,9 @@ I2C_DIR					= $(BSP_DIR)/bsp_shared/i2c
 # NOR Driver and AO
 NOR_DIR					= $(BSP_DIR)/nor
 
+# SDRAM Driver and AO
+SDRAM_DIR				= $(BSP_DIR)/sdram
+
 # QPC directories
 QPC_DIR					= $(SYS_DIR)/qpc_shared
 QP_PORT_DIR 			= $(QPC_DIR)/ports/arm-cm/qk/gnu
@@ -161,6 +164,7 @@ VPATH 					= $(APP_DIR) \
 						  $(SERIAL_DIR) \
 						  $(I2C_DIR) \
 						  $(NOR_DIR) \
+						  $(SDRAM_DIR) \
 						  \
 						  $(QP_LWIP_PORT_DIR) \
 						  $(QP_LWIP_PORT_DIR)/netif \
@@ -191,6 +195,7 @@ INCLUDES  				= -I$(SRC_DIR) \
 						  -I$(SERIAL_DIR) \
 						  -I$(I2C_DIR) \
 						  -I$(NOR_DIR) \
+						  -I$(SDRAM_DIR) \
 						  \
 						  -I$(LWIP_DIR)/src/include \
 						  -I$(LWIP_DIR)/src/include/netif \
@@ -258,6 +263,7 @@ C_SRCS					:= \
 						time.c \
 						i2c.c \
 						nor.c \
+						sdram.c \
 						dbg_cntrl.c \
 						\
 						LWIPMgr.c \

@@ -25,6 +25,7 @@
 #include "i2c.h"                                               /* I2C support */
 #include "serial.h"
 #include "nor.h"                               /* M29WV128G NOR Flash support */
+#include "sdram.h"                          /* MT48LC2M3B2B5-7E SDRAM support */
 
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */
@@ -76,9 +77,6 @@ void BSP_init( void )
    /* 5. Initialize the NOR flash */
    NOR_Init();
 
-   /* Return to read mode */
-   NOR_ReturnToReadMode();
-
    /* NOR IDs structure */
    NOR_IDTypeDef pNOR_ID;
    /* Initialize the ID structure */
@@ -93,6 +91,9 @@ void BSP_init( void )
    dbg_slow_printf("NOR ID: DevCode1 : 0x%02x\n", pNOR_ID.Device_Code1);
    dbg_slow_printf("NOR ID: DevCode2 : 0x%02x\n", pNOR_ID.Device_Code2);
    dbg_slow_printf("NOR ID: DevCode3 : 0x%02x\n", pNOR_ID.Device_Code3);
+
+   /* 6. Initialize the SDRAM */
+   SDRAM_Init();
 }
 
 /******************************************************************************/

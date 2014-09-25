@@ -226,9 +226,16 @@ static QState CommStackMgr_Active(CommStackMgr * const me, QEvt const * const e)
             QF_PUBLISH((QEvent *)i2cEvt1, AO_CommStackMgr);
             */
 
+            /*
             DBG_printf("Starting destructive NOR Flash test\n");
             NOR_TestDestructive();
             DBG_printf("Finished destructive NOR Flash test\n");
+            */
+
+
+            DBG_printf("Starting destructive SDRAM test\n");
+            SDRAM_TestDestructive();
+            DBG_printf("Finished destructive SDRAM test\n");
 
             QTimeEvt_disarm( &me->timeTestTimerEvt );
 
