@@ -478,7 +478,7 @@ void NOR_SDRAMTestInteraction( void )
    uint32_t aRxSdramBuffer[BUFFER_SIZE_SD_NOR/2];
 
    uint16_t tmpIndex = 0;
-   uint16_t uwOffset = 0xA5A5;
+   uint16_t uwOffset = 0x3CA5;
    CBErrorCode status = ERR_NONE;
 
    /* 1. Fill the buffer to write */
