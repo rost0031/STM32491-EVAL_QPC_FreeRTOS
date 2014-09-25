@@ -141,10 +141,15 @@ NOR_TestDestructive();
 DBG_printf(&quot;Finished destructive NOR Flash test\n&quot;);
 */
 
-
+/*
 DBG_printf(&quot;Starting destructive SDRAM test\n&quot;);
 SDRAM_TestDestructive();
 DBG_printf(&quot;Finished destructive SDRAM test\n&quot;);
+*/
+
+DBG_printf(&quot;Starting SDRAM/NOR interation test\n&quot;);
+NOR_SDRAMTestInteraction();
+DBG_printf(&quot;Finished SDRAM/NOR interation test\n&quot;);
 
 QTimeEvt_disarm( &amp;me-&gt;timeTestTimerEvt );
 

@@ -20,6 +20,7 @@
 #include "project_includes.h"
 #include "Shared.h"
 #include "stm32f4xx_fmc.h"                         /* For STM32F4 FMC support */
+#include "sdram.h"
 
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */
@@ -459,6 +460,77 @@ void NOR_TestDestructive( void )
    for (uwIndex = 0; (uwIndex < BUFFER_SIZE) && (uwWriteReadStatus == 0); uwIndex++) {
       if (aRxBuffer[uwIndex] != aTxBuffer[uwIndex]) {
          ERR_printf("Written and read back values don't match: wrote 0x%04x and read back 0x%04x\n", aTxBuffer[uwIndex], aRxBuffer[uwIndex] );
+         uwWriteReadStatus = uwIndex + 1;
+      }
+   }
+   DBG_printf("Result of buffer check: %d\n", uwWriteReadStatus );
+}
+
+/******************************************************************************/
+void NOR_SDRAMTestInteraction( void )
+{
+#define BUFFER_SIZE_SD_NOR     ((uint32_t)0x0400)
+#define WRITE_READ_ADDR_NOR    ((uint16_t)0x8000)
+#define WRITE_READ_ADDR_SDRAM  ((uint32_t)0x0800)
+
+   uint8_t  aTxBuffer[BUFFER_SIZE_SD_NOR*2];
+   uint16_t aRxNorBuffer[BUFFER_SIZE_SD_NOR];
+   uint32_t aRxSdramBuffer[BUFFER_SIZE_SD_NOR/2];
+
+   uint16_t tmpIndex = 0;
+   uint16_t uwOffset = 0xA5A5;
+   CBErrorCode status = ERR_NONE;
+
+   /* 1. Fill the buffer to write */
+   DBG_printf("Filling buffer...\n");
+   for (tmpIndex = 0; tmpIndex < BUFFER_SIZE_SD_NOR * 2; tmpIndex++ ) {
+      aTxBuffer[tmpIndex] = tmpIndex + uwOffset;
+   }
+
+   /* 2. Write buffer to SDRAM */
+   DBG_printf("Writing buffer to SDRAM...\n");
+   SDRAM_WriteBuffer((uint32_t *)&aTxBuffer[0], WRITE_READ_ADDR_SDRAM, BUFFER_SIZE_SD_NOR/2);
+   DBG_printf("Write to SDRAM finished\n");
+
+   /* 3. Read data from the SDRAM */
+   DBG_printf("Reading buffer back from SDRAM...\n");
+   SDRAM_ReadBuffer(aRxSdramBuffer, WRITE_READ_ADDR_SDRAM, BUFFER_SIZE_SD_NOR/2);
+   DBG_printf("Read from SDRAM finished\n");
+
+   /* 4. Write buffer buffer from SDRAM to NOR Flash */
+   /* Return to read mode */
+   NOR_ReturnToReadMode();
+
+   /* Erase the NOR memory block to write on */
+   NOR_EraseBlock(WRITE_READ_ADDR_NOR);
+
+   DBG_printf("Writing buffer to NOR...\n");
+   status = NOR_WriteBuffer((uint16_t *)&aRxSdramBuffer[0], WRITE_READ_ADDR_NOR, BUFFER_SIZE_SD_NOR);
+   DBG_printf("Write finished with status: 0x%08x\n", status);
+
+   /* 5. Read back the buffer from NOR */
+   DBG_printf("Reading buffer back from NOR...\n");
+   NOR_ReadBuffer(aRxNorBuffer, WRITE_READ_ADDR_NOR, BUFFER_SIZE_SD_NOR);
+   DBG_printf("Read finished\n");
+
+   /* 6. Read back data from SDRAM to make sure refresh lines are working ok */
+   memset(aRxSdramBuffer, 0, sizeof(aRxSdramBuffer));
+   DBG_printf("Reading buffer back from SDRAM to make sure the refresh is working...\n");
+   SDRAM_ReadBuffer(aRxSdramBuffer, WRITE_READ_ADDR_SDRAM, BUFFER_SIZE_SD_NOR/2);
+   DBG_printf("Read finished\n");
+
+   /* Compare the buffers read back from NOR and SDRAM and make sure they are
+    * same. */
+   DBG_printf("Checking buffers...\n");
+   uint32_t uwIndex = 0;
+   uint8_t *sdRxPtr = &aRxSdramBuffer[0];
+   uint8_t *norRxPtr = &aRxNorBuffer[0];
+   __IO uint32_t uwWriteReadStatus = 0;
+   for (uwIndex = 0; (uwIndex < BUFFER_SIZE_SD_NOR*2) && (uwWriteReadStatus == 0); uwIndex++) {
+      if (sdRxPtr[uwIndex] != norRxPtr[uwIndex]) {
+         ERR_printf(
+               "Written and read back values don't match: wrote 0x%04x and read back 0x%04x\n",
+               sdRxPtr[uwIndex], norRxPtr[uwIndex] );
          uwWriteReadStatus = uwIndex + 1;
       }
    }

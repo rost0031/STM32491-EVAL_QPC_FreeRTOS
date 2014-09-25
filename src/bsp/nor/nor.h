@@ -182,6 +182,22 @@ CBErrorCode NOR_GetStatus( uint32_t Timeout );
  */
 void NOR_TestDestructive( void );
 
+
+/**
+ * @brief  Runs a test of NOR and SDRAM interaction
+ * This test:
+ * 1. sets up a buffer
+ * 2. writes it to SDRAM
+ * 3. reads it back
+ * 4. writes it to NOR flash
+ * 5. reads the NOR flash
+ * 6. reads SDRAM
+ * 7. Compares the 2 read buffers.
+ * @param  None
+ * @retval None
+ */
+void NOR_SDRAMTestInteraction( void );
+
 /**
  * @brief   NOR Event callback function
  *
