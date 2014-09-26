@@ -555,7 +555,26 @@ static QState I2CMgr_initial(I2CMgr * const me, QEvt const * const e) {
     QS_FUN_DICTIONARY(&I2CMgr_Active);
     QS_FUN_DICTIONARY(&I2CMgr_Idle);
     QS_FUN_DICTIONARY(&I2CMgr_Busy);
-    QS_FUN_DICTIONARY(&I2CMgr_Read);
+    QS_FUN_DICTIONARY(&I2CMgr_WaitForBusRecovery);
+    QS_FUN_DICTIONARY(&I2CMgr_TogglingSCL);
+    QS_FUN_DICTIONARY(&I2CMgr_BusBeingUsed);
+    QS_FUN_DICTIONARY(&I2CMgr_WaitFor_I2C_EV6);
+    QS_FUN_DICTIONARY(&I2CMgr_SetupI2CDevice);
+    QS_FUN_DICTIONARY(&I2CMgr_Writing);
+    QS_FUN_DICTIONARY(&I2CMgr_WaitForDMAWriteDone);
+    QS_FUN_DICTIONARY(&I2CMgr_WriteI2CByte);
+    QS_FUN_DICTIONARY(&I2CMgr_WaitFor_I2C_EV5);
+    QS_FUN_DICTIONARY(&I2CMgr_WaitFor_I2C_EV8_MSB);
+    QS_FUN_DICTIONARY(&I2CMgr_WaitFor_I2C_EV8_LSB);
+    QS_FUN_DICTIONARY(&I2CMgr_Reading);
+    QS_FUN_DICTIONARY(&I2CMgr_WaitFor_I2C_EV6_R);
+    QS_FUN_DICTIONARY(&I2CMgr_WaitForDMAReadDone);
+    QS_FUN_DICTIONARY(&I2CMgr_WaitFor_I2C_EV5_R);
+    QS_FUN_DICTIONARY(&I2CMgr_ReadI2CByte);
+    QS_FUN_DICTIONARY(&I2CMgr_WaitFor_I2C_EV5_REC);
+    QS_FUN_DICTIONARY(&I2CMgr_WaitFor_I2C_EV6_REC);
+    QS_FUN_DICTIONARY(&I2CMgr_StartI2CComm);
+    QS_FUN_DICTIONARY(&I2CMgr_WaitForBusToSettle);
 
     QActive_subscribe((QActive *)me, I2C_READ_START_SIG);
     QActive_subscribe((QActive *)me, I2C_WRITE_START_SIG);
