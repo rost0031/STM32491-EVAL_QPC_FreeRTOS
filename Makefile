@@ -58,7 +58,7 @@ TRACEON=$(TRACE:0=@)
 TRACE_FLAG=$(TRACEON:1=)
 
 # Output file basename (should be the same as the directory name)
-PROJECT_NAME			= CBBootLdr
+PROJECT_NAME            = CBBootLdr
 
 #------------------------------------------------------------------------------
 #  MCU SETUP - This specifies which core to pass down to all the other makefiles
@@ -92,61 +92,65 @@ endif
 #------------------------------------------------------------------------------
 #  TOOLCHAIN SETUP
 #------------------------------------------------------------------------------
-CROSS    				= arm-none-eabi-
-CC       				= $(CROSS)gcc
-CPP      				= $(CROSS)g++
-AS       				= $(CROSS)as
-LINK     				= $(CROSS)gcc
-OBJCPY   				= ${CROSS}objcopy
-RM       				= rm -rf
-ECHO     				= echo
-MKDIR    				= mkdir
+CROSS                   = arm-none-eabi-
+CC                      = $(CROSS)gcc
+CPP                     = $(CROSS)g++
+AS                      = $(CROSS)as
+LINK                    = $(CROSS)gcc
+OBJCPY                  = ${CROSS}objcopy
+RM                      = rm -rf
+ECHO                    = echo
+MKDIR                   = mkdir
 
 #-----------------------------------------------------------------------------
 # Directories
 #
 #-----------------------------------------------------------------------------
-SRC_DIR					= ./src
-APP_DIR     			= $(SRC_DIR)/app
-BSP_DIR					= $(SRC_DIR)/bsp
-SYS_DIR					= $(SRC_DIR)/sys
+SRC_DIR                 = ./src
+APP_DIR                 = $(SRC_DIR)/app
+BSP_DIR                 = $(SRC_DIR)/bsp
+SYS_DIR                 = $(SRC_DIR)/sys
 
 # Ethernet Driver
-ETH_DRV_DIR				= $(BSP_DIR)/bsp_shared/STM32F4x7_ETH_Driver
-QP_LWIP_PORT_DIR		= $(BSP_DIR)/bsp_shared/qpc_lwip_port
+ETH_DRV_DIR             = $(BSP_DIR)/bsp_shared/STM32F4x7_ETH_Driver
+QP_LWIP_PORT_DIR        = $(BSP_DIR)/bsp_shared/qpc_lwip_port
 
 # Serial Driver and AO
-SERIAL_DIR				= $(BSP_DIR)/bsp_shared/serial
+SERIAL_DIR              = $(BSP_DIR)/bsp_shared/serial
 
 # I2C Driver and AO
-I2C_DIR					= $(BSP_DIR)/bsp_shared/i2c
+I2C_DIR                 = $(BSP_DIR)/bsp_shared/i2c
 
 # NOR Driver and AO
-NOR_DIR					= $(BSP_DIR)/nor
+NOR_DIR                 = $(BSP_DIR)/nor
 
 # SDRAM Driver and AO
-SDRAM_DIR				= $(BSP_DIR)/sdram
+SDRAM_DIR               = $(BSP_DIR)/sdram
 
 # QPC directories
-QPC_DIR					= $(SYS_DIR)/qpc_shared
-QP_PORT_DIR 			= $(QPC_DIR)/ports/arm-cm/qk/gnu
+QPC_DIR                 = $(SYS_DIR)/qpc_shared
+QP_PORT_DIR             = $(QPC_DIR)/ports/arm-cm/qk/gnu
 
 # STM32 Drivers
 STM32F4XX_STD_PERIPH_DIR= $(BSP_DIR)/bsp_shared/STM32F4xx_StdPeriph_Driver
 
 # LWIP
-LWIP_DIR				= $(SYS_DIR)/lwip_shared
+LWIP_DIR                = $(SYS_DIR)/lwip_shared
 
 # Base64 encoding module
-BASE64_DIR				= $(SYS_DIR)/libb64_shared
+BASE64_DIR              = $(SYS_DIR)/libb64_shared
 
 # Directories that need to be passed down to LWIP
-LWIP_PORT_FOR_LWIP		= ../../bsp/bsp_shared/qpc_lwip_port
-BSP_DIR_FOR_LWIP		= ../../bsp/bsp_shared/runtime
-LWIP_SRC_DIR			= ../../
+LWIP_PORT_FOR_LWIP      = ../../bsp/bsp_shared/qpc_lwip_port
+BSP_DIR_FOR_LWIP        = ../../bsp/bsp_shared/runtime
+LWIP_SRC_DIR            = ../../
 
-# Application state machines directory
-APP_SM_DIR				= $(APP_DIR)/StateMachines
+# Application Comm directory
+APP_COMM_DIR            = $(APP_DIR)/comm
+
+# Application Comm directory
+APP_MENU_DIR            = $(APP_DIR)/menu
+
 
 # Console output directory
 CON_OUT_DIR				= $(SYS_DIR)/sys_shared/con_out
@@ -156,7 +160,8 @@ DBG_CNTRL_DIR			= $(SYS_DIR)/sys_shared/dbg_cntrl
 
 # Source virtual directories
 VPATH 					= $(APP_DIR) \
-						  $(APP_SM_DIR) \
+						  $(APP_COMM_DIR) \
+						  $(APP_MENU_DIR) \
 						  \
 						  $(BSP_DIR) \
 						  $(BSP_DIR)/bsp_shared \
@@ -181,7 +186,8 @@ VPATH 					= $(APP_DIR) \
 INCLUDES  				= -I$(SRC_DIR) \
 						  -I$(APP_DIR) \
 						  \
-						  -I$(APP_SM_DIR) \
+						  -I$(APP_COMM_DIR) \
+						  -I$(APP_MENU_DIR) \
 						  \
 						  -I$(QPC_DIR)/include \
 						  -I$(QPC_DIR)/qf/source \
@@ -270,6 +276,7 @@ C_SRCS					:= \
 						I2CMgr.c \
 						SerialMgr.c \
 						CommStackMgr.c \
+						MenuMgr.c \
 						\
 			            misc.c  \
 			      		stm32f4xx_crc.c \
@@ -302,7 +309,6 @@ C_SRCS					:= \
 #			      		stm32f4xx_dbgmcu.c \
 #			      		stm32f4xx_dcmi.c \
 #			      		stm32f4xx_dmad2.c \
-#			      		stm32f4xx_fsmc.c \
 #			      		stm32f4xx_hash.c \
 #			      		stm32f4xx_hash_md5.c \
 #			      		stm32f4xx_hash_sha1.c \
@@ -330,15 +336,15 @@ ifeq (rel, $(CONF))       # Release configuration ............................
 BIN_DIR 	:= rel
 DEFINES		+= -DNDEBUG
 LIBS    	:= -lqp_$(ARM_CORE)_cs -llwip_$(ARM_CORE)_cs
-ASFLAGS 	= $(MFLAGS)
-CFLAGS 		= $(MFLAGS) -std=gnu99 -Wall -ffunction-sections -fdata-sections \
+ASFLAGS     = $(MFLAGS)
+CFLAGS      = $(MFLAGS) -std=gnu99 -Wall -ffunction-sections -fdata-sections \
 			  -Os $(INCLUDES) $(DEFINES)
 
-CPPFLAGS 	= $(MFLAGS) \
+CPPFLAGS    = $(MFLAGS) \
 			  -Wall -fno-rtti -fno-exceptions \
 			  -Os $(INCLUDES) $(DEFINES)
 
-LINKFLAGS 	= -nodefaultlibs -Xlinker --gc-sections -Wl,--strip-all -Wl,-Map,$(BIN_DIR)/$(PROJECT_NAME).map -mcpu=$(ARM_CORE) -mthumb
+LINKFLAGS   = -nodefaultlibs -Xlinker --gc-sections -Wl,--strip-all -Wl,-Map,$(BIN_DIR)/$(PROJECT_NAME).map -mcpu=$(ARM_CORE) -mthumb
 
 else ifeq (spy, $(CONF))  # Spy configuration ................................
 

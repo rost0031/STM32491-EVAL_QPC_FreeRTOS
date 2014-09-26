@@ -84,6 +84,15 @@
 /**
  * @defgroup groupApp Application
  */
+   /**
+    * @defgroup groupComm Communication System
+    * @ingroup groupApp
+    */
+
+   /**
+    * @defgroup groupMenu Menu System
+    * @ingroup groupApp
+    */
 
 /**
  * @defgroup groupBSP BSP

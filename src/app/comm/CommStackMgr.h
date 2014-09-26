@@ -29,6 +29,9 @@
  * @author  Harry Rostovtsev
  * @email   harry_rostovtsev@datacard.com
  * Copyright (C) 2014 Datacard. All rights reserved.
+ *
+ * @addtogroup groupComm
+ * @{
  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
@@ -64,6 +67,10 @@ extern QActive * const AO_CommStackMgr;
  * which is a shared port common to any ethernet project.  Instead, it's
  * declared in Shared.h, which is included by LWIPMgr.h */
 /* $declare(Events) */
+
+/**
+ * @} end addtogroup groupComm
+ */
 
 #endif                                                     /* COMMSTACKMGR_H_ */
 /******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/

@@ -29,6 +29,9 @@
  * @author  Harry Rostovtsev
  * @email   harry_rostovtsev@datacard.com
  * Copyright (C) 2014 Datacard. All rights reserved.
+ *
+ * @addtogroup groupComm
+ * @{
  */
 
 /* Includes ------------------------------------------------------------------*/
@@ -286,5 +289,9 @@ static QState CommStackMgr_Active(CommStackMgr * const me, QEvt const * const e)
     return status_;
 }
 
+
+/**
+ * @} end addtogroup groupComm
+ */
 
 /******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/

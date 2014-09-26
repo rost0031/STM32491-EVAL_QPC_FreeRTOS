@@ -15,6 +15,7 @@
 #include "CommStackMgr.h"                     /* for starting CommStackMgr AO */
 #include "SerialMgr.h"                           /* for starting SerialMgr AO */
 #include "I2CMgr.h"                                 /* for starting I2CMgr AO */
+#include "MenuMgr.h"                                /* for starting I2CMgr AO */
 
 #include "project_includes.h"           /* Includes common to entire project. */
 #include "Shared.h"
@@ -37,6 +38,7 @@ static QEvt const    *l_CommStackMgrQueueSto[50];  /**< Storage for CommStackMgr
 static QEvt const    *l_LWIPMgrQueueSto[50];       /**< Storage for LWIPMgr event Queue */
 static QEvt const    *l_SerialMgrQueueSto[50];     /**< Storage for SerialMgr event Queue */
 static QEvt const    *l_I2CMgrQueueSto[50];        /**< Storage for I2CMgr event Queue */
+static QEvt const    *l_MenuMgrQueueSto[50];       /**< Storage for MenuMgr event Queue */
 static QSubscrList   l_subscrSto[MAX_PUB_SIG];     /**< Storage for subscribe/publish event Queue */
 
 /**
@@ -46,6 +48,7 @@ static QSubscrList   l_subscrSto[MAX_PUB_SIG];     /**< Storage for subscribe/pu
 static union SmallEvents {
     void   *e0;                                       /* minimum event size */
     uint8_t e1[sizeof(QEvt)];
+    uint8_t e2[sizeof(MenuEvt)];
 } l_smlPoolSto[50];                     /* storage for the small event pool */
 
 /**
@@ -90,6 +93,7 @@ int main(void)
     DBG_ENABLE_DEBUG_FOR_MODULE(DBG_MODL_I2C);
     DBG_ENABLE_DEBUG_FOR_MODULE(DBG_MODL_NOR);
     DBG_ENABLE_DEBUG_FOR_MODULE(DBG_MODL_SDRAM);
+    DBG_ENABLE_DEBUG_FOR_MODULE(DBG_MODL_MENU);
 
     /* initialize the Board Support Package */
     BSP_init();
@@ -103,6 +107,7 @@ int main(void)
     LWIPMgr_ctor();
     I2CMgr_ctor( I2CBus1 );        /* Start this instance of AO for I2C1 bus. */
     CommStackMgr_ctor();
+    MenuMgr_ctor();                           /* This AO should start up last */
 
     dbg_slow_printf("Initializing QF\n");
     QF_init();       /* initialize the framework and the underlying RT kernel */
@@ -116,6 +121,7 @@ int main(void)
     QS_OBJ_DICTIONARY(l_LWIPMgrQueueSto);
     QS_OBJ_DICTIONARY(l_I2CMgrQueueSto);
     QS_OBJ_DICTIONARY(l_CommStackMgrQueueSto);
+    QS_OBJ_DICTIONARY(l_MenuMgrQueueSto);
 
     QF_psInit(l_subscrSto, Q_DIM(l_subscrSto));     /* init publish-subscribe */
 
@@ -152,6 +158,13 @@ int main(void)
     QACTIVE_START(AO_CommStackMgr,
           COMM_MGR_PRIORITY,                                      /* priority */
           l_CommStackMgrQueueSto, Q_DIM(l_CommStackMgrQueueSto), /* evt queue */
+          (void *)0, 0U,                               /* no per-thread stack */
+          (QEvt *)0                                /* no initialization event */
+    );
+
+    QACTIVE_START(AO_MenuMgr,
+          MENU_MGR_PRIORITY,                                      /* priority */
+          l_MenuMgrQueueSto, Q_DIM(l_MenuMgrQueueSto),           /* evt queue */
           (void *)0, 0U,                               /* no per-thread stack */
           (QEvt *)0                                /* no initialization event */
     );
