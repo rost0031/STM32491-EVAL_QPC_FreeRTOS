@@ -54,6 +54,11 @@ DBG_DEFINE_THIS_MODULE( DBG_MODL_SDRAM ); /* For dbg system to ID this module */
 
 /* Private macros ------------------------------------------------------------*/
 /* Private variables and Local objects ---------------------------------------*/
+/**
+ * @brief   A large buffer in SDRAM for testing.
+ */
+__attribute__((section(".sdram"))) uint32_t sdRamTestBuffer[10000];
+
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
 
@@ -471,6 +476,20 @@ void SDRAM_TestDestructive( void )
       }
    }
    DBG_printf("Result of buffer check: %d\n", uwWriteReadStatus );
+
+   /* Test a buffer placed directly into SDRAM by the linker */
+   for (uint16_t uwIndexLarge = 0; uwIndexLarge < 10000 ; uwIndexLarge++) {
+      sdRamTestBuffer[uwIndexLarge] = uwIndexLarge;
+   }
+
+  uint32_t uwRamBufferAddr = (uint32_t)sdRamTestBuffer; /* should be 0xC00xxxxx */
+
+  /* Get main stack pointer value */
+  uint32_t MSPValue = __get_MSP(); /* should be 0xC00xxxxx */
+  uint16_t tmpRamIndex = 5553;
+  DBG_printf("Copied data to large SDRAM buffer.  Value at %u is %u\n",tmpRamIndex , sdRamTestBuffer[tmpRamIndex]);
+  DBG_printf("Stack pointer addr: 0x%08x, SDRAM buffer addr: 0x%08x\n", MSPValue, uwRamBufferAddr);
+
 }
 
 /******************************************************************************/

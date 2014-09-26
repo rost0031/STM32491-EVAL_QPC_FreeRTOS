@@ -93,7 +93,7 @@ void BSP_init( void )
    dbg_slow_printf("NOR ID: DevCode3 : 0x%02x\n", pNOR_ID.Device_Code3);
 
    /* 6. Initialize the SDRAM */
-   SDRAM_Init();
+//   SDRAM_Init();
 }
 
 /******************************************************************************/

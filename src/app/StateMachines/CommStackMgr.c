@@ -232,16 +232,17 @@ static QState CommStackMgr_Active(CommStackMgr * const me, QEvt const * const e)
             DBG_printf("Finished destructive NOR Flash test\n");
             */
 
-            /*
+
             DBG_printf("Starting destructive SDRAM test\n");
             SDRAM_TestDestructive();
             DBG_printf("Finished destructive SDRAM test\n");
-            */
 
+
+            /*
             DBG_printf("Starting SDRAM/NOR interation test\n");
             NOR_SDRAMTestInteraction();
             DBG_printf("Finished SDRAM/NOR interation test\n");
-
+            */
             QTimeEvt_disarm( &me->timeTestTimerEvt );
 
             /*

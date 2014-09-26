@@ -41,8 +41,9 @@ _Min_Stack_Size = 0x400; /* required amount of stack */
 MEMORY
 {
 FLASH (rx)      : ORIGIN = 0x8000000, LENGTH = 2048K
-RAM (xrw)      : ORIGIN = 0x20000000, LENGTH = 192K
-CCMRAM (rw)      : ORIGIN = 0x10000000, LENGTH = 64K
+RAM (xrw)      	: ORIGIN = 0x20000000, LENGTH = 192K
+CCMRAM (rw)     : ORIGIN = 0x10000000, LENGTH = 64K
+SDRAM (xrw)     : ORIGIN = 0xC0000000, LENGTH = 16M
 }
 
 /* Define output sections */
@@ -172,7 +173,13 @@ SECTIONS
     . = ALIGN(4);
   } >RAM
 
-  
+  .sdram (NOLOAD) :
+  {
+    . = ALIGN(4);
+        *(.sdram)
+        *(.sdram.*)
+    . = ALIGN(4);
+  } >SDRAM
 
   /* Remove information from the standard libraries */
   /DISCARD/ :
