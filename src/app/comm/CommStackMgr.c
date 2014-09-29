@@ -163,6 +163,7 @@ static QState CommStackMgr_Active(CommStackMgr * const me, QEvt const * const e)
         }
         /* ${AOs::CommStackMgr::SM::Active::MSG_RECEIVED} */
         case MSG_RECEIVED_SIG: {
+            DBG_printf("Received a msg\n");
             status_ = Q_HANDLED();
             break;
         }

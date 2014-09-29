@@ -59,8 +59,10 @@ typedef struct USART_Settings
     uint32_t            rx_gpio_clk;                  /**< UART RX GPIO clock */
 
     /* Buffer management */
-    char                *buffer;             /**< Serial port in data buffer. */
-    uint16_t            index;   /**< Serial port in data buffer used length. */
+    char                *bufferTX;             /**< Serial port in data buffer. */
+    uint16_t            indexTX;   /**< Serial port in data buffer used length. */
+    char                *bufferRX;             /**< Serial port in data buffer. */
+    uint16_t            indexRX;   /**< Serial port in data buffer used length. */
 } USART_Settings_t;
 
 /**
@@ -188,6 +190,25 @@ uint32_t Serial_send_raw_msg(
  * @return: None
  */
 void Serial_DMASendCallback( void );
+
+/**
+ * @brief   Serial RX callback function
+ *
+ * Receives a message from through the serial port, one character at a
+ * time. The last character received is either the '\n' or '\r'
+ * character. The message gets stored in a buffer until the end-of-line
+ * character is received.
+ *
+ * @note: This function should only be called from the ISR that handles this UART.
+ *
+ * @note: this function is defined as "inline" but not declared as such.  This
+ * is so it can be called externally (by the file that contains the actual ISRs)
+ * and they can still be inlined so as not incur any function call overhead.
+ *
+ * @param   None
+ * @return: None
+ */
+void Serial_UART1Callback( void );
 
 /**
  * @}

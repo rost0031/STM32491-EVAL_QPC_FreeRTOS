@@ -69,6 +69,7 @@ QTimeEvt_postEvery(
       </tran_glyph>
      </tran>
      <tran trig="MSG_RECEIVED">
+      <action>DBG_printf(&quot;Received a msg\n&quot;);</action>
       <tran_glyph conn="3,14,3,-1,21">
        <action box="0,-2,17,2"/>
       </tran_glyph>

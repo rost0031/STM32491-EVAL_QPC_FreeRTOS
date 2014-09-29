@@ -213,6 +213,12 @@ void TIM5_IRQHandler( void )
    }
 }
 
+/******************************************************************************/
+void USART1_IRQHandler(void)
+{
+   /* Issue the callback function which does the actual work. */
+   Serial_UART1Callback();
+}
 /**
  * @} end addtogroup groupISR
  */

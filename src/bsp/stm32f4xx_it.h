@@ -198,6 +198,16 @@ void SysTick_Handler( void ) __attribute__((__interrupt__));
  */
 void TIM5_IRQHandler( void ) __attribute__((__interrupt__));
 
+/**
+ * @brief   ISR that handles incoming data on UART1 (debug serial) port.
+ *
+ * This ISR should use the callback function which should be defined wherever
+ * serial communications is handled.
+ *
+ * @param   None
+ * @retval  None
+ */
+void USART1_IRQHandler(void) __attribute__((__interrupt__));
 
 #ifdef __cplusplus
 }
