@@ -61,7 +61,7 @@ static char          Uart1RxBuffer[MAX_MSG_LEN];
 static USART_Settings_t a_UARTSettings[SERIAL_MAX] =
 {
       {
-            SERIAL_SYS,                /**< port */
+            SERIAL_UART1,                /**< port */
 
             /* USART settings */
             USART1,                    /**< usart */
@@ -93,7 +93,7 @@ static USART_Settings_t a_UARTSettings[SERIAL_MAX] =
 static USART_DMA_Settings_t a_UARTDMASettings[SERIAL_MAX] =
 {
       {
-            SERIAL_SYS,                /**< port */
+            SERIAL_UART1,                /**< port */
 
             DMA2_Stream7_IRQn,         /**< dma_irq_num */
             DMA2_Stream7_PRIO,         /**< dma_irq_prio */
@@ -119,7 +119,7 @@ void Serial_Init(
          ENABLE
    );
 
-   if ( SERIAL_SYS == serial_port ) {
+   if ( SERIAL_UART1 == serial_port ) {
       /* Rest of USARTs use a different APBus1 */
       RCC_APB2PeriphClockCmd( a_UARTSettings[serial_port].usart_clk, ENABLE );
    }
@@ -328,46 +328,48 @@ inline void Serial_DMASendCallback( void )
 /******************************************************************************/
 inline void Serial_UART1Callback(void)
 {
-   QK_ISR_ENTRY();                        /* inform QK about entering an ISR */
-   uint8_t data;
-//   printf("ISR!\n");
-   while (USART_GetITStatus(USART1, USART_IT_RXNE) != RESET) {
-      data = (uint8_t)USART_ReceiveData(USART1);
+   QK_ISR_ENTRY();                         /* inform QK about entering an ISR */
 
-      if ( '\n' == data && a_UARTSettings[SERIAL_SYS].indexRX > 0 ) {
+   while (USART_GetITStatus(USART1, USART_IT_RXNE) != RESET) {
+      uint8_t data = (uint8_t)USART_ReceiveData(USART1);
+
+      if ( '\n' == data && a_UARTSettings[SERIAL_UART1].indexRX > 0 ) {
          /* If a newline is received and the buffer is not empty, post event
           * with the buffer data */
-         a_UARTSettings[SERIAL_SYS].bufferRX[ a_UARTSettings[SERIAL_SYS].indexRX++ ] = data;
+         a_UARTSettings[SERIAL_UART1].bufferRX[ a_UARTSettings[SERIAL_UART1].indexRX++ ] = data;
          /* 1. Construct a new msg event indicating that a msg has been received */
          MsgEvt *msgEvt = Q_NEW( MsgEvt, MSG_RECEIVED_SIG );
 
          /* 2. Fill the msg payload with payload (the actual received msg)*/
          MEMCPY(
                msgEvt->msg,
-               a_UARTSettings[SERIAL_SYS].bufferRX,
-               a_UARTSettings[SERIAL_SYS].indexRX
+               a_UARTSettings[SERIAL_UART1].bufferRX,
+               a_UARTSettings[SERIAL_UART1].indexRX
          );
-         msgEvt->msg_len = a_UARTSettings[SERIAL_SYS].indexRX;
-         msgEvt->msg_src = SERIAL;
+         msgEvt->msg_len = a_UARTSettings[SERIAL_UART1].indexRX;
+         msgEvt->msg_src = SERIAL_UART1;
 
          /* 3. Publish the newly created event to current AO */
          QF_PUBLISH( (QEvent *)msgEvt, AO_SerialMgr );
 
-         a_UARTSettings[SERIAL_SYS].indexRX = 0;       /* Reset the RX buffer */
+         a_UARTSettings[SERIAL_UART1].indexRX = 0;       /* Reset the RX buffer */
 
       } else if ( '\r' == data ) {
          /* If a linefeed is received, toss it out. */
          data = 0;
       } else {
          /* If any other data is recieved, add it to the buffer */
-         a_UARTSettings[SERIAL_SYS].bufferRX[ a_UARTSettings[SERIAL_SYS].indexRX++ ] = data;
+         a_UARTSettings[SERIAL_UART1].bufferRX[ a_UARTSettings[SERIAL_UART1].indexRX++ ] = data;
 
       }
 
       /* Make sure we don't overrun the buffer. */
-      if ( a_UARTSettings[SERIAL_SYS].indexRX >= MAX_MSG_LEN ) {
-         err_slow_printf("Attempting to receive a serial msg over %d bytes which will overrun the buffer.", MAX_MSG_LEN);
-         assert( a_UARTSettings[SERIAL_SYS].indexRX >= MAX_MSG_LEN );
+      if ( a_UARTSettings[SERIAL_UART1].indexRX >= MAX_MSG_LEN ) {
+         err_slow_printf(
+               "Attempting to receive a serial msg over %d bytes which will overrun the buffer.",
+               MAX_MSG_LEN
+         );
+         assert( a_UARTSettings[SERIAL_UART1].indexRX >= MAX_MSG_LEN );
       }
    }
    QK_ISR_EXIT();                        /* inform QK about exiting an ISR */

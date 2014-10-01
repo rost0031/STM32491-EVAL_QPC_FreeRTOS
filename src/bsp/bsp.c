@@ -58,7 +58,7 @@ void BSP_init( void )
    RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
 
    /* 1. Initialize the Serial for printfs to the serial port */
-   Serial_Init( SERIAL_SYS );
+   Serial_Init( SERIAL_UART1 );
 
    /* 2. Initialize the RTC for getting time stamps. */
    TIME_Init();

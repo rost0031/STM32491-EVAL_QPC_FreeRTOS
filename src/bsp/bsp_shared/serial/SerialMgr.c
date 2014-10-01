@@ -232,7 +232,7 @@ static QState SerialMgr_Idle(SerialMgr * const me, QEvt const * const e) {
             /* Set up the DMA buffer here.  This copies the data from the event to the UART's
              * private buffer as well to avoid someone overwriting it */
             Serial_DMAConfig(
-                SERIAL_SYS,
+                SERIAL_UART1,
                 (char *)((SerialDataEvt const *) e)->buffer,
                 ((SerialDataEvt const *) e)->wBufferLen
             );
@@ -270,7 +270,7 @@ static QState SerialMgr_Busy(SerialMgr * const me, QEvt const * const e) {
             );
 
             /* Start the DMA transfer over serial */
-            Serial_DMAStartXfer( SERIAL_SYS );
+            Serial_DMAStartXfer( SERIAL_UART1 );
             status_ = Q_HANDLED();
             break;
         }

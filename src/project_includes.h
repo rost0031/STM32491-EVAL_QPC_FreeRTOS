@@ -202,8 +202,10 @@
 #include "mem_datacopy.h"      /* Very fast STM32 specific MEMCPY declaration */
 #include "CBSignals.h"                                /* Signal declarations. */
 #include "CBTimeouts.h"                             /* Timeouts declarations. */
+#include "CBErrors.h"                         /* For system-wide error codes. */
 #include "console_output.h"         /* For debug/console output declarations. */
 #include "time.h"                                   /* For time functionality */
+#include "dbg_cntrl.h"                     /* For module debugging capability */
 
 /* Exported defines ----------------------------------------------------------*/
 /**

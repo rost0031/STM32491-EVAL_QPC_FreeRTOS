@@ -142,11 +142,13 @@ NOR_TestDestructive();
 DBG_printf(&quot;Finished destructive NOR Flash test\n&quot;);
 */
 
-
+/*
 DBG_printf(&quot;Starting destructive SDRAM test\n&quot;);
 SDRAM_TestDestructive();
 DBG_printf(&quot;Finished destructive SDRAM test\n&quot;);
+*/
 
+KTREE_Test();
 
 /*
 DBG_printf(&quot;Starting SDRAM/NOR interation test\n&quot;);
@@ -185,7 +187,7 @@ DBG_printf(&quot;dbg_slow_printf() start: %02d:%02d:%02d:%d stop: %02d:%02d:%02d
      (int)slow_print_finish_time.sub_sec
 );
 */</action>
-      <tran_glyph conn="3,19,3,-1,21">
+      <tran_glyph conn="3,78,3,-1,21">
        <action box="0,-2,11,2"/>
       </tran_glyph>
      </tran>
@@ -242,9 +244,10 @@ QTimeEvt_ctor(&amp;me-&gt;timeTestTimerEvt, TIME_TEST_SIG);</code>
 #include &quot;time.h&quot;
 #include &quot;stm32f4x7_eth.h&quot;
 #include &quot;nor.h&quot;
+#include &quot;ktree.h&quot;
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE;                 /* For QSPY to know the name of this file */
-DBG_DEFINE_THIS_MODULE( DBG_MODL_GENERAL ); /* For debug system to ID this module */
+DBG_DEFINE_THIS_MODULE( DBG_MODL_COMM );/* For debug system to ID this module */
 
 /* Private typedefs ----------------------------------------------------------*/
 typedef void (*pFunction)(void);

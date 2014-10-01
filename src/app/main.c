@@ -94,6 +94,7 @@ int main(void)
     DBG_ENABLE_DEBUG_FOR_MODULE(DBG_MODL_NOR);
     DBG_ENABLE_DEBUG_FOR_MODULE(DBG_MODL_SDRAM);
     DBG_ENABLE_DEBUG_FOR_MODULE(DBG_MODL_MENU);
+    DBG_ENABLE_DEBUG_FOR_MODULE(DBG_MODL_COMM);
 
     /* initialize the Board Support Package */
     BSP_init();

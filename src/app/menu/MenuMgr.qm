@@ -9,8 +9,14 @@
    <documentation>/**
  * \struct Event struct type for getting data to this AO.
  */</documentation>
-   <attribute name="msg_src" type="MsgSrc" visibility="0x01" properties="0x00">
+   <attribute name="msgSrc" type="MsgSrc" visibility="0x01" properties="0x00">
     <documentation>/**&lt; Where the msg came from so it can be routed back to the sender. */</documentation>
+   </attribute>
+   <attribute name="buffer[MENU_MAX_CMD_LEN]" type="char" visibility="0x01" properties="0x00">
+    <documentation>/**&lt; Buffer to hold the actual menu command */</documentation>
+   </attribute>
+   <attribute name="bufferLen" type="uint8_t" visibility="0x02" properties="0x00">
+    <documentation>/**&lt; Length of the command in the buffer */</documentation>
    </attribute>
   </class>
  </package>
@@ -20,7 +26,7 @@
  * \brief MenuMgr &quot;class&quot;
  */</documentation>
    <statechart>
-    <initial target="../1/0">
+    <initial target="../1">
      <action>(void)e;        /* suppress the compiler warning about unused parameter */
 
 QS_OBJ_DICTIONARY(&amp;l_MenuMgr);
@@ -28,8 +34,8 @@ QS_FUN_DICTIONARY(&amp;QHsm_top);
 QS_FUN_DICTIONARY(&amp;MenuMgr_initial);
 QS_FUN_DICTIONARY(&amp;MenuMgr_Active);
 
-//QActive_subscribe((QActive *)me, MSG_SEND_OUT_SIG);</action>
-     <initial_glyph conn="1,2,4,3,7,7">
+QActive_subscribe((QActive *)me, MENU_GENERAL_REQ_SIG_SIG);</action>
+     <initial_glyph conn="1,2,4,3,7,2">
       <action box="0,-2,6,2"/>
      </initial_glyph>
     </initial>
@@ -44,6 +50,12 @@ QS_FUN_DICTIONARY(&amp;MenuMgr_Active);
  * @return status: QState type that specifies where the state
  * machine is going next.
  */</documentation>
+     <entry>MENU_printf(&quot; ***** Press '?' at any time to request a menu and help. ***** \n&quot;);</entry>
+     <tran trig="MENU_GENERAL_REQ">
+      <tran_glyph conn="3,82,3,-1,14">
+       <action box="0,-2,10,2"/>
+      </tran_glyph>
+     </tran>
      <state name="WaitForMenuRequest">
       <documentation>/**
  * This state is the initial state and waits for a user to request a menu.
@@ -53,14 +65,14 @@ QS_FUN_DICTIONARY(&amp;MenuMgr_Active);
  * @return status: QState type that specifies where the state
  * machine is going next.
  */</documentation>
-      <entry>//DBG_printf(&quot;Printing Menu help\n&quot;);
-MENU_printf(&quot;Press '?' to request a menu\n&quot;);
-//DBG_printf(&quot;Printed Menu help\n&quot;);</entry>
-      <state_glyph node="8,7,18,10">
+      <entry>MENU_printf(&quot; ***** Press '?' at any time to request a menu ***** \n&quot;);</entry>
+      <state_glyph node="74,35,18,10">
        <entry box="1,2,6,2"/>
       </state_glyph>
      </state>
-     <state_glyph node="3,3,94,82"/>
+     <state_glyph node="3,3,94,82">
+      <entry box="1,2,6,2"/>
+     </state_glyph>
     </state>
     <state_diagram size="108,90"/>
    </statechart>
@@ -104,19 +116,20 @@ QActive_ctor(&amp;me-&gt;super, (QStateHandler)&amp;MenuMgr_initial);</code>
 /* Includes ------------------------------------------------------------------*/
 #include &quot;MenuMgr.h&quot;
 #include &quot;project_includes.h&quot;           /* Includes common to entire project. */
-#include &quot;bsp.h&quot;                              /* For time to ticks conversion */
-#include &quot;I2CMgr.h&quot;                                         /* For I2CDataEvt */
-#include &quot;time.h&quot;
-#include &quot;stm32f4x7_eth.h&quot;
 
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE;                 /* For QSPY to know the name of this file */
-DBG_DEFINE_THIS_MODULE( DBG_MODL_MENU ); /* For debug system to ID this module */
+DBG_DEFINE_THIS_MODULE( DBG_MODL_MENU );/* For debug system to ID this module */
 
 /* Private typedefs ----------------------------------------------------------*/
 $declare(AOs::MenuMgr)
 
 /* Private defines -----------------------------------------------------------*/
+/**
+ *@brief    Max length of a menu command
+ */
+#define MENU_MAX_CMD_LEN                                                       8
+
 /* Private macros ------------------------------------------------------------*/
 /* Private variables and Local objects ---------------------------------------*/
 

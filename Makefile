@@ -151,12 +151,14 @@ APP_COMM_DIR            = $(APP_DIR)/comm
 # Application Comm directory
 APP_MENU_DIR            = $(APP_DIR)/menu
 
-
 # Console output directory
 CON_OUT_DIR				= $(SYS_DIR)/sys_shared/con_out
 
 # Debug control directory
 DBG_CNTRL_DIR			= $(SYS_DIR)/sys_shared/dbg_cntrl
+
+# Console output directory
+KTREE_DIR				= $(SYS_DIR)/ktree
 
 # Source virtual directories
 VPATH 					= $(APP_DIR) \
@@ -180,6 +182,7 @@ VPATH 					= $(APP_DIR) \
 						  $(STM32F4XX_STD_PERIPH_DIR)/src \
 						  \
 						  $(CON_OUT_DIR) \
+						  $(KTREE_DIR) \
 						  $(DBG_CNTRL_DIR)
 
 # include directories
@@ -218,6 +221,7 @@ INCLUDES  				= -I$(SRC_DIR) \
 						  -I$(STM32F4XX_STD_PERIPH_DIR)/inc \
 						  \
 						  -I$(CON_OUT_DIR) \
+						  -I$(KTREE_DIR) \
 						  -I$(DBG_CNTRL_DIR)
 
 #-----------------------------------------------------------------------------
@@ -252,6 +256,8 @@ C_SRCS					:= \
 						\
 						main.c \
 						no_heap.c \
+						comm.c \
+						menu.c \
 						\
 						bsp.c \
 						system_stm32f4xx.c \
@@ -271,6 +277,7 @@ C_SRCS					:= \
 						nor.c \
 						sdram.c \
 						dbg_cntrl.c \
+						ktree.c \
 						\
 						LWIPMgr.c \
 						I2CMgr.c \

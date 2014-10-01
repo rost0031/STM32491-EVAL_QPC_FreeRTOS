@@ -17,6 +17,8 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "qp_port.h"                                        /* for QP support */
+#include "CBErrors.h"                               /* for system error codes */
+#include "CBSignals.h"                                  /* for system signals */
 
 /* Exported defines ----------------------------------------------------------*/
 /**
@@ -57,7 +59,9 @@ enum AO_Priorities {
  * \enum Source of the message.
  */
 typedef enum MsgSrcTag {
-   SERIAL = 0,                           /**< Message came from a serial port */
+   SERIAL_CON = 0,             /**< Message came from the console serial port */
+   ETH_PORT_1,             /**< Message came from the the first ethernet port */
+   ETH_PORT_2,            /**< Message came from the the second ethernet port */
 } MsgSrc;
 
 /**

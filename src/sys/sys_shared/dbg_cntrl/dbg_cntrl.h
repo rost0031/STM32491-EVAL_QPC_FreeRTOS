@@ -168,6 +168,7 @@ typedef enum DBG_MODULES {
    DBG_MODL_NOR      = 0x00000020, /**< NOR Flash module debugging. */
    DBG_MODL_SDRAM    = 0x00000040, /**< SDRAM module debugging. */
    DBG_MODL_MENU     = 0x00000080, /**< MENU module debugging. */
+   DBG_MODL_COMM     = 0x00000100, /**< COMM module debugging. */
 } DBG_MODL_T;
 
 /* Exported variables --------------------------------------------------------*/

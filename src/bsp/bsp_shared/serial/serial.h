@@ -26,7 +26,7 @@
  * Serial ports available on the system.
  */
 typedef enum SerialPorts {
-   SERIAL_SYS  = 0,                           /**< Serial debug/basic IO port */
+   SERIAL_UART1  = 0,                         /**< Serial debug/basic IO port */
    /* Insert more serial port enumerations here... */
    SERIAL_MAX     /**< Maximum number of available serial ports on the system */
 } SerialPort_T;

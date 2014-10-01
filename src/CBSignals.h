@@ -69,13 +69,24 @@ enum I2CMgrSignals {
    I2C_MAX_SIG
 };
 
+/**
+ * @enum Signals used by MenuMgr
+ */
+enum MenuMgrSignals {
+   MENU_GENERAL_REQ_SIG = I2C_MAX_SIG, /** This signal must start at the previous category max signal */
+
+
+   MENU_MAX_SIG
+};
 /* INSERT NEW SIGNAL CATEGORIES BEFORE HERE...POINT MAX_SHARED_SIG TO LAST SIGNAL */
 
 /**
  * @enum Final signal.
+ * @note MAX_SHARED_SIG should be updated to point to the very last signal
+ * before it.
  */
 enum FinalSignal {
-   MAX_SHARED_SIG = I2C_MAX_SIG,  /**< Last published shared signal - should always be at the bottom of this list */
+   MAX_SHARED_SIG = MENU_MAX_SIG,  /**< Last published shared signal - should always be at the bottom of this list */
 };
 
 /* Exported constants --------------------------------------------------------*/

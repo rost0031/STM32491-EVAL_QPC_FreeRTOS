@@ -91,7 +91,7 @@ rq = 0; /* To prevent compiler warning about unused var */</entry>
        <action>/* Set up the DMA buffer here.  This copies the data from the event to the UART's
  * private buffer as well to avoid someone overwriting it */
 Serial_DMAConfig(
-    SERIAL_SYS,
+    SERIAL_UART1,
     (char *)((SerialDataEvt const *) e)-&gt;buffer,
     ((SerialDataEvt const *) e)-&gt;wBufferLen
 );</action>
@@ -121,7 +121,7 @@ QTimeEvt_rearm(
 );
 
 /* Start the DMA transfer over serial */
-Serial_DMAStartXfer( SERIAL_SYS );</entry>
+Serial_DMAStartXfer( SERIAL_UART1 );</entry>
       <exit>QTimeEvt_disarm( &amp;me-&gt;serialTimerEvt ); /* Disarm timer on exit */</exit>
       <tran trig="UART_DMA_DONE" target="../../0">
        <tran_glyph conn="42,18,3,1,-17">
