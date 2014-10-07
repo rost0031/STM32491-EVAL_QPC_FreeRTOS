@@ -25,6 +25,11 @@
    <documentation>/**
  * \brief MenuMgr &quot;class&quot;
  */</documentation>
+   <attribute name="menu" type="treeNode_t *" visibility="0x00" properties="0x00">
+    <documentation>/**
+ * @brief	Pointer to the top level of the menu.  Gets initialized on startup.
+ */</documentation>
+   </attribute>
    <statechart>
     <initial target="../1">
      <action>(void)e;        /* suppress the compiler warning about unused parameter */
@@ -34,7 +39,8 @@ QS_FUN_DICTIONARY(&amp;QHsm_top);
 QS_FUN_DICTIONARY(&amp;MenuMgr_initial);
 QS_FUN_DICTIONARY(&amp;MenuMgr_Active);
 
-QActive_subscribe((QActive *)me, MENU_GENERAL_REQ_SIG_SIG);</action>
+QActive_subscribe((QActive *)me, MENU_GENERAL_REQ_SIG);
+</action>
      <initial_glyph conn="1,2,4,3,7,2">
       <action box="0,-2,6,2"/>
      </initial_glyph>
@@ -50,10 +56,15 @@ QActive_subscribe((QActive *)me, MENU_GENERAL_REQ_SIG_SIG);</action>
  * @return status: QState type that specifies where the state
  * machine is going next.
  */</documentation>
-     <entry>MENU_printf(&quot; ***** Press '?' at any time to request a menu and help. ***** \n&quot;);</entry>
+     <entry>/* Initialize the menu */
+me-&gt;menu = MENU_init();
+
+MENU_printf(&quot; ***** Press '?' at any time to request a menu and help. ***** \n&quot;);
+
+MENU_printMenuTree(me-&gt;menu, 0, 0);</entry>
      <tran trig="MENU_GENERAL_REQ">
-      <tran_glyph conn="3,82,3,-1,14">
-       <action box="0,-2,10,2"/>
+      <tran_glyph conn="3,82,3,-1,19">
+       <action box="0,-2,18,2"/>
       </tran_glyph>
      </tran>
      <state name="WaitForMenuRequest">
@@ -116,6 +127,7 @@ QActive_ctor(&amp;me-&gt;super, (QStateHandler)&amp;MenuMgr_initial);</code>
 /* Includes ------------------------------------------------------------------*/
 #include &quot;MenuMgr.h&quot;
 #include &quot;project_includes.h&quot;           /* Includes common to entire project. */
+#include &quot;menu.h&quot;
 
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE;                 /* For QSPY to know the name of this file */
@@ -125,11 +137,6 @@ DBG_DEFINE_THIS_MODULE( DBG_MODL_MENU );/* For debug system to ID this module */
 $declare(AOs::MenuMgr)
 
 /* Private defines -----------------------------------------------------------*/
-/**
- *@brief    Max length of a menu command
- */
-#define MENU_MAX_CMD_LEN                                                       8
-
 /* Private macros ------------------------------------------------------------*/
 /* Private variables and Local objects ---------------------------------------*/
 
@@ -176,6 +183,11 @@ $define(AOs::MenuMgr)
 #include &quot;Shared.h&quot;
 
 /* Exported defines ----------------------------------------------------------*/
+/**
+ *@brief    Max length of a menu command
+ */
+#define MENU_MAX_CMD_LEN                                                       8
+
 /* Exported macros -----------------------------------------------------------*/
 /* Exported types ------------------------------------------------------------*/
 $declare(Events)

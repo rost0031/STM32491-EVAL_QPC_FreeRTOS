@@ -42,6 +42,11 @@
 #include "Shared.h"
 
 /* Exported defines ----------------------------------------------------------*/
+/**
+ *@brief    Max length of a menu command
+ */
+#define MENU_MAX_CMD_LEN                                                       8
+
 /* Exported macros -----------------------------------------------------------*/
 /* Exported types ------------------------------------------------------------*/
 
@@ -54,7 +59,15 @@ typedef struct {
     QEvt super;
 
     /**< Where the msg came from so it can be routed back to the sender. */
-    MsgSrc msg_src;
+    MsgSrc msgSrc;
+
+    /**< Buffer to hold the actual menu command */
+    char buffer[MENU_MAX_CMD_LEN];
+
+/* private: */
+
+    /**< Length of the command in the buffer */
+    uint8_t bufferLen;
 } MenuEvt;
 
 

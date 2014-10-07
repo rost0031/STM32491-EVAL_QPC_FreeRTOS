@@ -1,9 +1,8 @@
 /**
- * @file    menu.h
- * @brief   Implementation of the munu application using a statically allocated
- * k-ary tree structure.
+ * @file    systest_menu.h
+ * @brief   Handles the system tests menu section of the menu application.
  *
- * @date    09/29/2014
+ * @date    10/02/2014
  * @author  Harry Rostovtsev
  * @email   harry_rostovtsev@datacard.com
  * Copyright (C) 2014 Datacard. All rights reserved.
@@ -13,8 +12,8 @@
  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef MENU_H_
-#define MENU_H_
+#ifndef SYSTEST_MENU_H_
+#define SYSTEST_MENU_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -22,7 +21,6 @@ extern "C" {
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f4xx.h"                                 /* For STM32F4 support */
-#include "ktree.h"
 #include "Shared.h"
 
 /* Exported defines ----------------------------------------------------------*/
@@ -32,11 +30,17 @@ extern "C" {
 /* Exported variables --------------------------------------------------------*/
 /* Exported functions --------------------------------------------------------*/
 
-treeNode_t* MENU_init( void );
+/**
+ * @brief   Initialize the menu memory space with the contents of the menu
+ *
+ * This function initializes the menu application.
+ *
+ * @param [in]  iBus: I2C_Bus_t identifier for I2C bus to initialize
+ *    @arg
+ * @return: None
+ */
+//CBErrorCode MENU_debugMenuInit( void );
 
-void MENU_printMenuTree( treeNode_t *node, uint8_t level, MsgSrc whereToPrint );
-
-void MENU_printNode( treeNode_t *node, uint8_t level, MsgSrc whereToPrint );
 /**
  * @}
  * end addtogroup groupMenu
@@ -46,5 +50,5 @@ void MENU_printNode( treeNode_t *node, uint8_t level, MsgSrc whereToPrint );
 }
 #endif
 
-#endif                                                             /* MENU_H_ */
+#endif                                                     /* SYSTEST_MENU_H_ */
 /******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/

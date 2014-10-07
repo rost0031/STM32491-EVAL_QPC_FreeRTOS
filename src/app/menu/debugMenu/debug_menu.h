@@ -20,14 +20,25 @@ extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
-#include "stm32f4xx.h"                                 /* For STM32F4 support */
-#include "Shared.h"
+#include "ktree.h"                                  /* For treeNode_t typedef */
 
 /* Exported defines ----------------------------------------------------------*/
 /* Exported types ------------------------------------------------------------*/
 /* Exported macros -----------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
 /* Exported variables --------------------------------------------------------*/
+extern treeNode_t menuDbg;
+extern char *const menuDbg_TitleTxt;
+extern char *const menuDbg_SelectKey;
+
+extern treeNode_t menuDbgItem_toggleSerialDebug;
+extern char *const menuDbgItem_toggleSerialDebugTxt;
+extern char *const menuDbgItem_toggleSerialDebugSelectKey;
+
+extern treeNode_t menuDbgItem_toggleEthDebug;
+extern char *const menuDbgItem_toggleEthDebugTxt;
+extern char *const menuDbgItem_toggleEthDebugSelectKey;
+
 /* Exported functions --------------------------------------------------------*/
 
 /**
@@ -39,7 +50,9 @@ extern "C" {
  *    @arg
  * @return: None
  */
-//CBErrorCode MENU_debugMenuInit( void );
+void MENU_toggleSerialDebugAction( void );
+
+void MENU_toggleEthDebugAction( void );
 
 /**
  * @}

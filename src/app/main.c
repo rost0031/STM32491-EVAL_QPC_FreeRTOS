@@ -48,7 +48,6 @@ static QSubscrList   l_subscrSto[MAX_PUB_SIG];     /**< Storage for subscribe/pu
 static union SmallEvents {
     void   *e0;                                       /* minimum event size */
     uint8_t e1[sizeof(QEvt)];
-    uint8_t e2[sizeof(MenuEvt)];
 } l_smlPoolSto[50];                     /* storage for the small event pool */
 
 /**
@@ -58,6 +57,7 @@ static union SmallEvents {
 static union MediumEvents {
     void   *e0;                                       /* minimum event size */
     uint8_t e1[sizeof(I2CEvt)];
+    uint8_t e2[sizeof(MenuEvt)];
 } l_medPoolSto[50];                    /* storage for the medium event pool */
 
 /**

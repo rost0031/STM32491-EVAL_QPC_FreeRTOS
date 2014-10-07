@@ -65,6 +65,10 @@ typedef enum CBErrors
    ERR_COMM_INVALID_MSG_LEN                                    = 0x00040001,
    ERR_COMM_UNIMPLEMENTED_MSG                                  = 0x00040002,
 
+   /* MENU error category                        0x00050000 - 0x0005FFFF */
+   ERR_MENU_NODE_STORAGE_ALLOC_NULL                            = 0x00050000,
+   ERR_MENU_TEXT_STORAGE_ALLOC_NULL                            = 0x00050001,
+
    /* Reserved errors                            0xFFFFFFFE - 0xFFFFFFFF */
    ERR_UNIMPLEMENTED                                           = 0xFFFFFFFE,
    ERR_UNKNOWN                                                 = 0xFFFFFFFF

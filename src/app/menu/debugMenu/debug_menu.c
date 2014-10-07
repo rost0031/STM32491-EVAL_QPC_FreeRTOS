@@ -11,10 +11,9 @@
  * @{
  */
 /* Includes ------------------------------------------------------------------*/
-#include "menu.h"
-#include "debug_menu.h"
 #include "qp_port.h"                                        /* for QP support */
 #include "project_includes.h"
+#include "debug_menu.h"
 
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */
@@ -25,35 +24,34 @@ DBG_DEFINE_THIS_MODULE( DBG_MODL_MENU );/* For debug system to ID this module */
 /* Private macros ------------------------------------------------------------*/
 /* Private variables and Local objects ---------------------------------------*/
 
-//static treeNode_t menuItem;
-//
-//const char debugMenuTitleTxt = "Debug Menu";
-//const char debugMenuTimeTestTxt = "Run debug output time test";
+treeNode_t menuDbg;
+char *const menuDbg_TitleTxt = "Debug Menu";
+char *const menuDbg_SelectKey = "DBG";
+
+treeNode_t menuDbgItem_toggleSerialDebug;
+char *const menuDbgItem_toggleSerialDebugTxt = "Toggle debugging over serial port ON/OFF";
+char *const menuDbgItem_toggleSerialDebugSelectKey = "S";
+
+treeNode_t menuDbgItem_toggleEthDebug;
+char *const menuDbgItem_toggleEthDebugTxt = "Toggle debugging over ethernet port ON/OFF";
+char *const menuDbgItem_toggleEthDebugSelectKey = "E";
 
 /* Private function prototypes -----------------------------------------------*/
+
 /* Private functions ---------------------------------------------------------*/
 
-///******************************************************************************/
-//void MENU_debugMenuInit( treeNode_t *t )
-//{
-//
-//
-//}
-//
-///******************************************************************************/
-//void MENU_addDebugMenu( treeNode_t *t )
-//{
-//   t->text = debugMenuTitleTxt;
-//   t->parent = NULL;
-//   t->firstSiblingNode = NULL;
-//   t->firstChildNode = NULL;
-//}
-//
-//void MENU_addItemToDebugMenu( treeNode_t *menuItem, treeNode_t *menuItemParent, const char *menuItemText )
-//{
-//   menuItemParent->parent = menuItem;
-//   menuItemParent->text = menuItemText;
-//}
+/******************************************************************************/
+void MENU_toggleSerialDebugAction( void )
+{
+   DBG_printf("Toggle Serial Debug Action test\n");
+}
+
+/******************************************************************************/
+void MENU_toggleEthDebugAction( void )
+{
+   DBG_printf("Toggle Ethernet Debug Action test\n");
+}
+
 /**
  * @}
  * end addtogroup groupMenu

@@ -36,14 +36,11 @@
 /* Includes ------------------------------------------------------------------*/
 #include "MenuMgr.h"
 #include "project_includes.h"           /* Includes common to entire project. */
-#include "bsp.h"                              /* For time to ticks conversion */
-#include "I2CMgr.h"                                         /* For I2CDataEvt */
-#include "time.h"
-#include "stm32f4x7_eth.h"
+#include "menu.h"
 
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE;                 /* For QSPY to know the name of this file */
-DBG_DEFINE_THIS_MODULE( DBG_MODL_MENU ); /* For debug system to ID this module */
+DBG_DEFINE_THIS_MODULE( DBG_MODL_MENU );/* For debug system to ID this module */
 
 /* Private typedefs ----------------------------------------------------------*/
 
@@ -54,6 +51,13 @@ DBG_DEFINE_THIS_MODULE( DBG_MODL_MENU ); /* For debug system to ID this module *
 typedef struct {
 /* protected: */
     QActive super;
+
+/* public: */
+
+    /**
+     * @brief	Pointer to the top level of the menu.  Gets initialized on startup.
+     */
+    treeNode_t * menu;
 } MenuMgr;
 
 /* protected: */
@@ -122,8 +126,9 @@ static QState MenuMgr_initial(MenuMgr * const me, QEvt const * const e) {
     QS_FUN_DICTIONARY(&MenuMgr_initial);
     QS_FUN_DICTIONARY(&MenuMgr_Active);
 
-    //QActive_subscribe((QActive *)me, MSG_SEND_OUT_SIG);
-    return Q_TRAN(&MenuMgr_WaitForMenuRequest);
+    QActive_subscribe((QActive *)me, MENU_GENERAL_REQ_SIG);
+
+    return Q_TRAN(&MenuMgr_Active);
 }
 
 /**
@@ -140,6 +145,22 @@ static QState MenuMgr_initial(MenuMgr * const me, QEvt const * const e) {
 static QState MenuMgr_Active(MenuMgr * const me, QEvt const * const e) {
     QState status_;
     switch (e->sig) {
+        /* ${AOs::MenuMgr::SM::Active} */
+        case Q_ENTRY_SIG: {
+            /* Initialize the menu */
+            me->menu = MENU_init();
+
+            MENU_printf(" ***** Press '?' at any time to request a menu and help. ***** \n");
+
+            MENU_printMenuTree(me->menu, 0, 0);
+            status_ = Q_HANDLED();
+            break;
+        }
+        /* ${AOs::MenuMgr::SM::Active::MENU_GENERAL_REQ} */
+        case MENU_GENERAL_REQ_SIG: {
+            status_ = Q_HANDLED();
+            break;
+        }
         default: {
             status_ = Q_SUPER(&QHsm_top);
             break;
@@ -162,9 +183,7 @@ static QState MenuMgr_WaitForMenuRequest(MenuMgr * const me, QEvt const * const 
     switch (e->sig) {
         /* ${AOs::MenuMgr::SM::Active::WaitForMenuRequest} */
         case Q_ENTRY_SIG: {
-            //DBG_printf("Printing Menu help\n");
-            MENU_printf("Press '?' to request a menu\n");
-            //DBG_printf("Printed Menu help\n");
+            MENU_printf(" ***** Press '?' at any time to request a menu ***** \n");
             status_ = Q_HANDLED();
             break;
         }

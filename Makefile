@@ -148,8 +148,25 @@ LWIP_SRC_DIR            = ../../
 # Application Comm directory
 APP_COMM_DIR            = $(APP_DIR)/comm
 
-# Application Comm directory
+# Application Menu and submenu directories
 APP_MENU_DIR            = $(APP_DIR)/menu
+APP_MENU_DBG_DIR        = $(APP_DIR)/menu/debugMenu
+APP_MENU_SYSTEST_DIR    = $(APP_DIR)/menu/sysTestMenu
+
+# Collect all the menu directories and subdirectories here so we don't have to
+# keep modifying the VPATH and INCLUDE paths.
+APP_MENU_DIRS           = $(APP_MENU_DIR) \
+                          $(APP_MENU_DBG_DIR) \
+                          $(APP_MENU_SYSTEST_DIR)
+                          
+APP_MENU_INCLUDES       = -I$(APP_MENU_DIR) \
+                          -I$(APP_MENU_DBG_DIR) \
+                          -I$(APP_MENU_SYSTEST_DIR)                          
+# Collect all the menu c source files here so we don't have to the list of sources
+MENU_CSRCS              = ktree.c \
+                          menu.c \
+						  debug_menu.c
+						  						
 
 # Console output directory
 CON_OUT_DIR				= $(SYS_DIR)/sys_shared/con_out
@@ -163,7 +180,7 @@ KTREE_DIR				= $(SYS_DIR)/ktree
 # Source virtual directories
 VPATH 					= $(APP_DIR) \
 						  $(APP_COMM_DIR) \
-						  $(APP_MENU_DIR) \
+						  $(APP_MENU_DIRS) \
 						  \
 						  $(BSP_DIR) \
 						  $(BSP_DIR)/bsp_shared \
@@ -190,7 +207,7 @@ INCLUDES  				= -I$(SRC_DIR) \
 						  -I$(APP_DIR) \
 						  \
 						  -I$(APP_COMM_DIR) \
-						  -I$(APP_MENU_DIR) \
+						  $(APP_MENU_INCLUDES) \
 						  \
 						  -I$(QPC_DIR)/include \
 						  -I$(QPC_DIR)/qf/source \
@@ -252,12 +269,12 @@ ASM_SRCS 				:= \
 						stm32_hardfault_handler.S
 
 # C source files
-C_SRCS					:= \
-						\
+C_SRCS                = \
 						main.c \
 						no_heap.c \
 						comm.c \
-						menu.c \
+						\
+						$(MENU_CSRCS) \
 						\
 						bsp.c \
 						system_stm32f4xx.c \
@@ -277,7 +294,6 @@ C_SRCS					:= \
 						nor.c \
 						sdram.c \
 						dbg_cntrl.c \
-						ktree.c \
 						\
 						LWIPMgr.c \
 						I2CMgr.c \

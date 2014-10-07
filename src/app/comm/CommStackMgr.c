@@ -42,7 +42,7 @@
 #include "time.h"
 #include "stm32f4x7_eth.h"
 #include "nor.h"
-#include "ktree.h"
+#include "menu.h"
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE;                 /* For QSPY to know the name of this file */
 DBG_DEFINE_THIS_MODULE( DBG_MODL_COMM );/* For debug system to ID this module */
@@ -243,7 +243,7 @@ static QState CommStackMgr_Active(CommStackMgr * const me, QEvt const * const e)
             DBG_printf("Finished destructive SDRAM test\n");
             */
 
-            KTREE_Test();
+            KTREE_fakeMenuTest();
 
             /*
             DBG_printf("Starting SDRAM/NOR interation test\n");

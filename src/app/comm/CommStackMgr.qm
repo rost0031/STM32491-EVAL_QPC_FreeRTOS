@@ -148,7 +148,7 @@ SDRAM_TestDestructive();
 DBG_printf(&quot;Finished destructive SDRAM test\n&quot;);
 */
 
-KTREE_Test();
+KTREE_fakeMenuTest();
 
 /*
 DBG_printf(&quot;Starting SDRAM/NOR interation test\n&quot;);
@@ -244,7 +244,7 @@ QTimeEvt_ctor(&amp;me-&gt;timeTestTimerEvt, TIME_TEST_SIG);</code>
 #include &quot;time.h&quot;
 #include &quot;stm32f4x7_eth.h&quot;
 #include &quot;nor.h&quot;
-#include &quot;ktree.h&quot;
+#include &quot;menu.h&quot;
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE;                 /* For QSPY to know the name of this file */
 DBG_DEFINE_THIS_MODULE( DBG_MODL_COMM );/* For debug system to ID this module */

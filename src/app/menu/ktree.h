@@ -1,13 +1,14 @@
 /**
- * @file 	ktree.h
- * @brief   Implementation of a statically allocated k-ary tree structure.
+ * @file    ktree.h
+ * @brief   Implementation of a statically allocated k-ary tree structure that
+ * is used by the menu.
  *
- * @date   	09/29/2014
- * @author 	Harry Rostovtsev
- * @email  	harry_rostovtsev@datacard.com
+ * @date    09/29/2014
+ * @author  Harry Rostovtsev
+ * @email   harry_rostovtsev@datacard.com
  * Copyright (C) 2014 Datacard. All rights reserved.
  *
- * @addtogroup groupKTree
+ * @addtogroup groupMenu
  * @{
  */
 
@@ -28,11 +29,12 @@ extern "C" {
 typedef void (*pFunction)(void);
 
 typedef struct treeNode {
-   char *text;
    struct treeNode *fakeParentNode;
    struct treeNode *trueParentNode;
    struct treeNode *firstChildNode;
    struct treeNode *firstSiblingNode;
+   char *text;
+   char *selector;
    pFunction actionToTake;
 } treeNode_t;
 
@@ -42,7 +44,6 @@ typedef struct treeNode {
 /* Exported variables --------------------------------------------------------*/
 /* Exported functions --------------------------------------------------------*/
 
-void KTREE_Test( void );
 
 /**
  * @brief   Initialize the menu memory space with the contents of the menu
@@ -53,7 +54,7 @@ void KTREE_Test( void );
  *    @arg
  * @return: None
  */
-void KTREE_initNode( treeNode_t *node );
+void KTREE_nodeCtor( treeNode_t *node );
 
 
 void KTREE_addChild(
@@ -82,11 +83,11 @@ void KTREE_printTree( treeNode_t *node, uint8_t level );
 
 void KTREE_printNode( treeNode_t *node, uint8_t level );
 
-void KTREE_testAction( void );
+void KTREE_fakeMenuTest( void );
 
 /**
  * @}
- * end addtogroup groupKTree
+ * end addtogroup groupMenu
  */
 
 #ifdef __cplusplus
