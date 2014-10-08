@@ -32,9 +32,9 @@ char *const menu_TitleTxt = "Coupler Board Menu";
 char *const menu_SelectKey = "top";
 
 /* Private function prototypes -----------------------------------------------*/
-treeNode_t* MENU_initTopLevel( void );
+static treeNode_t* MENU_initTopLevel( void );
 
-treeNode_t* MENU_addChild(
+static treeNode_t* MENU_addChild(
       treeNode_t *node,
       treeNode_t *parent,
       const char *menuTxt,
@@ -42,7 +42,7 @@ treeNode_t* MENU_addChild(
       pFunction action
 );
 
-treeNode_t* MENU_addSubMenu(
+static treeNode_t* MENU_addSubMenu(
       treeNode_t *node,
       treeNode_t *parent,
       const char *menuTxt,
@@ -50,7 +50,7 @@ treeNode_t* MENU_addSubMenu(
       pFunction action
 );
 
-treeNode_t* MENU_addMenuItem(
+static treeNode_t* MENU_addMenuItem(
       treeNode_t *node,
       treeNode_t *parent,
       const char *menuTxt,
@@ -94,13 +94,13 @@ treeNode_t* MENU_init( void )
 }
 
 /******************************************************************************/
-treeNode_t* MENU_initTopLevel( void )
+static treeNode_t* MENU_initTopLevel( void )
 {
    return( MENU_addChild(&menu, NULL, menu_TitleTxt, menu_SelectKey, NULL ) );
 }
 
 /******************************************************************************/
-treeNode_t* MENU_addSubMenu(
+static treeNode_t* MENU_addSubMenu(
       treeNode_t *node,
       treeNode_t *parent,
       const char *menuTxt,
@@ -112,7 +112,7 @@ treeNode_t* MENU_addSubMenu(
 }
 
 /******************************************************************************/
-treeNode_t* MENU_addMenuItem(
+static treeNode_t* MENU_addMenuItem(
       treeNode_t *node,
       treeNode_t *parent,
       const char *menuTxt,
@@ -124,7 +124,7 @@ treeNode_t* MENU_addMenuItem(
 }
 
 /******************************************************************************/
-treeNode_t* MENU_addChild(
+static treeNode_t* MENU_addChild(
       treeNode_t *node,
       treeNode_t *parent,
       const char *menuTxt,
@@ -174,19 +174,11 @@ void MENU_printMenuTree( treeNode_t *node, uint8_t level, MsgSrc whereToPrint )
 void MENU_printNode( treeNode_t *node, uint8_t level, MsgSrc whereToPrint )
 {
 
-//   for ( uint8_t i = 0; i < level; i++ ) {
-//      MENU_printf("   ");
-//   }
-//   MENU_printf("|\n");
-
    for ( uint8_t i = 0; i < level; i++ ) {
       MENU_printf("    ");
    }
    MENU_printf("*---");
    MENU_printf("** %-3s **:  %-50s\n", node->selector, node->text );
-//   for ( uint8_t i = 0; i < level; i++ ) {
-//      MENU_printf("   ");
-//   }
 }
 
 /**
