@@ -243,7 +243,7 @@ static QState CommStackMgr_Active(CommStackMgr * const me, QEvt const * const e)
             DBG_printf("Finished destructive SDRAM test\n");
             */
 
-            KTREE_fakeMenuTest();
+            /* KTREE_fakeMenuTest(); */
 
             /*
             DBG_printf("Starting SDRAM/NOR interation test\n");

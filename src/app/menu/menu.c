@@ -173,11 +173,17 @@ void MENU_printMenuTree( treeNode_t *node, uint8_t level, MsgSrc whereToPrint )
 /******************************************************************************/
 void MENU_printNode( treeNode_t *node, uint8_t level, MsgSrc whereToPrint )
 {
-   for ( uint8_t i = 0; i < level; i++ ) {
-      MENU_printf("*--");
-   }
 
-   MENU_printf("%s to select.  %s\n", node->selector, node->text );
+//   for ( uint8_t i = 0; i < level; i++ ) {
+//      MENU_printf("   ");
+//   }
+//   MENU_printf("|\n");
+
+   for ( uint8_t i = 0; i < level; i++ ) {
+      MENU_printf("    ");
+   }
+   MENU_printf("*---");
+   MENU_printf("** %-3s **:  %-50s\n", node->selector, node->text );
 //   for ( uint8_t i = 0; i < level; i++ ) {
 //      MENU_printf("   ");
 //   }

@@ -149,9 +149,9 @@ static QState MenuMgr_Active(MenuMgr * const me, QEvt const * const e) {
         case Q_ENTRY_SIG: {
             /* Initialize the menu */
             me->menu = MENU_init();
-
-            MENU_printf(" ***** Press '?' at any time to request a menu and help. ***** \n");
-
+            MENU_printf("*************************************************************\n");
+            MENU_printf("***** Press '?' at any time to request a menu and help. *****\n");
+            MENU_printf("*************************************************************\n");
             MENU_printMenuTree(me->menu, 0, 0);
             status_ = Q_HANDLED();
             break;

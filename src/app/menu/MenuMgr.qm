@@ -58,9 +58,9 @@ QActive_subscribe((QActive *)me, MENU_GENERAL_REQ_SIG);
  */</documentation>
      <entry>/* Initialize the menu */
 me-&gt;menu = MENU_init();
-
-MENU_printf(&quot; ***** Press '?' at any time to request a menu and help. ***** \n&quot;);
-
+MENU_printf(&quot;*************************************************************\n&quot;);
+MENU_printf(&quot;***** Press '?' at any time to request a menu and help. *****\n&quot;);
+MENU_printf(&quot;*************************************************************\n&quot;);
 MENU_printMenuTree(me-&gt;menu, 0, 0);</entry>
      <tran trig="MENU_GENERAL_REQ">
       <tran_glyph conn="3,82,3,-1,19">

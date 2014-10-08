@@ -148,7 +148,7 @@ SDRAM_TestDestructive();
 DBG_printf(&quot;Finished destructive SDRAM test\n&quot;);
 */
 
-KTREE_fakeMenuTest();
+/* KTREE_fakeMenuTest(); */
 
 /*
 DBG_printf(&quot;Starting SDRAM/NOR interation test\n&quot;);
