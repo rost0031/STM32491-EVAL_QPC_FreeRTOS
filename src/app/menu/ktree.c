@@ -153,6 +153,20 @@ void KTREE_nodeCtor( treeNode_t *node )
 }
 
 /******************************************************************************/
+uint8_t KTREE_findDepth( treeNode_t *node, uint8_t currDepth )
+{
+   if ( NULL == node ) {
+      return( 0xFF );
+   }
+
+   if ( NULL != node->fakeParentNode ) {
+      return( currDepth );
+   } else {
+      return (KTREE_findDepth( node->fakeParentNode, ++currDepth ));
+   }
+}
+
+/******************************************************************************/
 void KTREE_addChild(
       treeNode_t *childToAdd,
       treeNode_t *trueParentNode,

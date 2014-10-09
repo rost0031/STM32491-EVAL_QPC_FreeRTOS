@@ -56,6 +56,19 @@ typedef struct treeNode {
  */
 void KTREE_nodeCtor( treeNode_t *node );
 
+/**
+ * @brief   Counts the depth (via fakeParentNode pointer) of the passed in
+ * pointer to a node.
+ *
+ * Recursive function that counts it's own depth by traversing the tree up via
+ * the fakeParentNode pointer and counting.
+ *
+ * @param [in]  *node: treeNode_t pointer to the node
+ * @parem [in] currDepth: uint8_t value of the current depth.  Unless you want
+ * to for some reason offset where you start counting from, pass in 0 here.
+ * @return: uint8_t depth of the current node.
+ */
+uint8_t KTREE_findDepth( treeNode_t *node, uint8_t currDepth );
 
 void KTREE_addChild(
       treeNode_t *childToAdd,

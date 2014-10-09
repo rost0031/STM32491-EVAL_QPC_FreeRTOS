@@ -152,12 +152,39 @@ static QState MenuMgr_Active(MenuMgr * const me, QEvt const * const e) {
             MENU_printf("*************************************************************\n");
             MENU_printf("***** Press '?' at any time to request a menu and help. *****\n");
             MENU_printf("*************************************************************\n");
+
+            DBG_printf("Testing printing entire menu tree\n");
             MENU_printMenuTree(me->menu, 0, 0);
+            MENU_printf("\n\n");
+            DBG_printf("Testing printing current level of the menu\n");
+            MENU_printMenuCurrLevel(me->menu, 0, 0);
+            DBG_printf("Testing printing one level below current level of the menu\n");
+            MENU_printMenuCurrLevel(me->menu->firstChildNode, 0, 0);
             status_ = Q_HANDLED();
             break;
         }
         /* ${AOs::MenuMgr::SM::Active::MENU_GENERAL_REQ} */
         case MENU_GENERAL_REQ_SIG: {
+            DBG_printf("Received MENU_GENERAL_REQ with data: %s\n", ((MenuEvt const *)e)->buffer);
+            me->menu = MENU_parse(me->menu, ((MenuEvt const *)e)->buffer, ((MenuEvt const *)e)->bufferLen, ((MenuEvt const *)e)->msgSrc);
+            status_ = Q_HANDLED();
+            break;
+        }
+        /* ${AOs::MenuMgr::SM::Active::MENU_TOP_REQ} */
+        case MENU_TOP_REQ_SIG: {
+            DBG_printf("Received MENU_TOP_REQ\n");
+            status_ = Q_HANDLED();
+            break;
+        }
+        /* ${AOs::MenuMgr::SM::Active::MENU_UP_REQ} */
+        case MENU_UP_REQ_SIG: {
+            DBG_printf("Received MENU_UP_REQ\n");
+            status_ = Q_HANDLED();
+            break;
+        }
+        /* ${AOs::MenuMgr::SM::Active::MENU_HELP_REQ} */
+        case MENU_HELP_REQ_SIG: {
+            DBG_printf("Received MENU_HELP_REQ");
             status_ = Q_HANDLED();
             break;
         }

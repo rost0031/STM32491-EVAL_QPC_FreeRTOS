@@ -40,6 +40,17 @@ CBErrorCode COMM_parseMsg( uint8_t *pBuffer, uint16_t bufferLen, MsgSrc msgSourc
        */
       switch( bufferLen ) {
          case 1:
+            if ( pBuffer[0] == '?') {
+
+            } else {
+               status = ERR_COMM_UNIMPLEMENTED_MSG;
+               WRN_printf(
+                     "ErrCode 0x%08x: ERR_COMM_UNIMPLEMENTED_MSG (%c) from source: %d\n",
+                     status,
+                     pBuffer[0],
+                     msgSource
+               );
+            }
 
             break;
          case 0:

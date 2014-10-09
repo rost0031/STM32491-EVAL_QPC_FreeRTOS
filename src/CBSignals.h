@@ -74,8 +74,9 @@ enum I2CMgrSignals {
  */
 enum MenuMgrSignals {
    MENU_GENERAL_REQ_SIG = I2C_MAX_SIG, /** This signal must start at the previous category max signal */
-
-
+   MENU_HELP_REQ_SIG,
+   MENU_TOP_REQ_SIG,
+   MENU_UP_REQ_SIG,
    MENU_MAX_SIG
 };
 /* INSERT NEW SIGNAL CATEGORIES BEFORE HERE...POINT MAX_SHARED_SIG TO LAST SIGNAL */

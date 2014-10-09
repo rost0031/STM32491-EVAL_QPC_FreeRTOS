@@ -9,10 +9,10 @@
    <documentation>/**
  * \struct Event struct type for getting data to this AO.
  */</documentation>
-   <attribute name="msgSrc" type="MsgSrc" visibility="0x01" properties="0x00">
+   <attribute name="msgSrc" type="MsgSrc" visibility="0x02" properties="0x00">
     <documentation>/**&lt; Where the msg came from so it can be routed back to the sender. */</documentation>
    </attribute>
-   <attribute name="buffer[MENU_MAX_CMD_LEN]" type="char" visibility="0x01" properties="0x00">
+   <attribute name="buffer[MENU_MAX_CMD_LEN]" type="char" visibility="0x02" properties="0x00">
     <documentation>/**&lt; Buffer to hold the actual menu command */</documentation>
    </attribute>
    <attribute name="bufferLen" type="uint8_t" visibility="0x02" properties="0x00">
@@ -61,9 +61,36 @@ me-&gt;menu = MENU_init();
 MENU_printf(&quot;*************************************************************\n&quot;);
 MENU_printf(&quot;***** Press '?' at any time to request a menu and help. *****\n&quot;);
 MENU_printf(&quot;*************************************************************\n&quot;);
-MENU_printMenuTree(me-&gt;menu, 0, 0);</entry>
+
+DBG_printf(&quot;Testing printing entire menu tree\n&quot;);
+MENU_printMenuTree(me-&gt;menu, 0, 0);
+MENU_printf(&quot;\n\n&quot;);
+DBG_printf(&quot;Testing printing current level of the menu\n&quot;);
+MENU_printMenuCurrLevel(me-&gt;menu, 0, 0);
+DBG_printf(&quot;Testing printing one level below current level of the menu\n&quot;);
+MENU_printMenuCurrLevel(me-&gt;menu-&gt;firstChildNode, 0, 0);</entry>
      <tran trig="MENU_GENERAL_REQ">
+      <action>DBG_printf(&quot;Received MENU_GENERAL_REQ with data: %s\n&quot;, ((MenuEvt const *)e)-&gt;buffer);
+me-&gt;menu = MENU_parse(me-&gt;menu, ((MenuEvt const *)e)-&gt;buffer, ((MenuEvt const *)e)-&gt;bufferLen, ((MenuEvt const *)e)-&gt;msgSrc);</action>
       <tran_glyph conn="3,82,3,-1,19">
+       <action box="0,-2,18,2"/>
+      </tran_glyph>
+     </tran>
+     <tran trig="MENU_TOP_REQ">
+      <action>DBG_printf(&quot;Received MENU_TOP_REQ\n&quot;);</action>
+      <tran_glyph conn="3,74,3,-1,19">
+       <action box="0,-2,18,2"/>
+      </tran_glyph>
+     </tran>
+     <tran trig="MENU_UP_REQ">
+      <action>DBG_printf(&quot;Received MENU_UP_REQ\n&quot;);</action>
+      <tran_glyph conn="3,78,3,-1,19">
+       <action box="0,-2,18,2"/>
+      </tran_glyph>
+     </tran>
+     <tran trig="MENU_HELP_REQ">
+      <action>DBG_printf(&quot;Received MENU_HELP_REQ&quot;);</action>
+      <tran_glyph conn="3,70,3,-1,19">
        <action box="0,-2,18,2"/>
       </tran_glyph>
      </tran>

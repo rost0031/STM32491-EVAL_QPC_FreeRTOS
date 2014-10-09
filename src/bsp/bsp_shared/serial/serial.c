@@ -53,7 +53,7 @@ DBG_DEFINE_THIS_MODULE( DBG_MODL_SERIAL ); /* For debug system to ID this module
  * @brief Buffers for Serial interfaces
  */
 static char          Uart1TxBuffer[MAX_MSG_LEN];
-static char          Uart1RxBuffer[MAX_MSG_LEN];
+static char          Uart1RxBuffer[MENU_MAX_CMD_LEN];
 /**
  * @brief An internal array of structures that holds almost all the settings for
  * the all serial ports used in the system.
@@ -334,23 +334,40 @@ inline void Serial_UART1Callback(void)
       uint8_t data = (uint8_t)USART_ReceiveData(USART1);
 
       if ( '\n' == data && a_UARTSettings[SERIAL_UART1].indexRX > 0 ) {
+
+         /* 1. Construct a new msg event indicating that a msg has been received */
+//         MsgEvt *msgEvt = Q_NEW( MsgEvt, MSG_RECEIVED_SIG );
+//
+//         /* 2. Fill the msg payload with payload (the actual received msg)*/
+//         MEMCPY(
+//               msgEvt->msg,
+//               a_UARTSettings[SERIAL_UART1].bufferRX,
+//               a_UARTSettings[SERIAL_UART1].indexRX
+//         );
+//         msgEvt->msg_len = a_UARTSettings[SERIAL_UART1].indexRX;
+//         msgEvt->msg_src = SERIAL_UART1;
+//
+//         /* 3. Publish the newly created event to current AO */
+//         QF_PUBLISH( (QEvent *)msgEvt, AO_SerialMgr );
+
          /* If a newline is received and the buffer is not empty, post event
           * with the buffer data */
          a_UARTSettings[SERIAL_UART1].bufferRX[ a_UARTSettings[SERIAL_UART1].indexRX++ ] = data;
-         /* 1. Construct a new msg event indicating that a msg has been received */
-         MsgEvt *msgEvt = Q_NEW( MsgEvt, MSG_RECEIVED_SIG );
+
+         /* Serial can only receive menu commands */
+         MenuEvt *menuEvt = Q_NEW( MenuEvt, MENU_GENERAL_REQ_SIG );
 
          /* 2. Fill the msg payload with payload (the actual received msg)*/
          MEMCPY(
-               msgEvt->msg,
+               menuEvt->buffer,
                a_UARTSettings[SERIAL_UART1].bufferRX,
                a_UARTSettings[SERIAL_UART1].indexRX
          );
-         msgEvt->msg_len = a_UARTSettings[SERIAL_UART1].indexRX;
-         msgEvt->msg_src = SERIAL_UART1;
+         menuEvt->bufferLen = a_UARTSettings[SERIAL_UART1].indexRX;
+         menuEvt->msgSrc = SERIAL_UART1;
 
          /* 3. Publish the newly created event to current AO */
-         QF_PUBLISH( (QEvent *)msgEvt, AO_SerialMgr );
+         QF_PUBLISH( (QEvent *)menuEvt, AO_SerialMgr );
 
          a_UARTSettings[SERIAL_UART1].indexRX = 0;       /* Reset the RX buffer */
 
@@ -358,19 +375,19 @@ inline void Serial_UART1Callback(void)
          /* If a linefeed is received, toss it out. */
          data = 0;
       } else {
-         /* If any other data is recieved, add it to the buffer */
-         a_UARTSettings[SERIAL_UART1].bufferRX[ a_UARTSettings[SERIAL_UART1].indexRX++ ] = data;
-
+         if ( a_UARTSettings[SERIAL_UART1].indexRX >= MENU_MAX_CMD_LEN ) {
+            WRN_printf(
+                  "Attempting to RX a serial msg over %d bytes which will overrun the buffer. Ignoring\n",
+                  MENU_MAX_CMD_LEN
+            );
+            a_UARTSettings[SERIAL_UART1].indexRX = 0;       /* Reset the RX buffer */
+         } else {
+            /* If any other data is recieved, add it to the buffer */
+            a_UARTSettings[SERIAL_UART1].bufferRX[ a_UARTSettings[SERIAL_UART1].indexRX++ ] = data;
+         }
       }
 
-      /* Make sure we don't overrun the buffer. */
-      if ( a_UARTSettings[SERIAL_UART1].indexRX >= MAX_MSG_LEN ) {
-         err_slow_printf(
-               "Attempting to receive a serial msg over %d bytes which will overrun the buffer.",
-               MAX_MSG_LEN
-         );
-         assert( a_UARTSettings[SERIAL_UART1].indexRX >= MAX_MSG_LEN );
-      }
+
    }
    QK_ISR_EXIT();                        /* inform QK about exiting an ISR */
 }
