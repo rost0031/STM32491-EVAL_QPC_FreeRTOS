@@ -155,13 +155,18 @@ void KTREE_nodeCtor( treeNode_t *node )
 /******************************************************************************/
 uint8_t KTREE_findDepth( treeNode_t *node, uint8_t currDepth )
 {
+   /* Make sure the node is not null.  If this happens, it's a bug. */
    if ( NULL == node ) {
-      return( 0xFF );
+      ERR_printf("!!!Node is null\n");
+      return( 0 );
    }
 
-   if ( NULL != node->fakeParentNode ) {
+   if ( NULL == node->fakeParentNode ) {
+      /* If no fake parents exist, this is the top.  Return the calculated
+       * depth */
       return( currDepth );
    } else {
+      /* Parent exists; recurse after incrementing the depth */
       return (KTREE_findDepth( node->fakeParentNode, ++currDepth ));
    }
 }
