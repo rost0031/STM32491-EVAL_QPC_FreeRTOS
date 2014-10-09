@@ -34,12 +34,12 @@ DBG_DEFINE_THIS_MODULE( DBG_MODL_GENERAL ); /* For debug system to ID this modul
 /* Private defines -----------------------------------------------------------*/
 /* Private macros ------------------------------------------------------------*/
 /* Private variables and Local objects ---------------------------------------*/
-static QEvt const    *l_CommStackMgrQueueSto[50];  /**< Storage for CommStackMgr event Queue */
-static QEvt const    *l_LWIPMgrQueueSto[50];       /**< Storage for LWIPMgr event Queue */
-static QEvt const    *l_SerialMgrQueueSto[50];     /**< Storage for SerialMgr event Queue */
-static QEvt const    *l_I2CMgrQueueSto[50];        /**< Storage for I2CMgr event Queue */
-static QEvt const    *l_MenuMgrQueueSto[50];       /**< Storage for MenuMgr event Queue */
-static QSubscrList   l_subscrSto[MAX_PUB_SIG];     /**< Storage for subscribe/publish event Queue */
+static QEvt const    *l_CommStackMgrQueueSto[100];  /**< Storage for CommStackMgr event Queue */
+static QEvt const    *l_LWIPMgrQueueSto[100];       /**< Storage for LWIPMgr event Queue */
+static QEvt const    *l_SerialMgrQueueSto[100];     /**< Storage for SerialMgr event Queue */
+static QEvt const    *l_I2CMgrQueueSto[100];        /**< Storage for I2CMgr event Queue */
+static QEvt const    *l_MenuMgrQueueSto[100];       /**< Storage for MenuMgr event Queue */
+static QSubscrList   l_subscrSto[MAX_PUB_SIG];      /**< Storage for subscribe/publish event Queue */
 
 /**
  * \union Small Events.
@@ -48,7 +48,7 @@ static QSubscrList   l_subscrSto[MAX_PUB_SIG];     /**< Storage for subscribe/pu
 static union SmallEvents {
     void   *e0;                                       /* minimum event size */
     uint8_t e1[sizeof(QEvt)];
-} l_smlPoolSto[50];                     /* storage for the small event pool */
+} l_smlPoolSto[100];                     /* storage for the small event pool */
 
 /**
  * \union Medium Events.
@@ -58,7 +58,7 @@ static union MediumEvents {
     void   *e0;                                       /* minimum event size */
     uint8_t e1[sizeof(I2CEvt)];
     uint8_t e2[sizeof(MenuEvt)];
-} l_medPoolSto[50];                    /* storage for the medium event pool */
+} l_medPoolSto[100];                    /* storage for the medium event pool */
 
 /**
  * \union Large Events.
@@ -70,7 +70,7 @@ static union LargeEvents {
     uint8_t e2[sizeof(EthEvt)];
     uint8_t e3[sizeof(SerialDataEvt)];
     uint8_t e4[sizeof(I2CDataEvt)];
-} l_lrgPoolSto[50];                    /* storage for the large event pool */
+} l_lrgPoolSto[100];                    /* storage for the large event pool */
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
