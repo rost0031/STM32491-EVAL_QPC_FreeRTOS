@@ -63,12 +63,12 @@ MENU_printf(&quot;***** Press '?' at any time to request a menu and help. *****\
 MENU_printf(&quot;*************************************************************\n&quot;);
 
 DBG_printf(&quot;Testing printing entire menu tree\n&quot;);
-MENU_printMenuTree(me-&gt;menu, 0, 0);
+MENU_printMenuTree(me-&gt;menu, 0);
 MENU_printf(&quot;\n\n&quot;);
 DBG_printf(&quot;Testing printing current level of the menu\n&quot;);
-MENU_printMenuCurrLevel(me-&gt;menu, 0, 0);
+MENU_printMenuCurrLevel(me-&gt;menu, 0);
 DBG_printf(&quot;Testing printing one level below current level of the menu\n&quot;);
-MENU_printMenuCurrLevel(me-&gt;menu-&gt;firstChildNode, 0, 0);</entry>
+MENU_printMenuCurrLevel(me-&gt;menu-&gt;firstChildNode, 0);</entry>
      <tran trig="MENU_GENERAL_REQ">
       <action>DBG_printf(&quot;Received MENU_GENERAL_REQ with data: %s\n&quot;, ((MenuEvt const *)e)-&gt;buffer);
 me-&gt;menu = MENU_parse(me-&gt;menu, ((MenuEvt const *)e)-&gt;buffer, ((MenuEvt const *)e)-&gt;bufferLen, ((MenuEvt const *)e)-&gt;msgSrc);</action>

@@ -112,7 +112,7 @@ treeNode_t* MENU_parse( treeNode_t *node, uint8_t *pBuffer, uint16_t bufferLen, 
    if ( NULL == node ) {
       WRN_printf("Passed in a null node.  Setting to top of menu\n");
       newNode = &menu;
-      MENU_printCurrMenu( newNode, 0, msgSrc );
+      MENU_printCurrMenu( newNode, msgSrc );
       return( newNode );
    }
 
@@ -121,7 +121,7 @@ treeNode_t* MENU_parse( treeNode_t *node, uint8_t *pBuffer, uint16_t bufferLen, 
       MENU_printHelp( msgSrc );
    } else if ( 0 == strncmp((const char *)pBuffer, "T", 1 ) ) {
       newNode = &menu;
-      MENU_printCurrMenu( node, 0, msgSrc );
+      MENU_printMenuExpandedAtCurrNode( newNode, msgSrc );
    } else if ( 0 == strncmp((const char *)pBuffer, "P", 1 ) ) {
       MENU_printMenuExpandedAtCurrNode(newNode, msgSrc );
    } else if ( 0 == strncmp((const char *)pBuffer, "U", 1 ) ) {
@@ -167,11 +167,7 @@ treeNode_t* MENU_parseCurrLevelMenuItems(
             if ( NULL != childNode->firstChildNode ) {
                DBG_printf("Setting node to %s\n", childNode->text);
                menuNode = childNode;
-               MENU_printCurrMenu(
-                     menuNode,
-                     KTREE_findDepth(menuNode, 0),
-                     msgSrc
-               );
+               MENU_printMenuExpandedAtCurrNode( menuNode, msgSrc );
             }
             return( menuNode );
          } else {
@@ -353,7 +349,7 @@ static void MENU_printRevAncestry( treeNode_t *node, MsgSrc whereToPrint )
 
    /* Iterate through the immediate children of the top most node and print them */
    while( NULL != node ) {
-      MENU_printNode( node, KTREE_findDepth( node, 0), whereToPrint );
+      MENU_printNode( node, whereToPrint );
 
       if ( menuNav.pathToTopFake[ menuNav.pathToTopFakeIndex ] == node ) {
          /* If the ancestry node and the current node match, recurse one level
@@ -369,7 +365,6 @@ static void MENU_printRevAncestry( treeNode_t *node, MsgSrc whereToPrint )
             /* Last ancestry node found */
             MENU_printMenuCurrLevel(
                   node->firstChildNode,
-                  KTREE_findDepth( node->firstChildNode, 0),
                   whereToPrint
             );
             return;
@@ -388,57 +383,58 @@ static void MENU_printRevAncestry( treeNode_t *node, MsgSrc whereToPrint )
 }
 
 /******************************************************************************/
-void MENU_printCurrMenu( treeNode_t *node, uint8_t level, MsgSrc whereToPrint )
+void MENU_printCurrMenu( treeNode_t *node, MsgSrc whereToPrint )
 {
    if (NULL == node ) {
       return;
    }
 
-   MENU_printNode( node, level, whereToPrint );
+   MENU_printNode( node, whereToPrint );
 
    if (NULL != node->firstChildNode ) {
-      MENU_printMenuCurrLevel( node->firstChildNode, level+1, whereToPrint );
+      MENU_printMenuCurrLevel( node->firstChildNode, whereToPrint );
    }
 }
 
 
 /******************************************************************************/
-void MENU_printMenuCurrLevel( treeNode_t *node, uint8_t level, MsgSrc whereToPrint )
+void MENU_printMenuCurrLevel( treeNode_t *node, MsgSrc whereToPrint )
 {
    if ( NULL == node ) {
       return;
    } else {
-      MENU_printNode( node, level, whereToPrint );
+      MENU_printNode( node, whereToPrint );
    }
 
    if ( NULL != node->firstSiblingNode ) {
-      MENU_printMenuCurrLevel( node->firstSiblingNode, level, whereToPrint );
+      MENU_printMenuCurrLevel( node->firstSiblingNode, whereToPrint );
    }
 }
 
 /******************************************************************************/
-void MENU_printMenuTree( treeNode_t *node, uint8_t level, MsgSrc whereToPrint )
+void MENU_printMenuTree( treeNode_t *node, MsgSrc whereToPrint )
 {
    if ( NULL == node ) {
       return;
    } else {
-      MENU_printNode( node, level, whereToPrint );
+      MENU_printNode( node, whereToPrint );
    }
 
    if ( NULL != node->firstChildNode ) {
       //      dbg_slow_printf("Child exists, descending one level\n");
-      MENU_printMenuTree( node->firstChildNode, level+1, whereToPrint );
+      MENU_printMenuTree( node->firstChildNode, whereToPrint );
    }
 
    if ( NULL != node->firstSiblingNode ) {
       //      dbg_slow_printf("Sibling exits, moving right\n");
-      MENU_printMenuTree( node->firstSiblingNode, level, whereToPrint );
+      MENU_printMenuTree( node->firstSiblingNode, whereToPrint );
    }
 }
 
 /******************************************************************************/
-void MENU_printNode( treeNode_t *node, uint8_t level, MsgSrc whereToPrint )
+void MENU_printNode( treeNode_t *node, MsgSrc whereToPrint )
 {
+   uint8_t level = KTREE_findDepth( node, 0);
    for ( uint8_t i = 0; i < level; i++ ) {
       MENU_printf("   ");
    }

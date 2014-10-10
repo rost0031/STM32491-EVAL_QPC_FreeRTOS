@@ -74,18 +74,18 @@ treeNode_t* MENU_parseCurrLevelMenuItems(
       MsgSrc msgSrc
 );
 
-void MENU_printCurrMenu( treeNode_t *node, uint8_t level, MsgSrc whereToPrint );
+void MENU_printCurrMenu( treeNode_t *node, MsgSrc whereToPrint );
 
 void MENU_printMenuExpandedAtCurrNode(
       treeNode_t *node,
       MsgSrc whereToPrint
 );
 
-void MENU_printMenuCurrLevel( treeNode_t *node, uint8_t level, MsgSrc whereToPrint );
+void MENU_printMenuCurrLevel( treeNode_t *node, MsgSrc whereToPrint );
 
-void MENU_printMenuTree( treeNode_t *node, uint8_t level, MsgSrc whereToPrint );
+void MENU_printMenuTree( treeNode_t *node, MsgSrc whereToPrint );
 
-void MENU_printNode( treeNode_t *node, uint8_t level, MsgSrc whereToPrint );
+void MENU_printNode( treeNode_t *node, MsgSrc whereToPrint );
 /**
  * @}
  * end addtogroup groupMenu

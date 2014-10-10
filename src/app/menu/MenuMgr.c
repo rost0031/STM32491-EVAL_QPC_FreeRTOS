@@ -154,12 +154,12 @@ static QState MenuMgr_Active(MenuMgr * const me, QEvt const * const e) {
             MENU_printf("*************************************************************\n");
 
             DBG_printf("Testing printing entire menu tree\n");
-            MENU_printMenuTree(me->menu, 0, 0);
+            MENU_printMenuTree(me->menu, 0);
             MENU_printf("\n\n");
             DBG_printf("Testing printing current level of the menu\n");
-            MENU_printMenuCurrLevel(me->menu, 0, 0);
+            MENU_printMenuCurrLevel(me->menu, 0);
             DBG_printf("Testing printing one level below current level of the menu\n");
-            MENU_printMenuCurrLevel(me->menu->firstChildNode, 0, 0);
+            MENU_printMenuCurrLevel(me->menu->firstChildNode, 0);
             status_ = Q_HANDLED();
             break;
         }
