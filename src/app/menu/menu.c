@@ -1,6 +1,6 @@
 /**
  * @file    menu.c
- * @brief   Implementation of the munu application using a statically allocated
+ * @brief   Implementation of the menu application using a statically allocated
  * k-ary tree structure.
  *
  * @date    09/29/2014
@@ -100,6 +100,13 @@ static treeNode_t* MENU_addMenuItem(
       pFunction action
 );
 
+static treeNode_t* MENU_parseCurrLevelMenuItems(
+      treeNode_t *node,
+      uint8_t *pBuffer,
+      uint16_t bufferLen,
+      MsgSrc msgSrc
+);
+
 static void MENU_findAncestryPath( treeNode_t *node );
 static void MENU_clearAncestryPaths( void );
 static void MENU_printRevAncestry( treeNode_t *node, MsgSrc whereToPrint );
@@ -114,7 +121,8 @@ treeNode_t* MENU_init( void )
 
    /* 2. At this point, submenus and their items can be added.  The nodes, text,
     * actions, etc have to be defined in their respective c files and the vars
-    * declared "extern" so they can be accessed from here. */
+    * declared "extern" so they can be accessed from here. The menus and menu
+    * items will appear in the order in which they are added here. */
 
    /* Add a menu */
    MENU_addSubMenu( &menuDbg, &menu, menuDbg_TitleTxt, menuDbg_SelectKey, NULL );
@@ -176,7 +184,7 @@ treeNode_t* MENU_parse( treeNode_t *node, uint8_t *pBuffer, uint16_t bufferLen, 
 }
 
 /******************************************************************************/
-treeNode_t* MENU_parseCurrLevelMenuItems(
+static treeNode_t* MENU_parseCurrLevelMenuItems(
       treeNode_t *node,
       uint8_t *pBuffer,
       uint16_t bufferLen,
@@ -232,7 +240,6 @@ void MENU_printHelp( MsgSrc whereToPrint )
    MENU_printf("***** any identifier to select the submenu or menu item on your level    *****\n");
    MENU_printf("******************************************************************************\n");
 }
-
 
 /******************************************************************************/
 static treeNode_t* MENU_initTopLevel( void )
@@ -413,7 +420,6 @@ void MENU_printCurrMenu( treeNode_t *node, MsgSrc whereToPrint )
    }
 }
 
-
 /******************************************************************************/
 void MENU_printMenuCurrLevel( treeNode_t *node, MsgSrc whereToPrint )
 {
@@ -438,12 +444,10 @@ void MENU_printMenuTree( treeNode_t *node, MsgSrc whereToPrint )
    }
 
    if ( NULL != node->firstChildNode ) {
-      //      dbg_slow_printf("Child exists, descending one level\n");
       MENU_printMenuTree( node->firstChildNode, whereToPrint );
    }
 
    if ( NULL != node->firstSiblingNode ) {
-      //      dbg_slow_printf("Sibling exits, moving right\n");
       MENU_printMenuTree( node->firstSiblingNode, whereToPrint );
    }
 }
@@ -456,7 +460,7 @@ void MENU_printNode( treeNode_t *node, MsgSrc whereToPrint )
       MENU_printf("   ");
    }
    MENU_printf("*--");
-   MENU_printf("** %-3s **:  %-50s\n", node->selector, node->text );
+   MENU_printf("** %-3s **: %s\n", node->selector, node->text );
 }
 
 /**

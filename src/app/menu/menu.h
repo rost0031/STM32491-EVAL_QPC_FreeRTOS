@@ -59,13 +59,6 @@ treeNode_t* MENU_parse(
       MsgSrc msgSrc
 );
 
-treeNode_t* MENU_parseCurrLevelMenuItems(
-      treeNode_t *node,
-      uint8_t *pBuffer,
-      uint16_t bufferLen,
-      MsgSrc msgSrc
-);
-
 void MENU_printCurrMenu( treeNode_t *node, MsgSrc whereToPrint );
 
 void MENU_printMenuExpandedAtCurrNode(
