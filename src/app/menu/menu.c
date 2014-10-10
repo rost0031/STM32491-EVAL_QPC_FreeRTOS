@@ -63,9 +63,9 @@ static treeNode_t* MENU_addMenuItem(
 );
 
 static void MENU_findFakeAncestryPath( treeNode_t *node );
-static void MENU_findTrueAncestryPath( treeNode_t *node );
 static void MENU_clearAncestryPaths( void );
 static void MENU_printRevAncestry( treeNode_t *node, MsgSrc whereToPrint );
+
 /* Private functions ---------------------------------------------------------*/
 
 /******************************************************************************/
@@ -280,29 +280,8 @@ static void MENU_findFakeAncestryPath( treeNode_t *node )
 }
 
 /******************************************************************************/
-static void MENU_findTrueAncestryPath( treeNode_t *node )
-{
-   if ( NULL == node ) {
-      /* Just to avoid crashes. */
-      ERR_printf("Node null. Something is probably wrong with the algorithm\n");
-      return;
-   } else if ( NULL != node->trueParentNode ) {
-      menuNav.pathToTopTrue[menuNav.pathToTopTrueIndex] = node->trueParentNode;
-      menuNav.pathToTopTrueIndex++;
-      MENU_findTrueAncestryPath( node->trueParentNode );
-   } else {
-      /* No more parents.  Put index back one since that's the last spot we have
-       * a pointer to a node */
-      menuNav.pathToTopTrueIndex--;
-      return;
-   }
-}
-
-/******************************************************************************/
 static void MENU_clearAncestryPaths( void )
 {
-   memset( menuNav.pathToTopTrue, 0, sizeof(menuNav.pathToTopTrue) );
-   menuNav.pathToTopTrueIndex = 0;
    memset( menuNav.pathToTopFake, 0, sizeof(menuNav.pathToTopFake) );
    menuNav.pathToTopFakeIndex = 0;
 }

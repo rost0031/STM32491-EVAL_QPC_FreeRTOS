@@ -42,13 +42,6 @@ typedef struct menuNavigationTag {
    treeNode_t* pathToTopFake[MENU_MAX_FAKE_DEPTH];
    /**< Index into the pathToTopFake array. */
    uint8_t pathToTopFakeIndex;
-   /**< Array of pointers to treeNode_t types that will hold the path from
-    * the currently selected node to the topmost parent via the trueParentNode
-    * pointers. This array is arranged from the child to the top so has to be
-    * traversed backwards to get back to the child. */
-   treeNode_t* pathToTopTrue[MENU_MAX_TRUE_DEPTH];
-   /**< Index into the pathToTopTrue array. */
-   uint8_t pathToTopTrueIndex;
 } menuNav_t;
 
 /* Exported macros -----------------------------------------------------------*/
