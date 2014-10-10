@@ -76,6 +76,11 @@ treeNode_t* MENU_parseCurrLevelMenuItems(
 
 void MENU_printCurrMenu( treeNode_t *node, uint8_t level, MsgSrc whereToPrint );
 
+void MENU_printMenuExpandedAtCurrNode(
+      treeNode_t *node,
+      MsgSrc whereToPrint
+);
+
 void MENU_printMenuCurrLevel( treeNode_t *node, uint8_t level, MsgSrc whereToPrint );
 
 void MENU_printMenuTree( treeNode_t *node, uint8_t level, MsgSrc whereToPrint );

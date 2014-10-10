@@ -123,16 +123,14 @@ treeNode_t* MENU_parse( treeNode_t *node, uint8_t *pBuffer, uint16_t bufferLen, 
       newNode = &menu;
       MENU_printCurrMenu( node, 0, msgSrc );
    } else if ( 0 == strncmp((const char *)pBuffer, "P", 1 ) ) {
-//      MENU_printCurrMenu( newNode, 0, msgSrc );
-      MENU_printParentMenus(newNode, 0, msgSrc );
+      MENU_printMenuExpandedAtCurrNode(newNode, msgSrc );
    } else if ( 0 == strncmp((const char *)pBuffer, "U", 1 ) ) {
       if ( NULL != node->fakeParentNode ) {
          newNode = node->fakeParentNode;
       } else {
          LOG_printf("Already at the top of the menu\n");
       }
-      MENU_printParentMenus(newNode, 0, msgSrc );
-//      MENU_printCurrMenu( newNode, 0, msgSrc );
+      MENU_printMenuExpandedAtCurrNode(newNode, msgSrc );
    } else {
       newNode = MENU_parseCurrLevelMenuItems(node, pBuffer, bufferLen, msgSrc);
    }
@@ -316,47 +314,6 @@ static void MENU_clearAncestryPaths( void )
 /******************************************************************************/
 void MENU_printMenuExpandedAtCurrNode(
       treeNode_t *node,
-      uint8_t level,
-      MsgSrc whereToPrint
-)
-{
-   MENU_clearAncestryPaths();                    /* Clear the ancestry paths. */
-
-   /* Find the path to the top that is connected via trueParentNode pointers.
-    * The search for true nodes will start from the first fakeParentNode since
-    * we have to print the entire current level anyway */
-   if (NULL != node && NULL != node->fakeParentNode ) {
-      MENU_findTrueAncestryPath( node );
-   } else {
-      ERR_printf("Node null or parent doesn't exist\n");
-   }
-
-   /* Sanity checks to avoid really bad memory out of bounds errors */
-   if ( 0 == menuNav.pathToTopTrueIndex || menuNav.pathToTopTrueIndex > MENU_MAX_TRUE_DEPTH ) {
-      ERR_printf("pathToTopIndex: %d\n", menuNav.pathToTopTrueIndex );
-      return;
-   }
-
-   if ( NULL != menuNav.pathToTopTrue[ menuNav.pathToTopTrueIndex ] ) {
-      MENU_printNode(
-            menuNav.pathToTopTrue[ menuNav.pathToTopTrueIndex ],
-            KTREE_findDepth( menuNav.pathToTopTrue[ menuNav.pathToTopTrueIndex ], 0),
-            whereToPrint
-      );
-   }
-
-   treeNode_t *currNode = menuNav.pathToTopTrue[menuNav.pathToTopTrueIndex]->firstChildNode;
-   if ( NULL != currNode ) {
-      /* Iterate through all the children nodes */
-
-   }
-
-}
-
-/******************************************************************************/
-void MENU_printParentMenus(
-      treeNode_t *node,
-      uint8_t level,
       MsgSrc whereToPrint
 )
 {
@@ -371,7 +328,11 @@ void MENU_printParentMenus(
     * is terribly wrong if it's not. */
    if ( &menu != menuNav.pathToTopFake[menuNav.pathToTopFakeIndex] ) {
       ERR_printf("Top node in ancestry is not the root of the menu!\n");
-      ERR_printf("top node: %s and node is %s\n",menuNav.pathToTopFake[menuNav.pathToTopFakeIndex]->text, menu.text );
+      ERR_printf(
+            "top node: %s and node is %s\n",
+            menuNav.pathToTopFake[menuNav.pathToTopFakeIndex]->text,
+            menu.text
+      );
    }
 
    /* Use a recursive function to print the entire ancestry */
@@ -383,7 +344,10 @@ static void MENU_printRevAncestry( treeNode_t *node, MsgSrc whereToPrint )
 {
    /* Underflow check. */
    if ( menuNav.pathToTopFakeIndex > MENU_MAX_FAKE_DEPTH ) {
-      ERR_printf("Ancestry index underflowed: %d\n", menuNav.pathToTopFakeIndex );
+      ERR_printf(
+            "Ancestry index underflowed: %d\n",
+            menuNav.pathToTopFakeIndex
+      );
       return;
    }
 
@@ -396,14 +360,12 @@ static void MENU_printRevAncestry( treeNode_t *node, MsgSrc whereToPrint )
           * lower unless this is the last node in the ancestry.  In that case,
           * print its children and return */
 
-
          if ( NULL == node->firstChildNode ) {
             ERR_printf("No child node\n");
             return;
          }
 
          if ( 0 == menuNav.pathToTopFakeIndex ) {
-//            DBG_printf("Last ancestry node found at index %d\n", menuNav.pathToTopFakeIndex);
             /* Last ancestry node found */
             MENU_printMenuCurrLevel(
                   node->firstChildNode,
@@ -450,7 +412,6 @@ void MENU_printMenuCurrLevel( treeNode_t *node, uint8_t level, MsgSrc whereToPri
    }
 
    if ( NULL != node->firstSiblingNode ) {
-      //      dbg_slow_printf("Sibling exits, moving right\n");
       MENU_printMenuCurrLevel( node->firstSiblingNode, level, whereToPrint );
    }
 }
@@ -478,17 +439,11 @@ void MENU_printMenuTree( treeNode_t *node, uint8_t level, MsgSrc whereToPrint )
 /******************************************************************************/
 void MENU_printNode( treeNode_t *node, uint8_t level, MsgSrc whereToPrint )
 {
-//dbg_slow_printf("4.1\n");
    for ( uint8_t i = 0; i < level; i++ ) {
-//      dbg_slow_printf("4.2\n");
       MENU_printf("   ");
-//      dbg_slow_printf("4.3\n");
    }
-//   dbg_slow_printf("4.4\n");
    MENU_printf("*--");
-//   dbg_slow_printf("4.5\n");
    MENU_printf("** %-3s **:  %-50s\n", node->selector, node->text );
-//   dbg_slow_printf("4.6\n");
 }
 
 /**
