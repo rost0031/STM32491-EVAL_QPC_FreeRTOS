@@ -28,16 +28,54 @@ DBG_DEFINE_THIS_MODULE( DBG_MODL_MENU );/* For debug system to ID this module */
 /* Private macros ------------------------------------------------------------*/
 /* Private variables and Local objects ---------------------------------------*/
 
+/**
+ * @brief   Storage for ancestry navigation through the menu.
+ * Used to find ancestry for printing out the menu expanded at the selected node.
+ */
 menuNav_t menuNav;
 
-
+/**
+ * @brief   Storage for the root of the menu.  MenuMgr has a pointer to this.
+ */
 treeNode_t menu;
+
+/**
+ * @brief   Text of the main menu.  Displayed when the menu gets printed.
+ */
 char *const menu_TitleTxt = "Coupler Board Menu";
+
+/**
+ * @brief   Selector key for the top of the menu.
+ * This is the letter sequence that the user inputs to jump back to the top of
+ * the menu.
+ */
 char *const menu_SelectKey = "T";
 
 /* Private function prototypes -----------------------------------------------*/
+/**
+ * @brief   Initializes the top level of the menu.
+ * @param   None.
+ * @return  treeNode_t*: pointer to the top level node of the menu.
+ */
 static treeNode_t* MENU_initTopLevel( void );
 
+/**
+ * @brief   Add a node to the menu.
+ * This function is a wrapper around the KTREE functionality to add a node to
+ * the existing tree of nodes.
+ *
+ * @param [in|out] *node: treeNode_t pointer to the node that is to be added.
+ * @param [in|out] *parent: treeNode_t pointer to the node where the node will
+ * be added.
+ * @param [in] *menuTxt: const char pointer to the storage of the text that will
+ * be pointed to by the node being added.
+ * @param [in] *menuSelectTxt: const char pointer to the storage of the selector
+ * text that will be pointed by the node being added.
+ * @param [in] pFunction function pointer to the action function that will be
+ * pointed by the node being added.  This action is what will execute when that
+ * menu item (or submenu) is selected.  Can be NULL if no action is to be taken.
+ * @return  treeNode_t*
+ */
 static treeNode_t* MENU_addChild(
       treeNode_t *node,
       treeNode_t *parent,
@@ -62,7 +100,7 @@ static treeNode_t* MENU_addMenuItem(
       pFunction action
 );
 
-static void MENU_findFakeAncestryPath( treeNode_t *node );
+static void MENU_findAncestryPath( treeNode_t *node );
 static void MENU_clearAncestryPaths( void );
 static void MENU_printRevAncestry( treeNode_t *node, MsgSrc whereToPrint );
 
@@ -112,7 +150,7 @@ treeNode_t* MENU_parse( treeNode_t *node, uint8_t *pBuffer, uint16_t bufferLen, 
    if ( NULL == node ) {
       WRN_printf("Passed in a null node.  Setting to top of menu\n");
       newNode = &menu;
-      MENU_printCurrMenu( newNode, msgSrc );
+      MENU_printMenuExpandedAtCurrNode( newNode, msgSrc );
       return( newNode );
    }
 
@@ -254,7 +292,7 @@ static treeNode_t* MENU_addChild(
 }
 
 /******************************************************************************/
-static void MENU_findFakeAncestryPath( treeNode_t *node )
+static void MENU_findAncestryPath( treeNode_t *node )
 {
    if ( NULL == node ) {
       /* Just to avoid crashes. */
@@ -263,17 +301,17 @@ static void MENU_findFakeAncestryPath( treeNode_t *node )
    }
 
    /* Node is valid.  Add it to the ancestry */
-   menuNav.pathToTopFake[menuNav.pathToTopFakeIndex++] = node;
+   menuNav.pathToTop[menuNav.pathToTopIndex++] = node;
 
    /* If parent exists, recursively call ourselves again with the parent node */
    if ( NULL != node->fakeParentNode ) {
-      MENU_findFakeAncestryPath( node->fakeParentNode );
+      MENU_findAncestryPath( node->fakeParentNode );
    } else {
       /* No more parents.  Put index back one since that's the last spot we have
        * a pointer to a node.  Make sure to not underflow the index since passing
        * in the root node would do that. */
-      if ( menuNav.pathToTopFakeIndex > 0 ) {
-         menuNav.pathToTopFakeIndex--;
+      if ( menuNav.pathToTopIndex > 0 ) {
+         menuNav.pathToTopIndex--;
       }
       return;
    }
@@ -282,8 +320,8 @@ static void MENU_findFakeAncestryPath( treeNode_t *node )
 /******************************************************************************/
 static void MENU_clearAncestryPaths( void )
 {
-   memset( menuNav.pathToTopFake, 0, sizeof(menuNav.pathToTopFake) );
-   menuNav.pathToTopFakeIndex = 0;
+   memset( menuNav.pathToTop, 0, sizeof(menuNav.pathToTop) );
+   menuNav.pathToTopIndex = 0;
 }
 
 /******************************************************************************/
@@ -297,15 +335,15 @@ void MENU_printMenuExpandedAtCurrNode(
 
    /* Find the path from the current child node all the way to the top root of
     * the menu tree */
-   MENU_findFakeAncestryPath( node );
+   MENU_findAncestryPath( node );
 
    /* Make sure the last node found in the ancestry is the root node.  Something
     * is terribly wrong if it's not. */
-   if ( &menu != menuNav.pathToTopFake[menuNav.pathToTopFakeIndex] ) {
+   if ( &menu != menuNav.pathToTop[menuNav.pathToTopIndex] ) {
       ERR_printf("Top node in ancestry is not the root of the menu!\n");
       ERR_printf(
             "top node: %s and node is %s\n",
-            menuNav.pathToTopFake[menuNav.pathToTopFakeIndex]->text,
+            menuNav.pathToTop[menuNav.pathToTopIndex]->text,
             menu.text
       );
    }
@@ -318,19 +356,19 @@ void MENU_printMenuExpandedAtCurrNode(
 static void MENU_printRevAncestry( treeNode_t *node, MsgSrc whereToPrint )
 {
    /* Underflow check. */
-   if ( menuNav.pathToTopFakeIndex > MENU_MAX_FAKE_DEPTH ) {
+   if ( menuNav.pathToTopIndex > MENU_MAX_DEPTH ) {
       ERR_printf(
             "Ancestry index underflowed: %d\n",
-            menuNav.pathToTopFakeIndex
+            menuNav.pathToTopIndex
       );
       return;
    }
 
-   /* Iterate through the immediate children of the top most node and print them */
+   /* Iterate through the children of the top most node and print them */
    while( NULL != node ) {
       MENU_printNode( node, whereToPrint );
 
-      if ( menuNav.pathToTopFake[ menuNav.pathToTopFakeIndex ] == node ) {
+      if ( menuNav.pathToTop[ menuNav.pathToTopIndex ] == node ) {
          /* If the ancestry node and the current node match, recurse one level
           * lower unless this is the last node in the ancestry.  In that case,
           * print its children and return */
@@ -340,18 +378,18 @@ static void MENU_printRevAncestry( treeNode_t *node, MsgSrc whereToPrint )
             return;
          }
 
-         if ( 0 == menuNav.pathToTopFakeIndex ) {
+         if ( 0 == menuNav.pathToTopIndex ) {
             /* Last ancestry node found */
             MENU_printMenuCurrLevel(
                   node->firstChildNode,
                   whereToPrint
             );
             return;
-         } else if (0 != menuNav.pathToTopFakeIndex ) {
-//            DBG_printf("Ancestry index %d\n", menuNav.pathToTopFakeIndex);
+         } else if (0 != menuNav.pathToTopIndex ) {
+//            DBG_printf("Ancestry index %d\n", menuNav.pathToTopIndex);
             /* Matched an ancestry node but it's not the last one.  Recurse but
              * make sure to decrement the ancestry index */
-            menuNav.pathToTopFakeIndex--;
+            menuNav.pathToTopIndex--;
             MENU_printRevAncestry( node->firstChildNode, whereToPrint );
             node = node->firstSiblingNode;
          }

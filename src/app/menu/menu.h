@@ -26,9 +26,8 @@ extern "C" {
 #include "Shared.h"
 
 /* Exported defines ----------------------------------------------------------*/
-#define MENU_MAX_FAKE_DEPTH                       20
-#define MENU_MAX_TRUE_DEPTH                       100
-#define MENU_MAX_SIBLINGS                         50
+#define MENU_MAX_DEPTH                       20
+
 /* Exported types ------------------------------------------------------------*/
 /**
  * @brief   Structure to keep track of where we are in the menu tree and how
@@ -39,9 +38,9 @@ typedef struct menuNavigationTag {
     * the currently selected node to the topmost parent via the fakeParentNode
     * pointers. This array is arranged from the child to the top so has to be
     * traversed backwards to get back to the child. */
-   treeNode_t* pathToTopFake[MENU_MAX_FAKE_DEPTH];
-   /**< Index into the pathToTopFake array. */
-   uint8_t pathToTopFakeIndex;
+   treeNode_t* pathToTop[MENU_MAX_DEPTH];
+   /**< Index into the pathToTop array. */
+   uint8_t pathToTopIndex;
 } menuNav_t;
 
 /* Exported macros -----------------------------------------------------------*/
