@@ -165,6 +165,7 @@ APP_MENU_INCLUDES       = -I$(APP_MENU_DIR) \
 # Collect all the menu c source files here so we don't have to the list of sources
 MENU_CSRCS              = ktree.c \
                           menu.c \
+                          menu_top.c \
 						  debug_menu.c
 						  						
 

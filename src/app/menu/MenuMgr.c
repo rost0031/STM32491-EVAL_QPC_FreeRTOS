@@ -36,7 +36,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "MenuMgr.h"
 #include "project_includes.h"           /* Includes common to entire project. */
-#include "menu.h"
+#include "menu_top.h"
 
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE;                 /* For QSPY to know the name of this file */
@@ -74,16 +74,6 @@ static QState MenuMgr_initial(MenuMgr * const me, QEvt const * const e);
  * machine is going next.
  */
 static QState MenuMgr_Active(MenuMgr * const me, QEvt const * const e);
-
-/**
- * This state is the initial state and waits for a user to request a menu.
- *
- * @param  [in|out] me: Pointer to the state machine
- * @param  [in|out]  e:  Pointer to the event being processed.
- * @return status: QState type that specifies where the state
- * machine is going next.
- */
-static QState MenuMgr_WaitForMenuRequest(MenuMgr * const me, QEvt const * const e);
 
 
 /* Private defines -----------------------------------------------------------*/
@@ -152,70 +142,17 @@ static QState MenuMgr_Active(MenuMgr * const me, QEvt const * const e) {
             MENU_printf("*************************************************************\n");
             MENU_printf("***** Press '?' at any time to request a menu and help. *****\n");
             MENU_printf("*************************************************************\n");
-
-            DBG_printf("Testing printing entire menu tree\n");
-            MENU_printMenuTree(me->menu, 0);
-            MENU_printf("\n\n");
-            DBG_printf("Testing printing current level of the menu\n");
-            MENU_printMenuCurrLevel(me->menu, 0);
-            DBG_printf("Testing printing one level below current level of the menu\n");
-            MENU_printMenuCurrLevel(me->menu->firstChildNode, 0);
             status_ = Q_HANDLED();
             break;
         }
         /* ${AOs::MenuMgr::SM::Active::MENU_GENERAL_REQ} */
         case MENU_GENERAL_REQ_SIG: {
-            DBG_printf("Received MENU_GENERAL_REQ with data: %s\n", ((MenuEvt const *)e)->buffer);
             me->menu = MENU_parse(me->menu, ((MenuEvt const *)e)->buffer, ((MenuEvt const *)e)->bufferLen, ((MenuEvt const *)e)->msgSrc);
-            status_ = Q_HANDLED();
-            break;
-        }
-        /* ${AOs::MenuMgr::SM::Active::MENU_TOP_REQ} */
-        case MENU_TOP_REQ_SIG: {
-            DBG_printf("Received MENU_TOP_REQ\n");
-            status_ = Q_HANDLED();
-            break;
-        }
-        /* ${AOs::MenuMgr::SM::Active::MENU_UP_REQ} */
-        case MENU_UP_REQ_SIG: {
-            DBG_printf("Received MENU_UP_REQ\n");
-            status_ = Q_HANDLED();
-            break;
-        }
-        /* ${AOs::MenuMgr::SM::Active::MENU_HELP_REQ} */
-        case MENU_HELP_REQ_SIG: {
-            DBG_printf("Received MENU_HELP_REQ");
             status_ = Q_HANDLED();
             break;
         }
         default: {
             status_ = Q_SUPER(&QHsm_top);
-            break;
-        }
-    }
-    return status_;
-}
-
-/**
- * This state is the initial state and waits for a user to request a menu.
- *
- * @param  [in|out] me: Pointer to the state machine
- * @param  [in|out]  e:  Pointer to the event being processed.
- * @return status: QState type that specifies where the state
- * machine is going next.
- */
-/*${AOs::MenuMgr::SM::Active::WaitForMenuRequest} ..........................*/
-static QState MenuMgr_WaitForMenuRequest(MenuMgr * const me, QEvt const * const e) {
-    QState status_;
-    switch (e->sig) {
-        /* ${AOs::MenuMgr::SM::Active::WaitForMenuRequest} */
-        case Q_ENTRY_SIG: {
-            MENU_printf(" ***** Press '?' at any time to request a menu ***** \n");
-            status_ = Q_HANDLED();
-            break;
-        }
-        default: {
-            status_ = Q_SUPER(&MenuMgr_Active);
             break;
         }
     }
