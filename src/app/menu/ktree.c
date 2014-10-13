@@ -200,16 +200,6 @@ void KTREE_addChild(
 }
 
 /******************************************************************************/
-void KTREE_addSibling(
-      treeNode_t *siblingToAdd,
-      treeNode_t *trueParentNode,
-      treeNode_t *fakeParentNode
-)
-{
-   KTREE_addNextSibling( siblingToAdd, trueParentNode, fakeParentNode );
-}
-
-/******************************************************************************/
 void KTREE_addNextSibling(
       treeNode_t *siblingToAdd,
       treeNode_t *trueParentNode,
@@ -227,27 +217,6 @@ void KTREE_addNextSibling(
    } else {
 //      dbg_slow_printf("Sibling '%s' already exists here.  Trying next one\n", trueParentNode->text);
       KTREE_addNextSibling(siblingToAdd, trueParentNode->firstSiblingNode, fakeParentNode);
-   }
-}
-
-/******************************************************************************/
-treeNode_t* KTREE_getLastSibling( treeNode_t *node )
-{
-   if ( NULL != node->firstSiblingNode ) {
-      return( KTREE_getLastSibling( node->firstSiblingNode ) );
-   } else {
-      return ( node );
-   }
-}
-
-/******************************************************************************/
-treeNode_t* KTREE_getLastChild( treeNode_t *node )
-{
-   if ( NULL == node->firstChildNode ) {
-//      dbg_slow_printf("returning node with text %s at 0x%08x\n", node->text, (uint32_t)node);
-      return ( node );
-   } else {
-      return( KTREE_getLastSibling( node->firstChildNode ) );
    }
 }
 
