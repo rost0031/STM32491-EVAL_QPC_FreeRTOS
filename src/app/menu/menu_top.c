@@ -19,6 +19,7 @@
 
 #include "debug_menu.h"
 #include "dbg_out_cntrl.h"
+#include "dbg_mod_cntrl.h"
 
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */
@@ -90,32 +91,121 @@ treeNode_t* MENU_init( void )
          NULL                         /**< Action taken when menu is selected */
    );
 
-   /* Add a Debug Uutput Control sub-menu under the DEBUG menu */
-   MENU_addSubMenu(
-         &menuDbgOutCntrl,                              /**< Menu being added */
-         &menuDbg,                        /**< Parent of the menu being added */
-         menuDbgOutCntrl_TitleTxt,           /**< Menu being added title text */
-         menuDbgOutCntrl_SelectKey,       /**< Menu being added selection key */
-         NULL                         /**< Action taken when menu is selected */
-   );
+      /* Add a Debug Output Control sub-menu under the DEBUG menu */
+      MENU_addSubMenu(
+            &menuDbgOutCntrl,                              /**< Menu being added */
+            &menuDbg,                        /**< Parent of the menu being added */
+            menuDbgOutCntrl_TitleTxt,           /**< Menu being added title text */
+            menuDbgOutCntrl_SelectKey,       /**< Menu being added selection key */
+            NULL                         /**< Action taken when menu is selected */
+      );
 
+         /* Add menu items for this menu */
+         MENU_addMenuItem(
+               &menuDbgOutCntrlItem_toggleSerialDebug,   /**< Menu item being added */
+               &menuDbgOutCntrl,                   /**< Parent of the menu item being added */
+               menuDbgOutCntrlItem_toggleSerialDebugTxt,  /**< Menu item title text */
+               menuDbgOutCntrlItem_toggleSerialDebugSelectKey, /**< Menu item selection key */
+               MENU_toggleSerialDebugAction /**< Action taken when menu item is selected */
+         );
 
-   /* Add menu items for this menu */
-   MENU_addMenuItem(
-         &menuDbgOutCntrlItem_toggleSerialDebug,   /**< Menu item being added */
-         &menuDbgOutCntrl,                   /**< Parent of the menu item being added */
-         menuDbgOutCntrlItem_toggleSerialDebugTxt,  /**< Menu item title text */
-         menuDbgOutCntrlItem_toggleSerialDebugSelectKey, /**< Menu item selection key */
-         MENU_toggleSerialDebugAction /**< Action taken when menu item is selected */
-   );
+         MENU_addMenuItem(
+               &menuDbgOutCntrlItem_toggleEthDebug,      /**< Menu item being added */
+               &menuDbgOutCntrl,                   /**< Parent of the menu item being added */
+               menuDbgOutCntrlItem_toggleEthDebugTxt,     /**< Menu item title text */
+               menuDbgOutCntrlItem_toggleEthDebugSelectKey, /**< Menu item selection key */
+               MENU_toggleEthDebugAction  /**< Action taken when menu item is selected */
+         );
 
-   MENU_addMenuItem(
-         &menuDbgOutCntrlItem_toggleEthDebug,      /**< Menu item being added */
-         &menuDbgOutCntrl,                   /**< Parent of the menu item being added */
-         menuDbgOutCntrlItem_toggleEthDebugTxt,     /**< Menu item title text */
-         menuDbgOutCntrlItem_toggleEthDebugSelectKey, /**< Menu item selection key */
-         MENU_toggleEthDebugAction  /**< Action taken when menu item is selected */
-   );
+      /* Add a Debug Module Control sub-menu under the DEBUG menu */
+      MENU_addSubMenu(
+            &menuDbgModCntrl,                              /**< Menu being added */
+            &menuDbg,                        /**< Parent of the menu being added */
+            menuDbgModCntrl_TitleTxt,           /**< Menu being added title text */
+            menuDbgModCntrl_SelectKey,       /**< Menu being added selection key */
+            NULL                         /**< Action taken when menu is selected */
+      );
+
+         /* Add menu items for this menu */
+         MENU_addMenuItem(
+               &menuDbgModCntrlItem_toggleModGen,   /**< Menu item being added */
+               &menuDbgModCntrl,                   /**< Parent of the menu item being added */
+               menuDbgModCntrlItem_toggleModGenTxt,  /**< Menu item title text */
+               menuDbgModCntrlItem_toggleModGenSelectKey, /**< Menu item selection key */
+               MENU_toggleDbgModGeneralAction /**< Action taken when menu item is selected */
+         );
+
+         /* Add menu items for this menu */
+         MENU_addMenuItem(
+               &menuDbgModCntrlItem_toggleModSer,   /**< Menu item being added */
+               &menuDbgModCntrl,                   /**< Parent of the menu item being added */
+               menuDbgModCntrlItem_toggleModSerTxt,  /**< Menu item title text */
+               menuDbgModCntrlItem_toggleModSerSelectKey, /**< Menu item selection key */
+               MENU_toggleDbgModSerialAction /**< Action taken when menu item is selected */
+         );
+
+         /* Add menu items for this menu */
+         MENU_addMenuItem(
+               &menuDbgModCntrlItem_toggleModTime,   /**< Menu item being added */
+               &menuDbgModCntrl,                   /**< Parent of the menu item being added */
+               menuDbgModCntrlItem_toggleModTimeTxt,  /**< Menu item title text */
+               menuDbgModCntrlItem_toggleModTimeSelectKey, /**< Menu item selection key */
+               MENU_toggleDbgModTimeAction /**< Action taken when menu item is selected */
+         );
+
+         /* Add menu items for this menu */
+         MENU_addMenuItem(
+               &menuDbgModCntrlItem_toggleModEth,   /**< Menu item being added */
+               &menuDbgModCntrl,                   /**< Parent of the menu item being added */
+               menuDbgModCntrlItem_toggleModEthTxt,  /**< Menu item title text */
+               menuDbgModCntrlItem_toggleModEthSelectKey, /**< Menu item selection key */
+               MENU_toggleDbgModEthAction /**< Action taken when menu item is selected */
+         );
+
+         /* Add menu items for this menu */
+         MENU_addMenuItem(
+               &menuDbgModCntrlItem_toggleModI2C,   /**< Menu item being added */
+               &menuDbgModCntrl,                   /**< Parent of the menu item being added */
+               menuDbgModCntrlItem_toggleModI2CTxt,  /**< Menu item title text */
+               menuDbgModCntrlItem_toggleModI2CSelectKey, /**< Menu item selection key */
+               MENU_toggleDbgModI2CAction /**< Action taken when menu item is selected */
+         );
+
+         /* Add menu items for this menu */
+         MENU_addMenuItem(
+               &menuDbgModCntrlItem_toggleModNOR,   /**< Menu item being added */
+               &menuDbgModCntrl,                   /**< Parent of the menu item being added */
+               menuDbgModCntrlItem_toggleModNORTxt,  /**< Menu item title text */
+               menuDbgModCntrlItem_toggleModNORSelectKey, /**< Menu item selection key */
+               MENU_toggleDbgModNORAction /**< Action taken when menu item is selected */
+         );
+
+         /* Add menu items for this menu */
+         MENU_addMenuItem(
+               &menuDbgModCntrlItem_toggleModSDR,   /**< Menu item being added */
+               &menuDbgModCntrl,                   /**< Parent of the menu item being added */
+               menuDbgModCntrlItem_toggleModSDRTxt,  /**< Menu item title text */
+               menuDbgModCntrlItem_toggleModSDRSelectKey, /**< Menu item selection key */
+               MENU_toggleDbgModSDRAMAction /**< Action taken when menu item is selected */
+         );
+
+         /* Add menu items for this menu */
+         MENU_addMenuItem(
+               &menuDbgModCntrlItem_toggleModMENU,   /**< Menu item being added */
+               &menuDbgModCntrl,                   /**< Parent of the menu item being added */
+               menuDbgModCntrlItem_toggleModMENUTxt,  /**< Menu item title text */
+               menuDbgModCntrlItem_toggleModMENUSelectKey, /**< Menu item selection key */
+               MENU_toggleDbgModMENUAction /**< Action taken when menu item is selected */
+         );
+
+         /* Add menu items for this menu */
+         MENU_addMenuItem(
+               &menuDbgModCntrlItem_toggleModCOMM,   /**< Menu item being added */
+               &menuDbgModCntrl,                   /**< Parent of the menu item being added */
+               menuDbgModCntrlItem_toggleModCOMMTxt,  /**< Menu item title text */
+               menuDbgModCntrlItem_toggleModCOMMSelectKey, /**< Menu item selection key */
+               MENU_toggleDbgModCOMMAction /**< Action taken when menu item is selected */
+         );
 
    return( &menu ); /* return a pointer to the top level of the menu tree */
 }

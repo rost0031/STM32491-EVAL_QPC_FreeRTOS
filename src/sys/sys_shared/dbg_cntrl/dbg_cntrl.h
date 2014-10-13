@@ -212,6 +212,21 @@ extern uint32_t  glbDbgConfig; /**< Allow global access to debug info */
       glbDbgConfig &= ~name_;
 
 /**
+ * @brief   Toggle debugging output for a given module.
+ *
+ * @param [in] @c name_: DBG_MODL_T enum representing the module.
+ */
+#define DBG_TOGGLE_DEBUG_FOR_MODULE( name_ ) \
+      glbDbgConfig ^= name_;
+
+/**
+ * @brief   Toggle debugging output for a given module.
+ *
+ * @param [in] @c name_: DBG_MODL_T enum representing the module.
+ */
+#define DBG_CHECK_DEBUG_FOR_MODULE( name_ ) \
+      ( glbDbgConfig & name_ )
+/**
  * @brief   Disable debugging output for all modules.
  */
 #define DBG_DISABLE_DEBUG_FOR_ALL_MODULES( ) \
