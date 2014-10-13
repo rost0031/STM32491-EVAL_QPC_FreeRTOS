@@ -18,6 +18,7 @@
 #include "project_includes.h"
 
 #include "debug_menu.h"
+#include "dbg_out_cntrl.h"
 
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */
@@ -55,6 +56,18 @@ char *const menu_SelectKey = "T";
  */
 static void MENU_printHelp( MsgSrc msgSrc );
 
+/**
+ * @brief   Prints out the entire expanded menu tree
+ * This is just a wrapper around the recursive function that prints the entire
+ * menu tree with some pretty-print code added in to make it obvious where the
+ * previous menu was printed and where the new one was.
+ *
+ * @param [in] node: treeNode_t* pointer to the root of the menu.
+ * @param [in] msgSrc: MsgSrc var that specifies where to print out to.
+ * @return  None
+ */
+static void MENU_printEntireExpandedMenu( treeNode_t* node, MsgSrc msgSrc );
+
 /* Private functions ---------------------------------------------------------*/
 
 /******************************************************************************/
@@ -68,7 +81,7 @@ treeNode_t* MENU_init( void )
     * declared "extern" so they can be accessed from here. The menus and menu
     * items will appear in the order in which they are added here. */
 
-   /* Add a menu */
+   /* Add the DEBUG menu */
    MENU_addSubMenu(
          &menuDbg,                                      /**< Menu being added */
          &menu,                           /**< Parent of the menu being added */
@@ -77,21 +90,31 @@ treeNode_t* MENU_init( void )
          NULL                         /**< Action taken when menu is selected */
    );
 
+   /* Add a Debug Uutput Control sub-menu under the DEBUG menu */
+   MENU_addSubMenu(
+         &menuDbgOutCntrl,                              /**< Menu being added */
+         &menuDbg,                        /**< Parent of the menu being added */
+         menuDbgOutCntrl_TitleTxt,           /**< Menu being added title text */
+         menuDbgOutCntrl_SelectKey,       /**< Menu being added selection key */
+         NULL                         /**< Action taken when menu is selected */
+   );
+
+
    /* Add menu items for this menu */
    MENU_addMenuItem(
-         &menuDbgItem_toggleSerialDebug,           /**< Menu item being added */
-         &menuDbg,                   /**< Parent of the menu item being added */
-         menuDbgItem_toggleSerialDebugTxt,          /**< Menu item title text */
-         menuDbgItem_toggleSerialDebugSelectKey, /**< Menu item selection key */
+         &menuDbgOutCntrlItem_toggleSerialDebug,   /**< Menu item being added */
+         &menuDbgOutCntrl,                   /**< Parent of the menu item being added */
+         menuDbgOutCntrlItem_toggleSerialDebugTxt,  /**< Menu item title text */
+         menuDbgOutCntrlItem_toggleSerialDebugSelectKey, /**< Menu item selection key */
          MENU_toggleSerialDebugAction /**< Action taken when menu item is selected */
    );
 
    MENU_addMenuItem(
-         &menuDbgItem_toggleEthDebug,              /**< Menu item being added */
-         &menuDbg,                   /**< Parent of the menu item being added */
-         menuDbgItem_toggleEthDebugTxt,             /**< Menu item title text */
-         menuDbgItem_toggleEthDebugSelectKey,    /**< Menu item selection key */
-         MENU_toggleEthDebugAction    /**< Action taken when menu item is selected */
+         &menuDbgOutCntrlItem_toggleEthDebug,      /**< Menu item being added */
+         &menuDbgOutCntrl,                   /**< Parent of the menu item being added */
+         menuDbgOutCntrlItem_toggleEthDebugTxt,     /**< Menu item title text */
+         menuDbgOutCntrlItem_toggleEthDebugSelectKey, /**< Menu item selection key */
+         MENU_toggleEthDebugAction  /**< Action taken when menu item is selected */
    );
 
    return( &menu ); /* return a pointer to the top level of the menu tree */
@@ -126,7 +149,9 @@ treeNode_t* MENU_parse(
    } else if ( 0 == strncmp((const char *)pBuffer, "P", 1 ) ) {
       MENU_printMenuExpandedAtCurrNode(newNode, msgSrc );
    } else if ( 0 == strncmp((const char *)pBuffer, "A", 1 ) ) {
-      MENU_printMenuTree(newNode, msgSrc );
+      /* Have to pass in the root of the menu to make sure to get the whole menu
+       * and not forget where we are currently at. */
+      MENU_printEntireExpandedMenu( &menu, msgSrc );
    } else if ( 0 == strncmp((const char *)pBuffer, "U", 1 ) ) {
       if ( NULL != node->fakeParentNode ) {
          newNode = node->fakeParentNode;
@@ -155,6 +180,13 @@ static void MENU_printHelp( MsgSrc msgSrc )
    MENU_printf("******************************************************************************\n");
 }
 
+/******************************************************************************/
+static void MENU_printEntireExpandedMenu( treeNode_t* node, MsgSrc msgSrc )
+{
+   MENU_printf("******************************************************************************\n");
+   MENU_printMenuTree(&menu, msgSrc );
+   MENU_printf("******************************************************************************\n\n");
+}
 /**
  * @}
  * end addtogroup groupMenu

@@ -17,8 +17,6 @@
 #include "qp_port.h"                                        /* for QP support */
 #include "project_includes.h"
 
-#include "debug_menu.h"
-
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */
 DBG_DEFINE_THIS_MODULE( DBG_MODL_MENU );/* For debug system to ID this module */
@@ -129,6 +127,7 @@ static void MENU_printNode( treeNode_t* node, MsgSrc msgSrc );
 /******************************************************************************/
 void MENU_printMenuExpandedAtCurrNode( treeNode_t* node, MsgSrc msgSrc )
 {
+
    if ( NULL == node ) {
       ERR_printf("Node null. Something is probably wrong with the algorithm\n");
       return;
@@ -150,9 +149,10 @@ void MENU_printMenuExpandedAtCurrNode( treeNode_t* node, MsgSrc msgSrc )
       ERR_printf("Incorrect ancestry calculation. Probably a bug in the algorithm\n");
       return;
    }
-
    /* Use a recursive function to print the entire ancestry */
+   MENU_printf("******************************************************************************\n");
    MENU_printRevAncestry( menuNav.pathToTop[menuNav.pathToTopIndex], msgSrc );
+   MENU_printf("******************************************************************************\n\n");
 }
 
 /******************************************************************************/

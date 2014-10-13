@@ -149,24 +149,29 @@ LWIP_SRC_DIR            = ../../
 APP_COMM_DIR            = $(APP_DIR)/comm
 
 # Application Menu and submenu directories
-APP_MENU_DIR            = $(APP_DIR)/menu
-APP_MENU_DBG_DIR        = $(APP_DIR)/menu/debugMenu
-APP_MENU_SYSTEST_DIR    = $(APP_DIR)/menu/sysTestMenu
+APP_MENU_DIR                      = $(APP_DIR)/menu
+APP_MENU_DBG_DIR                  = $(APP_DIR)/menu/dbgMenu
+APP_MENU_DBG_OUT_CNTRL_DIR        = $(APP_DIR)/menu/dbgMenu/dbgOutCntrlMenu
+APP_MENU_SYSTEST_DIR              = $(APP_DIR)/menu/sysTestMenu
 
 # Collect all the menu directories and subdirectories here so we don't have to
 # keep modifying the VPATH and INCLUDE paths.
 APP_MENU_DIRS           = $(APP_MENU_DIR) \
                           $(APP_MENU_DBG_DIR) \
+                          $(APP_MENU_DBG_OUT_CNTRL_DIR) \
                           $(APP_MENU_SYSTEST_DIR)
                           
 APP_MENU_INCLUDES       = -I$(APP_MENU_DIR) \
                           -I$(APP_MENU_DBG_DIR) \
-                          -I$(APP_MENU_SYSTEST_DIR)                          
+                          -I$(APP_MENU_DBG_OUT_CNTRL_DIR) \
+                          -I$(APP_MENU_SYSTEST_DIR)
+                                                 
 # Collect all the menu c source files here so we don't have to the list of sources
 MENU_CSRCS              = ktree.c \
                           menu.c \
                           menu_top.c \
-						  debug_menu.c
+						  debug_menu.c \
+						  dbg_out_cntrl.c
 						  						
 
 # Console output directory

@@ -1,8 +1,8 @@
 /**
- * @file 	debug_menu.h
- * @brief   Handles the debug menu section of the menu application.
+ * @file 	dbg_out_cntrl.h
+ * @brief   Handles the debug output control menu items of the menu application.
  *
- * @date   	09/29/2014
+ * @date   	10/13/2014
  * @author 	Harry Rostovtsev
  * @email  	harry_rostovtsev@datacard.com
  * Copyright (C) 2014 Datacard. All rights reserved.
@@ -12,8 +12,8 @@
  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef DEBUG_MENU_H_
-#define DEBUG_MENU_H_
+#ifndef DBG_OUT_CNTRL_H_
+#define DBG_OUT_CNTRL_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,17 +27,18 @@ extern "C" {
 /* Exported macros -----------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
 /* Exported variables --------------------------------------------------------*/
-extern treeNode_t menuDbg;
-extern char *const menuDbg_TitleTxt;
-extern char *const menuDbg_SelectKey;
 
-extern treeNode_t menuDbgItem_toggleSerialDebug;
-extern char *const menuDbgItem_toggleSerialDebugTxt;
-extern char *const menuDbgItem_toggleSerialDebugSelectKey;
+extern treeNode_t menuDbgOutCntrl;
+extern char *const menuDbgOutCntrl_TitleTxt;
+extern char *const menuDbgOutCntrl_SelectKey;
 
-extern treeNode_t menuDbgItem_toggleEthDebug;
-extern char *const menuDbgItem_toggleEthDebugTxt;
-extern char *const menuDbgItem_toggleEthDebugSelectKey;
+extern treeNode_t menuDbgOutCntrlItem_toggleSerialDebug;
+extern char *const menuDbgOutCntrlItem_toggleSerialDebugTxt;
+extern char *const menuDbgOutCntrlItem_toggleSerialDebugSelectKey;
+
+extern treeNode_t menuDbgOutCntrlItem_toggleEthDebug;
+extern char *const menuDbgOutCntrlItem_toggleEthDebugTxt;
+extern char *const menuDbgOutCntrlItem_toggleEthDebugSelectKey;
 
 /* Exported functions --------------------------------------------------------*/
 
@@ -63,5 +64,5 @@ void MENU_toggleEthDebugAction( void );
 }
 #endif
 
-#endif                                                       /* DEBUG_MENU_H_ */
+#endif                                                    /* DBG_OUT_CNTRL_H_ */
 /******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/
