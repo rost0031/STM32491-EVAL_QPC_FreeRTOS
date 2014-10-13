@@ -29,3 +29,4 @@ doc/
 .I2CMgr
 .CommStackMgr
 .SerialMgr
+.MenuMgr
