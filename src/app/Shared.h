@@ -60,8 +60,8 @@ enum AO_Priorities {
  */
 typedef enum MsgSrcTag {
    SERIAL_CON = 0,             /**< Message came from the console serial port */
-   ETH_PORT_1,             /**< Message came from the the first ethernet port */
-   ETH_PORT_2,            /**< Message came from the the second ethernet port */
+   ETH_PORT_SYS,           /**< Message came from the the first ethernet port */
+   ETH_PORT_LOG,          /**< Message came from the the second ethernet port */
 } MsgSrc;
 
 /**

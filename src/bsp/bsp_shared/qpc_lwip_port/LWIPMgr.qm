@@ -118,9 +118,9 @@ me-&gt;tpcb_sys = tcp_new();
 if (me-&gt;tpcb_sys == NULL) {
    ERR_printf(&quot;Unable to allocate LWIP memory for TCP\n&quot;);
 }
-err_t err = tcp_bind(me-&gt;tpcb_sys, IP_ADDR_ANY, 7778);   /* port 7778 for TCP */
+err_t err = tcp_bind(me-&gt;tpcb_sys, IP_ADDR_ANY, 1500);   /* port 1500 for TCP */
 if (ERR_OK != err ) {
-   ERR_printf(&quot;Unable to bind TCP to port 7778\n&quot;);
+   ERR_printf(&quot;Unable to bind TCP to port 1500\n&quot;);
 }
 
 me-&gt;tpcb_sys = tcp_listen(me-&gt;tpcb_sys);
@@ -131,13 +131,13 @@ me-&gt;tpcb_log = tcp_new();
 if (me-&gt;tpcb_log == NULL) {
    ERR_printf(&quot;Unable to allocate LWIP memory for TCP1\n&quot;);
 }
-err = tcp_bind(me-&gt;tpcb_log, IP_ADDR_ANY, 7779);   /* port 7779 for TCP */
+err = tcp_bind(me-&gt;tpcb_log, IP_ADDR_ANY, 1501);   /* port 1501 for TCP */
 if (ERR_OK != err ) {
-   ERR_printf(&quot;Unable to bind TCP to port 7779\n&quot;);
+   ERR_printf(&quot;Unable to bind TCP to port 1501\n&quot;);
 }
 
 me-&gt;tpcb_log = tcp_listen(me-&gt;tpcb_log);
-tcp_accept(me-&gt;tpcb_log, echo_accept);
+tcp_accept(me-&gt;tpcb_log, LWIP_logTcpAccept);
 
 QActive_subscribe((QActive *)me, ETH_SEND_SIG);</action>
      <initial_glyph conn="1,2,4,3,7,2">
@@ -278,52 +278,6 @@ if (me-&gt;auto_ip_tmr &gt;= AUTOIP_TMR_INTERVAL) {
 QActive_ctor(&amp;me-&gt;super, (QStateHandler)&amp;LWIPMgr_initial);
 QTimeEvt_ctor(&amp;me-&gt;te_LWIP_SLOW_TICK, LWIP_SLOW_TICK_SIG);</code>
   </operation>
-  <operation name="echo_accept" type="err_t" visibility="0x02" properties="0x00">
-   <documentation>/**
- * @brief: A callback function that handles acceptance of a connection 
- * on an echo TCP socket.
- * This function is passed in as a callback to tcp_accept().
- *
- * @param [in] *arg: void pointer to an argument list (unused)
- * @param [in] *newpcb: struct tcp_pcb pointer to the pcb that is handling the 
- * context for this connection.
- * @param [in] err: err_t passed in from the caller. (unused)
- *
- * @return err: err_t indicating error that may have occurred.
- *   @arg ERR_OK: no error
- *   @arg ERR_MEM: memory allocation error
- */</documentation>
-   <parameter name="arg" type="void *"/>
-   <parameter name="newpcb" type="struct tcp_pcb *"/>
-   <parameter name="err&#10;    " type="err_t"/>
-   <code>err_t ret_err;
-struct echo_state *es;
-
-LWIP_UNUSED_ARG(arg);
-LWIP_UNUSED_ARG(err);
-
-/* commonly observed practive to call tcp_setprio(), why? */
-tcp_setprio(newpcb, TCP_PRIO_MIN);
-
-es = (struct echo_state *)mem_malloc(sizeof(struct echo_state));
-if ( es != NULL ) {
-    es-&gt;state = ES_ACCEPTED;
-    es-&gt;pcb = newpcb;
-    es-&gt;retries = 0;
-    es-&gt;p = NULL;
-    /* pass newly allocated es to our callbacks */
-    tcp_arg(newpcb, es);
-    tcp_recv(newpcb, echo_recv);
-    tcp_err(newpcb, echo_error);
-    tcp_poll(newpcb, echo_poll, 0);
-    ret_err = ERR_OK;
-    LOG_printf(&quot;New connection accepted\n&quot;);
-} else {
-    ret_err = ERR_MEM;
-    ERR_printf(&quot;Error allocating LWIP mem for echo state\n&quot;);
-}
-return ret_err;</code>
-  </operation>
   <operation name="echo_recv" type="err_t" visibility="0x02" properties="0x00">
    <documentation>/**
  * @brief: A callback function that handles the start of a RECV on the echo 
@@ -356,11 +310,11 @@ if (p == NULL) {
     if(es-&gt;p == NULL) {
         LOG_printf(&quot;Closing connection\n&quot;);
         /* we're done sending, close it */
-        echo_close(tpcb, es);
+        LWIP_tcpClose(tpcb, es);
     } else {
         /* we're not done yet */
-        tcp_sent(tpcb, echo_sent);
-        echo_send(tpcb, es);
+        tcp_sent(tpcb, LWIP_tcpSent);
+        LWIP_tcpSend(tpcb, es);
     }
     ret_err = ERR_OK;
 
@@ -378,15 +332,15 @@ if (p == NULL) {
     /* store reference to incoming pbuf (chain) */
     es-&gt;p = p;
     /* install send completion notifier */
-    tcp_sent(tpcb, echo_sent);
-    echo_send(tpcb, es);
+    tcp_sent(tpcb, LWIP_tcpSent);
+    LWIP_tcpSend(tpcb, es);
     ret_err = ERR_OK;
 } else if (es-&gt;state == ES_RECEIVED) {
     /* read some more data */
     if(es-&gt;p == NULL) {
         es-&gt;p = p;
-        tcp_sent(tpcb, echo_sent);
-        echo_send(tpcb, es);
+        tcp_sent(tpcb, LWIP_tcpSent);
+        LWIP_tcpSend(tpcb, es);
     } else {
         struct pbuf *ptr;
          /* chain pbufs to the end of what we recv'ed previously  */
@@ -409,9 +363,9 @@ if (p == NULL) {
 }
 return ret_err;</code>
   </operation>
-  <operation name="echo_error" type="void" visibility="0x02" properties="0x00">
+  <operation name="LWIP_tcpError" type="void" visibility="0x02" properties="0x00">
    <documentation>/**
- * @brief: A callback function that handles the errors on the echo TCP socket.
+ * @brief: A callback function that handles the errors on a TCP socket.
  * This function is passed in as a callback to tcp_recv().
  *
  * @param [in] *arg: void pointer to an argument list (unused)
@@ -429,10 +383,9 @@ if (es != NULL) {
 }
 ERR_printf(&quot;Handling error, freeing memory\n&quot;);</code>
   </operation>
-  <operation name="echo_poll" type="err_t" visibility="0x02" properties="0x00">
+  <operation name="LWIP_tcpPoll" type="err_t" visibility="0x02" properties="0x00">
    <documentation>/**
- * @brief: A callback function that handles the start of a RECV on the echo 
- * TCP socket.
+ * @brief: A callback function that handles the start of a RECV on a TCP socket.
  * This function is passed in as a callback to tcp_recv().
  *
  * @param [in] *arg: void pointer to an argument list (unused)
@@ -451,12 +404,12 @@ es = (struct echo_state *)arg;
 if (es != NULL) {
     if (es-&gt;p != NULL) {
         /* there is a remaining pbuf (chain)  */
-        tcp_sent(tpcb, echo_sent);
-        echo_send(tpcb, es);
+        tcp_sent(tpcb, LWIP_tcpSent);
+        LWIP_tcpSend(tpcb, es);
     } else {
         /* no remaining pbuf (chain)  */
         if(es-&gt;state == ES_CLOSING) {
-            echo_close(tpcb, es);
+            LWIP_tcpClose(tpcb, es);
         }
     }
     ret_err = ERR_OK;
@@ -467,9 +420,9 @@ if (es != NULL) {
 }
 return ret_err;</code>
   </operation>
-  <operation name="echo_sent" type="err_t" visibility="0x02" properties="0x00">
+  <operation name="LWIP_tcpSent" type="err_t" visibility="0x02" properties="0x00">
    <documentation>/**
- * @brief: A callback function that handles the start of a RECV on the echo 
+ * @brief: A callback function that handles the start of a RECV on a
  * TCP socket.
  * This function is passed in as a callback to tcp_recv().
  *
@@ -491,20 +444,20 @@ es = (struct echo_state *)arg;
 es-&gt;retries = 0;
 if(es-&gt;p != NULL) {
     /* still got pbufs to send */
-    tcp_sent(tpcb, echo_sent);
-    echo_send(tpcb, es);
+    tcp_sent(tpcb, LWIP_tcpSent);
+    LWIP_tcpSend(tpcb, es);
 } else {
     /* no more pbufs to send */
     if(es-&gt;state == ES_CLOSING) {
-        echo_close(tpcb, es);
+        LWIP_tcpClose(tpcb, es);
     }
 }
 return ERR_OK;</code>
   </operation>
-  <operation name="echo_send" type="void" visibility="0x02" properties="0x00">
+  <operation name="LWIP_tcpSend" type="void" visibility="0x02" properties="0x00">
    <documentation>/**
  * @brief: A callback function that handles the actual sending of data
- * on an echo TCP socket.
+ * on a TCP socket.
  * This function is passed in as a callback to tcp_accept().
  *
  * @param [in|out] *tpcb: struct tcp_pcb pointer to the pcb that is handling the
@@ -550,7 +503,7 @@ while ((wr_err == ERR_OK) &amp;&amp; (es-&gt;p != NULL) &amp;&amp; (es-&gt;p-&gt
     }
 }</code>
   </operation>
-  <operation name="echo_close" type="void" visibility="0x02" properties="0x00">
+  <operation name="LWIP_tcpClose" type="void" visibility="0x02" properties="0x00">
    <documentation>/**
  * @brief: A callback function that handles the closing the TCP socket.
  * This function is passed in as a callback to tcp_accept().
@@ -575,6 +528,304 @@ if (es != NULL) {
 
 tcp_close(tpcb);
 LOG_printf(&quot;Connection closed\n&quot;);</code>
+  </operation>
+  <operation name="echo_accept" type="err_t" visibility="0x02" properties="0x00">
+   <documentation>/**
+ * @brief: A callback function that handles acceptance of a connection 
+ * on an echo TCP socket.
+ * This function is passed in as a callback to tcp_accept().
+ *
+ * @param [in] *arg: void pointer to an argument list (unused)
+ * @param [in] *newpcb: struct tcp_pcb pointer to the pcb that is handling the 
+ * context for this connection.
+ * @param [in] err: err_t passed in from the caller. (unused)
+ *
+ * @return err: err_t indicating error that may have occurred.
+ *   @arg ERR_OK: no error
+ *   @arg ERR_MEM: memory allocation error
+ */</documentation>
+   <parameter name="arg" type="void *"/>
+   <parameter name="newpcb" type="struct tcp_pcb *"/>
+   <parameter name="err&#10;    " type="err_t"/>
+   <code>err_t ret_err;
+struct echo_state *es;
+
+LWIP_UNUSED_ARG(arg);
+LWIP_UNUSED_ARG(err);
+
+/* commonly observed practive to call tcp_setprio(), why? */
+tcp_setprio(newpcb, TCP_PRIO_MIN);
+
+es = (struct echo_state *)mem_malloc(sizeof(struct echo_state));
+if ( es != NULL ) {
+    es-&gt;state = ES_ACCEPTED;
+    es-&gt;pcb = newpcb;
+    es-&gt;retries = 0;
+    es-&gt;p = NULL;
+    /* pass newly allocated es to our callbacks */
+    tcp_arg(newpcb, es);
+    tcp_recv(newpcb, echo_recv);
+    tcp_err(newpcb, LWIP_tcpError);
+    tcp_poll(newpcb, LWIP_tcpPoll, 0);
+    ret_err = ERR_OK;
+    LOG_printf(&quot;New connection accepted\n&quot;);
+} else {
+    ret_err = ERR_MEM;
+    ERR_printf(&quot;Error allocating LWIP mem for echo state\n&quot;);
+}
+return ret_err;</code>
+  </operation>
+  <operation name="echo_recv" type="err_t" visibility="0x02" properties="0x00">
+   <documentation>/**
+ * @brief: A callback function that handles the start of a RECV on the echo 
+ * TCP socket.
+ * This function is passed in as a callback to tcp_recv().
+ *
+ * @param [in] *arg: void pointer to an argument list (unused)
+ * @param [in] *newpcb: struct tcp_pcb pointer to the pcb that is handling the
+ * context for this connection.
+ * @param [in] *p: struct pbuf pointer to the LWIP pbuf that actually
+ * contains the data received.
+ * @param [in] err: err_t passed in from the caller. (unused)
+ *
+ * @return err: err_t indicating error that may have occurred.
+ *   @arg ERR_OK: no error
+ *   @arg ERR_MEM: memory allocation error
+ */</documentation>
+   <parameter name="arg" type="void *"/>
+   <parameter name="tpcb" type="struct tcp_pcb *"/>
+   <parameter name="p" type="struct pbuf *"/>
+   <parameter name="err" type="err_t"/>
+   <code>struct echo_state *es;
+err_t ret_err;
+
+LWIP_ASSERT(&quot;arg != NULL&quot;,arg != NULL);
+es = (struct echo_state *)arg;
+if (p == NULL) {
+    /* remote host closed connection */
+    es-&gt;state = ES_CLOSING;
+    if(es-&gt;p == NULL) {
+        LOG_printf(&quot;Closing connection\n&quot;);
+        /* we're done sending, close it */
+        LWIP_tcpClose(tpcb, es);
+    } else {
+        /* we're not done yet */
+        tcp_sent(tpcb, LWIP_tcpSent);
+        LWIP_tcpSend(tpcb, es);
+    }
+    ret_err = ERR_OK;
+
+} else if(err != ERR_OK) {
+    /* cleanup, for unkown reason */
+    if (p != NULL) {
+        es-&gt;p = NULL;
+        pbuf_free(p);
+    }
+    ret_err = err;
+    ERR_printf(&quot;Unknown error\n&quot;);
+} else if(es-&gt;state == ES_ACCEPTED) {
+    /* first data chunk in p-&gt;payload */
+    es-&gt;state = ES_RECEIVED;
+    /* store reference to incoming pbuf (chain) */
+    es-&gt;p = p;
+    /* install send completion notifier */
+    tcp_sent(tpcb, LWIP_tcpSent);
+    LWIP_tcpSend(tpcb, es);
+    ret_err = ERR_OK;
+} else if (es-&gt;state == ES_RECEIVED) {
+    /* read some more data */
+    if(es-&gt;p == NULL) {
+        es-&gt;p = p;
+        tcp_sent(tpcb, LWIP_tcpSent);
+        LWIP_tcpSend(tpcb, es);
+    } else {
+        struct pbuf *ptr;
+         /* chain pbufs to the end of what we recv'ed previously  */
+        ptr = es-&gt;p;
+        pbuf_chain(ptr,p);
+    }
+    ret_err = ERR_OK;
+} else if(es-&gt;state == ES_CLOSING) {
+    /* odd case, remote side closing twice, trash data */
+    tcp_recved(tpcb, p-&gt;tot_len);
+    es-&gt;p = NULL;
+    pbuf_free(p);
+    ret_err = ERR_OK;
+} else {
+    /* unkown es-&gt;state, trash data  */
+    tcp_recved(tpcb, p-&gt;tot_len);
+    es-&gt;p = NULL;
+    pbuf_free(p);
+    ret_err = ERR_OK;
+}
+return ret_err;</code>
+  </operation>
+  <operation name="LWIP_logTcpAccept" type="err_t" visibility="0x02" properties="0x00">
+   <documentation>/**
+ * @brief: A callback function that handles acceptance of a connection 
+ * on a TCP debug/logging socket.
+ * This function is passed in as a callback to tcp_accept().
+ *
+ * @param [in] *arg: void pointer to an argument list (unused)
+ * @param [in] *newpcb: struct tcp_pcb pointer to the pcb that is handling the 
+ * context for this connection.
+ * @param [in] err: err_t passed in from the caller. (unused)
+ *
+ * @return err: err_t indicating error that may have occurred.
+ *   @arg ERR_OK: no error
+ *   @arg ERR_MEM: memory allocation error
+ */</documentation>
+   <parameter name="arg" type="void *"/>
+   <parameter name="newpcb" type="struct tcp_pcb *"/>
+   <parameter name="err&#10;    " type="err_t"/>
+   <code>err_t ret_err;
+struct echo_state *es;
+
+LWIP_UNUSED_ARG(arg);
+LWIP_UNUSED_ARG(err);
+
+/* commonly observed practive to call tcp_setprio(), why? */
+tcp_setprio(newpcb, TCP_PRIO_MIN);
+
+es = (struct echo_state *)mem_malloc(sizeof(struct echo_state));
+if ( es != NULL ) {
+    es-&gt;state = ES_ACCEPTED;
+    es-&gt;pcb = newpcb;
+    es-&gt;retries = 0;
+    es-&gt;p = NULL;
+    /* pass newly allocated es to our callbacks */
+    tcp_arg(newpcb, es);
+    tcp_recv(newpcb, LWIP_logTcpRecv);
+    tcp_err(newpcb, LWIP_tcpError);
+    tcp_poll(newpcb, LWIP_tcpPoll, 0);
+    ret_err = ERR_OK;
+    LOG_printf(&quot;New connection accepted\n&quot;);
+} else {
+    ret_err = ERR_MEM;
+    ERR_printf(&quot;Error allocating LWIP mem for echo state\n&quot;);
+}
+return ret_err;</code>
+  </operation>
+  <operation name="LWIP_logTcpRecv" type="err_t" visibility="0x02" properties="0x00">
+   <documentation>/**
+ * @brief: A callback function that handles the start of a RECV on the
+ * TCP debug/logging socket.
+ * This function is passed in as a callback to tcp_recv().
+ *
+ * @param [in] *arg: void pointer to an argument list (unused)
+ * @param [in] *newpcb: struct tcp_pcb pointer to the pcb that is handling the
+ * context for this connection.
+ * @param [in] *p: struct pbuf pointer to the LWIP pbuf that actually
+ * contains the data received.
+ * @param [in] err: err_t passed in from the caller. (unused)
+ *
+ * @return err: err_t indicating error that may have occurred.
+ *   @arg ERR_OK: no error
+ *   @arg ERR_MEM: memory allocation error
+ */</documentation>
+   <parameter name="arg" type="void *"/>
+   <parameter name="tpcb" type="struct tcp_pcb *"/>
+   <parameter name="p" type="struct pbuf *"/>
+   <parameter name="err" type="err_t"/>
+   <code>struct echo_state *es;
+err_t ret_err;
+
+LWIP_ASSERT(&quot;arg != NULL&quot;,arg != NULL);
+es = (struct echo_state *)arg;
+if (p == NULL) {
+    /* remote host closed connection */
+    es-&gt;state = ES_CLOSING;
+    if(es-&gt;p == NULL) {
+        LOG_printf(&quot;Closing connection\n&quot;);
+        /* we're done sending, close it */
+        LWIP_tcpClose(tpcb, es);
+    } else {
+        /* we're not done yet */
+        tcp_sent(tpcb, LWIP_tcpSent);
+        LWIP_tcpSend(tpcb, es);
+    }
+    ret_err = ERR_OK;
+
+} else if(err != ERR_OK) {
+    /* cleanup, for unkown reason */
+    if (p != NULL) {
+        es-&gt;p = NULL;
+        pbuf_free(p);
+    }
+    ret_err = err;
+    ERR_printf(&quot;Unknown error\n&quot;);
+} else if(es-&gt;state == ES_ACCEPTED) {
+    /* first data chunk in p-&gt;payload */
+    es-&gt;state = ES_RECEIVED;
+    /* store reference to incoming pbuf (chain) */
+    es-&gt;p = p;
+
+    /* This eth port can only receive menu commands */
+    MenuEvt *menuEvt = Q_NEW( MenuEvt, MENU_GENERAL_REQ_SIG );
+
+    /* 2. Fill the msg payload with payload (the actual received msg)*/
+    MEMCPY(
+          menuEvt-&gt;buffer,
+          p-&gt;payload,
+          (p-&gt;tot_len)-1
+    );
+    menuEvt-&gt;bufferLen = (p-&gt;tot_len)-1;
+    menuEvt-&gt;msgSrc = ETH_PORT_LOG;
+
+    /* 3. Publish the newly created event to current AO */
+    QF_PUBLISH( (QEvent *)menuEvt, AO_LWIPMgr );
+
+    /* Free the pbuf */
+    tcp_recved(tpcb, p-&gt;tot_len);
+    es-&gt;p = NULL;
+    pbuf_free(p);
+    ret_err = ERR_OK;
+} else if (es-&gt;state == ES_RECEIVED) {
+    /* read some more data */
+    if(es-&gt;p == NULL) {
+        es-&gt;p = p;
+
+        /* This eth port can only receive menu commands */
+        MenuEvt *menuEvt = Q_NEW( MenuEvt, MENU_GENERAL_REQ_SIG );
+
+        /* 2. Fill the msg payload with payload (the actual received msg)*/
+        MEMCPY(
+              menuEvt-&gt;buffer,
+              p-&gt;payload,
+              (p-&gt;tot_len)-1
+        );
+        menuEvt-&gt;bufferLen = (p-&gt;tot_len)-1;
+        menuEvt-&gt;msgSrc = ETH_PORT_LOG;
+
+        /* 3. Publish the newly created event to current AO */
+        QF_PUBLISH( (QEvent *)menuEvt, AO_LWIPMgr );
+
+        /* Free the pbuf */
+        tcp_recved(tpcb, p-&gt;tot_len);
+        es-&gt;p = NULL;
+        pbuf_free(p);
+        ret_err = ERR_OK;
+    } else {
+        struct pbuf *ptr;
+         /* chain pbufs to the end of what we recv'ed previously  */
+        ptr = es-&gt;p;
+        pbuf_chain(ptr,p);
+    }
+    ret_err = ERR_OK;
+} else if(es-&gt;state == ES_CLOSING) {
+    /* odd case, remote side closing twice, trash data */
+    tcp_recved(tpcb, p-&gt;tot_len);
+    es-&gt;p = NULL;
+    pbuf_free(p);
+    ret_err = ERR_OK;
+} else {
+    /* unkown es-&gt;state, trash data  */
+    tcp_recved(tpcb, p-&gt;tot_len);
+    es-&gt;p = NULL;
+    pbuf_free(p);
+    ret_err = ERR_OK;
+}
+return ret_err;</code>
   </operation>
  </package>
  <directory name=".">
@@ -609,6 +860,7 @@ LOG_printf(&quot;Connection closed\n&quot;);</code>
 #include &quot;LWIPMgr.h&quot;
 #include &quot;lwip.h&quot;                                               /* lwIP stack */
 #include &quot;bsp_defs.h&quot;
+#include &quot;MenuMgr.h&quot;                                           /* For MenuEvt */
 
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */
@@ -649,13 +901,17 @@ static LWIPMgr l_LWIPMgr;       /* the single instance of the active object */
 QActive * const AO_LWIPMgr = (QActive *)&amp;l_LWIPMgr;  /* &quot;opaque&quot; AO pointer */
 
 /* Private function prototypes -----------------------------------------------*/
+$declare(AOs::LWIP_logTcpAccept)
+$declare(AOs::LWIP_logTcpRecv)
+
 $declare(AOs::echo_accept)
 $declare(AOs::echo_recv)
-$declare(AOs::echo_error)
-$declare(AOs::echo_poll)
-$declare(AOs::echo_sent)
-$declare(AOs::echo_send)
-$declare(AOs::echo_close)
+
+$declare(AOs::LWIP_tcpError)
+$declare(AOs::LWIP_tcpPoll)
+$declare(AOs::LWIP_tcpSent)
+$declare(AOs::LWIP_tcpSend)
+$declare(AOs::LWIP_tcpClose)
 
 
 /* Private functions ---------------------------------------------------------*/
@@ -679,13 +935,16 @@ static void udp_rx_handler(void *arg, struct udp_pcb *upcb,
 $define(AOs::LWIPMgr_ctor)
 $define(AOs::LWIPMgr)
 
+$define(AOs::LWIP_logTcpAccept)
+$define(AOs::LWIP_logTcpRecv)
+
 $define(AOs::echo_accept)
 $define(AOs::echo_recv)
-$define(AOs::echo_error)
-$define(AOs::echo_poll)
-$define(AOs::echo_sent)
-$define(AOs::echo_send)
-$define(AOs::echo_close)
+$define(AOs::LWIP_tcpError)
+$define(AOs::LWIP_tcpPoll)
+$define(AOs::LWIP_tcpSent)
+$define(AOs::LWIP_tcpSend)
+$define(AOs::LWIP_tcpClose)
 
 /* Ethernet message sender ...................................................*/
 void ETH_SendMsg_Handler(MsgEvt const *e) {

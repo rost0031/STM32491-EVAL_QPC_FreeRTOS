@@ -364,7 +364,7 @@ inline void Serial_UART1Callback(void)
                a_UARTSettings[SERIAL_UART1].indexRX
          );
          menuEvt->bufferLen = a_UARTSettings[SERIAL_UART1].indexRX;
-         menuEvt->msgSrc = SERIAL_UART1;
+         menuEvt->msgSrc = SERIAL_CON;
 
          /* 3. Publish the newly created event to current AO */
          QF_PUBLISH( (QEvent *)menuEvt, AO_SerialMgr );

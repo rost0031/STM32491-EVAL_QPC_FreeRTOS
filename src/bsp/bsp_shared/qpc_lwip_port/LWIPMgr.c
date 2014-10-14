@@ -45,6 +45,7 @@
 #include "LWIPMgr.h"
 #include "lwip.h"                                               /* lwIP stack */
 #include "bsp_defs.h"
+#include "MenuMgr.h"                                           /* For MenuEvt */
 
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */
@@ -157,6 +158,53 @@ QActive * const AO_LWIPMgr = (QActive *)&l_LWIPMgr;  /* "opaque" AO pointer */
 
 /**
  * @brief: A callback function that handles acceptance of a connection
+ * on a TCP debug/logging socket.
+ * This function is passed in as a callback to tcp_accept().
+ *
+ * @param [in] *arg: void pointer to an argument list (unused)
+ * @param [in] *newpcb: struct tcp_pcb pointer to the pcb that is handling the
+ * context for this connection.
+ * @param [in] err: err_t passed in from the caller. (unused)
+ *
+ * @return err: err_t indicating error that may have occurred.
+ *   @arg ERR_OK: no error
+ *   @arg ERR_MEM: memory allocation error
+ */
+/*${AOs::LWIP_logTcpAccept} ................................................*/
+static err_t LWIP_logTcpAccept(
+    void * arg,
+    struct tcp_pcb * newpcb,
+    err_t err
+    );
+
+
+/**
+ * @brief: A callback function that handles the start of a RECV on the
+ * TCP debug/logging socket.
+ * This function is passed in as a callback to tcp_recv().
+ *
+ * @param [in] *arg: void pointer to an argument list (unused)
+ * @param [in] *newpcb: struct tcp_pcb pointer to the pcb that is handling the
+ * context for this connection.
+ * @param [in] *p: struct pbuf pointer to the LWIP pbuf that actually
+ * contains the data received.
+ * @param [in] err: err_t passed in from the caller. (unused)
+ *
+ * @return err: err_t indicating error that may have occurred.
+ *   @arg ERR_OK: no error
+ *   @arg ERR_MEM: memory allocation error
+ */
+/*${AOs::LWIP_logTcpRecv} ..................................................*/
+static err_t LWIP_logTcpRecv(
+    void * arg,
+    struct tcp_pcb * tpcb,
+    struct pbuf * p,
+    err_t err);
+
+
+
+/**
+ * @brief: A callback function that handles acceptance of a connection
  * on an echo TCP socket.
  * This function is passed in as a callback to tcp_accept().
  *
@@ -201,8 +249,9 @@ static err_t echo_recv(
     err_t err);
 
 
+
 /**
- * @brief: A callback function that handles the errors on the echo TCP socket.
+ * @brief: A callback function that handles the errors on a TCP socket.
  * This function is passed in as a callback to tcp_recv().
  *
  * @param [in] *arg: void pointer to an argument list (unused)
@@ -210,13 +259,12 @@ static err_t echo_recv(
  *
  * @return None
  */
-/*${AOs::echo_error} .......................................................*/
-static void echo_error(void * arg, err_t err);
+/*${AOs::LWIP_tcpError} ....................................................*/
+static void LWIP_tcpError(void * arg, err_t err);
 
 
 /**
- * @brief: A callback function that handles the start of a RECV on the echo
- * TCP socket.
+ * @brief: A callback function that handles the start of a RECV on a TCP socket.
  * This function is passed in as a callback to tcp_recv().
  *
  * @param [in] *arg: void pointer to an argument list (unused)
@@ -227,12 +275,12 @@ static void echo_error(void * arg, err_t err);
  *   @arg ERR_OK: no error
  *   @arg ERR_MEM: memory allocation error
  */
-/*${AOs::echo_poll} ........................................................*/
-static err_t echo_poll(void * arg, struct tcp_pcb * tpcb);
+/*${AOs::LWIP_tcpPoll} .....................................................*/
+static err_t LWIP_tcpPoll(void * arg, struct tcp_pcb * tpcb);
 
 
 /**
- * @brief: A callback function that handles the start of a RECV on the echo
+ * @brief: A callback function that handles the start of a RECV on a
  * TCP socket.
  * This function is passed in as a callback to tcp_recv().
  *
@@ -245,8 +293,8 @@ static err_t echo_poll(void * arg, struct tcp_pcb * tpcb);
  *   @arg ERR_OK: no error
  *   @arg ERR_MEM: memory allocation error
  */
-/*${AOs::echo_sent} ........................................................*/
-static err_t echo_sent(
+/*${AOs::LWIP_tcpSent} .....................................................*/
+static err_t LWIP_tcpSent(
     void * arg,
     struct tcp_pcb * tpcb,
     uint16_t len);
@@ -254,7 +302,7 @@ static err_t echo_sent(
 
 /**
  * @brief: A callback function that handles the actual sending of data
- * on an echo TCP socket.
+ * on a TCP socket.
  * This function is passed in as a callback to tcp_accept().
  *
  * @param [in|out] *tpcb: struct tcp_pcb pointer to the pcb that is handling the
@@ -263,8 +311,8 @@ static err_t echo_sent(
  *
  * @return None
  */
-/*${AOs::echo_send} ........................................................*/
-static void echo_send(struct tcp_pcb * tpcb, struct echo_state * es);
+/*${AOs::LWIP_tcpSend} .....................................................*/
+static void LWIP_tcpSend(struct tcp_pcb * tpcb, struct echo_state * es);
 
 
 /**
@@ -277,8 +325,8 @@ static void echo_send(struct tcp_pcb * tpcb, struct echo_state * es);
  *
  * @return None
  */
-/*${AOs::echo_close} .......................................................*/
-static void echo_close(struct tcp_pcb * tpcb, struct echo_state * es);
+/*${AOs::LWIP_tcpClose} ....................................................*/
+static void LWIP_tcpClose(struct tcp_pcb * tpcb, struct echo_state * es);
 
 
 
@@ -380,9 +428,9 @@ static QState LWIPMgr_initial(LWIPMgr * const me, QEvt const * const e) {
     if (me->tpcb_sys == NULL) {
        ERR_printf("Unable to allocate LWIP memory for TCP\n");
     }
-    err_t err = tcp_bind(me->tpcb_sys, IP_ADDR_ANY, 7778);   /* port 7778 for TCP */
+    err_t err = tcp_bind(me->tpcb_sys, IP_ADDR_ANY, 1500);   /* port 1500 for TCP */
     if (ERR_OK != err ) {
-       ERR_printf("Unable to bind TCP to port 7778\n");
+       ERR_printf("Unable to bind TCP to port 1500\n");
     }
 
     me->tpcb_sys = tcp_listen(me->tpcb_sys);
@@ -393,13 +441,13 @@ static QState LWIPMgr_initial(LWIPMgr * const me, QEvt const * const e) {
     if (me->tpcb_log == NULL) {
        ERR_printf("Unable to allocate LWIP memory for TCP1\n");
     }
-    err = tcp_bind(me->tpcb_log, IP_ADDR_ANY, 7779);   /* port 7779 for TCP */
+    err = tcp_bind(me->tpcb_log, IP_ADDR_ANY, 1501);   /* port 1501 for TCP */
     if (ERR_OK != err ) {
-       ERR_printf("Unable to bind TCP to port 7779\n");
+       ERR_printf("Unable to bind TCP to port 1501\n");
     }
 
     me->tpcb_log = tcp_listen(me->tpcb_log);
-    tcp_accept(me->tpcb_log, echo_accept);
+    tcp_accept(me->tpcb_log, LWIP_logTcpAccept);
 
     QActive_subscribe((QActive *)me, ETH_SEND_SIG);
     return Q_TRAN(&LWIPMgr_Active);
@@ -539,6 +587,181 @@ static QState LWIPMgr_Active(LWIPMgr * const me, QEvt const * const e) {
 
 /**
  * @brief: A callback function that handles acceptance of a connection
+ * on a TCP debug/logging socket.
+ * This function is passed in as a callback to tcp_accept().
+ *
+ * @param [in] *arg: void pointer to an argument list (unused)
+ * @param [in] *newpcb: struct tcp_pcb pointer to the pcb that is handling the
+ * context for this connection.
+ * @param [in] err: err_t passed in from the caller. (unused)
+ *
+ * @return err: err_t indicating error that may have occurred.
+ *   @arg ERR_OK: no error
+ *   @arg ERR_MEM: memory allocation error
+ */
+/*${AOs::LWIP_logTcpAccept} ................................................*/
+static err_t LWIP_logTcpAccept(
+    void * arg,
+    struct tcp_pcb * newpcb,
+    err_t err
+    )
+{
+    err_t ret_err;
+    struct echo_state *es;
+
+    LWIP_UNUSED_ARG(arg);
+    LWIP_UNUSED_ARG(err);
+
+    /* commonly observed practive to call tcp_setprio(), why? */
+    tcp_setprio(newpcb, TCP_PRIO_MIN);
+
+    es = (struct echo_state *)mem_malloc(sizeof(struct echo_state));
+    if ( es != NULL ) {
+        es->state = ES_ACCEPTED;
+        es->pcb = newpcb;
+        es->retries = 0;
+        es->p = NULL;
+        /* pass newly allocated es to our callbacks */
+        tcp_arg(newpcb, es);
+        tcp_recv(newpcb, LWIP_logTcpRecv);
+        tcp_err(newpcb, LWIP_tcpError);
+        tcp_poll(newpcb, LWIP_tcpPoll, 0);
+        ret_err = ERR_OK;
+        LOG_printf("New connection accepted\n");
+    } else {
+        ret_err = ERR_MEM;
+        ERR_printf("Error allocating LWIP mem for echo state\n");
+    }
+    return ret_err;
+}
+
+/**
+ * @brief: A callback function that handles the start of a RECV on the
+ * TCP debug/logging socket.
+ * This function is passed in as a callback to tcp_recv().
+ *
+ * @param [in] *arg: void pointer to an argument list (unused)
+ * @param [in] *newpcb: struct tcp_pcb pointer to the pcb that is handling the
+ * context for this connection.
+ * @param [in] *p: struct pbuf pointer to the LWIP pbuf that actually
+ * contains the data received.
+ * @param [in] err: err_t passed in from the caller. (unused)
+ *
+ * @return err: err_t indicating error that may have occurred.
+ *   @arg ERR_OK: no error
+ *   @arg ERR_MEM: memory allocation error
+ */
+/*${AOs::LWIP_logTcpRecv} ..................................................*/
+static err_t LWIP_logTcpRecv(
+    void * arg,
+    struct tcp_pcb * tpcb,
+    struct pbuf * p,
+    err_t err)
+{
+    struct echo_state *es;
+    err_t ret_err;
+
+    LWIP_ASSERT("arg != NULL",arg != NULL);
+    es = (struct echo_state *)arg;
+    if (p == NULL) {
+        /* remote host closed connection */
+        es->state = ES_CLOSING;
+        if(es->p == NULL) {
+            LOG_printf("Closing connection\n");
+            /* we're done sending, close it */
+            LWIP_tcpClose(tpcb, es);
+        } else {
+            /* we're not done yet */
+            tcp_sent(tpcb, LWIP_tcpSent);
+            LWIP_tcpSend(tpcb, es);
+        }
+        ret_err = ERR_OK;
+
+    } else if(err != ERR_OK) {
+        /* cleanup, for unkown reason */
+        if (p != NULL) {
+            es->p = NULL;
+            pbuf_free(p);
+        }
+        ret_err = err;
+        ERR_printf("Unknown error\n");
+    } else if(es->state == ES_ACCEPTED) {
+        /* first data chunk in p->payload */
+        es->state = ES_RECEIVED;
+        /* store reference to incoming pbuf (chain) */
+        es->p = p;
+
+        /* This eth port can only receive menu commands */
+        MenuEvt *menuEvt = Q_NEW( MenuEvt, MENU_GENERAL_REQ_SIG );
+
+        /* 2. Fill the msg payload with payload (the actual received msg)*/
+        MEMCPY(
+              menuEvt->buffer,
+              p->payload,
+              (p->tot_len)-1
+        );
+        menuEvt->bufferLen = (p->tot_len)-1;
+        menuEvt->msgSrc = ETH_PORT_LOG;
+
+        /* 3. Publish the newly created event to current AO */
+        QF_PUBLISH( (QEvent *)menuEvt, AO_LWIPMgr );
+
+        /* Free the pbuf */
+        tcp_recved(tpcb, p->tot_len);
+        es->p = NULL;
+        pbuf_free(p);
+        ret_err = ERR_OK;
+    } else if (es->state == ES_RECEIVED) {
+        /* read some more data */
+        if(es->p == NULL) {
+            es->p = p;
+
+            /* This eth port can only receive menu commands */
+            MenuEvt *menuEvt = Q_NEW( MenuEvt, MENU_GENERAL_REQ_SIG );
+
+            /* 2. Fill the msg payload with payload (the actual received msg)*/
+            MEMCPY(
+                  menuEvt->buffer,
+                  p->payload,
+                  (p->tot_len)-1
+            );
+            menuEvt->bufferLen = (p->tot_len)-1;
+            menuEvt->msgSrc = ETH_PORT_LOG;
+
+            /* 3. Publish the newly created event to current AO */
+            QF_PUBLISH( (QEvent *)menuEvt, AO_LWIPMgr );
+
+            /* Free the pbuf */
+            tcp_recved(tpcb, p->tot_len);
+            es->p = NULL;
+            pbuf_free(p);
+            ret_err = ERR_OK;
+        } else {
+            struct pbuf *ptr;
+             /* chain pbufs to the end of what we recv'ed previously  */
+            ptr = es->p;
+            pbuf_chain(ptr,p);
+        }
+        ret_err = ERR_OK;
+    } else if(es->state == ES_CLOSING) {
+        /* odd case, remote side closing twice, trash data */
+        tcp_recved(tpcb, p->tot_len);
+        es->p = NULL;
+        pbuf_free(p);
+        ret_err = ERR_OK;
+    } else {
+        /* unkown es->state, trash data  */
+        tcp_recved(tpcb, p->tot_len);
+        es->p = NULL;
+        pbuf_free(p);
+        ret_err = ERR_OK;
+    }
+    return ret_err;
+}
+
+
+/**
+ * @brief: A callback function that handles acceptance of a connection
  * on an echo TCP socket.
  * This function is passed in as a callback to tcp_accept().
  *
@@ -576,8 +799,8 @@ static err_t echo_accept(
         /* pass newly allocated es to our callbacks */
         tcp_arg(newpcb, es);
         tcp_recv(newpcb, echo_recv);
-        tcp_err(newpcb, echo_error);
-        tcp_poll(newpcb, echo_poll, 0);
+        tcp_err(newpcb, LWIP_tcpError);
+        tcp_poll(newpcb, LWIP_tcpPoll, 0);
         ret_err = ERR_OK;
         LOG_printf("New connection accepted\n");
     } else {
@@ -621,11 +844,11 @@ static err_t echo_recv(
         if(es->p == NULL) {
             LOG_printf("Closing connection\n");
             /* we're done sending, close it */
-            echo_close(tpcb, es);
+            LWIP_tcpClose(tpcb, es);
         } else {
             /* we're not done yet */
-            tcp_sent(tpcb, echo_sent);
-            echo_send(tpcb, es);
+            tcp_sent(tpcb, LWIP_tcpSent);
+            LWIP_tcpSend(tpcb, es);
         }
         ret_err = ERR_OK;
 
@@ -643,15 +866,15 @@ static err_t echo_recv(
         /* store reference to incoming pbuf (chain) */
         es->p = p;
         /* install send completion notifier */
-        tcp_sent(tpcb, echo_sent);
-        echo_send(tpcb, es);
+        tcp_sent(tpcb, LWIP_tcpSent);
+        LWIP_tcpSend(tpcb, es);
         ret_err = ERR_OK;
     } else if (es->state == ES_RECEIVED) {
         /* read some more data */
         if(es->p == NULL) {
             es->p = p;
-            tcp_sent(tpcb, echo_sent);
-            echo_send(tpcb, es);
+            tcp_sent(tpcb, LWIP_tcpSent);
+            LWIP_tcpSend(tpcb, es);
         } else {
             struct pbuf *ptr;
              /* chain pbufs to the end of what we recv'ed previously  */
@@ -676,7 +899,7 @@ static err_t echo_recv(
 }
 
 /**
- * @brief: A callback function that handles the errors on the echo TCP socket.
+ * @brief: A callback function that handles the errors on a TCP socket.
  * This function is passed in as a callback to tcp_recv().
  *
  * @param [in] *arg: void pointer to an argument list (unused)
@@ -684,8 +907,8 @@ static err_t echo_recv(
  *
  * @return None
  */
-/*${AOs::echo_error} .......................................................*/
-static void echo_error(void * arg, err_t err) {
+/*${AOs::LWIP_tcpError} ....................................................*/
+static void LWIP_tcpError(void * arg, err_t err) {
     struct echo_state *es;
     LWIP_UNUSED_ARG(err);
     es = (struct echo_state *)arg;
@@ -696,8 +919,7 @@ static void echo_error(void * arg, err_t err) {
 }
 
 /**
- * @brief: A callback function that handles the start of a RECV on the echo
- * TCP socket.
+ * @brief: A callback function that handles the start of a RECV on a TCP socket.
  * This function is passed in as a callback to tcp_recv().
  *
  * @param [in] *arg: void pointer to an argument list (unused)
@@ -708,20 +930,20 @@ static void echo_error(void * arg, err_t err) {
  *   @arg ERR_OK: no error
  *   @arg ERR_MEM: memory allocation error
  */
-/*${AOs::echo_poll} ........................................................*/
-static err_t echo_poll(void * arg, struct tcp_pcb * tpcb) {
+/*${AOs::LWIP_tcpPoll} .....................................................*/
+static err_t LWIP_tcpPoll(void * arg, struct tcp_pcb * tpcb) {
     err_t ret_err;
     struct echo_state *es;
     es = (struct echo_state *)arg;
     if (es != NULL) {
         if (es->p != NULL) {
             /* there is a remaining pbuf (chain)  */
-            tcp_sent(tpcb, echo_sent);
-            echo_send(tpcb, es);
+            tcp_sent(tpcb, LWIP_tcpSent);
+            LWIP_tcpSend(tpcb, es);
         } else {
             /* no remaining pbuf (chain)  */
             if(es->state == ES_CLOSING) {
-                echo_close(tpcb, es);
+                LWIP_tcpClose(tpcb, es);
             }
         }
         ret_err = ERR_OK;
@@ -734,7 +956,7 @@ static err_t echo_poll(void * arg, struct tcp_pcb * tpcb) {
 }
 
 /**
- * @brief: A callback function that handles the start of a RECV on the echo
+ * @brief: A callback function that handles the start of a RECV on a
  * TCP socket.
  * This function is passed in as a callback to tcp_recv().
  *
@@ -747,8 +969,8 @@ static err_t echo_poll(void * arg, struct tcp_pcb * tpcb) {
  *   @arg ERR_OK: no error
  *   @arg ERR_MEM: memory allocation error
  */
-/*${AOs::echo_sent} ........................................................*/
-static err_t echo_sent(
+/*${AOs::LWIP_tcpSent} .....................................................*/
+static err_t LWIP_tcpSent(
     void * arg,
     struct tcp_pcb * tpcb,
     uint16_t len)
@@ -759,12 +981,12 @@ static err_t echo_sent(
     es->retries = 0;
     if(es->p != NULL) {
         /* still got pbufs to send */
-        tcp_sent(tpcb, echo_sent);
-        echo_send(tpcb, es);
+        tcp_sent(tpcb, LWIP_tcpSent);
+        LWIP_tcpSend(tpcb, es);
     } else {
         /* no more pbufs to send */
         if(es->state == ES_CLOSING) {
-            echo_close(tpcb, es);
+            LWIP_tcpClose(tpcb, es);
         }
     }
     return ERR_OK;
@@ -772,7 +994,7 @@ static err_t echo_sent(
 
 /**
  * @brief: A callback function that handles the actual sending of data
- * on an echo TCP socket.
+ * on a TCP socket.
  * This function is passed in as a callback to tcp_accept().
  *
  * @param [in|out] *tpcb: struct tcp_pcb pointer to the pcb that is handling the
@@ -781,8 +1003,8 @@ static err_t echo_sent(
  *
  * @return None
  */
-/*${AOs::echo_send} ........................................................*/
-static void echo_send(struct tcp_pcb * tpcb, struct echo_state * es) {
+/*${AOs::LWIP_tcpSend} .....................................................*/
+static void LWIP_tcpSend(struct tcp_pcb * tpcb, struct echo_state * es) {
     struct pbuf *ptr;
     err_t wr_err = ERR_OK;
     while ((wr_err == ERR_OK) && (es->p != NULL) && (es->p->len <= tcp_sndbuf(tpcb))) {
@@ -829,8 +1051,8 @@ static void echo_send(struct tcp_pcb * tpcb, struct echo_state * es) {
  *
  * @return None
  */
-/*${AOs::echo_close} .......................................................*/
-static void echo_close(struct tcp_pcb * tpcb, struct echo_state * es) {
+/*${AOs::LWIP_tcpClose} ....................................................*/
+static void LWIP_tcpClose(struct tcp_pcb * tpcb, struct echo_state * es) {
     tcp_arg(tpcb, NULL);
     tcp_sent(tpcb, NULL);
     tcp_recv(tpcb, NULL);

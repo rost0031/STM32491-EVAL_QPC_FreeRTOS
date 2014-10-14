@@ -35,8 +35,10 @@ Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */
 /**< This "global" variable is used to keep track of all the modules which have
  * debugging enabled throughout the system.
  * @note 1: this var should not be accessed directly by the developer.
- * @note 2: this var should be set/cleared by the #DBG_ENABLE_DEBUG_FOR_MODULE()
- * and #DBG_DISABLE_DEBUG_FOR_MODULE(), respectively */
+ * @note 2: this var should be set/cleared/checked by
+ * #DBG_ENABLE_DEBUG_FOR_MODULE(), #DBG_DISABLE_DEBUG_FOR_MODULE(),
+ * #DBG_TOGGLE_DEBUG_FOR_MODULE(), #DBG_CHECK_DEBUG_FOR_MODULE() macros only!
+ */
 uint32_t  glbDbgConfig = 0;
 
 /* Private function prototypes -----------------------------------------------*/
