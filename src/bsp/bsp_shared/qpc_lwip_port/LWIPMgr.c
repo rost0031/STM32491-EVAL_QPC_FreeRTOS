@@ -121,16 +121,22 @@ typedef struct {
 
     /**< Pointer to LWIP tcp pcb struct used to keep track of TCP connection to the
          system for commands and replies. */
-    struct tcp_pcb *tpcb_sys;
+    struct tcp_pcb* tpcb_sys;
 
     /**< Pointer to LWIP tcp pcb struct used to keep track of TCP connection to the
          system for logging. */
-    struct tcp_pcb *tpcb_log;
-
-    /* Pointer to the log socket state that will be passed in to the TCP callback
-     * functions. */
-    struct echo_state *es_log;
+    struct tcp_pcb* tpcb_log;
 } LWIPMgr;
+
+/* Pointer to the log socket state that will be passed in to the TCP callback
+ * functions. */
+extern struct echo_state* LWIPMgr_es_log;
+
+/* Keeps track of what port is used by logging TCP connection */
+extern uint16_t LWIPMgr_logPort;
+
+/* Keeps track of what port is used by system TCP connection */
+extern uint16_t LWIPMgr_sysPort;
 
 /* protected: */
 static QState LWIPMgr_initial(LWIPMgr * const me, QEvt const * const e);
@@ -373,6 +379,9 @@ void LWIPMgr_ctor(void) {
  * \brief LWIPMgr "class"
  */
 /*${AOs::LWIPMgr} ..........................................................*/
+struct echo_state* LWIPMgr_es_log;
+uint16_t LWIPMgr_logPort;
+uint16_t LWIPMgr_sysPort;
 /*${AOs::LWIPMgr::SM} ......................................................*/
 static QState LWIPMgr_initial(LWIPMgr * const me, QEvt const * const e) {
     /* ${AOs::LWIPMgr::SM::initial} */
@@ -392,6 +401,11 @@ static QState LWIPMgr_initial(LWIPMgr * const me, QEvt const * const e) {
     QS_FILTER_SM_OBJ(0);                  /* Turn off all tracing for this SM */
     QS_FILTER_AO_OBJ(0);                  /* Turn off all tracing for this AO */
     QS_FILTER_TE_OBJ(0);           /* Turn off time event tracing for this AO */
+
+    /* TODO: temporary assignment of logging and system port numbers.  These
+     * will eventually be assigned via BOOTP based on which board this is. */
+    LWIPMgr_sysPort = 1500;
+    LWIPMgr_logPort = 1501;
 
     /* Configure the hardware MAC address for the Ethernet Controller */
 
@@ -432,9 +446,9 @@ static QState LWIPMgr_initial(LWIPMgr * const me, QEvt const * const e) {
     if (me->tpcb_sys == NULL) {
        ERR_printf("Unable to allocate LWIP memory for TCP\n");
     }
-    err_t err = tcp_bind(me->tpcb_sys, IP_ADDR_ANY, 1500);   /* port 1500 for TCP */
+    err_t err = tcp_bind(me->tpcb_sys, IP_ADDR_ANY, LWIPMgr_sysPort);
     if (ERR_OK != err ) {
-       ERR_printf("Unable to bind TCP to port 1500\n");
+       ERR_printf("Unable to bind TCP to port %d\n", LWIPMgr_sysPort);
     }
 
     me->tpcb_sys = tcp_listen(me->tpcb_sys);
@@ -445,16 +459,14 @@ static QState LWIPMgr_initial(LWIPMgr * const me, QEvt const * const e) {
     if (me->tpcb_log == NULL) {
        ERR_printf("Unable to allocate LWIP memory for TCP_LOG socket\n");
     }
-    err = tcp_bind(me->tpcb_log, IP_ADDR_ANY, 1501);   /* port 1501 for TCP */
+    err = tcp_bind(me->tpcb_log, IP_ADDR_ANY, LWIPMgr_logPort);
     if (ERR_OK != err ) {
-       ERR_printf("Unable to bind TCP to port 1501\n");
+       ERR_printf("Unable to bind TCP to port %d\n", LWIPMgr_logPort);
     }
 
     me->tpcb_log = tcp_listen(me->tpcb_log);
 
-    me->es_log = (struct echo_state *)mem_malloc(sizeof(struct echo_state));
-
-    tcp_arg(me->tpcb_log, me->es_log);
+    LWIPMgr_es_log = NULL;
     tcp_accept(me->tpcb_log, LWIP_logTcpAccept);
 
     /* Signal subscriptions */
@@ -588,10 +600,10 @@ static QState LWIPMgr_Active(LWIPMgr * const me, QEvt const * const e) {
         }
         /* ${AOs::LWIPMgr::SM::Active::ETH_LOG_TCP_SEND} */
         case ETH_LOG_TCP_SEND_SIG: {
-            DBG_printf("Got ETH_LOG_TCP_SEND.  Port is %d\n", me->tpcb_log->remote_port);
-            DBG_printf("es_log->state: %d, es_log->p: %x\n", me->es_log->state, me->es_log->p);
+            DBG_printf("Got ETH_LOG_TCP_SEND.  LocalPort is %d, TCP state: %d\n", me->tpcb_log->local_port, me->tpcb_log->state);
+            DBG_printf("LWIPMgr_es_log->state: %d, LWIPMgr_es_log: %x\n", LWIPMgr_es_log->state, LWIPMgr_es_log);
             /* Event posted that will include (inside it) a msg to send */
-            //if (me->tpcb_log->remote_port != (uint16_t)0) {
+            if ( NULL != LWIPMgr_es_log) {
                 struct pbuf *p = pbuf_new(
                     (u8_t *)((EthEvt const *)e)->msg,
                     ((EthEvt const *)e)->msg_len
@@ -599,14 +611,17 @@ static QState LWIPMgr_Active(LWIPMgr * const me, QEvt const * const e) {
                 if (p != (struct pbuf *)0) {
                     DBG_printf("Sending\n");
                     //tcp_write(me->tpcb_log, p->payload, p->tot_len, 1);
-                    me->es_log->p = p;
-                    LWIP_tcpSend(me->tpcb_log, me->es_log);
-                    tcp_sent(me->tpcb_log, NULL);  // Don't need a callback
+                    //me->es_log->p = p;
+                    LWIPMgr_es_log->p = p;
+                    LWIP_tcpSend(me->tpcb_log, LWIPMgr_es_log);
+                    tcp_sent(me->tpcb_log, LWIP_tcpSent);
                     pbuf_free(p);                   // don't leak the pbuf!
                 } else {
                     DBG_printf("Not Sending\n");
                 }
-            //}
+            } else {
+                DBG_printf("No connection exists for logging\n");
+            }
 
 
 
@@ -663,20 +678,27 @@ static err_t LWIP_logTcpAccept(
     err_t ret_err;
     struct echo_state *es;
 
-    // LWIP_UNUSED_ARG(arg);
+    LWIP_UNUSED_ARG(arg);
     LWIP_UNUSED_ARG(err);
+
+    if ( LWIPMgr_logPort == newpcb->local_port ) {
+       if ( NULL != LWIPMgr_es_log) {
+          /* A connection on the logging port exists already. */
+          ret_err = ERR_USE;
+          return ret_err;
+       }
+    } else if ( LWIPMgr_sysPort == newpcb->local_port ) {
+       WRN_printf("System TCP not implemented currently\n");
+    } else {
+       ERR_printf("Unknown port number %d\n", newpcb->local_port );
+       ret_err = ERR_VAL;
+       return ret_err;
+    }
 
     /* commonly observed practice to call tcp_setprio(), why? */
     tcp_setprio(newpcb, TCP_PRIO_MIN);
 
-    //es = (struct echo_state *)mem_malloc(sizeof(struct echo_state));
-    es = (struct echo_state *)arg;
-
-    //    if ( NULL == es ) {
-    //       DBG_printf("Allocating LWIP memory for the passed in es\n");
-    //       es = (struct echo_state *)mem_malloc(sizeof(struct echo_state));
-    //    }
-
+    es = (struct echo_state *)mem_malloc(sizeof(struct echo_state));
     if ( es != NULL ) {
         es->state = ES_ACCEPTED;
         es->pcb = newpcb;
@@ -688,6 +710,7 @@ static err_t LWIP_logTcpAccept(
         tcp_err(newpcb, LWIP_tcpError);
         tcp_poll(newpcb, LWIP_tcpPoll, 0);
         ret_err = ERR_OK;
+        LWIPMgr_es_log = es; /* Tell the opaque pointer about this new structure. */
         LOG_printf("New connection accepted\n");
     } else {
         ret_err = ERR_MEM;
@@ -975,6 +998,7 @@ static void LWIP_tcpError(void * arg, err_t err) {
     es = (struct echo_state *)arg;
     if (es != NULL) {
         mem_free(es);
+        LWIPMgr_es_log = NULL; /* Clear out the global opaque pointer */
     }
     ERR_printf("Handling error, freeing memory\n");
 }
@@ -1120,9 +1144,10 @@ static void LWIP_tcpClose(struct tcp_pcb * tpcb, struct echo_state * es) {
     tcp_err(tpcb, NULL);
     tcp_poll(tpcb, NULL, 0);
 
-    //    if (es != NULL) {
-    //        mem_free(es);
-    //    }
+    if (es != NULL) {
+        mem_free(es);
+        LWIPMgr_es_log = NULL;
+    }
 
     tcp_close(tpcb);
     LOG_printf("Connection closed\n");
