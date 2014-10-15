@@ -19,7 +19,7 @@
 
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */
-DBG_DEFINE_THIS_MODULE( DBG_MODL_MENU );/* For debug system to ID this module */
+DBG_DEFINE_THIS_MODULE( DBG_MODL_DBG ); /* For debug system to ID this module */
 
 /* Private typedefs ----------------------------------------------------------*/
 /* Private defines -----------------------------------------------------------*/

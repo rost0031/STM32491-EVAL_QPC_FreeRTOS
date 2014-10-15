@@ -147,6 +147,9 @@ LWIP_SRC_DIR            = ../../
 
 # Application Comm directory
 APP_COMM_DIR            = $(APP_DIR)/comm
+						  						
+# Application Debug directory
+APP_DBG_DIR             = $(APP_DIR)/debug
 
 # Application Menu and submenu directories
 APP_MENU_DIR                      = $(APP_DIR)/menu
@@ -176,7 +179,6 @@ MENU_CSRCS              = ktree.c \
 						  debug_menu.c \
 						  dbg_out_cntrl.c \
 						  dbg_mod_cntrl.c
-						  						
 
 # Console output directory
 CON_OUT_DIR				= $(SYS_DIR)/sys_shared/con_out
@@ -190,6 +192,7 @@ KTREE_DIR				= $(SYS_DIR)/ktree
 # Source virtual directories
 VPATH 					= $(APP_DIR) \
 						  $(APP_COMM_DIR) \
+						  $(APP_DBG_DIR) \
 						  $(APP_MENU_DIRS) \
 						  \
 						  $(BSP_DIR) \
@@ -217,6 +220,7 @@ INCLUDES  				= -I$(SRC_DIR) \
 						  -I$(APP_DIR) \
 						  \
 						  -I$(APP_COMM_DIR) \
+						  -I$(APP_DBG_DIR) \
 						  $(APP_MENU_INCLUDES) \
 						  \
 						  -I$(QPC_DIR)/include \
@@ -309,7 +313,7 @@ C_SRCS                = \
 						I2CMgr.c \
 						SerialMgr.c \
 						CommStackMgr.c \
-						MenuMgr.c \
+						DbgMgr.c \
 						\
 			            misc.c  \
 			      		stm32f4xx_crc.c \

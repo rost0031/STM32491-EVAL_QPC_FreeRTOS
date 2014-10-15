@@ -93,6 +93,11 @@
     * @defgroup groupMenu Menu System
     * @ingroup groupApp
     */
+    
+   /**
+    * @defgroup groupDbg Debugging and Logging System
+    * @ingroup groupApp
+    */
 
 /**
  * @defgroup groupBSP BSP

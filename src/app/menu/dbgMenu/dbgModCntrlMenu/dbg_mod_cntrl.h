@@ -61,9 +61,9 @@ extern treeNode_t menuDbgModCntrlItem_toggleModSDR;
 extern char *const menuDbgModCntrlItem_toggleModSDRTxt;
 extern char *const menuDbgModCntrlItem_toggleModSDRSelectKey;
 
-extern treeNode_t menuDbgModCntrlItem_toggleModMENU;
-extern char *const menuDbgModCntrlItem_toggleModMENUTxt;
-extern char *const menuDbgModCntrlItem_toggleModMENUSelectKey;
+extern treeNode_t menuDbgModCntrlItem_toggleModDBG;
+extern char *const menuDbgModCntrlItem_toggleModDBGTxt;
+extern char *const menuDbgModCntrlItem_toggleModDBGSelectKey;
 
 extern treeNode_t menuDbgModCntrlItem_toggleModCOMM;
 extern char *const menuDbgModCntrlItem_toggleModCOMMTxt;
@@ -78,7 +78,7 @@ void MENU_toggleDbgModEthAction( void );
 void MENU_toggleDbgModI2CAction( void );
 void MENU_toggleDbgModNORAction( void );
 void MENU_toggleDbgModSDRAMAction( void );
-void MENU_toggleDbgModMENUAction( void );
+void MENU_toggleDbgModDBGAction( void );
 void MENU_toggleDbgModCOMMAction( void );
 
 

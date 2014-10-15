@@ -44,12 +44,13 @@
  */
 enum AO_Priorities {
    NEVER_USE_ZERO_PRIORITY = 0,   /**< Never use this.  It breaks everything. */
-   MENU_MGR_PRIORITY,                            /**< Priority of MenuMgr AO. */
    ETH_PRIORITY,       /**< Priority of LWIP AO which handles ethernet comms. */
    SERIAL_MGR_PRIORITY,                        /**< Priority of SerialMgr AO. */
    COMM_MGR_PRIORITY,                       /**< Priority of CommStackMgr AO. */
    I2C_MGR_PRIORITY,                              /**< Priority of I2CMgr AO. */
+
    /* Insert new priorities here ... */
+   DBG_MGR_PRIORITY,                             /**< Priority of MenuMgr AO. */
 };
 
 /* These need to be visible to LWIPMgr AO, which is part of a shared port. Most
@@ -59,9 +60,9 @@ enum AO_Priorities {
  * \enum Source of the message.
  */
 typedef enum MsgSrcTag {
-   SERIAL_CON = 0,             /**< Message came from the console serial port */
-   ETH_PORT_SYS,           /**< Message came from the the first ethernet port */
-   ETH_PORT_LOG,          /**< Message came from the the second ethernet port */
+   SERIAL_CON     = 0x00000001,  /**< Message to/from the console serial port */
+   ETH_PORT_SYS   = 0x00000002,  /**< Message to/from the the sys tcp port */
+   ETH_PORT_LOG   = 0x00000004,  /**< Message to/from the the log tcp port */
 } MsgSrc;
 
 /**

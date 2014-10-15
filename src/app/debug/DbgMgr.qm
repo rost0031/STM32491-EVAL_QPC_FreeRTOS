@@ -19,9 +19,23 @@
     <documentation>/**&lt; Length of the command in the buffer */</documentation>
    </attribute>
   </class>
+  <class name="LogDataEvt" superclass="qpc::QEvt">
+   <documentation>/**
+ * \struct Event struct type for transporting serial data.
+ */</documentation>
+   <attribute name="buffer[MAX_MSG_LEN]" type="char" visibility="0x01" properties="0x00">
+    <documentation>/**&lt; Buffer that holds the data. */</documentation>
+   </attribute>
+   <attribute name="wBufferLen" type="uint16_t" visibility="0x01" properties="0x00">
+    <documentation>/**&lt; Length of data in the buffer. */</documentation>
+   </attribute>
+   <attribute name="msgDest" type="MsgSrc" visibility="0x01" properties="0x00">
+    <documentation>/**&lt; Distination of where this log message should go */</documentation>
+   </attribute>
+  </class>
  </package>
  <package name="AOs" stereotype="0x02">
-  <class name="MenuMgr" superclass="qpc::QActive">
+  <class name="DbgMgr" superclass="qpc::QActive">
    <documentation>/**
  * \brief MenuMgr &quot;class&quot;
  */</documentation>
@@ -34,13 +48,13 @@
     <initial target="../1">
      <action>(void)e;        /* suppress the compiler warning about unused parameter */
 
-QS_OBJ_DICTIONARY(&amp;l_MenuMgr);
+QS_OBJ_DICTIONARY(&amp;l_DbgMgr);
 QS_FUN_DICTIONARY(&amp;QHsm_top);
-QS_FUN_DICTIONARY(&amp;MenuMgr_initial);
-QS_FUN_DICTIONARY(&amp;MenuMgr_Active);
+QS_FUN_DICTIONARY(&amp;DbgMgr_initial);
+QS_FUN_DICTIONARY(&amp;DbgMgr_Active);
 
 QActive_subscribe((QActive *)me, MENU_GENERAL_REQ_SIG);
-</action>
+QActive_subscribe((QActive *)me, LOG_MSG_SIG);</action>
      <initial_glyph conn="1,2,4,3,7,2">
       <action box="0,-2,6,2"/>
      </initial_glyph>
@@ -67,6 +81,11 @@ MENU_printf(&quot;*************************************************************\
        <action box="0,-2,18,2"/>
       </tran_glyph>
      </tran>
+     <tran trig="LOG_MSG">
+      <tran_glyph conn="3,16,3,-1,16">
+       <action box="0,-2,10,2"/>
+      </tran_glyph>
+     </tran>
      <state_glyph node="3,3,26,15">
       <entry box="1,2,6,2"/>
      </state_glyph>
@@ -74,95 +93,99 @@ MENU_printf(&quot;*************************************************************\
     <state_diagram size="108,90"/>
    </statechart>
   </class>
-  <attribute name="AO_MenuMgr" type="QActive * const" visibility="0x00" properties="0x00">
+  <attribute name="AO_DbgMgr" type="QActive * const" visibility="0x00" properties="0x00">
    <documentation>/**&lt; &quot;opaque&quot; pointer to the Active Object */</documentation>
   </attribute>
-  <operation name="MenuMgr_ctor" type="void" visibility="0x00" properties="0x00">
+  <operation name="DbgMgr_ctor" type="void" visibility="0x00" properties="0x00">
    <documentation>/**
- * @brief C &quot;constructor&quot; for MenuMgr &quot;class&quot;.
+ * @brief C &quot;constructor&quot; for DbgMgr &quot;class&quot;.
  * Initializes all the timers and queues used by the AO and sets of the
  * first state.
  * @param  None
  * @param  None
  * @retval None
  */</documentation>
-   <code>MenuMgr *me = &amp;l_MenuMgr;
-QActive_ctor(&amp;me-&gt;super, (QStateHandler)&amp;MenuMgr_initial);</code>
+   <code>DbgMgr *me = &amp;l_DbgMgr;
+QActive_ctor(&amp;me-&gt;super, (QStateHandler)&amp;DbgMgr_initial);</code>
   </operation>
  </package>
  <directory name=".">
-  <file name="MenuMgr_gen.c">
+  <file name="DbgMgr_gen.c">
    <text>/**
- * @file    MenuMgr.c
- * Declarations for functions for the MenuMgr AO.  This state machine handles 
- * all menu interactions.
+ * @file    DbgMgr.c
+ * Declarations for functions for the DbgMgr AO.  This state machine handles
+ * all menu interactions and log msg propagation as well as storing log msgs
+ * to the circular buffer in RAM.  Basically, it handles all debugging
+ * functionality.
  *
- * Note: If editing this file, please make sure to update the MenuMgr.qm
+ * Note: If editing this file, please make sure to update the DbgMgr.qm
  * model.  The generated code from that model should be very similar to the
  * code in this file.
  *
- * @date    09/26/2014
+ * @date    10/15/2014
  * @author  Harry Rostovtsev
  * @email   harry_rostovtsev@datacard.com
  * Copyright (C) 2014 Datacard. All rights reserved.
  *
- * @addtogroup groupMenu
+ * @addtogroup groupDbg
  * @{
  */
 
 /* Includes ------------------------------------------------------------------*/
-#include &quot;MenuMgr.h&quot;
+#include &quot;DbgMgr.h&quot;
 #include &quot;project_includes.h&quot;           /* Includes common to entire project. */
 #include &quot;menu_top.h&quot;
 
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE;                 /* For QSPY to know the name of this file */
-DBG_DEFINE_THIS_MODULE( DBG_MODL_MENU );/* For debug system to ID this module */
+DBG_DEFINE_THIS_MODULE( DBG_MODL_DBG );/* For debug system to ID this module */
 
 /* Private typedefs ----------------------------------------------------------*/
-$declare(AOs::MenuMgr)
+$declare(AOs::DbgMgr)
 
 /* Private defines -----------------------------------------------------------*/
 /* Private macros ------------------------------------------------------------*/
 /* Private variables and Local objects ---------------------------------------*/
 
-static MenuMgr l_MenuMgr; /* the single instance of the Interstage active object */
+static DbgMgr l_DbgMgr;/* the single instance of the Interstage active object */
 
 /* Global-scope objects ----------------------------------------------------*/
-QActive * const AO_MenuMgr = (QActive *)&amp;l_MenuMgr;  /* &quot;opaque&quot; AO pointer */
+QActive * const AO_DbgMgr = (QActive *)&amp;l_DbgMgr;  /* &quot;opaque&quot; AO pointer */
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
-$define(AOs::MenuMgr_ctor)
-$define(AOs::MenuMgr)
+$define(AOs::DbgMgr_ctor)
+$define(AOs::DbgMgr)
 
 /**
- * @} end addtogroup groupMenu
+ * @} end addtogroup groupDbg
  */
 /******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/</text>
   </file>
-  <file name="MenuMgr_gen.h">
+  <file name="DbgMgr_gen.h">
    <text>/**
- * @file    MenuMgr.c
- * Declarations for functions for the MenuMgr AO.  This state machine handles 
- * all menu interactions.
+ * @file    DbgMgr.h
+ * Declarations for functions for the DbgMgr AO.  This state machine handles
+ * all menu interactions and log msg propagation as well as storing log msgs
+ * to the circular buffer in RAM.  Basically, it handles all debugging
+ * functionality.
  *
- * Note: If editing this file, please make sure to update the MenuMgr.qm
+ * Note: If editing this file, please make sure to update the DbgMgr.qm
  * model.  The generated code from that model should be very similar to the
  * code in this file.
  *
- * @date    09/26/2014
+ * @date    10/15/2014
  * @author  Harry Rostovtsev
  * @email   harry_rostovtsev@datacard.com
  * Copyright (C) 2014 Datacard. All rights reserved.
  *
- * @addtogroup groupMenu
+ * @addtogroup groupDbg
  * @{
  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef MENUMGR_H_
-#define MENUMGR_H_
+#ifndef DBGMGR_H_
+#define DBGMGR_H_
 
 /* Includes ------------------------------------------------------------------*/
 #include &quot;qp_port.h&quot;                                        /* for QP support */
@@ -180,18 +203,13 @@ $declare(Events)
 
 /* Exported constants --------------------------------------------------------*/
 /* Exported functions --------------------------------------------------------*/
-$declare(AOs::MenuMgr_ctor)
-$declare(AOs::AO_MenuMgr)
-
-/* Don't declare the MsgEvt type here since it needs to be visible to LWIP, 
- * which is a shared port common to any ethernet project.  Instead, it's 
- * declared in Shared.h, which is included by LWIPMgr.h */
-/* $declare(Events) */
+$declare(AOs::DbgMgr_ctor)
+$declare(AOs::AO_DbgMgr)
 
 /**
- * @} end addtogroup groupMenu
+ * @} end addtogroup groupDbg
  */
-#endif                                                          /* MENUMGR_H_ */
+#endif                                                           /* DBGMGR_H_ */
 /******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/</text>
   </file>
  </directory>

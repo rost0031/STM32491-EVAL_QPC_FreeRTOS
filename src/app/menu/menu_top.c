@@ -23,7 +23,7 @@
 
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */
-DBG_DEFINE_THIS_MODULE( DBG_MODL_MENU );/* For debug system to ID this module */
+DBG_DEFINE_THIS_MODULE( DBG_MODL_DBG );/* For debug system to ID this module */
 
 /* Private typedefs ----------------------------------------------------------*/
 /* Private defines -----------------------------------------------------------*/
@@ -191,11 +191,11 @@ treeNode_t* MENU_init( void )
 
          /* Add menu items for this menu */
          MENU_addMenuItem(
-               &menuDbgModCntrlItem_toggleModMENU,   /**< Menu item being added */
+               &menuDbgModCntrlItem_toggleModDBG,   /**< Menu item being added */
                &menuDbgModCntrl,                   /**< Parent of the menu item being added */
-               menuDbgModCntrlItem_toggleModMENUTxt,  /**< Menu item title text */
-               menuDbgModCntrlItem_toggleModMENUSelectKey, /**< Menu item selection key */
-               MENU_toggleDbgModMENUAction /**< Action taken when menu item is selected */
+               menuDbgModCntrlItem_toggleModDBGTxt,  /**< Menu item title text */
+               menuDbgModCntrlItem_toggleModDBGSelectKey, /**< Menu item selection key */
+               MENU_toggleDbgModDBGAction /**< Action taken when menu item is selected */
          );
 
          /* Add menu items for this menu */

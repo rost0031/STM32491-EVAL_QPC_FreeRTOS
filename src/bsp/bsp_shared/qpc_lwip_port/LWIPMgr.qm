@@ -943,7 +943,7 @@ return ret_err;</code>
 #include &quot;LWIPMgr.h&quot;
 #include &quot;lwip.h&quot;                                               /* lwIP stack */
 #include &quot;bsp_defs.h&quot;
-#include &quot;MenuMgr.h&quot;                                           /* For MenuEvt */
+#include &quot;DbgMgr.h&quot;                                           /* For MenuEvt */
 
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */

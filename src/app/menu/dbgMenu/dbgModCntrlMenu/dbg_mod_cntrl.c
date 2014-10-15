@@ -18,7 +18,7 @@
 
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */
-DBG_DEFINE_THIS_MODULE( DBG_MODL_MENU );/* For debug system to ID this module */
+DBG_DEFINE_THIS_MODULE( DBG_MODL_DBG );/* For debug system to ID this module */
 
 /* Private typedefs ----------------------------------------------------------*/
 /* Private defines -----------------------------------------------------------*/
@@ -64,10 +64,10 @@ char *const menuDbgModCntrlItem_toggleModSDRTxt =
       "Toggle SDRAM module debugging ON/OFF";
 char *const menuDbgModCntrlItem_toggleModSDRSelectKey = "SDR";
 
-treeNode_t menuDbgModCntrlItem_toggleModMENU;
-char *const menuDbgModCntrlItem_toggleModMENUTxt =
-      "Toggle MENU module debugging ON/OFF";
-char *const menuDbgModCntrlItem_toggleModMENUSelectKey = "MNU";
+treeNode_t menuDbgModCntrlItem_toggleModDBG;
+char *const menuDbgModCntrlItem_toggleModDBGTxt =
+      "Toggle DBG module debugging ON/OFF";
+char *const menuDbgModCntrlItem_toggleModDBGSelectKey = "DBG";
 
 treeNode_t menuDbgModCntrlItem_toggleModCOMM;
 char *const menuDbgModCntrlItem_toggleModCOMMTxt =
@@ -135,11 +135,11 @@ void MENU_toggleDbgModSDRAMAction( void )
 }
 
 /******************************************************************************/
-void MENU_toggleDbgModMENUAction( void )
+void MENU_toggleDbgModDBGAction( void )
 {
-   DBG_printf("Debugging for MENU module was %s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_MENU) == 1 ? "ON" : "OFF" );
-   DBG_TOGGLE_DEBUG_FOR_MODULE(DBG_MODL_MENU);
-   LOG_printf("Debugging for MENU module is now %s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_MENU) == 1 ? "ON" : "OFF" );
+   DBG_printf("Debugging for MENU module was %s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_DBG) == 1 ? "ON" : "OFF" );
+   DBG_TOGGLE_DEBUG_FOR_MODULE(DBG_MODL_DBG);
+   LOG_printf("Debugging for MENU module is now %s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_DBG) == 1 ? "ON" : "OFF" );
 }
 
 /******************************************************************************/

@@ -45,7 +45,7 @@
 #include "LWIPMgr.h"
 #include "lwip.h"                                               /* lwIP stack */
 #include "bsp_defs.h"
-#include "MenuMgr.h"                                           /* For MenuEvt */
+#include "DbgMgr.h"                                           /* For MenuEvt */
 
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */

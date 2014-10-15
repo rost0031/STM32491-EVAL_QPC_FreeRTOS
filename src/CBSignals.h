@@ -79,6 +79,15 @@ enum MenuMgrSignals {
    MENU_UP_REQ_SIG,
    MENU_MAX_SIG
 };
+
+/**
+ * @enum Signals used by LogMgr
+ */
+enum LogMgrSignals {
+   LOG_MSG_SIG = MENU_MAX_SIG,
+   LOG_MAX_SIG
+};
+
 /* INSERT NEW SIGNAL CATEGORIES BEFORE HERE...POINT MAX_SHARED_SIG TO LAST SIGNAL */
 
 /**
@@ -87,7 +96,7 @@ enum MenuMgrSignals {
  * before it.
  */
 enum FinalSignal {
-   MAX_SHARED_SIG = MENU_MAX_SIG,  /**< Last published shared signal - should always be at the bottom of this list */
+   MAX_SHARED_SIG = LOG_MAX_SIG,  /**< Last published shared signal - should always be at the bottom of this list */
 };
 
 /* Exported constants --------------------------------------------------------*/
