@@ -126,6 +126,10 @@ typedef struct {
     /**< Pointer to LWIP tcp pcb struct used to keep track of TCP connection to the
          system for logging. */
     struct tcp_pcb *tpcb_log;
+
+    /* Pointer to the log socket state that will be passed in to the TCP callback
+     * functions. */
+    struct echo_state *es_log;
 } LWIPMgr;
 
 /* protected: */
@@ -439,7 +443,7 @@ static QState LWIPMgr_initial(LWIPMgr * const me, QEvt const * const e) {
     /* Second connection */
     me->tpcb_log = tcp_new();
     if (me->tpcb_log == NULL) {
-       ERR_printf("Unable to allocate LWIP memory for TCP1\n");
+       ERR_printf("Unable to allocate LWIP memory for TCP_LOG socket\n");
     }
     err = tcp_bind(me->tpcb_log, IP_ADDR_ANY, 1501);   /* port 1501 for TCP */
     if (ERR_OK != err ) {
@@ -447,9 +451,16 @@ static QState LWIPMgr_initial(LWIPMgr * const me, QEvt const * const e) {
     }
 
     me->tpcb_log = tcp_listen(me->tpcb_log);
+
+    me->es_log = (struct echo_state *)mem_malloc(sizeof(struct echo_state));
+
+    tcp_arg(me->tpcb_log, me->es_log);
     tcp_accept(me->tpcb_log, LWIP_logTcpAccept);
 
-    QActive_subscribe((QActive *)me, ETH_SEND_SIG);
+    /* Signal subscriptions */
+    QActive_subscribe((QActive *)me, ETH_UDP_SEND_SIG);
+    QActive_subscribe((QActive *)me, ETH_LOG_TCP_SEND_SIG);
+    QActive_subscribe((QActive *)me, ETH_SYS_TCP_SEND_SIG);
     return Q_TRAN(&LWIPMgr_Active);
 }
 
@@ -483,8 +494,8 @@ static QState LWIPMgr_Active(LWIPMgr * const me, QEvt const * const e) {
             status_ = Q_HANDLED();
             break;
         }
-        /* ${AOs::LWIPMgr::SM::Active::ETH_SEND} */
-        case ETH_SEND_SIG: {
+        /* ${AOs::LWIPMgr::SM::Active::ETH_UDP_SEND} */
+        case ETH_UDP_SEND_SIG: {
             /* Event posted that will include (inside it) a msg to send */
             if (me->upcb->remote_port != (uint16_t)0) {
                 struct pbuf *p = pbuf_new(
@@ -575,6 +586,49 @@ static QState LWIPMgr_Active(LWIPMgr * const me, QEvt const * const e) {
             status_ = Q_HANDLED();
             break;
         }
+        /* ${AOs::LWIPMgr::SM::Active::ETH_LOG_TCP_SEND} */
+        case ETH_LOG_TCP_SEND_SIG: {
+            DBG_printf("Got ETH_LOG_TCP_SEND.  Port is %d\n", me->tpcb_log->remote_port);
+            DBG_printf("es_log->state: %d, es_log->p: %x\n", me->es_log->state, me->es_log->p);
+            /* Event posted that will include (inside it) a msg to send */
+            //if (me->tpcb_log->remote_port != (uint16_t)0) {
+                struct pbuf *p = pbuf_new(
+                    (u8_t *)((EthEvt const *)e)->msg,
+                    ((EthEvt const *)e)->msg_len
+                );
+                if (p != (struct pbuf *)0) {
+                    DBG_printf("Sending\n");
+                    //tcp_write(me->tpcb_log, p->payload, p->tot_len, 1);
+                    me->es_log->p = p;
+                    LWIP_tcpSend(me->tpcb_log, me->es_log);
+                    tcp_sent(me->tpcb_log, NULL);  // Don't need a callback
+                    pbuf_free(p);                   // don't leak the pbuf!
+                } else {
+                    DBG_printf("Not Sending\n");
+                }
+            //}
+
+
+
+            status_ = Q_HANDLED();
+            break;
+        }
+        /* ${AOs::LWIPMgr::SM::Active::ETH_SYS_TCP_SEND} */
+        case ETH_SYS_TCP_SEND_SIG: {
+            /* Event posted that will include (inside it) a msg to send */
+            if (me->upcb->remote_port != (uint16_t)0) {
+                struct pbuf *p = pbuf_new(
+                    (u8_t *)((EthEvt const *)e)->msg,
+                    ((EthEvt const *)e)->msg_len
+                );
+                if (p != (struct pbuf *)0) {
+                    udp_send(me->upcb, p);
+                    pbuf_free(p);                   /* don't leak the pbuf! */
+                }
+            }
+            status_ = Q_HANDLED();
+            break;
+        }
         default: {
             status_ = Q_SUPER(&QHsm_top);
             break;
@@ -609,13 +663,20 @@ static err_t LWIP_logTcpAccept(
     err_t ret_err;
     struct echo_state *es;
 
-    LWIP_UNUSED_ARG(arg);
+    // LWIP_UNUSED_ARG(arg);
     LWIP_UNUSED_ARG(err);
 
-    /* commonly observed practive to call tcp_setprio(), why? */
+    /* commonly observed practice to call tcp_setprio(), why? */
     tcp_setprio(newpcb, TCP_PRIO_MIN);
 
-    es = (struct echo_state *)mem_malloc(sizeof(struct echo_state));
+    //es = (struct echo_state *)mem_malloc(sizeof(struct echo_state));
+    es = (struct echo_state *)arg;
+
+    //    if ( NULL == es ) {
+    //       DBG_printf("Allocating LWIP memory for the passed in es\n");
+    //       es = (struct echo_state *)mem_malloc(sizeof(struct echo_state));
+    //    }
+
     if ( es != NULL ) {
         es->state = ES_ACCEPTED;
         es->pcb = newpcb;
@@ -787,7 +848,7 @@ static err_t echo_accept(
     LWIP_UNUSED_ARG(arg);
     LWIP_UNUSED_ARG(err);
 
-    /* commonly observed practive to call tcp_setprio(), why? */
+    /* commonly observed practice to call tcp_setprio(), why? */
     tcp_setprio(newpcb, TCP_PRIO_MIN);
 
     es = (struct echo_state *)mem_malloc(sizeof(struct echo_state));
@@ -1059,9 +1120,9 @@ static void LWIP_tcpClose(struct tcp_pcb * tpcb, struct echo_state * es) {
     tcp_err(tpcb, NULL);
     tcp_poll(tpcb, NULL, 0);
 
-    if (es != NULL) {
-        mem_free(es);
-    }
+    //    if (es != NULL) {
+    //        mem_free(es);
+    //    }
 
     tcp_close(tpcb);
     LOG_printf("Connection closed\n");
@@ -1071,7 +1132,7 @@ static void LWIP_tcpClose(struct tcp_pcb * tpcb, struct echo_state * es) {
 void ETH_SendMsg_Handler(MsgEvt const *e) {
 
         /* 1. Construct a new msg event indicating that a msg has been received */
-        EthEvt *ethEvt = Q_NEW(EthEvt, ETH_SEND_SIG);
+        EthEvt *ethEvt = Q_NEW(EthEvt, ETH_UDP_SEND_SIG);
 
         /* 2. Fill the msg payload with the message */
         MEMCPY(ethEvt->msg, e->msg, e->msg_len);

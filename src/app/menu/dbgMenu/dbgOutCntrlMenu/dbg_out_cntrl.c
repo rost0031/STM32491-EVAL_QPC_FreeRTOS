@@ -14,6 +14,7 @@
 #include "qp_port.h"                                        /* for QP support */
 #include "project_includes.h"
 #include "dbg_out_cntrl.h"
+#include "LWIPMgr.h"
 
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */
@@ -52,6 +53,12 @@ void MENU_toggleSerialDebugAction( void )
 void MENU_toggleEthDebugAction( void )
 {
    DBG_printf("Toggle Ethernet Debug Action test\n");
+   EthEvt *ethEvt = Q_NEW(EthEvt, ETH_LOG_TCP_SEND_SIG);
+   char tmp[] = "Testing Ethernet TCP send function\n";
+   ethEvt->msg_len = sizeof(tmp);
+   MEMCPY(ethEvt->msg, tmp, ethEvt->msg_len);
+   ethEvt->msg_src = 0;
+   QF_PUBLISH((QEvent *)ethEvt, 0);
 }
 
 /**
