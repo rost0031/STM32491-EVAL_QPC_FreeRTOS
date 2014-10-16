@@ -355,7 +355,7 @@ inline void Serial_UART1Callback(void)
          a_UARTSettings[SERIAL_UART1].bufferRX[ a_UARTSettings[SERIAL_UART1].indexRX++ ] = data;
 
          /* Serial can only receive menu commands */
-         MenuEvt *menuEvt = Q_NEW( MenuEvt, MENU_GENERAL_REQ_SIG );
+         MenuEvt *menuEvt = Q_NEW( MenuEvt, DBG_MENU_REQ_SIG );
 
          /* 2. Fill the msg payload with payload (the actual received msg)*/
          MEMCPY(

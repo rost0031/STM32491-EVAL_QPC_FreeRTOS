@@ -776,7 +776,7 @@ static err_t LWIP_logTcpRecv(
         es->p = p;
 
         /* This eth port can only receive menu commands */
-        MenuEvt *menuEvt = Q_NEW( MenuEvt, MENU_GENERAL_REQ_SIG );
+        MenuEvt *menuEvt = Q_NEW( MenuEvt, DBG_MENU_REQ_SIG );
 
         /* 2. Fill the msg payload with payload (the actual received msg)*/
         MEMCPY(
@@ -801,7 +801,7 @@ static err_t LWIP_logTcpRecv(
             es->p = p;
 
             /* This eth port can only receive menu commands */
-            MenuEvt *menuEvt = Q_NEW( MenuEvt, MENU_GENERAL_REQ_SIG );
+            MenuEvt *menuEvt = Q_NEW( MenuEvt, DBG_MENU_REQ_SIG );
 
             /* 2. Fill the msg payload with payload (the actual received msg)*/
             MEMCPY(

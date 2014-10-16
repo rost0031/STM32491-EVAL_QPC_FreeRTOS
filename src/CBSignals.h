@@ -70,21 +70,11 @@ enum I2CMgrSignals {
 };
 
 /**
- * @enum Signals used by MenuMgr
- */
-enum MenuMgrSignals {
-   MENU_GENERAL_REQ_SIG = I2C_MAX_SIG, /** This signal must start at the previous category max signal */
-   MENU_HELP_REQ_SIG,
-   MENU_TOP_REQ_SIG,
-   MENU_UP_REQ_SIG,
-   MENU_MAX_SIG
-};
-
-/**
  * @enum Signals used by DbgMgr
  */
 enum DbgMgrSignals {
-   DBG_LOG_SIG = MENU_MAX_SIG,
+   DBG_MENU_REQ_SIG = I2C_MAX_SIG, /** This signal must start at the previous category max signal */
+   DBG_LOG_SIG,
    DBG_MENU_SIG,
    DBG_MAX_SIG
 };
