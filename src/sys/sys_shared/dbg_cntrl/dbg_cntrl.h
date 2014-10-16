@@ -402,8 +402,8 @@ extern uint32_t  glbDbgConfig; /**< Allow global access to debug info */
  *
  * @return None
  */
-#define MENU_printf(fmt, ...) \
-      do { CON_output(CON, NA_SRC_DST, NA_SRC_DST, __func__, __LINE__, fmt, \
+#define MENU_printf(dst, fmt, ...) \
+      do { CON_output(CON, NA_SRC_DST, dst, __func__, __LINE__, fmt, \
             ##__VA_ARGS__); \
       } while (0)
 

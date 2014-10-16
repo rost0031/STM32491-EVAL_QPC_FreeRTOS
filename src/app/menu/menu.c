@@ -150,9 +150,9 @@ void MENU_printMenuExpandedAtCurrNode( treeNode_t* node, MsgSrc msgSrc )
       return;
    }
    /* Use a recursive function to print the entire ancestry */
-   MENU_printf("******************************************************************************\n");
+   MENU_printf(msgSrc, "******************************************************************************\n");
    MENU_printRevAncestry( menuNav.pathToTop[menuNav.pathToTopIndex], msgSrc );
-   MENU_printf("******************************************************************************\n\n");
+   MENU_printf(msgSrc, "******************************************************************************\n\n");
 }
 
 /******************************************************************************/
@@ -381,10 +381,10 @@ static void MENU_printNode( treeNode_t* node, MsgSrc msgSrc )
 {
    uint8_t level = KTREE_findDepth( node, 0);
    for ( uint8_t i = 0; i < level; i++ ) {
-      MENU_printf("   ");
+      MENU_printf(msgSrc, "   ");
    }
-   MENU_printf("*--");
-   MENU_printf("** %-3s **: %s\n", node->selector, node->text );
+   MENU_printf(msgSrc, "*--");
+   MENU_printf(msgSrc, "** %-3s **: %s\n", node->selector, node->text );
 }
 
 /**

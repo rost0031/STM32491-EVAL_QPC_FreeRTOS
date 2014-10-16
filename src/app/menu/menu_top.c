@@ -258,24 +258,24 @@ treeNode_t* MENU_parse(
 /******************************************************************************/
 static void MENU_printHelp( MsgSrc msgSrc )
 {
-   MENU_printf("******************************************************************************\n");
-   MENU_printf("*****                           Menu Help                                *****\n");
-   MENU_printf("***** Type the following commands:                                       *****\n");
-   MENU_printf("***** '?': menu help                                                     *****\n");
-   MENU_printf("***** 'P': print currently selected menu                                 *****\n");
-   MENU_printf("***** 'A': print entire expanded menu tree                               *****\n");
-   MENU_printf("***** 'T': go to the top of the menu                                     *****\n");
-   MENU_printf("***** 'U': go up one level from where you're currently at                *****\n");
-   MENU_printf("***** any identifier to select the submenu or menu item on your level    *****\n");
-   MENU_printf("******************************************************************************\n");
+   MENU_printf(msgSrc, "******************************************************************************\n");
+   MENU_printf(msgSrc, "*****                           Menu Help                                *****\n");
+   MENU_printf(msgSrc, "***** Type the following commands:                                       *****\n");
+   MENU_printf(msgSrc, "***** '?': menu help                                                     *****\n");
+   MENU_printf(msgSrc, "***** 'P': print currently selected menu                                 *****\n");
+   MENU_printf(msgSrc, "***** 'A': print entire expanded menu tree                               *****\n");
+   MENU_printf(msgSrc, "***** 'T': go to the top of the menu                                     *****\n");
+   MENU_printf(msgSrc, "***** 'U': go up one level from where you're currently at                *****\n");
+   MENU_printf(msgSrc, "***** any identifier to select the submenu or menu item on your level    *****\n");
+   MENU_printf(msgSrc, "******************************************************************************\n");
 }
 
 /******************************************************************************/
 static void MENU_printEntireExpandedMenu( treeNode_t* node, MsgSrc msgSrc )
 {
-   MENU_printf("******************************************************************************\n");
+   MENU_printf(msgSrc, "******************************************************************************\n");
    MENU_printMenuTree(&menu, msgSrc );
-   MENU_printf("******************************************************************************\n\n");
+   MENU_printf(msgSrc, "******************************************************************************\n\n");
 }
 /**
  * @}

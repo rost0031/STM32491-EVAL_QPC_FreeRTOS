@@ -58,9 +58,9 @@ QActive_subscribe((QActive *)me, DBG_LOG_SIG);</action>
  */</documentation>
      <entry>/* Initialize the menu */
 me-&gt;menu = MENU_init();
-MENU_printf(&quot;*************************************************************\n&quot;);
-MENU_printf(&quot;***** Press '?' at any time to request a menu and help. *****\n&quot;);
-MENU_printf(&quot;*************************************************************\n&quot;);</entry>
+MENU_printf(SERIAL_CON, &quot;*************************************************************\n&quot;);
+MENU_printf(SERIAL_CON, &quot;***** Press '?' at any time to request a menu and help. *****\n&quot;);
+MENU_printf(SERIAL_CON, &quot;*************************************************************\n&quot;);</entry>
      <tran trig="DBG_MENU_REQ">
       <action>me-&gt;menu = MENU_parse(me-&gt;menu, ((MenuEvt const *)e)-&gt;buffer, ((MenuEvt const *)e)-&gt;bufferLen, ((MenuEvt const *)e)-&gt;msgSrc);</action>
       <tran_glyph conn="3,13,3,-1,19">
