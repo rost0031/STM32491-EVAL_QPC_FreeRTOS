@@ -228,8 +228,10 @@ static QState SerialMgr_Idle(SerialMgr * const me, QEvt const * const e) {
             status_ = Q_HANDLED();
             break;
         }
-        /* ${AOs::SerialMgr::SM::Active::Idle::UART_DMA_START} */
-        case UART_DMA_START_SIG: {
+        /* ${AOs::SerialMgr::SM::Active::Idle::UART_DMA_START, DBG_LOG, DBG_MENU} */
+        case UART_DMA_START_SIG: /* intentionally fall through */
+        case DBG_LOG_SIG: /* intentionally fall through */
+        case DBG_MENU_SIG: {
             /* Set up the DMA buffer here.  This copies the data from the event to the UART's
              * private buffer as well to avoid someone overwriting it */
             Serial_DMAConfig(
@@ -292,8 +294,10 @@ static QState SerialMgr_Busy(SerialMgr * const me, QEvt const * const e) {
             status_ = Q_TRAN(&SerialMgr_Idle);
             break;
         }
-        /* ${AOs::SerialMgr::SM::Active::Busy::UART_DMA_START} */
-        case UART_DMA_START_SIG: {
+        /* ${AOs::SerialMgr::SM::Active::Busy::UART_DMA_START, DBG_LOG, DBG_MENU} */
+        case UART_DMA_START_SIG: /* intentionally fall through */
+        case DBG_LOG_SIG: /* intentionally fall through */
+        case DBG_MENU_SIG: {
             if (QEQueue_getNFree(&me->deferredEvtQueue) > 0) {
                /* defer the request - this event will be handled
                 * when the state machine goes back to Idle state */

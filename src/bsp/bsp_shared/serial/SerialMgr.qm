@@ -88,7 +88,7 @@ QActive_recall(
     (QActive *)me,
     &amp;me-&gt;deferredEvtQueue
 );</entry>
-      <tran trig="UART_DMA_START" target="../../1">
+      <tran trig="UART_DMA_START, DBG_LOG, DBG_MENU" target="../../1">
        <action>/* Set up the DMA buffer here.  This copies the data from the event to the UART's
  * private buffer as well to avoid someone overwriting it */
 Serial_DMAConfig(
@@ -135,7 +135,7 @@ Serial_DMAStartXfer( SERIAL_UART1 );</entry>
         <action box="-16,-2,16,2"/>
        </tran_glyph>
       </tran>
-      <tran trig="UART_DMA_START">
+      <tran trig="UART_DMA_START, DBG_LOG, DBG_MENU">
        <action>if (QEQueue_getNFree(&amp;me-&gt;deferredEvtQueue) &gt; 0) {
    /* defer the request - this event will be handled
     * when the state machine goes back to Idle state */
