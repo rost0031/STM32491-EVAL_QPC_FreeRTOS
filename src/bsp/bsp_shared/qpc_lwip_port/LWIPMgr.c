@@ -647,6 +647,12 @@ static QState LWIPMgr_Active(LWIPMgr * const me, QEvt const * const e) {
         }
         /* ${AOs::LWIPMgr::SM::Active::DBG_LOG} */
         case DBG_LOG_SIG: {
+            /************************************************************/
+            /* WARNING: Do not use any fast logging functions here.  In
+             * fact, avoid using ANY logging here since it could cause an
+             * infinite loop. */
+            /************************************************************/
+
             /* Event posted that will include (inside it) a msg to send */
             if ( NULL != LWIPMgr_es_log) {
                 struct pbuf *p = pbuf_new(
@@ -658,8 +664,6 @@ static QState LWIPMgr_Active(LWIPMgr * const me, QEvt const * const e) {
                     LWIP_tcpSend(me->tpcb_log, LWIPMgr_es_log);
                     tcp_sent(me->tpcb_log, LWIP_tcpSent);
                     pbuf_free(p);                   // don't leak the pbuf!
-                } else {
-                    DBG_printf("Not Sending\n");
                 }
             }
             status_ = Q_HANDLED();
