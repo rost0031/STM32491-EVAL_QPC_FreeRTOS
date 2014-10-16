@@ -109,6 +109,8 @@ void CON_output(
          );
          break;
       case CON: // This is used to print menu so don't prepend anything
+         lrgDataEvt->super.sig = DBG_MENU_SIG;
+         break;
       default:
          break;
    }
