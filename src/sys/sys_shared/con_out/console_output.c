@@ -48,15 +48,17 @@ void CON_output(
 
    /* 2. Construct a new msg event pointer and allocate storage in the QP event
     * pool */
-   SerialDataEvt *serDataEvt = Q_NEW(SerialDataEvt, UART_DMA_START_SIG);
-   serDataEvt->wBufferLen = 0;
+   LrgDataEvt *lrgDataEvt = Q_NEW(LrgDataEvt, DBG_LOG_SIG);
+   lrgDataEvt->dataLen = 0;
+   lrgDataEvt->dst = NA_SRC_DST;
+   lrgDataEvt->src = NA_SRC_DST;
 
    /* 3. Based on the debug level specified by the calling macro, decide what to
     * prepend (if anything). */
    switch (dbgLvl) {
       case DBG:
-         serDataEvt->wBufferLen += snprintf(
-               &serDataEvt->buffer[serDataEvt->wBufferLen],
+         lrgDataEvt->dataLen += snprintf(
+               (char *)&lrgDataEvt->dataBuf[lrgDataEvt->dataLen],
                MAX_MSG_LEN,
                "DBG-%02d:%02d:%02d:%03d-%s():%d:",
                time.hour_min_sec.RTC_Hours,
@@ -68,8 +70,8 @@ void CON_output(
          );
          break;
       case LOG:
-         serDataEvt->wBufferLen += snprintf(
-               &serDataEvt->buffer[serDataEvt->wBufferLen],
+         lrgDataEvt->dataLen += snprintf(
+               (char *)&lrgDataEvt->dataBuf[lrgDataEvt->dataLen],
                MAX_MSG_LEN,
                "LOG-%02d:%02d:%02d:%03d-%s():%d:",
                time.hour_min_sec.RTC_Hours,
@@ -81,8 +83,8 @@ void CON_output(
          );
          break;
       case WRN:
-         serDataEvt->wBufferLen += snprintf(
-               &serDataEvt->buffer[serDataEvt->wBufferLen],
+         lrgDataEvt->dataLen += snprintf(
+               (char *)&lrgDataEvt->dataBuf[lrgDataEvt->dataLen],
                MAX_MSG_LEN,
                "WRN-%02d:%02d:%02d:%03d-%s():%d:",
                time.hour_min_sec.RTC_Hours,
@@ -94,8 +96,8 @@ void CON_output(
          );
          break;
       case ERR:
-         serDataEvt->wBufferLen += snprintf(
-               &serDataEvt->buffer[serDataEvt->wBufferLen],
+         lrgDataEvt->dataLen += snprintf(
+               (char *)&lrgDataEvt->dataBuf[lrgDataEvt->dataLen],
                MAX_MSG_LEN,
                "ERR-%02d:%02d:%02d:%03d-%s():%d:",
                time.hour_min_sec.RTC_Hours,
@@ -116,16 +118,16 @@ void CON_output(
    va_start(args, fmt);
 
    /* 5. Print the actual user supplied data to the buffer and set the length */
-   serDataEvt->wBufferLen += vsnprintf(
-         &serDataEvt->buffer[serDataEvt->wBufferLen],
-         MAX_MSG_LEN - serDataEvt->wBufferLen, // Account for the part of the buffer that was already written.
+   lrgDataEvt->dataLen += vsnprintf(
+         (char *)&lrgDataEvt->dataBuf[lrgDataEvt->dataLen],
+         MAX_MSG_LEN - lrgDataEvt->dataLen, // Account for the part of the buffer that was already written.
          fmt,
          args
    );
    va_end(args);
 
    /* 6. Publish the event*/
-   QF_PUBLISH((QEvent *)serDataEvt, 0);
+   QF_PUBLISH((QEvent *)lrgDataEvt, 0);
 }
 
 /******************************************************************************/

@@ -60,6 +60,7 @@ enum AO_Priorities {
  * \enum Source of the message.
  */
 typedef enum MsgSrcTag {
+   NA_SRC_DST     = 0x00000000,  /**< No src/dst info */
    SERIAL_CON     = 0x00000001,  /**< Message to/from the console serial port */
    ETH_PORT_SYS   = 0x00000002,  /**< Message to/from the the sys tcp port */
    ETH_PORT_LOG   = 0x00000004,  /**< Message to/from the the log tcp port */

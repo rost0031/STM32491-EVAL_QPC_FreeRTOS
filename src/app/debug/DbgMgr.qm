@@ -68,7 +68,7 @@ MENU_printf(&quot;*************************************************************\
       </tran_glyph>
      </tran>
      <tran trig="DBG_LOG">
-      <action>DBG_printf(&quot;Got DBG_LOG\n&quot;);</action>
+      <action>//DBG_printf(&quot;Got DBG_LOG\n&quot;);  If this is uncommented, you will get a qa_fifo assert</action>
       <tran_glyph conn="3,16,3,-1,16">
        <action box="0,-2,10,2"/>
       </tran_glyph>

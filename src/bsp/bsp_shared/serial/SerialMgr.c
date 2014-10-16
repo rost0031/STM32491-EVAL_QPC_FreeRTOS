@@ -236,8 +236,8 @@ static QState SerialMgr_Idle(SerialMgr * const me, QEvt const * const e) {
              * private buffer as well to avoid someone overwriting it */
             Serial_DMAConfig(
                 SERIAL_UART1,
-                (char *)((SerialDataEvt const *) e)->buffer,
-                ((SerialDataEvt const *) e)->wBufferLen
+                (char *)((LrgDataEvt const *) e)->dataBuf,
+                ((LrgDataEvt const *) e)->dataLen
             );
             status_ = Q_TRAN(&SerialMgr_Busy);
             break;
