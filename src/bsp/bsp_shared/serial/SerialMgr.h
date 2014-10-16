@@ -45,21 +45,6 @@
 /* Exported macros -----------------------------------------------------------*/
 /* Exported types ------------------------------------------------------------*/
 
-/**
- * \struct Event struct type for transporting serial data.
- */
-/*${Events::SerialDataEvt} .................................................*/
-typedef struct {
-/* protected: */
-    QEvt super;
-
-    /**< Buffer that holds the data. */
-    char buffer[MAX_MSG_LEN];
-
-    /**< Length of data in the buffer. */
-    uint16_t wBufferLen;
-} SerialDataEvt;
-
 
 /* Exported constants --------------------------------------------------------*/
 /* Exported functions --------------------------------------------------------*/
