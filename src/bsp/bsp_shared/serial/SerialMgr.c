@@ -221,11 +221,10 @@ static QState SerialMgr_Idle(SerialMgr * const me, QEvt const * const e) {
         /* ${AOs::SerialMgr::SM::Active::Idle} */
         case Q_ENTRY_SIG: {
             /* recall the request from the private requestQueue */
-            SerialDataEvt const *rq = (SerialDataEvt const *) (uint32_t) QActive_recall(
+            QActive_recall(
                 (QActive *)me,
                 &me->deferredEvtQueue
             );
-            rq = 0; /* To prevent compiler warning about unused var */
             status_ = Q_HANDLED();
             break;
         }
