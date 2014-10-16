@@ -159,7 +159,8 @@ tcp_accept(me-&gt;tpcb_log, LWIP_logTcpAccept);
 /* Signal subscriptions */
 QActive_subscribe((QActive *)me, ETH_UDP_SEND_SIG);
 QActive_subscribe((QActive *)me, ETH_LOG_TCP_SEND_SIG);
-QActive_subscribe((QActive *)me, ETH_SYS_TCP_SEND_SIG);</action>
+QActive_subscribe((QActive *)me, ETH_SYS_TCP_SEND_SIG);
+QActive_subscribe((QActive *)me, DBG_LOG_SIG);</action>
      <initial_glyph conn="1,2,4,3,7,2">
       <action box="0,-2,6,2"/>
      </initial_glyph>
@@ -299,7 +300,7 @@ if ( NULL != LWIPMgr_es_log) {
 
 
 </action>
-      <tran_glyph conn="3,15,3,-1,17">
+      <tran_glyph conn="3,39,3,-1,16">
        <action box="0,-2,17,2"/>
       </tran_glyph>
      </tran>
@@ -315,7 +316,27 @@ if (me-&gt;upcb-&gt;remote_port != (uint16_t)0) {
         pbuf_free(p);                   /* don't leak the pbuf! */
     }
 }</action>
-      <tran_glyph conn="3,12,3,-1,17">
+      <tran_glyph conn="3,35,3,-1,16">
+       <action box="0,-2,17,2"/>
+      </tran_glyph>
+     </tran>
+     <tran trig="DBG_LOG">
+      <action>/* Event posted that will include (inside it) a msg to send */
+if ( NULL != LWIPMgr_es_log) {
+    struct pbuf *p = pbuf_new(
+        (u8_t *)((LrgDataEvt const *)e)-&gt;dataBuf,
+        ((LrgDataEvt const *)e)-&gt;dataLen
+    );
+    if (p != (struct pbuf *)0) {
+        LWIPMgr_es_log-&gt;p = p;
+        LWIP_tcpSend(me-&gt;tpcb_log, LWIPMgr_es_log);
+        tcp_sent(me-&gt;tpcb_log, LWIP_tcpSent);
+        pbuf_free(p);                   // don't leak the pbuf!
+    } else {
+        DBG_printf(&quot;Not Sending\n&quot;);
+    }
+}</action>
+      <tran_glyph conn="3,44,3,-1,16">
        <action box="0,-2,17,2"/>
       </tran_glyph>
      </tran>

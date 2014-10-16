@@ -473,6 +473,7 @@ static QState LWIPMgr_initial(LWIPMgr * const me, QEvt const * const e) {
     QActive_subscribe((QActive *)me, ETH_UDP_SEND_SIG);
     QActive_subscribe((QActive *)me, ETH_LOG_TCP_SEND_SIG);
     QActive_subscribe((QActive *)me, ETH_SYS_TCP_SEND_SIG);
+    QActive_subscribe((QActive *)me, DBG_LOG_SIG);
     return Q_TRAN(&LWIPMgr_Active);
 }
 
@@ -639,6 +640,26 @@ static QState LWIPMgr_Active(LWIPMgr * const me, QEvt const * const e) {
                 if (p != (struct pbuf *)0) {
                     udp_send(me->upcb, p);
                     pbuf_free(p);                   /* don't leak the pbuf! */
+                }
+            }
+            status_ = Q_HANDLED();
+            break;
+        }
+        /* ${AOs::LWIPMgr::SM::Active::DBG_LOG} */
+        case DBG_LOG_SIG: {
+            /* Event posted that will include (inside it) a msg to send */
+            if ( NULL != LWIPMgr_es_log) {
+                struct pbuf *p = pbuf_new(
+                    (u8_t *)((LrgDataEvt const *)e)->dataBuf,
+                    ((LrgDataEvt const *)e)->dataLen
+                );
+                if (p != (struct pbuf *)0) {
+                    LWIPMgr_es_log->p = p;
+                    LWIP_tcpSend(me->tpcb_log, LWIPMgr_es_log);
+                    tcp_sent(me->tpcb_log, LWIP_tcpSent);
+                    pbuf_free(p);                   // don't leak the pbuf!
+                } else {
+                    DBG_printf("Not Sending\n");
                 }
             }
             status_ = Q_HANDLED();
