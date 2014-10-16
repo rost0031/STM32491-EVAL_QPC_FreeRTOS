@@ -162,6 +162,8 @@ static QState SerialMgr_initial(SerialMgr * const me, QEvt const * const e) {
     QS_FUN_DICTIONARY(&SerialMgr_Busy);
 
     QActive_subscribe((QActive *)me, UART_DMA_START_SIG);
+    QActive_subscribe((QActive *)me, DBG_LOG_SIG);
+    QActive_subscribe((QActive *)me, DBG_MENU_SIG);
     QActive_subscribe((QActive *)me, UART_DMA_DONE_SIG);
     QActive_subscribe((QActive *)me, UART_DMA_TIMEOUT_SIG);
     return Q_TRAN(&SerialMgr_Idle);

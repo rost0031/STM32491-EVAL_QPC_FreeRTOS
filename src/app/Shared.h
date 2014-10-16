@@ -78,6 +78,18 @@ typedef struct MsgEvtTag {
     char msg[MAX_MSG_LEN];        /**< Buffer that holds the data of the msg. */
 } MsgEvt;
 
+/**
+ * @brief Event type for transferring large data.
+ */
+typedef struct LrgDataEvtTag {
+/* protected: */
+    QEvt       super;
+    MsgSrc     src;                                   /**< Source of the data */
+    MsgSrc     dst;                              /**< Destination of the data */
+    uint16_t   dataLen;                    /**< Length of the data in dataBuf */
+    uint8_t    dataBuf[MAX_MSG_LEN];          /**< Buffer that holds the data */
+} LrgDataEvt;
+
 /* Exported constants --------------------------------------------------------*/
 /* Exported functions --------------------------------------------------------*/
 #endif                                                           /* SHARED_H_ */

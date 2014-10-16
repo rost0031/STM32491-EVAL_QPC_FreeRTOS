@@ -45,6 +45,8 @@ QS_FUN_DICTIONARY(&amp;SerialMgr_Idle);
 QS_FUN_DICTIONARY(&amp;SerialMgr_Busy);
 
 QActive_subscribe((QActive *)me, UART_DMA_START_SIG);
+QActive_subscribe((QActive *)me, DBG_LOG_SIG);
+QActive_subscribe((QActive *)me, DBG_MENU_SIG);
 QActive_subscribe((QActive *)me, UART_DMA_DONE_SIG);
 QActive_subscribe((QActive *)me, UART_DMA_TIMEOUT_SIG);</action>
      <initial_glyph conn="1,2,4,3,11,5">

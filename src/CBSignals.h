@@ -85,6 +85,7 @@ enum MenuMgrSignals {
  */
 enum DbgMgrSignals {
    DBG_LOG_SIG = MENU_MAX_SIG,
+   DBG_MENU_SIG,
    DBG_MAX_SIG
 };
 

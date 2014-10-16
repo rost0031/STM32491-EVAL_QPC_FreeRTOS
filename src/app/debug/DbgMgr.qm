@@ -19,20 +19,6 @@
     <documentation>/**&lt; Length of the command in the buffer */</documentation>
    </attribute>
   </class>
-  <class name="LogDataEvt" superclass="qpc::QEvt">
-   <documentation>/**
- * \struct Event struct type for transporting serial data.
- */</documentation>
-   <attribute name="buffer[MAX_MSG_LEN]" type="char" visibility="0x01" properties="0x00">
-    <documentation>/**&lt; Buffer that holds the data. */</documentation>
-   </attribute>
-   <attribute name="wBufferLen" type="uint16_t" visibility="0x01" properties="0x00">
-    <documentation>/**&lt; Length of data in the buffer. */</documentation>
-   </attribute>
-   <attribute name="msgDest" type="MsgSrc" visibility="0x01" properties="0x00">
-    <documentation>/**&lt; Distination of where this log message should go */</documentation>
-   </attribute>
-  </class>
  </package>
  <package name="AOs" stereotype="0x02">
   <class name="DbgMgr" superclass="qpc::QActive">
@@ -82,8 +68,7 @@ MENU_printf(&quot;*************************************************************\
       </tran_glyph>
      </tran>
      <tran trig="DBG_LOG">
-      <action>DBG_printf(&quot;Got DBG_LOG\n&quot;);
-</action>
+      <action>DBG_printf(&quot;Got DBG_LOG\n&quot;);</action>
       <tran_glyph conn="3,16,3,-1,16">
        <action box="0,-2,10,2"/>
       </tran_glyph>
