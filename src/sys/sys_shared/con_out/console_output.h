@@ -22,7 +22,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
-
+#include "Shared.h"
 #include "dbg_cntrl.h"                                   /* For debug control */
 
 /* Exported defines ----------------------------------------------------------*/
@@ -81,12 +81,24 @@
  *   Enabled in all builds. Just the "User message here" will be printed.  This
  *   is meant to output serial menu items.
  *
- * @param [in] *pFuncName: pointer to the function name where the macro was
- * called from.
+ * @param [in] src: MsgSrc var specifying the source of the data.
+ *    @arg NA_SRC_DST: no src/dst
+ *    @arg SERIAL_CON: data is to or from the serial console
+ *    @arg ETH_PORT_SYS: data is to or from the system TCP port
+ *    @arg ETH_PORT_LOG: data is to or from the logging TCP port
+ *
+ * @param [in] dst: MsgSrc var specifying the destination of the data.
+ *    @arg NA_SRC_DST: no src/dst
+ *    @arg SERIAL_CON: data is to or from the serial console
+ *    @arg ETH_PORT_SYS: data is to or from the system TCP port
+ *    @arg ETH_PORT_LOG: data is to or from the logging TCP port
+ *
+ * @param [in] pFuncName: const char* pointer to the function name where the
+ * macro was called from.
  *
  * @param [in] wLineNumber: line number where the macro was called from.
  *
- * @param [in] *fmt: const char pointer to the data to be printed using the
+ * @param [in] fmt: const char* pointer to the data to be printed using the
  * va_args type argument list.
  *
  * @param [in] ... : the variable list of arguments from above.  This allows
@@ -95,6 +107,8 @@
  */
 void CON_output(
       DBG_LEVEL_T dbgLvl,
+      MsgSrc src,
+      MsgSrc dst,
       const char *pFuncName,
       uint16_t wLineNumber,
       char *fmt,

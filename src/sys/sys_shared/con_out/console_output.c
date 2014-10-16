@@ -36,6 +36,8 @@ DBG_DEFINE_THIS_MODULE( DBG_MODL_SERIAL ); /* For debug system to ID this module
 /******************************************************************************/
 void CON_output(
       DBG_LEVEL_T dbgLvl,
+      MsgSrc src,
+      MsgSrc dst,
       const char *pFuncName,
       uint16_t wLineNumber,
       char *fmt,
@@ -50,8 +52,8 @@ void CON_output(
     * pool */
    LrgDataEvt *lrgDataEvt = Q_NEW(LrgDataEvt, DBG_LOG_SIG);
    lrgDataEvt->dataLen = 0;
-   lrgDataEvt->dst = NA_SRC_DST;
-   lrgDataEvt->src = NA_SRC_DST;
+   lrgDataEvt->src = src;
+   lrgDataEvt->dst = dst;
 
    /* 3. Based on the debug level specified by the calling macro, decide what to
     * prepend (if anything). */

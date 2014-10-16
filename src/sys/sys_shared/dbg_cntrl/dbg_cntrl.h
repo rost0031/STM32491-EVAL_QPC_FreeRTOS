@@ -270,7 +270,7 @@ extern uint32_t  glbDbgConfig; /**< Allow global access to debug info */
       do { \
          if (DEBUG) { \
             if ( glbDbgConfig & DBG_this_module_ ) { \
-               CON_output(DBG, __func__, __LINE__, fmt, \
+               CON_output(DBG, NA_SRC_DST, NA_SRC_DST, __func__, __LINE__, fmt, \
                   ##__VA_ARGS__); \
             } \
          } \
@@ -304,7 +304,7 @@ extern uint32_t  glbDbgConfig; /**< Allow global access to debug info */
  * @return None
  */
 #define LOG_printf(fmt, ...) \
-      do { if (DEBUG) CON_output(LOG, __func__, __LINE__, fmt, \
+      do { if (DEBUG) CON_output(LOG, NA_SRC_DST, NA_SRC_DST, __func__, __LINE__, fmt, \
             ##__VA_ARGS__); \
       } while (0)
 
@@ -336,7 +336,7 @@ extern uint32_t  glbDbgConfig; /**< Allow global access to debug info */
  * @return None
  */
 #define WRN_printf(fmt, ...) \
-      do { CON_output(WRN, __func__, __LINE__, fmt, \
+      do { CON_output(WRN, NA_SRC_DST, NA_SRC_DST, __func__, __LINE__, fmt, \
             ##__VA_ARGS__); \
       } while (0)
 
@@ -368,7 +368,7 @@ extern uint32_t  glbDbgConfig; /**< Allow global access to debug info */
  * @return None
  */
 #define ERR_printf(fmt, ...) \
-      do { CON_output(ERR, __func__, __LINE__, fmt, \
+      do { CON_output(ERR, NA_SRC_DST, NA_SRC_DST, __func__, __LINE__, fmt, \
             ##__VA_ARGS__); \
       } while (0)
 
@@ -403,7 +403,7 @@ extern uint32_t  glbDbgConfig; /**< Allow global access to debug info */
  * @return None
  */
 #define MENU_printf(fmt, ...) \
-      do { CON_output(CON, __func__, __LINE__, fmt, \
+      do { CON_output(CON, NA_SRC_DST, NA_SRC_DST, __func__, __LINE__, fmt, \
             ##__VA_ARGS__); \
       } while (0)
 
