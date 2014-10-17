@@ -474,6 +474,7 @@ static QState LWIPMgr_initial(LWIPMgr * const me, QEvt const * const e) {
     QActive_subscribe((QActive *)me, ETH_LOG_TCP_SEND_SIG);
     QActive_subscribe((QActive *)me, ETH_SYS_TCP_SEND_SIG);
     QActive_subscribe((QActive *)me, DBG_LOG_SIG);
+    QActive_subscribe((QActive *)me, DBG_MENU_SIG);
     return Q_TRAN(&LWIPMgr_Active);
 }
 
@@ -667,6 +668,33 @@ static QState LWIPMgr_Active(LWIPMgr * const me, QEvt const * const e) {
                 }
             }
             status_ = Q_HANDLED();
+            break;
+        }
+        /* ${AOs::LWIPMgr::SM::Active::DBG_MENU} */
+        case DBG_MENU_SIG: {
+            DBG_printf("Got DBG_MENU with dst: %x\n", ((LrgDataEvt const *)e)->dst);
+            /* ${AOs::LWIPMgr::SM::Active::DBG_MENU::[Dest==TCPlog?]} */
+            if (ETH_PORT_LOG == ((LrgDataEvt const *)e)->dst) {
+                /* Event posted that will include (inside it) a msg to send */
+                if ( NULL != LWIPMgr_es_log) {
+                    DBG_printf("Menu to TCP:\n");
+                    struct pbuf *p = pbuf_new(
+                        (u8_t *)((LrgDataEvt const *)e)->dataBuf,
+                        ((LrgDataEvt const *)e)->dataLen
+                    );
+                    if (p != (struct pbuf *)0) {
+                        LWIPMgr_es_log->p = p;
+                        LWIP_tcpSend(me->tpcb_log, LWIPMgr_es_log);
+                        tcp_sent(me->tpcb_log, LWIP_tcpSent);
+                        pbuf_free(p);                   // don't leak the pbuf!
+                    }
+                }
+                status_ = Q_HANDLED();
+            }
+            /* ${AOs::LWIPMgr::SM::Active::DBG_MENU::[else]} */
+            else {
+                status_ = Q_HANDLED();
+            }
             break;
         }
         default: {

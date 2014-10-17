@@ -59,6 +59,14 @@ void MENU_toggleEthDebugAction( void )
    MEMCPY(ethEvt->msg, tmp, ethEvt->msg_len);
    ethEvt->msg_src = 0;
    QF_PUBLISH((QEvent *)ethEvt, 0);
+
+
+   MENU_printf(ETH_PORT_LOG, "Test1\n");
+   MENU_printf(ETH_PORT_LOG, "Test2\n");
+   MENU_printf(ETH_PORT_LOG, "Test3\n");
+   MENU_printf(ETH_PORT_LOG, "Test4\n");
+   MENU_printf(ETH_PORT_LOG, "Test5\n");
+   MENU_printf(ETH_PORT_LOG, "Test6\n");
 }
 
 /**

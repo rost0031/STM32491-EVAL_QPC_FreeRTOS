@@ -160,7 +160,8 @@ tcp_accept(me-&gt;tpcb_log, LWIP_logTcpAccept);
 QActive_subscribe((QActive *)me, ETH_UDP_SEND_SIG);
 QActive_subscribe((QActive *)me, ETH_LOG_TCP_SEND_SIG);
 QActive_subscribe((QActive *)me, ETH_SYS_TCP_SEND_SIG);
-QActive_subscribe((QActive *)me, DBG_LOG_SIG);</action>
+QActive_subscribe((QActive *)me, DBG_LOG_SIG);
+QActive_subscribe((QActive *)me, DBG_MENU_SIG);</action>
      <initial_glyph conn="1,2,4,3,7,2">
       <action box="0,-2,6,2"/>
      </initial_glyph>
@@ -341,6 +342,38 @@ if ( NULL != LWIPMgr_es_log) {
     }
 }</action>
       <tran_glyph conn="3,44,3,-1,16">
+       <action box="0,-2,17,2"/>
+      </tran_glyph>
+     </tran>
+     <tran trig="DBG_MENU">
+      <action>DBG_printf(&quot;Got DBG_MENU with dst: %x\n&quot;, ((LrgDataEvt const *)e)-&gt;dst);</action>
+      <choice>
+       <guard brief="Dest == TCP log?">ETH_PORT_LOG == ((LrgDataEvt const *)e)-&gt;dst</guard>
+       <action>/* Event posted that will include (inside it) a msg to send */
+if ( NULL != LWIPMgr_es_log) {
+    DBG_printf(&quot;Menu to TCP:\n&quot;);
+    struct pbuf *p = pbuf_new(
+        (u8_t *)((LrgDataEvt const *)e)-&gt;dataBuf,
+        ((LrgDataEvt const *)e)-&gt;dataLen
+    );
+    if (p != (struct pbuf *)0) {
+        LWIPMgr_es_log-&gt;p = p;
+        LWIP_tcpSend(me-&gt;tpcb_log, LWIPMgr_es_log);
+        tcp_sent(me-&gt;tpcb_log, LWIP_tcpSent);
+        pbuf_free(p);                   // don't leak the pbuf!
+    }
+}</action>
+       <choice_glyph conn="23,47,5,-1,12">
+        <action box="1,-2,13,2"/>
+       </choice_glyph>
+      </choice>
+      <choice>
+       <guard brief="else"/>
+       <choice_glyph conn="23,47,4,-1,5,12">
+        <action box="1,3,10,2"/>
+       </choice_glyph>
+      </choice>
+      <tran_glyph conn="3,47,3,-1,20">
        <action box="0,-2,17,2"/>
       </tran_glyph>
      </tran>
