@@ -126,6 +126,12 @@ typedef struct {
     /**< Pointer to LWIP tcp pcb struct used to keep track of TCP connection to the
          system for logging. */
     struct tcp_pcb* tpcb_log;
+
+    /**< Native QF queue for deferred request events. */
+    QEQueue deferredEvtQueue;
+
+    /**< Storage for deferred event queue. */
+    QTimeEvt const * deferredEvtQSto[100];
 } LWIPMgr;
 
 /* Pointer to the log socket state that will be passed in to the TCP callback
@@ -152,6 +158,11 @@ static QState LWIPMgr_initial(LWIPMgr * const me, QEvt const * const e);
  * machine is going next.
  */
 static QState LWIPMgr_Active(LWIPMgr * const me, QEvt const * const e);
+static QState LWIPMgr_Connected(LWIPMgr * const me, QEvt const * const e);
+static QState LWIPMgr_Busy(LWIPMgr * const me, QEvt const * const e);
+static QState LWIPMgr_Receiving(LWIPMgr * const me, QEvt const * const e);
+static QState LWIPMgr_Idle(LWIPMgr * const me, QEvt const * const e);
+static QState LWIPMgr_Sending(LWIPMgr * const me, QEvt const * const e);
 
 
 /* Private defines -----------------------------------------------------------*/
@@ -322,7 +333,7 @@ static err_t LWIP_tcpSent(
  * @return None
  */
 /*${AOs::LWIP_tcpSend} .....................................................*/
-static void LWIP_tcpSend(struct tcp_pcb * tpcb, struct echo_state * es);
+static bool LWIP_tcpSend(struct tcp_pcb * tpcb, struct echo_state * es);
 
 
 /**
@@ -373,6 +384,13 @@ void LWIPMgr_ctor(void) {
 
     QActive_ctor(&me->super, (QStateHandler)&LWIPMgr_initial);
     QTimeEvt_ctor(&me->te_LWIP_SLOW_TICK, LWIP_SLOW_TICK_SIG);
+
+    /* Initialize the deferred event queue and storage for it */
+    QEQueue_init(
+        &me->deferredEvtQueue,
+        (QEvt const **)( me->deferredEvtQSto ),
+        Q_DIM(me->deferredEvtQSto)
+    );
 }
 
 /**
@@ -468,6 +486,7 @@ static QState LWIPMgr_initial(LWIPMgr * const me, QEvt const * const e) {
 
     LWIPMgr_es_log = NULL;
     tcp_accept(me->tpcb_log, LWIP_logTcpAccept);
+    //tcp_accept(me->tpcb_log, LWIP_tcpLogAcceptCB);
 
     /* Signal subscriptions */
     QActive_subscribe((QActive *)me, ETH_UDP_SEND_SIG);
@@ -475,7 +494,10 @@ static QState LWIPMgr_initial(LWIPMgr * const me, QEvt const * const e) {
     QActive_subscribe((QActive *)me, ETH_SYS_TCP_SEND_SIG);
     QActive_subscribe((QActive *)me, DBG_LOG_SIG);
     QActive_subscribe((QActive *)me, DBG_MENU_SIG);
-    return Q_TRAN(&LWIPMgr_Active);
+    QActive_subscribe((QActive *)me, TCP_LOG_ACCEPTED_SIG);
+    QActive_subscribe((QActive *)me, TCP_LOG_CLOSED_SIG);
+    QActive_subscribe((QActive *)me, TCP_LOG_DONE_SIG);
+    return Q_TRAN(&LWIPMgr_Idle);
 }
 
 /**
@@ -600,36 +622,6 @@ static QState LWIPMgr_Active(LWIPMgr * const me, QEvt const * const e) {
             status_ = Q_HANDLED();
             break;
         }
-        /* ${AOs::LWIPMgr::SM::Active::ETH_LOG_TCP_SEND} */
-        case ETH_LOG_TCP_SEND_SIG: {
-            DBG_printf("Got ETH_LOG_TCP_SEND.  LocalPort is %d, TCP state: %d\n", me->tpcb_log->local_port, me->tpcb_log->state);
-            DBG_printf("LWIPMgr_es_log->state: %d, LWIPMgr_es_log: %x\n", LWIPMgr_es_log->state, LWIPMgr_es_log);
-            /* Event posted that will include (inside it) a msg to send */
-            if ( NULL != LWIPMgr_es_log) {
-                struct pbuf *p = pbuf_new(
-                    (u8_t *)((EthEvt const *)e)->msg,
-                    ((EthEvt const *)e)->msg_len
-                );
-                if (p != (struct pbuf *)0) {
-                    DBG_printf("Sending\n");
-                    //tcp_write(me->tpcb_log, p->payload, p->tot_len, 1);
-                    //me->es_log->p = p;
-                    LWIPMgr_es_log->p = p;
-                    LWIP_tcpSend(me->tpcb_log, LWIPMgr_es_log);
-                    tcp_sent(me->tpcb_log, LWIP_tcpSent);
-                    pbuf_free(p);                   // don't leak the pbuf!
-                } else {
-                    DBG_printf("Not Sending\n");
-                }
-            } else {
-                DBG_printf("No connection exists for logging\n");
-            }
-
-
-
-            status_ = Q_HANDLED();
-            break;
-        }
         /* ${AOs::LWIPMgr::SM::Active::ETH_SYS_TCP_SEND} */
         case ETH_SYS_TCP_SEND_SIG: {
             /* Event posted that will include (inside it) a msg to send */
@@ -646,7 +638,74 @@ static QState LWIPMgr_Active(LWIPMgr * const me, QEvt const * const e) {
             status_ = Q_HANDLED();
             break;
         }
-        /* ${AOs::LWIPMgr::SM::Active::DBG_LOG} */
+        default: {
+            status_ = Q_SUPER(&QHsm_top);
+            break;
+        }
+    }
+    return status_;
+}
+/*${AOs::LWIPMgr::SM::Active::Connected} ...................................*/
+static QState LWIPMgr_Connected(LWIPMgr * const me, QEvt const * const e) {
+    QState status_;
+    switch (e->sig) {
+        /* ${AOs::LWIPMgr::SM::Active::Connected} */
+        case Q_ENTRY_SIG: {
+            /* recall the request from the private requestQueue */
+            QActive_recall(
+                (QActive *)me,
+                &me->deferredEvtQueue
+            );
+            status_ = Q_HANDLED();
+            break;
+        }
+        /* ${AOs::LWIPMgr::SM::Active::Connected::TCP_LOG_CLOSED} */
+        case TCP_LOG_CLOSED_SIG: {
+            dbg_slow_printf("ClsOnTcpLog\n");
+            status_ = Q_TRAN(&LWIPMgr_Connected);
+            break;
+        }
+        /* ${AOs::LWIPMgr::SM::Active::Connected::TCP_LOG_RECEIVED} */
+        case TCP_LOG_RECEIVED_SIG: {
+            dbg_slow_printf("RxOnTcpLog\n");
+            status_ = Q_TRAN(&LWIPMgr_Receiving);
+            break;
+        }
+        /* ${AOs::LWIPMgr::SM::Active::Connected::TCP_LOG_ACCEPTED} */
+        case TCP_LOG_ACCEPTED_SIG: {
+            dbg_slow_printf("AccOnTcpLog\n");
+            status_ = Q_TRAN(&LWIPMgr_Connected);
+            break;
+        }
+        default: {
+            status_ = Q_SUPER(&LWIPMgr_Active);
+            break;
+        }
+    }
+    return status_;
+}
+/*${AOs::LWIPMgr::SM::Active::Busy} ........................................*/
+static QState LWIPMgr_Busy(LWIPMgr * const me, QEvt const * const e) {
+    QState status_;
+    switch (e->sig) {
+        /* ${AOs::LWIPMgr::SM::Active::Busy::TCP_LOG_DONE} */
+        case TCP_LOG_DONE_SIG: {
+            dbg_slow_printf("DoneOnTcpLog\n");
+            status_ = Q_TRAN(&LWIPMgr_Connected);
+            break;
+        }
+        default: {
+            status_ = Q_SUPER(&LWIPMgr_Active);
+            break;
+        }
+    }
+    return status_;
+}
+/*${AOs::LWIPMgr::SM::Active::Busy::Receiving} .............................*/
+static QState LWIPMgr_Receiving(LWIPMgr * const me, QEvt const * const e) {
+    QState status_;
+    switch (e->sig) {
+        /* ${AOs::LWIPMgr::SM::Active::Busy::Receiving::DBG_LOG} */
         case DBG_LOG_SIG: {
             /************************************************************/
             /* WARNING: Do not use any fast logging functions here.  In
@@ -670,35 +729,121 @@ static QState LWIPMgr_Active(LWIPMgr * const me, QEvt const * const e) {
             status_ = Q_HANDLED();
             break;
         }
-        /* ${AOs::LWIPMgr::SM::Active::DBG_MENU} */
+        /* ${AOs::LWIPMgr::SM::Active::Busy::Receiving::ETH_LOG_TCP_SEND} */
+        case ETH_LOG_TCP_SEND_SIG: {
+            dbg_slow_printf("Got ETH_LOG_TCP_SEND.  LocalPort is %d, TCP state: %d\n", me->tpcb_log->local_port, me->tpcb_log->state);
+            dbg_slow_printf("LWIPMgr_es_log->state: %d, LWIPMgr_es_log: %x\n", LWIPMgr_es_log->state, LWIPMgr_es_log);
+            /* Event posted that will include (inside it) a msg to send */
+            if ( NULL != LWIPMgr_es_log) {
+                struct pbuf *p = pbuf_new(
+                    (u8_t *)((EthEvt const *)e)->msg,
+                    ((EthEvt const *)e)->msg_len
+                );
+                if (p != (struct pbuf *)0) {
+                    DBG_printf("Sending\n");
+                    //tcp_write(me->tpcb_log, p->payload, p->tot_len, 1);
+                    //me->es_log->p = p;
+                    LWIPMgr_es_log->p = p;
+                    LWIP_tcpSend(me->tpcb_log, LWIPMgr_es_log);
+                    tcp_sent(me->tpcb_log, LWIP_tcpSent);
+                    pbuf_free(p);                   // don't leak the pbuf!
+                } else {
+                    DBG_printf("Not Sending\n");
+                }
+            } else {
+                DBG_printf("No connection exists for logging\n");
+            }
+            status_ = Q_HANDLED();
+            break;
+        }
+        default: {
+            status_ = Q_SUPER(&LWIPMgr_Busy);
+            break;
+        }
+    }
+    return status_;
+}
+/*${AOs::LWIPMgr::SM::Active::Idle} ........................................*/
+static QState LWIPMgr_Idle(LWIPMgr * const me, QEvt const * const e) {
+    QState status_;
+    switch (e->sig) {
+        /* ${AOs::LWIPMgr::SM::Active::Idle} */
+        case Q_ENTRY_SIG: {
+            /* recall the request from the private requestQueue */
+            QActive_recall(
+                (QActive *)me,
+                &me->deferredEvtQueue
+            );
+            status_ = Q_HANDLED();
+            break;
+        }
+        /* ${AOs::LWIPMgr::SM::Active::Idle::DBG_MENU} */
         case DBG_MENU_SIG: {
-            DBG_printf("Got DBG_MENU with dst: %x\n", ((LrgDataEvt const *)e)->dst);
-            /* ${AOs::LWIPMgr::SM::Active::DBG_MENU::[Dest==TCPlog?]} */
+            //dbg_slow_printf("Got DBG_MENU with dst: %x\n", ((LrgDataEvt const *)e)->dst);
+            /* ${AOs::LWIPMgr::SM::Active::Idle::DBG_MENU::[Dest==TCPlog?]} */
             if (ETH_PORT_LOG == ((LrgDataEvt const *)e)->dst) {
                 /* Event posted that will include (inside it) a msg to send */
                 if ( NULL != LWIPMgr_es_log) {
-                    DBG_printf("Menu to TCP:\n");
                     struct pbuf *p = pbuf_new(
                         (u8_t *)((LrgDataEvt const *)e)->dataBuf,
                         ((LrgDataEvt const *)e)->dataLen
                     );
                     if (p != (struct pbuf *)0) {
                         LWIPMgr_es_log->p = p;
-                        LWIP_tcpSend(me->tpcb_log, LWIPMgr_es_log);
+
                         tcp_sent(me->tpcb_log, LWIP_tcpSent);
+                        LWIP_tcpSend(me->tpcb_log, LWIPMgr_es_log);
                         pbuf_free(p);                   // don't leak the pbuf!
                     }
                 }
-                status_ = Q_HANDLED();
+                status_ = Q_TRAN(&LWIPMgr_Sending);
             }
-            /* ${AOs::LWIPMgr::SM::Active::DBG_MENU::[else]} */
+            /* ${AOs::LWIPMgr::SM::Active::Idle::DBG_MENU::[else]} */
             else {
                 status_ = Q_HANDLED();
             }
             break;
         }
         default: {
-            status_ = Q_SUPER(&QHsm_top);
+            status_ = Q_SUPER(&LWIPMgr_Active);
+            break;
+        }
+    }
+    return status_;
+}
+/*${AOs::LWIPMgr::SM::Active::Sending} .....................................*/
+static QState LWIPMgr_Sending(LWIPMgr * const me, QEvt const * const e) {
+    QState status_;
+    switch (e->sig) {
+        /* ${AOs::LWIPMgr::SM::Active::Sending} */
+        case Q_ENTRY_SIG: {
+            //QEvt *qEvt = Q_NEW( QEvt, TCP_LOG_DONE_SIG);
+            //QF_PUBLISH(qEvt, AO_LWIPMgr);
+            status_ = Q_HANDLED();
+            break;
+        }
+        /* ${AOs::LWIPMgr::SM::Active::Sending::TCP_LOG_DONE} */
+        case TCP_LOG_DONE_SIG: {
+            status_ = Q_TRAN(&LWIPMgr_Idle);
+            break;
+        }
+        /* ${AOs::LWIPMgr::SM::Active::Sending::DBG_LOG, DBG_MENU, ETH_LOG_TCP_SEND} */
+        case DBG_LOG_SIG: /* intentionally fall through */
+        case DBG_MENU_SIG: /* intentionally fall through */
+        case ETH_LOG_TCP_SEND_SIG: {
+            if (QEQueue_getNFree(&me->deferredEvtQueue) > 0) {
+               /* defer the request - this event will be handled
+                * when the state machine goes back to Idle state */
+               QActive_defer((QActive *)me, &me->deferredEvtQueue, e);
+            } else {
+               /* notify the request sender that the request was ignored.. */
+               err_slow_printf("Unable to defer an ETH event");
+            }
+            status_ = Q_HANDLED();
+            break;
+        }
+        default: {
+            status_ = Q_SUPER(&LWIPMgr_Active);
             break;
         }
     }
@@ -1126,6 +1271,8 @@ static err_t LWIP_tcpSent(
         if(es->state == ES_CLOSING) {
             LWIP_tcpClose(tpcb, es);
         }
+        QEvt *qEvt = Q_NEW( QEvt, TCP_LOG_DONE_SIG);
+        QF_PUBLISH(qEvt, AO_LWIPMgr);
     }
     return ERR_OK;
 }
@@ -1142,11 +1289,18 @@ static err_t LWIP_tcpSent(
  * @return None
  */
 /*${AOs::LWIP_tcpSend} .....................................................*/
-static void LWIP_tcpSend(struct tcp_pcb * tpcb, struct echo_state * es) {
+static bool LWIP_tcpSend(struct tcp_pcb * tpcb, struct echo_state * es) {
     struct pbuf *ptr;
     err_t wr_err = ERR_OK;
+    bool status = false;
+    /* Check if we have the buffer space */
+    if (! (es->p->len <= tcp_sndbuf(tpcb)) ) {
+        return status;
+    }
+
     while ((wr_err == ERR_OK) && (es->p != NULL) && (es->p->len <= tcp_sndbuf(tpcb))) {
         ptr = es->p;
+
         /* enqueue data for transmission */
         wr_err = tcp_write(tpcb, ptr->payload, ptr->len, 1);
         if (wr_err == ERR_OK) {
@@ -1168,6 +1322,7 @@ static void LWIP_tcpSend(struct tcp_pcb * tpcb, struct echo_state * es) {
 
             /* we can read more data now */
             tcp_recved(tpcb, plen);
+            status = true;
         } else if(wr_err == ERR_MEM) {
             /* we are low on memory, try later / harder, defer to poll */
             es->p = ptr;
@@ -1177,6 +1332,8 @@ static void LWIP_tcpSend(struct tcp_pcb * tpcb, struct echo_state * es) {
             WRN_printf("Some unknown problem occurred\n");
         }
     }
+
+    return status;
 }
 
 /**

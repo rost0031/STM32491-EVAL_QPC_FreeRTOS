@@ -70,8 +70,14 @@
    <attribute name="sysPort" type="uint16_t" visibility="0x01" properties="0x01">
     <documentation>/* Keeps track of what port is used by system TCP connection */</documentation>
    </attribute>
+   <attribute name="deferredEvtQueue" type="QEQueue" visibility="0x01" properties="0x00">
+    <documentation>/**&lt; Native QF queue for deferred request events. */</documentation>
+   </attribute>
+   <attribute name="deferredEvtQSto[100]" type="QTimeEvt const *" visibility="0x01" properties="0x00">
+    <documentation>/**&lt; Storage for deferred event queue. */</documentation>
+   </attribute>
    <statechart>
-    <initial target="../1">
+    <initial target="../1/8">
      <action>(void)e;        /* suppress the compiler warning about unused parameter */
 
 uint8_t  macaddr[NETIF_MAX_HWADDR_LEN];
@@ -155,14 +161,18 @@ me-&gt;tpcb_log = tcp_listen(me-&gt;tpcb_log);
 
 LWIPMgr_es_log = NULL;
 tcp_accept(me-&gt;tpcb_log, LWIP_logTcpAccept);
+//tcp_accept(me-&gt;tpcb_log, LWIP_tcpLogAcceptCB);
 
 /* Signal subscriptions */
 QActive_subscribe((QActive *)me, ETH_UDP_SEND_SIG);
 QActive_subscribe((QActive *)me, ETH_LOG_TCP_SEND_SIG);
 QActive_subscribe((QActive *)me, ETH_SYS_TCP_SEND_SIG);
 QActive_subscribe((QActive *)me, DBG_LOG_SIG);
-QActive_subscribe((QActive *)me, DBG_MENU_SIG);</action>
-     <initial_glyph conn="1,2,4,3,7,2">
+QActive_subscribe((QActive *)me, DBG_MENU_SIG);
+QActive_subscribe((QActive *)me, TCP_LOG_ACCEPTED_SIG);
+QActive_subscribe((QActive *)me, TCP_LOG_CLOSED_SIG);
+QActive_subscribe((QActive *)me, TCP_LOG_DONE_SIG);</action>
+     <initial_glyph conn="1,2,4,3,38,19">
       <action box="0,-2,6,2"/>
      </initial_glyph>
     </initial>
@@ -275,9 +285,85 @@ if (me-&gt;auto_ip_tmr &gt;= AUTOIP_TMR_INTERVAL) {
        <action box="0,-2,15,2"/>
       </tran_glyph>
      </tran>
-     <tran trig="ETH_LOG_TCP_SEND">
-      <action>DBG_printf(&quot;Got ETH_LOG_TCP_SEND.  LocalPort is %d, TCP state: %d\n&quot;, me-&gt;tpcb_log-&gt;local_port, me-&gt;tpcb_log-&gt;state);
-DBG_printf(&quot;LWIPMgr_es_log-&gt;state: %d, LWIPMgr_es_log: %x\n&quot;, LWIPMgr_es_log-&gt;state, LWIPMgr_es_log);
+     <tran trig="ETH_SYS_TCP_SEND">
+      <action>/* Event posted that will include (inside it) a msg to send */
+if (me-&gt;upcb-&gt;remote_port != (uint16_t)0) {
+    struct pbuf *p = pbuf_new(
+        (u8_t *)((EthEvt const *)e)-&gt;msg,
+        ((EthEvt const *)e)-&gt;msg_len
+    );
+    if (p != (struct pbuf *)0) {
+        udp_send(me-&gt;upcb, p);
+        pbuf_free(p);                   /* don't leak the pbuf! */
+    }
+}</action>
+      <tran_glyph conn="3,35,3,-1,16">
+       <action box="0,-2,17,2"/>
+      </tran_glyph>
+     </tran>
+     <state name="Connected">
+      <entry>/* recall the request from the private requestQueue */
+QActive_recall(
+    (QActive *)me,
+    &amp;me-&gt;deferredEvtQueue
+);</entry>
+      <tran trig="TCP_LOG_CLOSED" target="..">
+       <action>dbg_slow_printf(&quot;ClsOnTcpLog\n&quot;);</action>
+       <tran_glyph conn="49,46,3,3,-2,-8,2">
+        <action box="-4,1,15,2"/>
+       </tran_glyph>
+      </tran>
+      <tran trig="TCP_LOG_RECEIVED" target="../../7/1">
+       <action>dbg_slow_printf(&quot;RxOnTcpLog\n&quot;);</action>
+       <tran_glyph conn="64,41,1,3,34">
+        <action box="0,-2,17,2"/>
+       </tran_glyph>
+      </tran>
+      <tran trig="TCP_LOG_ACCEPTED" target="..">
+       <action>dbg_slow_printf(&quot;AccOnTcpLog\n&quot;);</action>
+       <tran_glyph conn="49,32,3,3,-2,-9,2">
+        <action box="0,-2,19,2"/>
+       </tran_glyph>
+      </tran>
+      <state_glyph node="49,14,15,37">
+       <entry box="1,2,6,2"/>
+      </state_glyph>
+     </state>
+     <state name="Busy">
+      <tran trig="TCP_LOG_DONE" target="../../6">
+       <action>dbg_slow_printf(&quot;DoneOnTcpLog\n&quot;);</action>
+       <tran_glyph conn="94,46,3,1,-30">
+        <action box="-25,-2,15,2"/>
+       </tran_glyph>
+      </tran>
+      <state name="Receiving">
+       <tran trig="DBG_LOG">
+        <action>/************************************************************/
+/* WARNING: Do not use any fast logging functions here.  In
+ * fact, avoid using ANY logging here since it could cause an
+ * infinite loop. */
+/************************************************************/
+
+/* Event posted that will include (inside it) a msg to send */
+if ( NULL != LWIPMgr_es_log) {
+    struct pbuf *p = pbuf_new(
+        (u8_t *)((LrgDataEvt const *)e)-&gt;dataBuf,
+        ((LrgDataEvt const *)e)-&gt;dataLen
+    );
+    if (p != (struct pbuf *)0) {
+        LWIPMgr_es_log-&gt;p = p;
+        LWIP_tcpSend(me-&gt;tpcb_log, LWIPMgr_es_log);
+        tcp_sent(me-&gt;tpcb_log, LWIP_tcpSent);
+        pbuf_free(p);                   // don't leak the pbuf!
+    }
+}</action>
+        <tran_glyph conn="98,48,3,-1,-97,-37,40">
+         <action box="0,-2,17,2"/>
+        </tran_glyph>
+       </tran>
+       <tran trig="ETH_LOG_TCP_SEND">
+        <action>dbg_slow_printf(&quot;Got ETH_LOG_TCP_SEND.  LocalPort is %d, TCP state: %d\n&quot;, me-&gt;tpcb_log-&gt;local_port, me-&gt;tpcb_log-&gt;state);
+dbg_slow_printf(&quot;LWIPMgr_es_log-&gt;state: %d, LWIPMgr_es_log: %x\n&quot;, LWIPMgr_es_log-&gt;state, LWIPMgr_es_log);
 /* Event posted that will include (inside it) a msg to send */
 if ( NULL != LWIPMgr_es_log) {
     struct pbuf *p = pbuf_new(
@@ -297,38 +383,26 @@ if ( NULL != LWIPMgr_es_log) {
     }
 } else {
     DBG_printf(&quot;No connection exists for logging\n&quot;);
-}
-
-
-</action>
-      <tran_glyph conn="3,39,3,-1,16">
-       <action box="0,-2,17,2"/>
-      </tran_glyph>
-     </tran>
-     <tran trig="ETH_SYS_TCP_SEND">
-      <action>/* Event posted that will include (inside it) a msg to send */
-if (me-&gt;upcb-&gt;remote_port != (uint16_t)0) {
-    struct pbuf *p = pbuf_new(
-        (u8_t *)((EthEvt const *)e)-&gt;msg,
-        ((EthEvt const *)e)-&gt;msg_len
-    );
-    if (p != (struct pbuf *)0) {
-        udp_send(me-&gt;upcb, p);
-        pbuf_free(p);                   /* don't leak the pbuf! */
-    }
 }</action>
-      <tran_glyph conn="3,35,3,-1,16">
-       <action box="0,-2,17,2"/>
-      </tran_glyph>
-     </tran>
-     <tran trig="DBG_LOG">
-      <action>/************************************************************/
-/* WARNING: Do not use any fast logging functions here.  In
- * fact, avoid using ANY logging here since it could cause an
- * infinite loop. */
-/************************************************************/
-
-/* Event posted that will include (inside it) a msg to send */
+        <tran_glyph conn="98,47,3,-1,-97,-34,40">
+         <action box="0,-2,17,2"/>
+        </tran_glyph>
+       </tran>
+       <state_glyph node="98,38,18,12"/>
+      </state>
+      <state_glyph node="94,14,26,50"/>
+     </state>
+     <state name="Idle">
+      <entry>/* recall the request from the private requestQueue */
+QActive_recall(
+    (QActive *)me,
+    &amp;me-&gt;deferredEvtQueue
+);</entry>
+      <tran trig="DBG_MENU">
+       <action>//dbg_slow_printf(&quot;Got DBG_MENU with dst: %x\n&quot;, ((LrgDataEvt const *)e)-&gt;dst);</action>
+       <choice target="../../../9">
+        <guard brief="Dest == TCP log?">ETH_PORT_LOG == ((LrgDataEvt const *)e)-&gt;dst</guard>
+        <action>/* Event posted that will include (inside it) a msg to send */
 if ( NULL != LWIPMgr_es_log) {
     struct pbuf *p = pbuf_new(
         (u8_t *)((LrgDataEvt const *)e)-&gt;dataBuf,
@@ -336,53 +410,61 @@ if ( NULL != LWIPMgr_es_log) {
     );
     if (p != (struct pbuf *)0) {
         LWIPMgr_es_log-&gt;p = p;
-        LWIP_tcpSend(me-&gt;tpcb_log, LWIPMgr_es_log);
+
         tcp_sent(me-&gt;tpcb_log, LWIP_tcpSent);
+        LWIP_tcpSend(me-&gt;tpcb_log, LWIPMgr_es_log);
         pbuf_free(p);                   // don't leak the pbuf!
     }
 }</action>
-      <tran_glyph conn="3,44,3,-1,16">
-       <action box="0,-2,17,2"/>
-      </tran_glyph>
-     </tran>
-     <tran trig="DBG_MENU">
-      <action>DBG_printf(&quot;Got DBG_MENU with dst: %x\n&quot;, ((LrgDataEvt const *)e)-&gt;dst);</action>
-      <choice>
-       <guard brief="Dest == TCP log?">ETH_PORT_LOG == ((LrgDataEvt const *)e)-&gt;dst</guard>
-       <action>/* Event posted that will include (inside it) a msg to send */
-if ( NULL != LWIPMgr_es_log) {
-    DBG_printf(&quot;Menu to TCP:\n&quot;);
-    struct pbuf *p = pbuf_new(
-        (u8_t *)((LrgDataEvt const *)e)-&gt;dataBuf,
-        ((LrgDataEvt const *)e)-&gt;dataLen
-    );
-    if (p != (struct pbuf *)0) {
-        LWIPMgr_es_log-&gt;p = p;
-        LWIP_tcpSend(me-&gt;tpcb_log, LWIPMgr_es_log);
-        tcp_sent(me-&gt;tpcb_log, LWIP_tcpSent);
-        pbuf_free(p);                   // don't leak the pbuf!
-    }
+        <choice_glyph conn="78,26,4,2,-9">
+         <action box="1,-2,13,2"/>
+        </choice_glyph>
+       </choice>
+       <choice>
+        <guard brief="else"/>
+        <choice_glyph conn="78,26,4,-1,5,11">
+         <action box="1,3,10,2"/>
+        </choice_glyph>
+       </choice>
+       <tran_glyph conn="31,26,1,-1,47">
+        <action box="0,-2,17,2"/>
+       </tran_glyph>
+      </tran>
+      <state_glyph node="20,15,11,36">
+       <entry box="1,2,6,2"/>
+      </state_glyph>
+     </state>
+     <state name="Sending">
+      <entry>//QEvt *qEvt = Q_NEW( QEvt, TCP_LOG_DONE_SIG);
+//QF_PUBLISH(qEvt, AO_LWIPMgr);</entry>
+      <tran trig="TCP_LOG_DONE" target="../../8">
+       <tran_glyph conn="69,15,3,1,-2,7,-36">
+        <action box="-15,-3,15,2"/>
+       </tran_glyph>
+      </tran>
+      <tran trig="DBG_LOG, DBG_MENU, ETH_LOG_TCP_SEND">
+       <action>if (QEQueue_getNFree(&amp;me-&gt;deferredEvtQueue) &gt; 0) {
+   /* defer the request - this event will be handled
+    * when the state machine goes back to Idle state */
+   QActive_defer((QActive *)me, &amp;me-&gt;deferredEvtQueue, e);
+} else {
+   /* notify the request sender that the request was ignored.. */
+   err_slow_printf(&quot;Unable to defer an ETH event&quot;);
 }</action>
-       <choice_glyph conn="23,47,5,-1,12">
-        <action box="1,-2,13,2"/>
-       </choice_glyph>
-      </choice>
-      <choice>
-       <guard brief="else"/>
-       <choice_glyph conn="23,47,4,-1,5,12">
-        <action box="1,3,10,2"/>
-       </choice_glyph>
-      </choice>
-      <tran_glyph conn="3,47,3,-1,20">
-       <action box="0,-2,17,2"/>
-      </tran_glyph>
-     </tran>
-     <state_glyph node="3,2,94,82">
+       <tran_glyph conn="69,13,3,-1,13">
+        <action box="0,-4,16,6"/>
+       </tran_glyph>
+      </tran>
+      <state_glyph node="69,6,18,11">
+       <entry box="1,2,6,2"/>
+      </state_glyph>
+     </state>
+     <state_glyph node="3,2,121,82">
       <entry box="1,2,5,2"/>
       <exit box="1,4,5,2"/>
      </state_glyph>
     </state>
-    <state_diagram size="108,90"/>
+    <state_diagram size="129,90"/>
    </statechart>
   </class>
   <attribute name="AO_LWIPMgr" type="QActive * const" visibility="0x00" properties="0x00">
@@ -400,7 +482,14 @@ if ( NULL != LWIPMgr_es_log) {
    <code>LWIPMgr *me = &amp;l_LWIPMgr;
 
 QActive_ctor(&amp;me-&gt;super, (QStateHandler)&amp;LWIPMgr_initial);
-QTimeEvt_ctor(&amp;me-&gt;te_LWIP_SLOW_TICK, LWIP_SLOW_TICK_SIG);</code>
+QTimeEvt_ctor(&amp;me-&gt;te_LWIP_SLOW_TICK, LWIP_SLOW_TICK_SIG);
+
+/* Initialize the deferred event queue and storage for it */
+QEQueue_init(
+    &amp;me-&gt;deferredEvtQueue,
+    (QEvt const **)( me-&gt;deferredEvtQSto ),
+    Q_DIM(me-&gt;deferredEvtQSto)
+);</code>
   </operation>
   <operation name="echo_recv" type="err_t" visibility="0x02" properties="0x00">
    <documentation>/**
@@ -576,10 +665,12 @@ if(es-&gt;p != NULL) {
     if(es-&gt;state == ES_CLOSING) {
         LWIP_tcpClose(tpcb, es);
     }
+    QEvt *qEvt = Q_NEW( QEvt, TCP_LOG_DONE_SIG);
+    QF_PUBLISH(qEvt, AO_LWIPMgr);
 }
 return ERR_OK;</code>
   </operation>
-  <operation name="LWIP_tcpSend" type="void" visibility="0x02" properties="0x00">
+  <operation name="LWIP_tcpSend" type="bool" visibility="0x02" properties="0x00">
    <documentation>/**
  * @brief: A callback function that handles the actual sending of data
  * on a TCP socket.
@@ -595,8 +686,15 @@ return ERR_OK;</code>
    <parameter name="es" type="struct echo_state *"/>
    <code>struct pbuf *ptr;
 err_t wr_err = ERR_OK;
+bool status = false;
+/* Check if we have the buffer space */
+if (! (es-&gt;p-&gt;len &lt;= tcp_sndbuf(tpcb)) ) {
+    return status;
+}
+
 while ((wr_err == ERR_OK) &amp;&amp; (es-&gt;p != NULL) &amp;&amp; (es-&gt;p-&gt;len &lt;= tcp_sndbuf(tpcb))) {
     ptr = es-&gt;p;
+
     /* enqueue data for transmission */
     wr_err = tcp_write(tpcb, ptr-&gt;payload, ptr-&gt;len, 1);
     if (wr_err == ERR_OK) {
@@ -618,6 +716,7 @@ while ((wr_err == ERR_OK) &amp;&amp; (es-&gt;p != NULL) &amp;&amp; (es-&gt;p-&gt
 
         /* we can read more data now */
         tcp_recved(tpcb, plen);
+        status = true;
     } else if(wr_err == ERR_MEM) {
         /* we are low on memory, try later / harder, defer to poll */
         es-&gt;p = ptr;
@@ -626,7 +725,9 @@ while ((wr_err == ERR_OK) &amp;&amp; (es-&gt;p != NULL) &amp;&amp; (es-&gt;p-&gt
         /* other problem ?? */
         WRN_printf(&quot;Some unknown problem occurred\n&quot;);
     }
-}</code>
+}
+
+return status;</code>
   </operation>
   <operation name="LWIP_tcpClose" type="void" visibility="0x02" properties="0x00">
    <documentation>/**
@@ -968,6 +1069,190 @@ if (p == NULL) {
 }
 return ret_err;</code>
   </operation>
+  <operation name="LWIP_tcpLogAcceptCB" type="err_t" visibility="0x02" properties="0x00">
+   <documentation>/**
+ * @brief: A callback function that handles acceptance of a connection 
+ * on a TCP debug/logging socket.
+ * This function is passed in as a callback to tcp_accept().
+ *
+ * @param [in] *arg: void pointer to an argument list (unused)
+ * @param [in] *newpcb: struct tcp_pcb pointer to the pcb that is handling the 
+ * context for this connection.
+ * @param [in] err: err_t passed in from the caller. (unused)
+ *
+ * @return err: err_t indicating error that may have occurred.
+ *   @arg ERR_OK: no error
+ *   @arg ERR_MEM: memory allocation error
+ */</documentation>
+   <parameter name="arg" type="void *"/>
+   <parameter name="newpcb" type="struct tcp_pcb *"/>
+   <parameter name="err&#10;    " type="err_t"/>
+   <code>err_t ret_err;
+struct echo_state *es;
+
+LWIP_UNUSED_ARG(arg);
+LWIP_UNUSED_ARG(err);
+
+if ( LWIPMgr_logPort == newpcb-&gt;local_port ) {
+   if ( NULL != LWIPMgr_es_log) {
+      /* A connection on the logging port exists already. */
+      ret_err = ERR_USE;
+      return ret_err;
+   }
+} else if ( LWIPMgr_sysPort == newpcb-&gt;local_port ) {
+   WRN_printf(&quot;System TCP not implemented currently\n&quot;);
+} else {
+   ERR_printf(&quot;Unknown port number %d\n&quot;, newpcb-&gt;local_port );
+   ret_err = ERR_VAL;
+   return ret_err;
+}
+
+/* commonly observed practice to call tcp_setprio(), why? */
+tcp_setprio(newpcb, TCP_PRIO_MIN);
+
+es = (struct echo_state *)mem_malloc(sizeof(struct echo_state));
+if ( es != NULL ) {
+    es-&gt;state = ES_ACCEPTED;
+    es-&gt;pcb = newpcb;
+    es-&gt;retries = 0;
+    es-&gt;p = NULL;
+    /* pass newly allocated es to our callbacks */
+    tcp_arg(newpcb, es);
+    tcp_recv(newpcb, LWIP_logTcpRecv);
+    tcp_err(newpcb, LWIP_tcpError);
+    tcp_poll(newpcb, LWIP_tcpPoll, 0);
+    ret_err = ERR_OK;
+    LWIPMgr_es_log = es; /* Tell the opaque pointer about this new structure. */
+    LOG_printf(&quot;New connection accepted\n&quot;);
+    QEvt* qEvt = Q_NEW( QEvt, TCP_LOG_ACCEPTED_SIG );
+    QF_PUBLISH( (QEvt*)qEvt, AO_LWIPMgr );
+} else {
+    ret_err = ERR_MEM;
+    ERR_printf(&quot;Error allocating LWIP mem for echo state\n&quot;);
+}
+return ret_err;</code>
+  </operation>
+  <operation name="LWIP_tcpLogRecvCB" type="err_t" visibility="0x02" properties="0x00">
+   <documentation>/**
+ * @brief: A callback function that handles the start of a RECV on the
+ * TCP debug/logging socket.
+ * This function is passed in as a callback to tcp_recv().
+ *
+ * @param [in] *arg: void pointer to an argument list (unused)
+ * @param [in] *newpcb: struct tcp_pcb pointer to the pcb that is handling the
+ * context for this connection.
+ * @param [in] *p: struct pbuf pointer to the LWIP pbuf that actually
+ * contains the data received.
+ * @param [in] err: err_t passed in from the caller. (unused)
+ *
+ * @return err: err_t indicating error that may have occurred.
+ *   @arg ERR_OK: no error
+ *   @arg ERR_MEM: memory allocation error
+ */</documentation>
+   <parameter name="arg" type="void *"/>
+   <parameter name="tpcb" type="struct tcp_pcb *"/>
+   <parameter name="p" type="struct pbuf *"/>
+   <parameter name="err" type="err_t"/>
+   <code>struct echo_state *es;
+err_t ret_err;
+
+LWIP_ASSERT(&quot;arg != NULL&quot;,arg != NULL);
+es = (struct echo_state *)arg;
+if (p == NULL) {
+    /* remote host closed connection */
+    es-&gt;state = ES_CLOSING;
+    if(es-&gt;p == NULL) {
+        LOG_printf(&quot;Closing connection\n&quot;);
+        /* we're done sending, close it */
+        LWIP_tcpClose(tpcb, es);
+    } else {
+        /* we're not done yet */
+        tcp_sent(tpcb, LWIP_tcpSent);
+        LWIP_tcpSend(tpcb, es);
+    }
+    ret_err = ERR_OK;
+
+} else if(err != ERR_OK) {
+    /* cleanup, for unkown reason */
+    if (p != NULL) {
+        es-&gt;p = NULL;
+        pbuf_free(p);
+    }
+    ret_err = err;
+    ERR_printf(&quot;Unknown error\n&quot;);
+} else if(es-&gt;state == ES_ACCEPTED) {
+    /* first data chunk in p-&gt;payload */
+    es-&gt;state = ES_RECEIVED;
+    /* store reference to incoming pbuf (chain) */
+    es-&gt;p = p;
+
+    /* This eth port can only receive menu commands */
+    MenuEvt *menuEvt = Q_NEW( MenuEvt, DBG_MENU_REQ_SIG );
+
+    /* 2. Fill the msg payload with payload (the actual received msg)*/
+    MEMCPY(
+          menuEvt-&gt;buffer,
+          p-&gt;payload,
+          (p-&gt;tot_len)-1
+    );
+    menuEvt-&gt;bufferLen = (p-&gt;tot_len)-1;
+    menuEvt-&gt;msgSrc = ETH_PORT_LOG;
+
+    /* 3. Publish the newly created event to current AO */
+    QF_PUBLISH( (QEvent *)menuEvt, AO_LWIPMgr );
+
+    /* Free the pbuf */
+    tcp_recved(tpcb, p-&gt;tot_len);
+    es-&gt;p = NULL;
+    pbuf_free(p);
+    ret_err = ERR_OK;
+} else if (es-&gt;state == ES_RECEIVED) {
+    /* read some more data */
+    if(es-&gt;p == NULL) {
+        es-&gt;p = p;
+
+        /* This eth port can only receive menu commands */
+        MenuEvt *menuEvt = Q_NEW( MenuEvt, DBG_MENU_REQ_SIG );
+
+        /* 2. Fill the msg payload with payload (the actual received msg)*/
+        MEMCPY(
+              menuEvt-&gt;buffer,
+              p-&gt;payload,
+              (p-&gt;tot_len)-1
+        );
+        menuEvt-&gt;bufferLen = (p-&gt;tot_len)-1;
+        menuEvt-&gt;msgSrc = ETH_PORT_LOG;
+
+        /* 3. Publish the newly created event to current AO */
+        QF_PUBLISH( (QEvent *)menuEvt, AO_LWIPMgr );
+
+        /* Free the pbuf */
+        tcp_recved(tpcb, p-&gt;tot_len);
+        es-&gt;p = NULL;
+        pbuf_free(p);
+        ret_err = ERR_OK;
+    } else {
+        struct pbuf *ptr;
+         /* chain pbufs to the end of what we recv'ed previously  */
+        ptr = es-&gt;p;
+        pbuf_chain(ptr,p);
+    }
+    ret_err = ERR_OK;
+} else if(es-&gt;state == ES_CLOSING) {
+    /* odd case, remote side closing twice, trash data */
+    tcp_recved(tpcb, p-&gt;tot_len);
+    es-&gt;p = NULL;
+    pbuf_free(p);
+    ret_err = ERR_OK;
+} else {
+    /* unkown es-&gt;state, trash data  */
+    tcp_recved(tpcb, p-&gt;tot_len);
+    es-&gt;p = NULL;
+    pbuf_free(p);
+    ret_err = ERR_OK;
+}
+return ret_err;</code>
+  </operation>
  </package>
  <directory name=".">
   <file name="LWIPMgr_gen.c">
@@ -1171,10 +1456,14 @@ static void udp_rx_handler(void *arg, struct udp_pcb *upcb,
  * Signals used by LWIPMgr.  These should start from MAX_SHARED_SIG
  */
 enum LWIPMgrSignals {
-   ETH_UDP_SEND_SIG = MAX_SHARED_SIG,
-   ETH_LOG_TCP_SEND_SIG,
-   ETH_SYS_TCP_SEND_SIG,
-   MAX_PUB_SIG,                                  /* the last published signal */
+    ETH_UDP_SEND_SIG = MAX_SHARED_SIG,
+    ETH_LOG_TCP_SEND_SIG,
+    ETH_SYS_TCP_SEND_SIG,
+    TCP_LOG_DONE_SIG,
+    TCP_LOG_ACCEPTED_SIG,
+    TCP_LOG_RECEIVED_SIG,
+    TCP_LOG_CLOSED_SIG,
+    MAX_PUB_SIG,                                  /* the last published signal */
 };
 
 $declare(Events)
