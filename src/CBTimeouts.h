@@ -66,7 +66,7 @@
    /*@} I2C Timeouts */
 
    /** \name ETH Timeouts
-    * These are the timeouts used by the low level SerialMgr AO.
+    * These are the timeouts used by the low level LWIPMgr AO.
     *@{*/
    #define LL_MAX_TIMEOUT_TCP_SEND_SEC                                     3.0
    /*@} ETH Timeout Maximums*/
