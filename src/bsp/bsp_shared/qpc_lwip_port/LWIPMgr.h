@@ -58,10 +58,8 @@ enum LWIPMgrSignals {
     ETH_UDP_SEND_SIG = MAX_SHARED_SIG,
     ETH_LOG_TCP_SEND_SIG,
     ETH_SYS_TCP_SEND_SIG,
-    TCP_LOG_DONE_SIG,
-    TCP_LOG_ACCEPTED_SIG,
-    TCP_LOG_RECEIVED_SIG,
-    TCP_LOG_CLOSED_SIG,
+    ETH_TCP_DATA_RECV_SIG,
+    TCP_DONE_SIG,
     MAX_PUB_SIG,                                  /* the last published signal */
 };
 

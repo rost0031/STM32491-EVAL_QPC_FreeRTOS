@@ -134,15 +134,19 @@ typedef struct {
     QTimeEvt const * deferredEvtQSto[100];
 } LWIPMgr;
 
-/* Pointer to the log socket state that will be passed in to the TCP callback
- * functions. */
-extern struct echo_state* LWIPMgr_es_log;
-
 /* Keeps track of what port is used by logging TCP connection */
 extern uint16_t LWIPMgr_logPort;
 
 /* Keeps track of what port is used by system TCP connection */
 extern uint16_t LWIPMgr_sysPort;
+
+/* Pointer to the log socket state that will be passed in to the TCP callback
+ * functions. */
+extern struct echo_state* LWIPMgr_es_log;
+
+/* Pointer to the log socket state that will be passed in to the TCP callback
+ * functions. */
+extern struct echo_state* LWIPMgr_es_sys;
 
 /* protected: */
 static QState LWIPMgr_initial(LWIPMgr * const me, QEvt const * const e);
@@ -174,6 +178,8 @@ QActive * const AO_LWIPMgr = (QActive *)&l_LWIPMgr;  /* "opaque" AO pointer */
 
 /* Private function prototypes -----------------------------------------------*/
 
+/* Common TCP functions */
+
 /**
  * @brief: A callback function that handles acceptance of a connection
  * on a TCP debug/logging socket.
@@ -188,8 +194,8 @@ QActive * const AO_LWIPMgr = (QActive *)&l_LWIPMgr;  /* "opaque" AO pointer */
  *   @arg ERR_OK: no error
  *   @arg ERR_MEM: memory allocation error
  */
-/*${AOs::LWIP_logTcpAccept} ................................................*/
-static err_t LWIP_logTcpAccept(
+/*${AOs::LWIP_tcpAccept} ...................................................*/
+static err_t LWIP_tcpAccept(
     void * arg,
     struct tcp_pcb * newpcb,
     err_t err
@@ -198,7 +204,7 @@ static err_t LWIP_logTcpAccept(
 
 /**
  * @brief: A callback function that handles the start of a RECV on the
- * TCP debug/logging socket.
+ * TCP sockets.
  * This function is passed in as a callback to tcp_recv().
  *
  * @param [in] *arg: void pointer to an argument list (unused)
@@ -212,89 +218,27 @@ static err_t LWIP_logTcpAccept(
  *   @arg ERR_OK: no error
  *   @arg ERR_MEM: memory allocation error
  */
-/*${AOs::LWIP_logTcpRecv} ..................................................*/
-static err_t LWIP_logTcpRecv(
+/*${AOs::LWIP_tcpRecv} .....................................................*/
+static err_t LWIP_tcpRecv(
     void * arg,
     struct tcp_pcb * tpcb,
     struct pbuf * p,
     err_t err);
 
 
-
 /**
- * @brief: A callback function that handles acceptance of a connection
- * on an echo TCP socket.
+ * @brief: A callback function that handles the actual sending of data
+ * on a TCP socket.
  * This function is passed in as a callback to tcp_accept().
  *
- * @param [in] *arg: void pointer to an argument list (unused)
- * @param [in] *newpcb: struct tcp_pcb pointer to the pcb that is handling the
+ * @param [in|out] *tpcb: struct tcp_pcb pointer to the pcb that is handling the
  * context for this connection.
- * @param [in] err: err_t passed in from the caller. (unused)
- *
- * @return err: err_t indicating error that may have occurred.
- *   @arg ERR_OK: no error
- *   @arg ERR_MEM: memory allocation error
- */
-/*${AOs::echo_accept} ......................................................*/
-static err_t echo_accept(
-    void * arg,
-    struct tcp_pcb * newpcb,
-    err_t err
-    );
-
-
-/**
- * @brief: A callback function that handles the start of a RECV on the echo
- * TCP socket.
- * This function is passed in as a callback to tcp_recv().
- *
- * @param [in] *arg: void pointer to an argument list (unused)
- * @param [in] *newpcb: struct tcp_pcb pointer to the pcb that is handling the
- * context for this connection.
- * @param [in] *p: struct pbuf pointer to the LWIP pbuf that actually
- * contains the data received.
- * @param [in] err: err_t passed in from the caller. (unused)
- *
- * @return err: err_t indicating error that may have occurred.
- *   @arg ERR_OK: no error
- *   @arg ERR_MEM: memory allocation error
- */
-/*${AOs::echo_recv} ........................................................*/
-static err_t echo_recv(
-    void * arg,
-    struct tcp_pcb * tpcb,
-    struct pbuf * p,
-    err_t err);
-
-
-
-/**
- * @brief: A callback function that handles the errors on a TCP socket.
- * This function is passed in as a callback to tcp_recv().
- *
- * @param [in] *arg: void pointer to an argument list (unused)
- * @param [in] err: err_t passed in from the caller. (unused)
+ * @param [in|out] *es: echo_state struct to keep track of the socket state.
  *
  * @return None
  */
-/*${AOs::LWIP_tcpError} ....................................................*/
-static void LWIP_tcpError(void * arg, err_t err);
-
-
-/**
- * @brief: A callback function that handles the start of a RECV on a TCP socket.
- * This function is passed in as a callback to tcp_recv().
- *
- * @param [in] *arg: void pointer to an argument list (unused)
- * @param [in|out] *tpcb: struct tcp_pcb pointer to the pcb that is handling the
- * context for this connection.
- *
- * @return err: err_t indicating error that may have occurred.
- *   @arg ERR_OK: no error
- *   @arg ERR_MEM: memory allocation error
- */
-/*${AOs::LWIP_tcpPoll} .....................................................*/
-static err_t LWIP_tcpPoll(void * arg, struct tcp_pcb * tpcb);
+/*${AOs::LWIP_tcpSend} .....................................................*/
+static bool LWIP_tcpSend(struct tcp_pcb * tpcb, struct echo_state * es);
 
 
 /**
@@ -319,18 +263,19 @@ static err_t LWIP_tcpSent(
 
 
 /**
- * @brief: A callback function that handles the actual sending of data
- * on a TCP socket.
- * This function is passed in as a callback to tcp_accept().
+ * @brief: A callback function that handles the start of a RECV on a TCP socket.
+ * This function is passed in as a callback to tcp_recv().
  *
+ * @param [in] *arg: void pointer to an argument list (unused)
  * @param [in|out] *tpcb: struct tcp_pcb pointer to the pcb that is handling the
  * context for this connection.
- * @param [in|out] *es: echo_state struct to keep track of the socket state.
  *
- * @return None
+ * @return err: err_t indicating error that may have occurred.
+ *   @arg ERR_OK: no error
+ *   @arg ERR_MEM: memory allocation error
  */
-/*${AOs::LWIP_tcpSend} .....................................................*/
-static bool LWIP_tcpSend(struct tcp_pcb * tpcb, struct echo_state * es);
+/*${AOs::LWIP_tcpPoll} .....................................................*/
+static err_t LWIP_tcpPoll(void * arg, struct tcp_pcb * tpcb);
 
 
 /**
@@ -347,8 +292,20 @@ static bool LWIP_tcpSend(struct tcp_pcb * tpcb, struct echo_state * es);
 static void LWIP_tcpClose(struct tcp_pcb * tpcb, struct echo_state * es);
 
 
+/**
+ * @brief: A callback function that handles the errors on a TCP socket.
+ * This function is passed in as a callback to tcp_recv().
+ *
+ * @param [in] *arg: void pointer to an argument list (unused)
+ * @param [in] err: err_t passed in from the caller. (unused)
+ *
+ * @return None
+ */
+/*${AOs::LWIP_tcpError} ....................................................*/
+static void LWIP_tcpError(void * arg, err_t err);
 
-/* Private functions ---------------------------------------------------------*/
+
+/* UDP functions */
 /**
   * @brief  This function is the UDP handler callback. It is automatically
   *             called by the LWIP stack when a new UDP message arrives.  It
@@ -365,6 +322,8 @@ static void LWIP_tcpClose(struct tcp_pcb * tpcb, struct echo_state * es);
   */
 static void udp_rx_handler(void *arg, struct udp_pcb *upcb,
                            struct pbuf *p, struct ip_addr *addr, u16_t port);
+
+/* Private functions ---------------------------------------------------------*/
 
 
 /**
@@ -394,9 +353,10 @@ void LWIPMgr_ctor(void) {
  * \brief LWIPMgr "class"
  */
 /*${AOs::LWIPMgr} ..........................................................*/
-struct echo_state* LWIPMgr_es_log;
 uint16_t LWIPMgr_logPort;
 uint16_t LWIPMgr_sysPort;
+struct echo_state* LWIPMgr_es_log;
+struct echo_state* LWIPMgr_es_sys;
 /*${AOs::LWIPMgr::SM} ......................................................*/
 static QState LWIPMgr_initial(LWIPMgr * const me, QEvt const * const e) {
     /* ${AOs::LWIPMgr::SM::initial} */
@@ -456,7 +416,7 @@ static QState LWIPMgr_initial(LWIPMgr * const me, QEvt const * const e) {
     udp_bind(me->upcb, IP_ADDR_ANY, 777);             /* use port 777 for UDP */
     udp_recv(me->upcb, &udp_rx_handler, me);
 
-    /* Set up TCP related PCB */
+    /* Set up TCP related PCB  for system connnection */
     me->tpcb_sys = tcp_new();
     if (me->tpcb_sys == NULL) {
        ERR_printf("Unable to allocate LWIP memory for TCP\n");
@@ -467,9 +427,9 @@ static QState LWIPMgr_initial(LWIPMgr * const me, QEvt const * const e) {
     }
 
     me->tpcb_sys = tcp_listen(me->tpcb_sys);
-    tcp_accept(me->tpcb_sys, echo_accept);
+    tcp_accept(me->tpcb_sys, LWIP_tcpAccept);
 
-    /* Second connection */
+    /* Set up TCP related PCB  for log/dbg connnection */
     me->tpcb_log = tcp_new();
     if (me->tpcb_log == NULL) {
        ERR_printf("Unable to allocate LWIP memory for TCP_LOG socket\n");
@@ -482,8 +442,7 @@ static QState LWIPMgr_initial(LWIPMgr * const me, QEvt const * const e) {
     me->tpcb_log = tcp_listen(me->tpcb_log);
 
     LWIPMgr_es_log = NULL;
-    tcp_accept(me->tpcb_log, LWIP_logTcpAccept);
-    //tcp_accept(me->tpcb_log, LWIP_tcpLogAcceptCB);
+    tcp_accept(me->tpcb_log, LWIP_tcpAccept);
 
     /* Signal subscriptions */
     QActive_subscribe((QActive *)me, ETH_UDP_SEND_SIG);
@@ -491,9 +450,7 @@ static QState LWIPMgr_initial(LWIPMgr * const me, QEvt const * const e) {
     QActive_subscribe((QActive *)me, ETH_SYS_TCP_SEND_SIG);
     QActive_subscribe((QActive *)me, DBG_LOG_SIG);
     QActive_subscribe((QActive *)me, DBG_MENU_SIG);
-    QActive_subscribe((QActive *)me, TCP_LOG_ACCEPTED_SIG);
-    QActive_subscribe((QActive *)me, TCP_LOG_CLOSED_SIG);
-    QActive_subscribe((QActive *)me, TCP_LOG_DONE_SIG);
+    QActive_subscribe((QActive *)me, TCP_DONE_SIG);
     return Q_TRAN(&LWIPMgr_Idle);
 }
 
@@ -619,22 +576,6 @@ static QState LWIPMgr_Active(LWIPMgr * const me, QEvt const * const e) {
             status_ = Q_HANDLED();
             break;
         }
-        /* ${AOs::LWIPMgr::SM::Active::ETH_SYS_TCP_SEND} */
-        case ETH_SYS_TCP_SEND_SIG: {
-            /* Event posted that will include (inside it) a msg to send */
-            if (me->upcb->remote_port != (uint16_t)0) {
-                struct pbuf *p = pbuf_new(
-                    (u8_t *)((EthEvt const *)e)->msg,
-                    ((EthEvt const *)e)->msg_len
-                );
-                if (p != (struct pbuf *)0) {
-                    udp_send(me->upcb, p);
-                    pbuf_free(p);                   /* don't leak the pbuf! */
-                }
-            }
-            status_ = Q_HANDLED();
-            break;
-        }
         default: {
             status_ = Q_SUPER(&QHsm_top);
             break;
@@ -714,20 +655,21 @@ static QState LWIPMgr_Idle(LWIPMgr * const me, QEvt const * const e) {
             }
             break;
         }
-        /* ${AOs::LWIPMgr::SM::Active::Idle::DBG_LOG} */
-        case DBG_LOG_SIG: {
+        /* ${AOs::LWIPMgr::SM::Active::Idle::DBG_LOG, ETH_LOG_TCP_SEND} */
+        case DBG_LOG_SIG: /* intentionally fall through */
+        case ETH_LOG_TCP_SEND_SIG: {
             /************************************************************/
             /* WARNING: Do not use any fast logging functions here.  In
              * fact, avoid using ANY logging here since it could cause an
              * infinite loop. */
             /************************************************************/
-            /* ${AOs::LWIPMgr::SM::Active::Idle::DBG_LOG::[ConnExists?]} */
+            /* ${AOs::LWIPMgr::SM::Active::Idle::DBG_LOG, ETH_LOG_TCP_SEND::[ConnExists?]} */
             if (NULL != LWIPMgr_es_log) {
                 struct pbuf *p = pbuf_new(
                     (u8_t *)((LrgDataEvt const *)e)->dataBuf,
                     ((LrgDataEvt const *)e)->dataLen
                 );
-                /* ${AOs::LWIPMgr::SM::Active::Idle::DBG_LOG::[ConnExists?]::[MemAvail?]} */
+                /* ${AOs::LWIPMgr::SM::Active::Idle::DBG_LOG, ETH_LOG_TCP_SEND::[ConnExists?]::[MemAvail?]} */
                 if (p != (struct pbuf *)0) {
                     LWIPMgr_es_log->p = p;                         // Attach pbuf to the socket state
                     //dbg_slow_printf("c tcpSend, me->tpcb: %x, LWIPMgr_es_log->pcb: %x\n", (uint32_t) me->tpcb_log, (uint32_t) LWIPMgr_es_log->pcb);
@@ -737,8 +679,9 @@ static QState LWIPMgr_Idle(LWIPMgr * const me, QEvt const * const e) {
                         LWIPMgr_es_log
                     );                                             // Queue data for sending
                     pbuf_free(p);                                  // don't leak the pbuf!
-                    /* ${AOs::LWIPMgr::SM::Active::Idle::DBG_LOG::[ConnExists?]::[MemAvail?]::[Datanotsent?]} */
+                    /* ${AOs::LWIPMgr::SM::Active::Idle::DBG_LOG, ETH_LOG_TCP_SEND::[ConnExists?]::[MemAvail?]::[Datanotsent?]} */
                     if (false == dataSent) {
+                        /* Failed to send data.  Defer the event (if possible) */
                         if (QEQueue_getNFree(&me->deferredEvtQueue) > 0) {
                             /* defer the request - this event will be handled
                              * when the state machine goes back to Idle state */
@@ -749,47 +692,81 @@ static QState LWIPMgr_Idle(LWIPMgr * const me, QEvt const * const e) {
                         }
                         status_ = Q_TRAN(&LWIPMgr_Sending);
                     }
-                    /* ${AOs::LWIPMgr::SM::Active::Idle::DBG_LOG::[ConnExists?]::[MemAvail?]::[else]} */
+                    /* ${AOs::LWIPMgr::SM::Active::Idle::DBG_LOG, ETH_LOG_TCP_SEND::[ConnExists?]::[MemAvail?]::[else]} */
                     else {
                         status_ = Q_HANDLED();
                     }
                 }
-                /* ${AOs::LWIPMgr::SM::Active::Idle::DBG_LOG::[ConnExists?]::[else]} */
+                /* ${AOs::LWIPMgr::SM::Active::Idle::DBG_LOG, ETH_LOG_TCP_SEND::[ConnExists?]::[else]} */
                 else {
                     status_ = Q_HANDLED();
                 }
             }
-            /* ${AOs::LWIPMgr::SM::Active::Idle::DBG_LOG::[else]} */
+            /* ${AOs::LWIPMgr::SM::Active::Idle::DBG_LOG, ETH_LOG_TCP_SEND::[else]} */
             else {
                 status_ = Q_HANDLED();
             }
             break;
         }
-        /* ${AOs::LWIPMgr::SM::Active::Idle::ETH_LOG_TCP_SEND} */
-        case ETH_LOG_TCP_SEND_SIG: {
-            dbg_slow_printf("Got ETH_LOG_TCP_SEND.  LocalPort is %d, TCP state: %d\n", me->tpcb_log->local_port, me->tpcb_log->state);
-            dbg_slow_printf("LWIPMgr_es_log->state: %d, LWIPMgr_es_log: %x\n", LWIPMgr_es_log->state, LWIPMgr_es_log);
+        /* ${AOs::LWIPMgr::SM::Active::Idle::ETH_SYS_TCP_SEND} */
+        case ETH_SYS_TCP_SEND_SIG: {
+
+
             /* Event posted that will include (inside it) a msg to send */
-            if ( NULL != LWIPMgr_es_log) {
+            if (me->upcb->remote_port != (uint16_t)0) {
                 struct pbuf *p = pbuf_new(
                     (u8_t *)((EthEvt const *)e)->msg,
                     ((EthEvt const *)e)->msg_len
                 );
                 if (p != (struct pbuf *)0) {
-                    DBG_printf("Sending\n");
-                    //tcp_write(me->tpcb_log, p->payload, p->tot_len, 1);
-                    //me->es_log->p = p;
-                    LWIPMgr_es_log->p = p;
-                    LWIP_tcpSend(me->tpcb_log, LWIPMgr_es_log);
-                    tcp_sent(me->tpcb_log, LWIP_tcpSent);
-                    pbuf_free(p);                   // don't leak the pbuf!
-                } else {
-                    DBG_printf("Not Sending\n");
+                    udp_send(me->upcb, p);
+                    pbuf_free(p);                   /* don't leak the pbuf! */
                 }
-            } else {
-                DBG_printf("No connection exists for logging\n");
             }
-            status_ = Q_HANDLED();
+            /* ${AOs::LWIPMgr::SM::Active::Idle::ETH_SYS_TCP_SEND::[ConnExists?]} */
+            if (NULL != LWIPMgr_es_sys) {
+                struct pbuf *p = pbuf_new(
+                    (u8_t *)((LrgDataEvt const *)e)->dataBuf,
+                    ((LrgDataEvt const *)e)->dataLen
+                );
+                /* ${AOs::LWIPMgr::SM::Active::Idle::ETH_SYS_TCP_SEND::[ConnExists?]::[MemAvail?]} */
+                if (p != (struct pbuf *)0) {
+                    LWIPMgr_es_sys->p = p;                         // Attach pbuf to the socket state
+                    //dbg_slow_printf("c tcpSend, me->tpcb: %x, LWIPMgr_es_log->pcb: %x\n", (uint32_t) me->tpcb_log, (uint32_t) LWIPMgr_es_log->pcb);
+                    tcp_sent(LWIPMgr_es_sys->pcb, LWIP_tcpSent);   // Set callback
+                    bool dataSent = LWIP_tcpSend(
+                        LWIPMgr_es_sys->pcb,
+                        LWIPMgr_es_sys
+                    );                                             // Queue data for sending
+                    pbuf_free(p);                                  // don't leak the pbuf!
+                    /* ${AOs::LWIPMgr::SM::Active::Idle::ETH_SYS_TCP_SEND::[ConnExists?]::[MemAvail?]::[Datanotsent?]} */
+                    if (false == dataSent) {
+                        /* Failed to send data.  Defer the event (if possible) */
+                        if (QEQueue_getNFree(&me->deferredEvtQueue) > 0) {
+                            /* defer the request - this event will be handled
+                             * when the state machine goes back to Idle state */
+                            QActive_defer((QActive *)me, &me->deferredEvtQueue, e);
+                        } else {
+                            /* notify the request sender that the request was ignored.. */
+                            err_slow_printf("Unable to defer an ETH event");
+                        }
+                        status_ = Q_TRAN(&LWIPMgr_Sending);
+                    }
+                    /* ${AOs::LWIPMgr::SM::Active::Idle::ETH_SYS_TCP_SEND::[ConnExists?]::[MemAvail?]::[else]} */
+                    else {
+                        status_ = Q_HANDLED();
+                    }
+                }
+                /* ${AOs::LWIPMgr::SM::Active::Idle::ETH_SYS_TCP_SEND::[ConnExists?]::[else]} */
+                else {
+                    status_ = Q_HANDLED();
+                }
+            }
+            /* ${AOs::LWIPMgr::SM::Active::Idle::ETH_SYS_TCP_SEND::[else]} */
+            else {
+                ERR_printf("Attempting to send data over system ethernet port but no connection exists.  Something is probably very wrong!\n");
+                status_ = Q_HANDLED();
+            }
             break;
         }
         default: {
@@ -803,8 +780,8 @@ static QState LWIPMgr_Idle(LWIPMgr * const me, QEvt const * const e) {
 static QState LWIPMgr_Sending(LWIPMgr * const me, QEvt const * const e) {
     QState status_;
     switch (e->sig) {
-        /* ${AOs::LWIPMgr::SM::Active::Sending::TCP_LOG_DONE} */
-        case TCP_LOG_DONE_SIG: {
+        /* ${AOs::LWIPMgr::SM::Active::Sending::TCP_DONE} */
+        case TCP_DONE_SIG: {
             status_ = Q_TRAN(&LWIPMgr_Idle);
             break;
         }
@@ -832,6 +809,7 @@ static QState LWIPMgr_Sending(LWIPMgr * const me, QEvt const * const e) {
 }
 
 
+/* Common TCP functions */
 
 /**
  * @brief: A callback function that handles acceptance of a connection
@@ -847,8 +825,8 @@ static QState LWIPMgr_Sending(LWIPMgr * const me, QEvt const * const e) {
  *   @arg ERR_OK: no error
  *   @arg ERR_MEM: memory allocation error
  */
-/*${AOs::LWIP_logTcpAccept} ................................................*/
-static err_t LWIP_logTcpAccept(
+/*${AOs::LWIP_tcpAccept} ...................................................*/
+static err_t LWIP_tcpAccept(
     void * arg,
     struct tcp_pcb * newpcb,
     err_t err
@@ -861,17 +839,23 @@ static err_t LWIP_logTcpAccept(
     LWIP_UNUSED_ARG(err);
 
     if ( LWIPMgr_logPort == newpcb->local_port ) {
-       if ( NULL != LWIPMgr_es_log) {
-          /* A connection on the logging port exists already. */
-          ret_err = ERR_USE;
-          return ret_err;
+        if ( NULL != LWIPMgr_es_log ) {
+            /* A connection on the logging port exists already. */
+            ret_err = ERR_USE;
+            WRN_printf("A connection on the logging port %d exists already.\n", newpcb->local_port );
+            return ret_err;
        }
     } else if ( LWIPMgr_sysPort == newpcb->local_port ) {
-       WRN_printf("System TCP not implemented currently\n");
+        if ( NULL != LWIPMgr_es_sys ) {
+            /* A connection on the system port exists already. */
+            ret_err = ERR_USE;
+            WRN_printf("A connection on the logging port %d exists already.\n", newpcb->local_port );
+            return ret_err;
+       }
     } else {
-       ERR_printf("Unknown port number %d\n", newpcb->local_port );
-       ret_err = ERR_VAL;
-       return ret_err;
+        ERR_printf("Unknown port number %d\n", newpcb->local_port );
+        ret_err = ERR_VAL;
+        return ret_err;
     }
 
     /* commonly observed practice to call tcp_setprio(), why? */
@@ -883,14 +867,25 @@ static err_t LWIP_logTcpAccept(
         es->pcb = newpcb;
         es->retries = 0;
         es->p = NULL;
+        ret_err = ERR_OK;
+
         /* pass newly allocated es to our callbacks */
         tcp_arg(newpcb, es);
-        tcp_recv(newpcb, LWIP_logTcpRecv);
+        tcp_recv(newpcb, LWIP_tcpRecv);
         tcp_err(newpcb, LWIP_tcpError);
         tcp_poll(newpcb, LWIP_tcpPoll, 0);
-        ret_err = ERR_OK;
-        LWIPMgr_es_log = es; /* Tell the opaque pointer about this new structure. */
-        LOG_printf("New connection accepted\n");
+
+        if ( LWIPMgr_logPort == newpcb->local_port ) {
+            LWIPMgr_es_log = es; /* Tell the opaque pointer about this new structure. */
+            LOG_printf("New connection accepted on log/debug port %d\n", newpcb->local_port);
+        } else if ( LWIPMgr_sysPort == newpcb->local_port ) {
+            LWIPMgr_es_sys = es; /* Tell the opaque pointer about this new structure. */
+            LOG_printf("New connection accepted on system port %d\n", newpcb->local_port);
+        } else {
+            ERR_printf("Unknown port number %d\n", newpcb->local_port );
+            ret_err = ERR_VAL;
+            return ret_err;
+        }
     } else {
         ret_err = ERR_MEM;
         ERR_printf("Error allocating LWIP mem for echo state\n");
@@ -900,7 +895,7 @@ static err_t LWIP_logTcpAccept(
 
 /**
  * @brief: A callback function that handles the start of a RECV on the
- * TCP debug/logging socket.
+ * TCP sockets.
  * This function is passed in as a callback to tcp_recv().
  *
  * @param [in] *arg: void pointer to an argument list (unused)
@@ -914,8 +909,8 @@ static err_t LWIP_logTcpAccept(
  *   @arg ERR_OK: no error
  *   @arg ERR_MEM: memory allocation error
  */
-/*${AOs::LWIP_logTcpRecv} ..................................................*/
-static err_t LWIP_logTcpRecv(
+/*${AOs::LWIP_tcpRecv} .....................................................*/
+static err_t LWIP_tcpRecv(
     void * arg,
     struct tcp_pcb * tpcb,
     struct pbuf * p,
@@ -954,31 +949,7 @@ static err_t LWIP_logTcpRecv(
         /* store reference to incoming pbuf (chain) */
         es->p = p;
 
-        /* This eth port can only receive menu commands */
-        MenuEvt *menuEvt = Q_NEW( MenuEvt, DBG_MENU_REQ_SIG );
-
-        /* 2. Fill the msg payload with payload (the actual received msg)*/
-        MEMCPY(
-              menuEvt->buffer,
-              p->payload,
-              (p->tot_len)-1
-        );
-        menuEvt->bufferLen = (p->tot_len)-1;
-        menuEvt->msgSrc = ETH_PORT_LOG;
-
-        /* 3. Publish the newly created event to current AO */
-        QF_PUBLISH( (QEvent *)menuEvt, AO_LWIPMgr );
-
-        /* Free the pbuf */
-        tcp_recved(tpcb, p->tot_len);
-        es->p = NULL;
-        pbuf_free(p);
-        ret_err = ERR_OK;
-    } else if (es->state == ES_RECEIVED) {
-        /* read some more data */
-        if(es->p == NULL) {
-            es->p = p;
-
+        if ( LWIPMgr_logPort == tpcb->local_port ) {
             /* This eth port can only receive menu commands */
             MenuEvt *menuEvt = Q_NEW( MenuEvt, DBG_MENU_REQ_SIG );
 
@@ -993,6 +964,56 @@ static err_t LWIP_logTcpRecv(
 
             /* 3. Publish the newly created event to current AO */
             QF_PUBLISH( (QEvent *)menuEvt, AO_LWIPMgr );
+
+        } else if ( LWIPMgr_sysPort == tpcb->local_port ) {
+            LOG_printf(
+                "Received data on SYS port %d.  Currently unimplemented. Discarding.\n",
+                tpcb->local_port
+            );
+        } else {
+            LOG_printf(
+                "Received data on unknown port %d.  Discarding.\n",
+                tpcb->local_port
+            );
+        }
+
+        /* Free the pbuf */
+        tcp_recved(tpcb, p->tot_len);
+        es->p = NULL;
+        pbuf_free(p);
+        ret_err = ERR_OK;
+    } else if (es->state == ES_RECEIVED) {
+        /* read some more data */
+        if(es->p == NULL) {
+            es->p = p;
+
+            if ( LWIPMgr_logPort == tpcb->local_port ) {
+                /* This eth port can only receive menu commands */
+                MenuEvt *menuEvt = Q_NEW( MenuEvt, DBG_MENU_REQ_SIG );
+
+                /* 2. Fill the msg payload with payload (the actual received msg)*/
+                MEMCPY(
+                      menuEvt->buffer,
+                      p->payload,
+                      (p->tot_len)-1
+                );
+                menuEvt->bufferLen = (p->tot_len)-1;
+                menuEvt->msgSrc = ETH_PORT_LOG;
+
+                /* 3. Publish the newly created event to current AO */
+                QF_PUBLISH( (QEvent *)menuEvt, AO_LWIPMgr );
+
+            } else if ( LWIPMgr_sysPort == tpcb->local_port ) {
+                LOG_printf(
+                    "Received data on SYS port %d.  Currently unimplemented. Discarding.\n",
+                    tpcb->local_port
+                );
+            } else {
+                LOG_printf(
+                    "Received data on unknown port %d.  Discarding.\n",
+                    tpcb->local_port
+                );
+            }
 
             /* Free the pbuf */
             tcp_recved(tpcb, p->tot_len);
@@ -1020,242 +1041,6 @@ static err_t LWIP_logTcpRecv(
         ret_err = ERR_OK;
     }
     return ret_err;
-}
-
-
-/**
- * @brief: A callback function that handles acceptance of a connection
- * on an echo TCP socket.
- * This function is passed in as a callback to tcp_accept().
- *
- * @param [in] *arg: void pointer to an argument list (unused)
- * @param [in] *newpcb: struct tcp_pcb pointer to the pcb that is handling the
- * context for this connection.
- * @param [in] err: err_t passed in from the caller. (unused)
- *
- * @return err: err_t indicating error that may have occurred.
- *   @arg ERR_OK: no error
- *   @arg ERR_MEM: memory allocation error
- */
-/*${AOs::echo_accept} ......................................................*/
-static err_t echo_accept(
-    void * arg,
-    struct tcp_pcb * newpcb,
-    err_t err
-    )
-{
-    err_t ret_err;
-    struct echo_state *es;
-
-    LWIP_UNUSED_ARG(arg);
-    LWIP_UNUSED_ARG(err);
-
-    /* commonly observed practice to call tcp_setprio(), why? */
-    tcp_setprio(newpcb, TCP_PRIO_MIN);
-
-    es = (struct echo_state *)mem_malloc(sizeof(struct echo_state));
-    if ( es != NULL ) {
-        es->state = ES_ACCEPTED;
-        es->pcb = newpcb;
-        es->retries = 0;
-        es->p = NULL;
-        /* pass newly allocated es to our callbacks */
-        tcp_arg(newpcb, es);
-        tcp_recv(newpcb, echo_recv);
-        tcp_err(newpcb, LWIP_tcpError);
-        tcp_poll(newpcb, LWIP_tcpPoll, 0);
-        ret_err = ERR_OK;
-        LOG_printf("New connection accepted\n");
-    } else {
-        ret_err = ERR_MEM;
-        ERR_printf("Error allocating LWIP mem for echo state\n");
-    }
-    return ret_err;
-}
-
-/**
- * @brief: A callback function that handles the start of a RECV on the echo
- * TCP socket.
- * This function is passed in as a callback to tcp_recv().
- *
- * @param [in] *arg: void pointer to an argument list (unused)
- * @param [in] *newpcb: struct tcp_pcb pointer to the pcb that is handling the
- * context for this connection.
- * @param [in] *p: struct pbuf pointer to the LWIP pbuf that actually
- * contains the data received.
- * @param [in] err: err_t passed in from the caller. (unused)
- *
- * @return err: err_t indicating error that may have occurred.
- *   @arg ERR_OK: no error
- *   @arg ERR_MEM: memory allocation error
- */
-/*${AOs::echo_recv} ........................................................*/
-static err_t echo_recv(
-    void * arg,
-    struct tcp_pcb * tpcb,
-    struct pbuf * p,
-    err_t err)
-{
-    struct echo_state *es;
-    err_t ret_err;
-
-    LWIP_ASSERT("arg != NULL",arg != NULL);
-    es = (struct echo_state *)arg;
-    if (p == NULL) {
-        /* remote host closed connection */
-        es->state = ES_CLOSING;
-        if(es->p == NULL) {
-            LOG_printf("Closing connection\n");
-            /* we're done sending, close it */
-            LWIP_tcpClose(tpcb, es);
-        } else {
-            /* we're not done yet */
-            tcp_sent(tpcb, LWIP_tcpSent);
-            LWIP_tcpSend(tpcb, es);
-        }
-        ret_err = ERR_OK;
-
-    } else if(err != ERR_OK) {
-        /* cleanup, for unkown reason */
-        if (p != NULL) {
-            es->p = NULL;
-            pbuf_free(p);
-        }
-        ret_err = err;
-        ERR_printf("Unknown error\n");
-    } else if(es->state == ES_ACCEPTED) {
-        /* first data chunk in p->payload */
-        es->state = ES_RECEIVED;
-        /* store reference to incoming pbuf (chain) */
-        es->p = p;
-        /* install send completion notifier */
-        tcp_sent(tpcb, LWIP_tcpSent);
-        LWIP_tcpSend(tpcb, es);
-        ret_err = ERR_OK;
-    } else if (es->state == ES_RECEIVED) {
-        /* read some more data */
-        if(es->p == NULL) {
-            es->p = p;
-            tcp_sent(tpcb, LWIP_tcpSent);
-            LWIP_tcpSend(tpcb, es);
-        } else {
-            struct pbuf *ptr;
-             /* chain pbufs to the end of what we recv'ed previously  */
-            ptr = es->p;
-            pbuf_chain(ptr,p);
-        }
-        ret_err = ERR_OK;
-    } else if(es->state == ES_CLOSING) {
-        /* odd case, remote side closing twice, trash data */
-        tcp_recved(tpcb, p->tot_len);
-        es->p = NULL;
-        pbuf_free(p);
-        ret_err = ERR_OK;
-    } else {
-        /* unkown es->state, trash data  */
-        tcp_recved(tpcb, p->tot_len);
-        es->p = NULL;
-        pbuf_free(p);
-        ret_err = ERR_OK;
-    }
-    return ret_err;
-}
-
-/**
- * @brief: A callback function that handles the errors on a TCP socket.
- * This function is passed in as a callback to tcp_recv().
- *
- * @param [in] *arg: void pointer to an argument list (unused)
- * @param [in] err: err_t passed in from the caller. (unused)
- *
- * @return None
- */
-/*${AOs::LWIP_tcpError} ....................................................*/
-static void LWIP_tcpError(void * arg, err_t err) {
-    struct echo_state *es;
-    LWIP_UNUSED_ARG(err);
-    es = (struct echo_state *)arg;
-    if (es != NULL) {
-        mem_free(es);
-        LWIPMgr_es_log = NULL; /* Clear out the global opaque pointer */
-    }
-    ERR_printf("Handling error, freeing memory\n");
-}
-
-/**
- * @brief: A callback function that handles the start of a RECV on a TCP socket.
- * This function is passed in as a callback to tcp_recv().
- *
- * @param [in] *arg: void pointer to an argument list (unused)
- * @param [in|out] *tpcb: struct tcp_pcb pointer to the pcb that is handling the
- * context for this connection.
- *
- * @return err: err_t indicating error that may have occurred.
- *   @arg ERR_OK: no error
- *   @arg ERR_MEM: memory allocation error
- */
-/*${AOs::LWIP_tcpPoll} .....................................................*/
-static err_t LWIP_tcpPoll(void * arg, struct tcp_pcb * tpcb) {
-    err_t ret_err;
-    struct echo_state *es;
-    es = (struct echo_state *)arg;
-    if (es != NULL) {
-        if (es->p != NULL) {
-            /* there is a remaining pbuf (chain)  */
-            tcp_sent(tpcb, LWIP_tcpSent);
-            LWIP_tcpSend(tpcb, es);
-        } else {
-            /* no remaining pbuf (chain)  */
-            if(es->state == ES_CLOSING) {
-                LWIP_tcpClose(tpcb, es);
-            }
-        }
-        ret_err = ERR_OK;
-    } else {
-        /* nothing to be done */
-        tcp_abort(tpcb);
-        ret_err = ERR_ABRT;
-    }
-    return ret_err;
-}
-
-/**
- * @brief: A callback function that handles the start of a RECV on a
- * TCP socket.
- * This function is passed in as a callback to tcp_recv().
- *
- * @param [in] *arg: void pointer to an argument list (unused)
- * @param [in|out] *tpcb: struct tcp_pcb pointer to the pcb that is handling the
- * context for this connection.
- * @param [in] len: uint16_t length of data sent.
- *
- * @return err: err_t indicating error that may have occurred.
- *   @arg ERR_OK: no error
- *   @arg ERR_MEM: memory allocation error
- */
-/*${AOs::LWIP_tcpSent} .....................................................*/
-static err_t LWIP_tcpSent(
-    void * arg,
-    struct tcp_pcb * tpcb,
-    uint16_t len)
-{
-    struct echo_state *es;
-    LWIP_UNUSED_ARG(len);
-    es = (struct echo_state *)arg;
-    es->retries = 0;
-    if(es->p != NULL) {
-        /* still got pbufs to send */
-        tcp_sent(tpcb, LWIP_tcpSent);
-        LWIP_tcpSend(tpcb, es);
-    } else {
-        /* no more pbufs to send */
-        if(es->state == ES_CLOSING) {
-            LWIP_tcpClose(tpcb, es);
-        }
-        QEvt *qEvt = Q_NEW( QEvt, TCP_LOG_DONE_SIG);
-        QF_PUBLISH(qEvt, AO_LWIPMgr);
-    }
-    return ERR_OK;
 }
 
 /**
@@ -1315,6 +1100,82 @@ static bool LWIP_tcpSend(struct tcp_pcb * tpcb, struct echo_state * es) {
 }
 
 /**
+ * @brief: A callback function that handles the start of a RECV on a
+ * TCP socket.
+ * This function is passed in as a callback to tcp_recv().
+ *
+ * @param [in] *arg: void pointer to an argument list (unused)
+ * @param [in|out] *tpcb: struct tcp_pcb pointer to the pcb that is handling the
+ * context for this connection.
+ * @param [in] len: uint16_t length of data sent.
+ *
+ * @return err: err_t indicating error that may have occurred.
+ *   @arg ERR_OK: no error
+ *   @arg ERR_MEM: memory allocation error
+ */
+/*${AOs::LWIP_tcpSent} .....................................................*/
+static err_t LWIP_tcpSent(
+    void * arg,
+    struct tcp_pcb * tpcb,
+    uint16_t len)
+{
+    struct echo_state *es;
+    LWIP_UNUSED_ARG(len);
+    es = (struct echo_state *)arg;
+    es->retries = 0;
+    if(es->p != NULL) {
+        /* still got pbufs to send */
+        tcp_sent(tpcb, LWIP_tcpSent);
+        LWIP_tcpSend(tpcb, es);
+    } else {
+        /* no more pbufs to send */
+        if(es->state == ES_CLOSING) {
+            LWIP_tcpClose(tpcb, es);
+        }
+        QEvt *qEvt = Q_NEW( QEvt, TCP_DONE_SIG);
+        QF_PUBLISH(qEvt, AO_LWIPMgr);
+    }
+    return ERR_OK;
+}
+
+/**
+ * @brief: A callback function that handles the start of a RECV on a TCP socket.
+ * This function is passed in as a callback to tcp_recv().
+ *
+ * @param [in] *arg: void pointer to an argument list (unused)
+ * @param [in|out] *tpcb: struct tcp_pcb pointer to the pcb that is handling the
+ * context for this connection.
+ *
+ * @return err: err_t indicating error that may have occurred.
+ *   @arg ERR_OK: no error
+ *   @arg ERR_MEM: memory allocation error
+ */
+/*${AOs::LWIP_tcpPoll} .....................................................*/
+static err_t LWIP_tcpPoll(void * arg, struct tcp_pcb * tpcb) {
+    err_t ret_err;
+    struct echo_state *es;
+    es = (struct echo_state *)arg;
+    if (es != NULL) {
+        if (es->p != NULL) {
+            /* there is a remaining pbuf (chain)  */
+            tcp_sent(tpcb, LWIP_tcpSent);
+            LWIP_tcpSend(tpcb, es);
+        } else {
+            /* no remaining pbuf (chain)  */
+            if(es->state == ES_CLOSING) {
+                LWIP_tcpClose(tpcb, es);
+            }
+        }
+        ret_err = ERR_OK;
+    } else {
+        /* nothing to be done */
+        tcp_abort(tpcb);
+        ret_err = ERR_ABRT;
+    }
+    return ret_err;
+}
+
+/**
  * @brief: A callback function that handles the closing the TCP socket.
  * This function is passed in as a callback to tcp_accept().
  *
@@ -1333,12 +1194,54 @@ static void LWIP_tcpClose(struct tcp_pcb * tpcb, struct echo_state * es) {
     tcp_poll(tpcb, NULL, 0);
 
     if (es != NULL) {
+        if ( LWIPMgr_logPort == tpcb->local_port ) {
+            LWIPMgr_es_log = NULL;
+            LOG_printf("Log/Dbg TCP Connection on port %d closed\n", tpcb->local_port);
+        } else if ( LWIPMgr_sysPort == tpcb->local_port ) {
+            LWIPMgr_es_log = NULL;
+            LOG_printf("System TCP Connection on port %d closed\n", tpcb->local_port);
+        } else {
+            WRN_printf(
+                "Attempting to close an unknown socket on port %d\n",
+                tpcb->local_port
+            );
+        }
         mem_free(es);
-        LWIPMgr_es_log = NULL;
     }
 
     tcp_close(tpcb);
-    LOG_printf("Connection closed\n");
+}
+
+/**
+ * @brief: A callback function that handles the errors on a TCP socket.
+ * This function is passed in as a callback to tcp_recv().
+ *
+ * @param [in] *arg: void pointer to an argument list (unused)
+ * @param [in] err: err_t passed in from the caller. (unused)
+ *
+ * @return None
+ */
+/*${AOs::LWIP_tcpError} ....................................................*/
+static void LWIP_tcpError(void * arg, err_t err) {
+    struct echo_state *es;
+    LWIP_UNUSED_ARG(err);
+    es = (struct echo_state *)arg;
+    if (es != NULL) {
+        if ( LWIPMgr_logPort == es->pcb->local_port ) {
+            LWIPMgr_es_log = NULL;
+            LOG_printf("Log/Dbg TCP Connection on port %d closed\n", es->pcb->local_port);
+        } else if ( LWIPMgr_sysPort == es->pcb->local_port ) {
+            LWIPMgr_es_log = NULL;
+            LOG_printf("System TCP Connection on port %d closed\n", es->pcb->local_port);
+        } else {
+            WRN_printf(
+                "Attempting to close an unknown socket on port %d\n",
+                es->pcb->local_port
+            );
+        }
+        mem_free(es);
+    }
+    ERR_printf("Handling error, freeing memory\n");
 }
 
 /* Ethernet message sender ...................................................*/
