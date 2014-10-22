@@ -83,71 +83,71 @@ void MENU_toggleDbgModGeneralAction( void )
 {
    DBG_printf("Debugging for GENERAL module was %s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_GENERAL) ? "ON" : "OFF" );
    DBG_TOGGLE_DEBUG_FOR_MODULE(DBG_MODL_GENERAL);
-   LOG_printf("Debugging for GENERAL module is now %s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_GENERAL) == 1 ? "ON" : "OFF" );
+   LOG_printf("Debugging for GENERAL module is now %s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_GENERAL) ? "ON" : "OFF" );
 }
 
 /******************************************************************************/
 void MENU_toggleDbgModSerialAction( void )
 {
-   DBG_printf("Debugging for SERIAL module was %s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_SERIAL) == 1 ? "ON" : "OFF" );
+   DBG_printf("Debugging for SERIAL module was %s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_SERIAL) ? "ON" : "OFF" );
    DBG_TOGGLE_DEBUG_FOR_MODULE(DBG_MODL_SERIAL);
-   LOG_printf("Debugging for SERIAL module is now %s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_SERIAL) == 1 ? "ON" : "OFF" );
+   LOG_printf("Debugging for SERIAL module is now %s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_SERIAL) ? "ON" : "OFF" );
 }
 
 /******************************************************************************/
 void MENU_toggleDbgModTimeAction( void )
 {
-   DBG_printf("Debugging for TIME module was %s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_TIME) == 1 ? "ON" : "OFF" );
+   DBG_printf("Debugging for TIME module was %s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_TIME) ? "ON" : "OFF" );
    DBG_TOGGLE_DEBUG_FOR_MODULE(DBG_MODL_TIME);
-   LOG_printf("Debugging for TIME module is now %s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_TIME) == 1 ? "ON" : "OFF" );
+   LOG_printf("Debugging for TIME module is now %s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_TIME) ? "ON" : "OFF" );
 }
 
 /******************************************************************************/
 void MENU_toggleDbgModEthAction( void )
 {
-   DBG_printf("Debugging for ETHERNET module was %s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_ETH) == 1 ? "ON" : "OFF" );
+   DBG_printf("Debugging for ETHERNET module was %s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_ETH) ? "ON" : "OFF" );
    DBG_TOGGLE_DEBUG_FOR_MODULE(DBG_MODL_ETH);
-   LOG_printf("Debugging for ETHERNET module is now %s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_ETH) == 1 ? "ON" : "OFF" );
+   LOG_printf("Debugging for ETHERNET module is now %s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_ETH) ? "ON" : "OFF" );
 }
 
 /******************************************************************************/
 void MENU_toggleDbgModI2CAction( void )
 {
-   DBG_printf("Debugging for I2C module was %s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_I2C) == 1 ? "ON" : "OFF" );
+   DBG_printf("Debugging for I2C module was %s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_I2C) ? "ON" : "OFF" );
    DBG_TOGGLE_DEBUG_FOR_MODULE(DBG_MODL_I2C);
-   LOG_printf("Debugging for I2C module is now %s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_I2C) == 1 ? "ON" : "OFF" );
+   LOG_printf("Debugging for I2C module is now %s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_I2C) ? "ON" : "OFF" );
 }
 
 /******************************************************************************/
 void MENU_toggleDbgModNORAction( void )
 {
-   DBG_printf("Debugging for NOR module was %s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_NOR) == 1 ? "ON" : "OFF" );
+   DBG_printf("Debugging for NOR module was %s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_NOR) ? "ON" : "OFF" );
    DBG_TOGGLE_DEBUG_FOR_MODULE(DBG_MODL_NOR);
-   LOG_printf("Debugging for NOR module is now %s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_NOR) == 1 ? "ON" : "OFF" );
+   LOG_printf("Debugging for NOR module is now %s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_NOR) ? "ON" : "OFF" );
 }
 
 /******************************************************************************/
 void MENU_toggleDbgModSDRAMAction( void )
 {
-   DBG_printf("Debugging for SDRAM module was %s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_SDRAM) == 1 ? "ON" : "OFF" );
+   DBG_printf("Debugging for SDRAM module was %s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_SDRAM) ? "ON" : "OFF" );
    DBG_TOGGLE_DEBUG_FOR_MODULE(DBG_MODL_SDRAM);
-   LOG_printf("Debugging for SDRAM module is now %s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_SDRAM) == 1 ? "ON" : "OFF" );
+   LOG_printf("Debugging for SDRAM module is now %s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_SDRAM) ? "ON" : "OFF" );
 }
 
 /******************************************************************************/
 void MENU_toggleDbgModDBGAction( void )
 {
-   DBG_printf("Debugging for MENU module was %s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_DBG) == 1 ? "ON" : "OFF" );
+   DBG_printf("Debugging for DBG module was %s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_DBG) ? "ON" : "OFF" );
    DBG_TOGGLE_DEBUG_FOR_MODULE(DBG_MODL_DBG);
-   LOG_printf("Debugging for MENU module is now %s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_DBG) == 1 ? "ON" : "OFF" );
+   LOG_printf("Debugging for DBG module is now %s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_DBG) ? "ON" : "OFF" );
 }
 
 /******************************************************************************/
 void MENU_toggleDbgModCOMMAction( void )
 {
-   DBG_printf("Debugging for COMM module was %s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_COMM) == 1 ? "ON" : "OFF" );
+   DBG_printf("Debugging for COMM module was %s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_COMM) ? "ON" : "OFF" );
    DBG_TOGGLE_DEBUG_FOR_MODULE(DBG_MODL_COMM);
-   LOG_printf("Debugging for COMM module is now %s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_COMM) == 1 ? "ON" : "OFF" );
+   LOG_printf("Debugging for COMM module is now %s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_COMM) ? "ON" : "OFF" );
 }
 
 
