@@ -98,7 +98,7 @@ void MENU_toggleDbgModSerialAction( void )
 void MENU_toggleDbgModTimeAction( void )
 {
    DBG_printf("Debugging for TIME module was %s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_TIME) == 1 ? "ON" : "OFF" );
-   DBG_TOGGLE_DEBUG_FOR_MODULE(DBG_MODL_SERIAL);
+   DBG_TOGGLE_DEBUG_FOR_MODULE(DBG_MODL_TIME);
    LOG_printf("Debugging for TIME module is now %s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_TIME) == 1 ? "ON" : "OFF" );
 }
 

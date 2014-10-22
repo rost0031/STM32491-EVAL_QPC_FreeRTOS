@@ -230,19 +230,21 @@ treeNode_t* MENU_parse(
       return( newNode );
    }
 
+   DBG_printf("BufferLen %d\n", bufferLen);
+
    /* Parse the universal commands first */
-   if ( 0 == strncmp((const char *)pBuffer, "?", 1 ) ) {
+   if ( 0 == strncmp((const char *)pBuffer, "?", 1 ) && 1 == bufferLen-1 ) {
       MENU_printHelp( msgSrc );
-   } else if ( 0 == strncmp((const char *)pBuffer, "T", 1 ) ) {
+   } else if ( 0 == strncmp((const char *)pBuffer, "T", 1 ) && 1 == bufferLen-1 ) {
       newNode = &menu;
       MENU_printMenuExpandedAtCurrNode( newNode, msgSrc );
-   } else if ( 0 == strncmp((const char *)pBuffer, "P", 1 ) ) {
+   } else if ( 0 == strncmp((const char *)pBuffer, "P", 1 ) && 1 == bufferLen-1 ) {
       MENU_printMenuExpandedAtCurrNode(newNode, msgSrc );
-   } else if ( 0 == strncmp((const char *)pBuffer, "A", 1 ) ) {
+   } else if ( 0 == strncmp((const char *)pBuffer, "A", 1 ) && 1 == bufferLen-1 ) {
       /* Have to pass in the root of the menu to make sure to get the whole menu
        * and not forget where we are currently at. */
       MENU_printEntireExpandedMenu( &menu, msgSrc );
-   } else if ( 0 == strncmp((const char *)pBuffer, "U", 1 ) ) {
+   } else if ( 0 == strncmp((const char *)pBuffer, "U", 1 ) && 1 == bufferLen-1 ) {
       if ( NULL != node->fakeParentNode ) {
          newNode = node->fakeParentNode;
       } else {
