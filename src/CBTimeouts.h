@@ -65,6 +65,11 @@
    #define LL_MAX_TIMEOUT_I2C_BUS_RECOVERY_SEC                             1.2
    /*@} I2C Timeouts */
 
+   /** \name ETH Timeouts
+    * These are the timeouts used by the low level SerialMgr AO.
+    *@{*/
+   #define LL_MAX_TIMEOUT_TCP_SEND_SEC                                     3.0
+   /*@} ETH Timeout Maximums*/
 
 /*@} Coupler Board Timeout Maximums*/
 

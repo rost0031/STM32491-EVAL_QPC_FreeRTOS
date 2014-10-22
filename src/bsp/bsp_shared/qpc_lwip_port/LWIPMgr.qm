@@ -25,9 +25,6 @@
    <documentation>/**
  * \brief LWIPMgr &quot;class&quot;
  */</documentation>
-   <attribute name="te_LWIP_SLOW_TICK" type="QTimeEvt" visibility="0x01" properties="0x00">
-    <documentation>/**&lt; Local timer for LWIP slow tick. */</documentation>
-   </attribute>
    <attribute name="*netif" type="struct netif" visibility="0x01" properties="0x00">
     <documentation>/**&lt; Pointer to LWIP netif struct. */</documentation>
    </attribute>
@@ -79,6 +76,12 @@
    <attribute name="es_sys" type="struct echo_state*" visibility="0x01" properties="0x01">
     <documentation>/* Pointer to the log socket state that will be passed in to the TCP callback 
  * functions. */</documentation>
+   </attribute>
+   <attribute name="te_LWIP_SLOW_TICK" type="QTimeEvt" visibility="0x01" properties="0x00">
+    <documentation>/**&lt; Local timer for LWIP slow tick. */</documentation>
+   </attribute>
+   <attribute name="te_TcpSend" type="QTimeEvt" visibility="0x01" properties="0x00">
+    <documentation>/**&lt; Local timer for TCP send timeout. */</documentation>
    </attribute>
    <statechart>
     <initial target="../1/5">
@@ -192,7 +195,16 @@ QActive_subscribe((QActive *)me, TCP_DONE_SIG);</action>
     &amp;me-&gt;te_LWIP_SLOW_TICK,
     (QActive *)me,
     (LWIP_SLOW_TICK_MS * BSP_TICKS_PER_SEC) / 1000
-);</entry>
+);
+
+/* Post all the other timers and disarm them right away so it can be
+ * rearmed at any point without worrying asserts. */
+QTimeEvt_postIn(
+    &amp;me-&gt;te_TcpSend,
+    (QActive *)me,
+    SEC_TO_TICKS( LL_MAX_TIMEOUT_TCP_SEND_SEC )
+);
+QTimeEvt_disarm(&amp;me-&gt;te_TcpSend);</entry>
      <exit>QTimeEvt_disarm(&amp;me-&gt;te_LWIP_SLOW_TICK);</exit>
      <tran trig="ETH_UDP_SEND">
       <action>/* Event posted that will include (inside it) a msg to send */
@@ -287,6 +299,22 @@ if (me-&gt;auto_ip_tmr &gt;= AUTOIP_TMR_INTERVAL) {
       </tran_glyph>
      </tran>
      <state name="Idle">
+      <documentation>/**
+ * @brief This state is for handling TCP send events.
+ * When a TCP SEND event is received, the state will route it to the appropriate
+ * signal handler who will then attempt to buffer it in the TCP LWIP queue.  If
+ * there's no space available, the event is deferred and the SM goes to the
+ * Sending state.  If the data was successfully buffered in the TCP LWIP queue,
+ * the SM stays in the Idle state.
+ *
+ * @note: data in the TCP LWIP queue is sent out when the LWIP coarse timer
+ * expires.
+ *
+ * @param  [in|out] me: Pointer to the state machine
+ * @param  [in|out]  e:  Pointer to the event being processed.
+ * @return status: QState type that specifies where the state
+ * machine is going next.
+ */</documentation>
       <entry>/* recall the request from the private requestQueue */
 QActive_recall(
     (QActive *)me,
@@ -518,6 +546,27 @@ if (QEQueue_getNFree(&amp;me-&gt;deferredEvtQueue) &gt; 0) {
       </state_glyph>
      </state>
      <state name="Sending">
+      <documentation>/**
+ * @brief This state is for handling TCP send events while the TCP LWIP queue is
+ * full.
+ * After the TCP LWIP queue fills up, the SM goes to this state where any TCP
+ * SEND events will get deferred.  The SM leaves this state after receiving a 
+ *
+ * @note: data in the TCP LWIP queue is sent out when the LWIP coarse timer
+ * expires.
+ *
+ * @param  [in|out] me: Pointer to the state machine
+ * @param  [in|out]  e:  Pointer to the event being processed.
+ * @return status: QState type that specifies where the state
+ * machine is going next.
+ */</documentation>
+      <entry>/* Arm the timer so if the connection is broken for some reason, we can get back
+ * to idle state */
+QTimeEvt_rearm(
+    &amp;me-&gt;te_TcpSend,
+    SEC_TO_TICKS( LL_MAX_TIMEOUT_TCP_SEND_SEC )
+);</entry>
+      <exit>QTimeEvt_disarm( &amp;me-&gt;te_TcpSend );</exit>
       <tran trig="TCP_DONE" target="../../5">
        <tran_glyph conn="99,50,3,1,-20">
         <action box="-15,-2,15,2"/>
@@ -536,7 +585,16 @@ if (QEQueue_getNFree(&amp;me-&gt;deferredEvtQueue) &gt; 0) {
         <action box="0,-6,16,6"/>
        </tran_glyph>
       </tran>
-      <state_glyph node="99,6,19,47"/>
+      <tran trig="TCP_TIMEOUT" target="../../5">
+       <action>ERR_printf(&quot;Timed out waiting for TCP acks.  Returning to Idle.  Data loss likely\n&quot;);</action>
+       <tran_glyph conn="99,53,3,1,-20">
+        <action box="-15,-2,13,2"/>
+       </tran_glyph>
+      </tran>
+      <state_glyph node="99,6,19,48">
+       <entry box="1,2,6,2"/>
+       <exit box="1,4,6,2"/>
+      </state_glyph>
      </state>
      <state_glyph node="3,2,125,78">
       <entry box="1,2,5,2"/>
@@ -562,6 +620,7 @@ if (QEQueue_getNFree(&amp;me-&gt;deferredEvtQueue) &gt; 0) {
 
 QActive_ctor(&amp;me-&gt;super, (QStateHandler)&amp;LWIPMgr_initial);
 QTimeEvt_ctor(&amp;me-&gt;te_LWIP_SLOW_TICK, LWIP_SLOW_TICK_SIG);
+QTimeEvt_ctor(&amp;me-&gt;te_TcpSend, TCP_TIMEOUT_SIG);
 
 /* Initialize the deferred event queue and storage for it */
 QEQueue_init(
@@ -1198,6 +1257,7 @@ enum LWIPMgrSignals {
     ETH_SYS_TCP_SEND_SIG,
     ETH_TCP_DATA_RECV_SIG,
     TCP_DONE_SIG,
+    TCP_TIMEOUT_SIG,
     MAX_PUB_SIG,                                  /* the last published signal */
 };
 

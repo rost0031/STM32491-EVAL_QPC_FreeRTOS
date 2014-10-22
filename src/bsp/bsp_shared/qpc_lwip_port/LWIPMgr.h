@@ -60,6 +60,7 @@ enum LWIPMgrSignals {
     ETH_SYS_TCP_SEND_SIG,
     ETH_TCP_DATA_RECV_SIG,
     TCP_DONE_SIG,
+    TCP_TIMEOUT_SIG,
     MAX_PUB_SIG,                                  /* the last published signal */
 };
 

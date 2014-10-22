@@ -82,9 +82,6 @@ typedef struct {
 /* protected: */
     QActive super;
 
-    /**< Local timer for LWIP slow tick. */
-    QTimeEvt te_LWIP_SLOW_TICK;
-
     /**< Pointer to LWIP netif struct. */
     struct netif *netif;
 
@@ -132,6 +129,12 @@ typedef struct {
 
     /**< Storage for deferred event queue. */
     QTimeEvt const * deferredEvtQSto[100];
+
+    /**< Local timer for LWIP slow tick. */
+    QTimeEvt te_LWIP_SLOW_TICK;
+
+    /**< Local timer for TCP send timeout. */
+    QTimeEvt te_TcpSend;
 } LWIPMgr;
 
 /* Keeps track of what port is used by logging TCP connection */
@@ -162,7 +165,39 @@ static QState LWIPMgr_initial(LWIPMgr * const me, QEvt const * const e);
  * machine is going next.
  */
 static QState LWIPMgr_Active(LWIPMgr * const me, QEvt const * const e);
+
+/**
+ * @brief This state is for handling TCP send events.
+ * When a TCP SEND event is received, the state will route it to the appropriate
+ * signal handler who will then attempt to buffer it in the TCP LWIP queue.  If
+ * there's no space available, the event is deferred and the SM goes to the
+ * Sending state.  If the data was successfully buffered in the TCP LWIP queue,
+ * the SM stays in the Idle state.
+ *
+ * @note: data in the TCP LWIP queue is sent out when the LWIP coarse timer
+ * expires.
+ *
+ * @param  [in|out] me: Pointer to the state machine
+ * @param  [in|out]  e:  Pointer to the event being processed.
+ * @return status: QState type that specifies where the state
+ * machine is going next.
+ */
 static QState LWIPMgr_Idle(LWIPMgr * const me, QEvt const * const e);
+
+/**
+ * @brief This state is for handling TCP send events while the TCP LWIP queue is
+ * full.
+ * After the TCP LWIP queue fills up, the SM goes to this state where any TCP
+ * SEND events will get deferred.  The SM leaves this state after receiving a
+ *
+ * @note: data in the TCP LWIP queue is sent out when the LWIP coarse timer
+ * expires.
+ *
+ * @param  [in|out] me: Pointer to the state machine
+ * @param  [in|out]  e:  Pointer to the event being processed.
+ * @return status: QState type that specifies where the state
+ * machine is going next.
+ */
 static QState LWIPMgr_Sending(LWIPMgr * const me, QEvt const * const e);
 
 
@@ -340,6 +375,7 @@ void LWIPMgr_ctor(void) {
 
     QActive_ctor(&me->super, (QStateHandler)&LWIPMgr_initial);
     QTimeEvt_ctor(&me->te_LWIP_SLOW_TICK, LWIP_SLOW_TICK_SIG);
+    QTimeEvt_ctor(&me->te_TcpSend, TCP_TIMEOUT_SIG);
 
     /* Initialize the deferred event queue and storage for it */
     QEQueue_init(
@@ -475,6 +511,15 @@ static QState LWIPMgr_Active(LWIPMgr * const me, QEvt const * const e) {
                 (QActive *)me,
                 (LWIP_SLOW_TICK_MS * BSP_TICKS_PER_SEC) / 1000
             );
+
+            /* Post all the other timers and disarm them right away so it can be
+             * rearmed at any point without worrying asserts. */
+            QTimeEvt_postIn(
+                &me->te_TcpSend,
+                (QActive *)me,
+                SEC_TO_TICKS( LL_MAX_TIMEOUT_TCP_SEND_SEC )
+            );
+            QTimeEvt_disarm(&me->te_TcpSend);
             status_ = Q_HANDLED();
             break;
         }
@@ -583,6 +628,23 @@ static QState LWIPMgr_Active(LWIPMgr * const me, QEvt const * const e) {
     }
     return status_;
 }
+
+/**
+ * @brief This state is for handling TCP send events.
+ * When a TCP SEND event is received, the state will route it to the appropriate
+ * signal handler who will then attempt to buffer it in the TCP LWIP queue.  If
+ * there's no space available, the event is deferred and the SM goes to the
+ * Sending state.  If the data was successfully buffered in the TCP LWIP queue,
+ * the SM stays in the Idle state.
+ *
+ * @note: data in the TCP LWIP queue is sent out when the LWIP coarse timer
+ * expires.
+ *
+ * @param  [in|out] me: Pointer to the state machine
+ * @param  [in|out]  e:  Pointer to the event being processed.
+ * @return status: QState type that specifies where the state
+ * machine is going next.
+ */
 /*${AOs::LWIPMgr::SM::Active::Idle} ........................................*/
 static QState LWIPMgr_Idle(LWIPMgr * const me, QEvt const * const e) {
     QState status_;
@@ -776,10 +838,42 @@ static QState LWIPMgr_Idle(LWIPMgr * const me, QEvt const * const e) {
     }
     return status_;
 }
+
+/**
+ * @brief This state is for handling TCP send events while the TCP LWIP queue is
+ * full.
+ * After the TCP LWIP queue fills up, the SM goes to this state where any TCP
+ * SEND events will get deferred.  The SM leaves this state after receiving a
+ *
+ * @note: data in the TCP LWIP queue is sent out when the LWIP coarse timer
+ * expires.
+ *
+ * @param  [in|out] me: Pointer to the state machine
+ * @param  [in|out]  e:  Pointer to the event being processed.
+ * @return status: QState type that specifies where the state
+ * machine is going next.
+ */
 /*${AOs::LWIPMgr::SM::Active::Sending} .....................................*/
 static QState LWIPMgr_Sending(LWIPMgr * const me, QEvt const * const e) {
     QState status_;
     switch (e->sig) {
+        /* ${AOs::LWIPMgr::SM::Active::Sending} */
+        case Q_ENTRY_SIG: {
+            /* Arm the timer so if the connection is broken for some reason, we can get back
+             * to idle state */
+            QTimeEvt_rearm(
+                &me->te_TcpSend,
+                SEC_TO_TICKS( LL_MAX_TIMEOUT_TCP_SEND_SEC )
+            );
+            status_ = Q_HANDLED();
+            break;
+        }
+        /* ${AOs::LWIPMgr::SM::Active::Sending} */
+        case Q_EXIT_SIG: {
+            QTimeEvt_disarm( &me->te_TcpSend );
+            status_ = Q_HANDLED();
+            break;
+        }
         /* ${AOs::LWIPMgr::SM::Active::Sending::TCP_DONE} */
         case TCP_DONE_SIG: {
             status_ = Q_TRAN(&LWIPMgr_Idle);
@@ -798,6 +892,12 @@ static QState LWIPMgr_Sending(LWIPMgr * const me, QEvt const * const e) {
                err_slow_printf("Unable to defer an ETH event");
             }
             status_ = Q_HANDLED();
+            break;
+        }
+        /* ${AOs::LWIPMgr::SM::Active::Sending::TCP_TIMEOUT} */
+        case TCP_TIMEOUT_SIG: {
+            ERR_printf("Timed out waiting for TCP acks.  Returning to Idle.  Data loss likely\n");
+            status_ = Q_TRAN(&LWIPMgr_Idle);
             break;
         }
         default: {
