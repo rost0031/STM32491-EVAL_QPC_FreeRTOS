@@ -128,7 +128,7 @@ The STM32F207 allows computing and verifying the IP, UDP, TCP and ICMP checksums
 //#define DHCP_EXPIRE_TIMER_MSECS         (60 * 1000)
 #define TX_PBUF_QUEUE_LEN               8
 
-#define  TCP_TMR_INTERVAL               50
+#define TCP_TMR_INTERVAL               50
 
 //****************************************************************************
 //
