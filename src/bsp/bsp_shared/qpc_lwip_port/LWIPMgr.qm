@@ -400,9 +400,11 @@ QActive_recall(
 );</entry>
       <tran trig="DBG_MENU">
        <action>//dbg_slow_printf(&quot;Got DBG_MENU with dst: %x\n&quot;, ((LrgDataEvt const *)e)-&gt;dst);</action>
-       <choice target="../../../9">
+       <choice>
         <guard brief="Dest == TCP log?">ETH_PORT_LOG == ((LrgDataEvt const *)e)-&gt;dst</guard>
-        <action>/* Event posted that will include (inside it) a msg to send */
+        <action>bool status = false;
+
+/* Event posted that will include (inside it) a msg to send */
 if ( NULL != LWIPMgr_es_log) {
     struct pbuf *p = pbuf_new(
         (u8_t *)((LrgDataEvt const *)e)-&gt;dataBuf,
@@ -410,13 +412,42 @@ if ( NULL != LWIPMgr_es_log) {
     );
     if (p != (struct pbuf *)0) {
         LWIPMgr_es_log-&gt;p = p;
-
-        tcp_sent(me-&gt;tpcb_log, LWIP_tcpSent);
-        LWIP_tcpSend(me-&gt;tpcb_log, LWIPMgr_es_log);
+        //tcp_write(me-&gt;tpcb_log, p-&gt;payload, p-&gt;len, 1);
+        //tcp_output(me-&gt;tpcb_log);
+//      dbg_slow_printf(&quot;c tcpSend, me-&gt;tpcb: %x, LWIPMgr_es_log-&gt;pcb: %x\n&quot;, (uint32_t) me-&gt;tpcb_log, (uint32_t) LWIPMgr_es_log-&gt;pcb);
+        tcp_sent(LWIPMgr_es_log-&gt;pcb, LWIP_tcpSent);
+        status = LWIP_tcpSend(LWIPMgr_es_log-&gt;pcb, LWIPMgr_es_log);
+        if ( false ==  status ) {
+            if (QEQueue_getNFree(&amp;me-&gt;deferredEvtQueue) &gt; 0) {
+               /* defer the request - this event will be handled
+                * when the state machine goes back to Idle state */
+               QActive_defer((QActive *)me, &amp;me-&gt;deferredEvtQueue, e);
+            } else {
+               /* notify the request sender that the request was ignored.. */
+               err_slow_printf(&quot;Unable to defer an ETH event&quot;);
+            }
+        }
+//      tcp_output(me-&gt;tpcb_log);
         pbuf_free(p);                   // don't leak the pbuf!
     }
+} else {
+    /* Update the status flag to make sure we don't defer the event if there's
+     * no connection */
+    status = true;
 }</action>
-        <choice_glyph conn="78,26,4,2,-9">
+        <choice target="../../../../9">
+         <guard>false == status</guard>
+         <choice_glyph conn="78,21,4,2,-4">
+          <action box="0,-3,14,2"/>
+         </choice_glyph>
+        </choice>
+        <choice>
+         <guard brief="else"/>
+         <choice_glyph conn="78,21,5,-1,7">
+          <action box="1,0,10,2"/>
+         </choice_glyph>
+        </choice>
+        <choice_glyph conn="78,26,4,-1,-5">
          <action box="1,-2,13,2"/>
         </choice_glyph>
        </choice>
@@ -438,7 +469,7 @@ if ( NULL != LWIPMgr_es_log) {
       <entry>//QEvt *qEvt = Q_NEW( QEvt, TCP_LOG_DONE_SIG);
 //QF_PUBLISH(qEvt, AO_LWIPMgr);</entry>
       <tran trig="TCP_LOG_DONE" target="../../8">
-       <tran_glyph conn="69,15,3,1,-2,7,-36">
+       <tran_glyph conn="69,15,3,1,-36,4,-2">
         <action box="-15,-3,15,2"/>
        </tran_glyph>
       </tran>
@@ -687,17 +718,13 @@ return ERR_OK;</code>
    <code>struct pbuf *ptr;
 err_t wr_err = ERR_OK;
 bool status = false;
-/* Check if we have the buffer space */
-if (! (es-&gt;p-&gt;len &lt;= tcp_sndbuf(tpcb)) ) {
-    return status;
-}
 
 while ((wr_err == ERR_OK) &amp;&amp; (es-&gt;p != NULL) &amp;&amp; (es-&gt;p-&gt;len &lt;= tcp_sndbuf(tpcb))) {
     ptr = es-&gt;p;
-
     /* enqueue data for transmission */
     wr_err = tcp_write(tpcb, ptr-&gt;payload, ptr-&gt;len, 1);
     if (wr_err == ERR_OK) {
+        status = true;
         uint16_t plen;
         uint8_t freed;
         plen = ptr-&gt;len;
@@ -716,18 +743,19 @@ while ((wr_err == ERR_OK) &amp;&amp; (es-&gt;p != NULL) &amp;&amp; (es-&gt;p-&gt
 
         /* we can read more data now */
         tcp_recved(tpcb, plen);
-        status = true;
     } else if(wr_err == ERR_MEM) {
         /* we are low on memory, try later / harder, defer to poll */
         es-&gt;p = ptr;
         WRN_printf(&quot;Running low on mem in LWIP, polling later\n&quot;);
+        status = false;
     } else {
         /* other problem ?? */
         WRN_printf(&quot;Some unknown problem occurred\n&quot;);
+        status = false;
     }
 }
 
-return status;</code>
+return( status );</code>
   </operation>
   <operation name="LWIP_tcpClose" type="void" visibility="0x02" properties="0x00">
    <documentation>/**

@@ -782,6 +782,8 @@ static QState LWIPMgr_Idle(LWIPMgr * const me, QEvt const * const e) {
             //dbg_slow_printf("Got DBG_MENU with dst: %x\n", ((LrgDataEvt const *)e)->dst);
             /* ${AOs::LWIPMgr::SM::Active::Idle::DBG_MENU::[Dest==TCPlog?]} */
             if (ETH_PORT_LOG == ((LrgDataEvt const *)e)->dst) {
+                bool status = false;
+
                 /* Event posted that will include (inside it) a msg to send */
                 if ( NULL != LWIPMgr_es_log) {
                     struct pbuf *p = pbuf_new(
@@ -790,13 +792,37 @@ static QState LWIPMgr_Idle(LWIPMgr * const me, QEvt const * const e) {
                     );
                     if (p != (struct pbuf *)0) {
                         LWIPMgr_es_log->p = p;
-
-                        tcp_sent(me->tpcb_log, LWIP_tcpSent);
-                        LWIP_tcpSend(me->tpcb_log, LWIPMgr_es_log);
+                        //tcp_write(me->tpcb_log, p->payload, p->len, 1);
+                        //tcp_output(me->tpcb_log);
+                //      dbg_slow_printf("c tcpSend, me->tpcb: %x, LWIPMgr_es_log->pcb: %x\n", (uint32_t) me->tpcb_log, (uint32_t) LWIPMgr_es_log->pcb);
+                        tcp_sent(LWIPMgr_es_log->pcb, LWIP_tcpSent);
+                        status = LWIP_tcpSend(LWIPMgr_es_log->pcb, LWIPMgr_es_log);
+                        if ( false ==  status ) {
+                            if (QEQueue_getNFree(&me->deferredEvtQueue) > 0) {
+                               /* defer the request - this event will be handled
+                                * when the state machine goes back to Idle state */
+                               QActive_defer((QActive *)me, &me->deferredEvtQueue, e);
+                            } else {
+                               /* notify the request sender that the request was ignored.. */
+                               err_slow_printf("Unable to defer an ETH event");
+                            }
+                        }
+                //      tcp_output(me->tpcb_log);
                         pbuf_free(p);                   // don't leak the pbuf!
                     }
+                } else {
+                    /* Update the status flag to make sure we don't defer the event if there's
+                     * no connection */
+                    status = true;
                 }
-                status_ = Q_TRAN(&LWIPMgr_Sending);
+                /* ${AOs::LWIPMgr::SM::Active::Idle::DBG_MENU::[Dest==TCPlog?]::[false==status]} */
+                if (false == status) {
+                    status_ = Q_TRAN(&LWIPMgr_Sending);
+                }
+                /* ${AOs::LWIPMgr::SM::Active::Idle::DBG_MENU::[Dest==TCPlog?]::[else]} */
+                else {
+                    status_ = Q_HANDLED();
+                }
             }
             /* ${AOs::LWIPMgr::SM::Active::Idle::DBG_MENU::[else]} */
             else {
@@ -1222,6 +1248,7 @@ static err_t LWIP_tcpPoll(void * arg, struct tcp_pcb * tpcb) {
         if (es->p != NULL) {
             /* there is a remaining pbuf (chain)  */
             tcp_sent(tpcb, LWIP_tcpSent);
+            dbg_slow_printf("c tcpSend, tpcb: %x\n", (uint32_t) tpcb);
             LWIP_tcpSend(tpcb, es);
         } else {
             /* no remaining pbuf (chain)  */
@@ -1293,17 +1320,13 @@ static bool LWIP_tcpSend(struct tcp_pcb * tpcb, struct echo_state * es) {
     struct pbuf *ptr;
     err_t wr_err = ERR_OK;
     bool status = false;
-    /* Check if we have the buffer space */
-    if (! (es->p->len <= tcp_sndbuf(tpcb)) ) {
-        return status;
-    }
 
     while ((wr_err == ERR_OK) && (es->p != NULL) && (es->p->len <= tcp_sndbuf(tpcb))) {
         ptr = es->p;
-
         /* enqueue data for transmission */
         wr_err = tcp_write(tpcb, ptr->payload, ptr->len, 1);
         if (wr_err == ERR_OK) {
+            status = true;
             uint16_t plen;
             uint8_t freed;
             plen = ptr->len;
@@ -1322,18 +1345,19 @@ static bool LWIP_tcpSend(struct tcp_pcb * tpcb, struct echo_state * es) {
 
             /* we can read more data now */
             tcp_recved(tpcb, plen);
-            status = true;
         } else if(wr_err == ERR_MEM) {
             /* we are low on memory, try later / harder, defer to poll */
             es->p = ptr;
             WRN_printf("Running low on mem in LWIP, polling later\n");
+            status = false;
         } else {
             /* other problem ?? */
             WRN_printf("Some unknown problem occurred\n");
+            status = false;
         }
     }
 
-    return status;
+    return( status );
 }
 
 /**

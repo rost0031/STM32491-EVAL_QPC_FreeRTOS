@@ -126,7 +126,9 @@ The STM32F207 allows computing and verifying the IP, UDP, TCP and ICMP checksums
 
 //#define HOST_TMR_INTERVAL
 //#define DHCP_EXPIRE_TIMER_MSECS         (60 * 1000)
-//#define TX_PBUF_QUEUE_LEN               8
+#define TX_PBUF_QUEUE_LEN               8
+
+#define  TCP_TMR_INTERVAL               50
 
 //****************************************************************************
 //
@@ -339,11 +341,11 @@ The STM32F207 allows computing and verifying the IP, UDP, TCP and ICMP checksums
 //****************************************************************************
 #define LWIP_TCP                        1
 #define TCP_TTL                         (IP_DEFAULT_TTL)
-//#define TCP_WND                         (4 * TCP_MSS)
+#define TCP_WND                         (2 * TCP_MSS)
 //#define TCP_MAXRTX                      12
 //#define TCP_SYNMAXRTX                   6
 //#define TCP_QUEUE_OOSEQ                 (LWIP_TCP)
-#define TCP_MSS                         256 // default is 536
+#define TCP_MSS                         1460 // default is 536
 //#define TCP_CALCULATE_EFF_SEND_MSS      1
 #define TCP_SND_BUF                     (2 * TCP_MSS) // default is 256
 //#define TCP_SND_QUEUELEN     ((4 * (TCP_SND_BUF) + (TCP_MSS - 1))/(TCP_MSS))
