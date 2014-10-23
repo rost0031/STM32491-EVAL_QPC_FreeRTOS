@@ -165,7 +165,7 @@ treeNode_t* MENU_parseCurrLevelMenuItems(
  * be pointed to by the submenu being added.
  * @param [in] *menuSelectTxt: const char pointer to the storage of the selector
  * text that will be pointed by the node being added.
- * @param [in] pFunction function pointer to the action function that will be
+ * @param [in] pMenuFunction function pointer to the action function that will be
  * pointed by the node being added.  This action is what will execute when that
  * submenu is selected.  Can be NULL if no action is to be taken.
  * @return  treeNode_t*: pointer to the added submenu.
@@ -175,7 +175,7 @@ treeNode_t* MENU_addSubMenu(
       treeNode_t* parent,
       const char* menuTxt,
       const char* menuSelectTxt,
-      pFunction action
+      pMenuFunction action
 );
 
 /**
@@ -200,7 +200,7 @@ treeNode_t* MENU_addSubMenu(
  * be pointed to by the menu item being added.
  * @param [in] *menuSelectTxt: const char pointer to the storage of the selector
  * text that will be pointed by the menu item being added.
- * @param [in] pFunction function pointer to the action function that will be
+ * @param [in] pMenuFunction function pointer to the action function that will be
  * pointed by the node being added.  This action is what will execute when that
  * submenu is selected.  Can be NULL if no action is to be taken though this
  * probaly makes no sense for a menu item.
@@ -211,7 +211,7 @@ treeNode_t* MENU_addMenuItem(
       treeNode_t* parent,
       const char* menuTxt,
       const char* menuSelectTxt,
-      pFunction action
+      pMenuFunction action
 );
 
 /**

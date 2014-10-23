@@ -28,29 +28,9 @@ treeNode_t menuDbg;
 char *const menuDbg_TitleTxt = "Debug Menu";
 char *const menuDbg_SelectKey = "DBG";
 
-//treeNode_t menuDbgItem_toggleSerialDebug;
-//char *const menuDbgItem_toggleSerialDebugTxt = "Toggle debugging over serial port ON/OFF";
-//char *const menuDbgItem_toggleSerialDebugSelectKey = "S";
-//
-//treeNode_t menuDbgItem_toggleEthDebug;
-//char *const menuDbgItem_toggleEthDebugTxt = "Toggle debugging over ethernet port ON/OFF";
-//char *const menuDbgItem_toggleEthDebugSelectKey = "E";
-
 /* Private function prototypes -----------------------------------------------*/
 
 /* Private functions ---------------------------------------------------------*/
-
-///******************************************************************************/
-//void MENU_toggleSerialDebugAction( void )
-//{
-//   DBG_printf("Toggle Serial Debug Action test\n");
-//}
-//
-///******************************************************************************/
-//void MENU_toggleEthDebugAction( void )
-//{
-//   DBG_printf("Toggle Ethernet Debug Action test\n");
-//}
 
 /**
  * @}

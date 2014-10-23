@@ -21,8 +21,12 @@
    <attribute name="deferredEvtQSto[100]" type="QTimeEvt const *" visibility="0x01" properties="0x00">
     <documentation>/**&lt; Storage for deferred event queue. */</documentation>
    </attribute>
+   <attribute name="isSerialDbgEnabled" type="bool" visibility="0x01" properties="0x00">
+    <documentation>/**&lt; Keep track of whether serial debug is enabled or disabled.  Starts out enabled
+ * but an event can enable it. */</documentation>
+   </attribute>
    <statechart>
-    <initial target="../1/0">
+    <initial target="../1/1">
      <action>(void)e;        /* suppress the compiler warning about unused parameter */
 
 QS_OBJ_DICTIONARY(&amp;l_SerialMgr);
@@ -32,11 +36,14 @@ QS_FUN_DICTIONARY(&amp;SerialMgr_Active);
 QS_FUN_DICTIONARY(&amp;SerialMgr_Idle);
 QS_FUN_DICTIONARY(&amp;SerialMgr_Busy);
 
+me-&gt;isSerialDbgEnabled = true; // enable debug over serial by default.
+
 QActive_subscribe((QActive *)me, UART_DMA_START_SIG);
 QActive_subscribe((QActive *)me, DBG_LOG_SIG);
 QActive_subscribe((QActive *)me, DBG_MENU_SIG);
 QActive_subscribe((QActive *)me, UART_DMA_DONE_SIG);
-QActive_subscribe((QActive *)me, UART_DMA_TIMEOUT_SIG);</action>
+QActive_subscribe((QActive *)me, UART_DMA_TIMEOUT_SIG);
+QActive_subscribe((QActive *)me, UART_DMA_DBG_TOGGLE_SIG);</action>
      <initial_glyph conn="1,2,4,3,11,5">
       <action box="0,-2,6,2"/>
      </initial_glyph>
@@ -60,6 +67,12 @@ QTimeEvt_postIn(
     SEC_TO_TICKS( LL_MAX_TIMEOUT_SERIAL_DMA_BUSY_SEC )
 );
 QTimeEvt_disarm(&amp;me-&gt;serialTimerEvt);</entry>
+     <tran trig="UART_DMA_DBG_TOGGLE">
+      <action>me-&gt;isSerialDbgEnabled = !(me-&gt;isSerialDbgEnabled);</action>
+      <tran_glyph conn="3,48,3,-1,21">
+       <action box="0,-2,20,2"/>
+      </tran_glyph>
+     </tran>
      <state name="Idle">
       <documentation>/**
  * @brief This state indicates that the DMA is currently idle and the
@@ -76,7 +89,7 @@ QActive_recall(
     (QActive *)me,
     &amp;me-&gt;deferredEvtQueue
 );</entry>
-      <tran trig="UART_DMA_START, DBG_LOG, DBG_MENU" target="../../1">
+      <tran trig="UART_DMA_START" target="../../2">
        <action>/* Set up the DMA buffer here.  This copies the data from the event to the UART's
  * private buffer as well to avoid someone overwriting it */
 Serial_DMAConfig(
@@ -84,11 +97,59 @@ Serial_DMAConfig(
     (char *)((LrgDataEvt const *) e)-&gt;dataBuf,
     ((LrgDataEvt const *) e)-&gt;dataLen
 );</action>
-       <tran_glyph conn="25,14,1,3,17">
-        <action box="1,-6,15,6"/>
+       <tran_glyph conn="25,14,1,3,31">
+        <action box="0,-2,16,2"/>
        </tran_glyph>
       </tran>
-      <state_glyph node="6,8,19,39">
+      <tran trig="DBG_MENU">
+       <choice target="../../../2">
+        <guard brief="OutToSerial?">SERIAL_CON == ((LrgDataEvt const *) e)-&gt;dst</guard>
+        <action>/* Set up the DMA buffer here.  This copies the data from the event to the UART's
+ * private buffer as well to avoid someone overwriting it */
+Serial_DMAConfig(
+    SERIAL_UART1,
+    (char *)((LrgDataEvt const *) e)-&gt;dataBuf,
+    ((LrgDataEvt const *) e)-&gt;dataLen
+);</action>
+        <choice_glyph conn="37,19,5,3,19">
+         <action box="1,-2,13,2"/>
+        </choice_glyph>
+       </choice>
+       <choice>
+        <guard>else</guard>
+        <choice_glyph conn="37,19,4,-1,4">
+         <action box="0,1,6,2"/>
+        </choice_glyph>
+       </choice>
+       <tran_glyph conn="25,19,1,-1,12">
+        <action box="0,-2,10,2"/>
+       </tran_glyph>
+      </tran>
+      <tran trig="DBG_LOG">
+       <choice target="../../../2">
+        <guard brief="SerialDbgEnabled?">true == me-&gt;isSerialDbgEnabled</guard>
+        <action>/* Set up the DMA buffer here.  This copies the data from the event to the UART's
+ * private buffer as well to avoid someone overwriting it */
+Serial_DMAConfig(
+    SERIAL_UART1,
+    (char *)((LrgDataEvt const *) e)-&gt;dataBuf,
+    ((LrgDataEvt const *) e)-&gt;dataLen
+);</action>
+        <choice_glyph conn="37,27,5,3,19">
+         <action box="1,-2,15,2"/>
+        </choice_glyph>
+       </choice>
+       <choice>
+        <guard>else</guard>
+        <choice_glyph conn="37,27,4,-1,4">
+         <action box="0,1,6,2"/>
+        </choice_glyph>
+       </choice>
+       <tran_glyph conn="25,27,1,-1,12">
+        <action box="0,-2,10,2"/>
+       </tran_glyph>
+      </tran>
+      <state_glyph node="6,8,19,37">
        <entry box="1,2,5,2"/>
       </state_glyph>
      </state>
@@ -112,14 +173,14 @@ QTimeEvt_rearm(
 /* Start the DMA transfer over serial */
 Serial_DMAStartXfer( SERIAL_UART1 );</entry>
       <exit>QTimeEvt_disarm( &amp;me-&gt;serialTimerEvt ); /* Disarm timer on exit */</exit>
-      <tran trig="UART_DMA_DONE" target="../../0">
-       <tran_glyph conn="42,18,3,1,-17">
+      <tran trig="UART_DMA_DONE" target="../../1">
+       <tran_glyph conn="56,33,3,1,-31">
         <action box="-14,-2,14,2"/>
        </tran_glyph>
       </tran>
-      <tran trig="UART_DMA_TIMEOUT" target="../../0">
+      <tran trig="UART_DMA_TIMEOUT" target="../../1">
        <action>err_slow_printf(&quot;UART DMA timeout occurred\n&quot;);</action>
-       <tran_glyph conn="42,21,3,1,-17">
+       <tran_glyph conn="56,36,3,1,-31">
         <action box="-16,-2,16,2"/>
        </tran_glyph>
       </tran>
@@ -132,20 +193,20 @@ Serial_DMAStartXfer( SERIAL_UART1 );</entry>
    /* notify the request sender that the request was ignored.. */
    err_slow_printf(&quot;Unable to defer UART_DMA_START request\n&quot;);
 }</action>
-       <tran_glyph conn="42,44,3,-1,17">
+       <tran_glyph conn="56,44,3,-1,17">
         <action box="0,-6,15,6"/>
        </tran_glyph>
       </tran>
-      <state_glyph node="42,8,20,39">
+      <state_glyph node="56,8,20,39">
        <entry box="1,2,5,2"/>
        <exit box="1,4,5,2"/>
       </state_glyph>
      </state>
-     <state_glyph node="3,3,63,47">
+     <state_glyph node="3,3,74,49">
       <entry box="1,2,5,2"/>
      </state_glyph>
     </state>
-    <state_diagram size="73,58"/>
+    <state_diagram size="81,58"/>
    </statechart>
   </class>
   <attribute name="AO_SerialMgr" type="QActive * const" visibility="0x00" properties="0x00">

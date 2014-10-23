@@ -135,6 +135,7 @@ typedef struct {
 
     /**< Local timer for TCP send timeout. */
     QTimeEvt te_TcpSend;
+    bool isEthDbgEnabled;
 } LWIPMgr;
 
 /* Keeps track of what port is used by logging TCP connection */
@@ -418,6 +419,8 @@ static QState LWIPMgr_initial(LWIPMgr * const me, QEvt const * const e) {
     LWIPMgr_sysPort = 1500;
     LWIPMgr_logPort = 1501;
 
+    me->isEthDbgEnabled = true; // Enable debugging over ethernet by default.
+
     /* Configure the hardware MAC address for the Ethernet Controller */
 
     /*
@@ -487,6 +490,8 @@ static QState LWIPMgr_initial(LWIPMgr * const me, QEvt const * const e) {
     QActive_subscribe((QActive *)me, DBG_LOG_SIG);
     QActive_subscribe((QActive *)me, DBG_MENU_SIG);
     QActive_subscribe((QActive *)me, TCP_DONE_SIG);
+    QActive_subscribe((QActive *)me, ETH_DBG_TOGGLE_SIG);
+
     return Q_TRAN(&LWIPMgr_Idle);
 }
 
@@ -621,6 +626,12 @@ static QState LWIPMgr_Active(LWIPMgr * const me, QEvt const * const e) {
             status_ = Q_HANDLED();
             break;
         }
+        /* ${AOs::LWIPMgr::SM::Active::ETH_DBG_TOGGLE} */
+        case ETH_DBG_TOGGLE_SIG: {
+            me->isEthDbgEnabled = !(me->isEthDbgEnabled);
+            status_ = Q_HANDLED();
+            break;
+        }
         default: {
             status_ = Q_SUPER(&QHsm_top);
             break;
@@ -725,41 +736,48 @@ static QState LWIPMgr_Idle(LWIPMgr * const me, QEvt const * const e) {
              * fact, avoid using ANY logging here since it could cause an
              * infinite loop. */
             /************************************************************/
-            /* ${AOs::LWIPMgr::SM::Active::Idle::DBG_LOG, ETH_LOG_TCP_SEND::[ConnExists?]} */
-            if (NULL != LWIPMgr_es_log) {
-                struct pbuf *p = pbuf_new(
-                    (u8_t *)((LrgDataEvt const *)e)->dataBuf,
-                    ((LrgDataEvt const *)e)->dataLen
-                );
-                /* ${AOs::LWIPMgr::SM::Active::Idle::DBG_LOG, ETH_LOG_TCP_SEND::[ConnExists?]::[MemAvail?]} */
-                if (p != (struct pbuf *)0) {
-                    LWIPMgr_es_log->p = p;                         // Attach pbuf to the socket state
-                    //dbg_slow_printf("c tcpSend, me->tpcb: %x, LWIPMgr_es_log->pcb: %x\n", (uint32_t) me->tpcb_log, (uint32_t) LWIPMgr_es_log->pcb);
-                    tcp_sent(LWIPMgr_es_log->pcb, LWIP_tcpSent);   // Set callback
-                    bool dataSent = LWIP_tcpSend(
-                        LWIPMgr_es_log->pcb,
-                        LWIPMgr_es_log
-                    );                                             // Queue data for sending
-                    pbuf_free(p);                                  // don't leak the pbuf!
-                    /* ${AOs::LWIPMgr::SM::Active::Idle::DBG_LOG, ETH_LOG_TCP_SEND::[ConnExists?]::[MemAvail?]::[Datanotsent?]} */
-                    if (false == dataSent) {
-                        /* Failed to send data.  Defer the event (if possible) */
-                        if (QEQueue_getNFree(&me->deferredEvtQueue) > 0) {
-                            /* defer the request - this event will be handled
-                             * when the state machine goes back to Idle state */
-                            QActive_defer((QActive *)me, &me->deferredEvtQueue, e);
-                        } else {
-                            /* notify the request sender that the request was ignored.. */
-                            err_slow_printf("Unable to defer an ETH event");
+            /* ${AOs::LWIPMgr::SM::Active::Idle::DBG_LOG, ETH_LOG_TCP_SEND::[EthDbgEnabled?]} */
+            if (true == me->isEthDbgEnabled) {
+                /* ${AOs::LWIPMgr::SM::Active::Idle::DBG_LOG, ETH_LOG_TCP_SEND::[EthDbgEnabled?]::[ConnExists?]} */
+                if (NULL != LWIPMgr_es_log) {
+                    struct pbuf *p = pbuf_new(
+                        (u8_t *)((LrgDataEvt const *)e)->dataBuf,
+                        ((LrgDataEvt const *)e)->dataLen
+                    );
+                    /* ${AOs::LWIPMgr::SM::Active::Idle::DBG_LOG, ETH_LOG_TCP_SEND::[EthDbgEnabled?]::[ConnExists?]::[MemAvail?]} */
+                    if (p != (struct pbuf *)0) {
+                        LWIPMgr_es_log->p = p;                         // Attach pbuf to the socket state
+                        //dbg_slow_printf("c tcpSend, me->tpcb: %x, LWIPMgr_es_log->pcb: %x\n", (uint32_t) me->tpcb_log, (uint32_t) LWIPMgr_es_log->pcb);
+                        tcp_sent(LWIPMgr_es_log->pcb, LWIP_tcpSent);   // Set callback
+                        bool dataSent = LWIP_tcpSend(
+                            LWIPMgr_es_log->pcb,
+                            LWIPMgr_es_log
+                        );                                             // Queue data for sending
+                        pbuf_free(p);                                  // don't leak the pbuf!
+                        /* ${..LWIPMgr::SM::Active::Idle::DBG_LOG, ETH_LOG_TCP_SEND::[EthDbgEnabled?]::[ConnExists?]::[MemAvail?]::[Datanotsent?]} */
+                        if (false == dataSent) {
+                            /* Failed to send data.  Defer the event (if possible) */
+                            if (QEQueue_getNFree(&me->deferredEvtQueue) > 0) {
+                                /* defer the request - this event will be handled
+                                 * when the state machine goes back to Idle state */
+                                QActive_defer((QActive *)me, &me->deferredEvtQueue, e);
+                            } else {
+                                /* notify the request sender that the request was ignored.. */
+                                err_slow_printf("Unable to defer an ETH event");
+                            }
+                            status_ = Q_TRAN(&LWIPMgr_Sending);
                         }
-                        status_ = Q_TRAN(&LWIPMgr_Sending);
+                        /* ${..LWIPMgr::SM::Active::Idle::DBG_LOG, ETH_LOG_TCP_SEND::[EthDbgEnabled?]::[ConnExists?]::[MemAvail?]::[else]} */
+                        else {
+                            status_ = Q_HANDLED();
+                        }
                     }
-                    /* ${AOs::LWIPMgr::SM::Active::Idle::DBG_LOG, ETH_LOG_TCP_SEND::[ConnExists?]::[MemAvail?]::[else]} */
+                    /* ${AOs::LWIPMgr::SM::Active::Idle::DBG_LOG, ETH_LOG_TCP_SEND::[EthDbgEnabled?]::[ConnExists?]::[else]} */
                     else {
                         status_ = Q_HANDLED();
                     }
                 }
-                /* ${AOs::LWIPMgr::SM::Active::Idle::DBG_LOG, ETH_LOG_TCP_SEND::[ConnExists?]::[else]} */
+                /* ${AOs::LWIPMgr::SM::Active::Idle::DBG_LOG, ETH_LOG_TCP_SEND::[EthDbgEnabled?]::[else]} */
                 else {
                     status_ = Q_HANDLED();
                 }

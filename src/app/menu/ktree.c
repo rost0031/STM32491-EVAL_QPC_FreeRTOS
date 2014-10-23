@@ -178,9 +178,6 @@ void KTREE_addChild(
       treeNode_t *fakeParentNode
 )
 {
-
-   treeNode_t *whereToAddChild = NULL;
-
    /* Find the parent node */
    if ( NULL == trueParentNode ) {
       childToAdd->trueParentNode = NULL;

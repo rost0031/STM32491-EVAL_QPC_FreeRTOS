@@ -83,8 +83,9 @@
    <attribute name="te_TcpSend" type="QTimeEvt" visibility="0x01" properties="0x00">
     <documentation>/**&lt; Local timer for TCP send timeout. */</documentation>
    </attribute>
+   <attribute name="isEthDbgEnabled" type="bool" visibility="0x01" properties="0x00"/>
    <statechart>
-    <initial target="../1/5">
+    <initial target="../1/6">
      <action>(void)e;        /* suppress the compiler warning about unused parameter */
 
 uint8_t  macaddr[NETIF_MAX_HWADDR_LEN];
@@ -106,6 +107,8 @@ QS_FILTER_TE_OBJ(0);           /* Turn off time event tracing for this AO */
  * will eventually be assigned via BOOTP based on which board this is. */
 LWIPMgr_sysPort = 1500;
 LWIPMgr_logPort = 1501;
+
+me-&gt;isEthDbgEnabled = true; // Enable debugging over ethernet by default.
 
 /* Configure the hardware MAC address for the Ethernet Controller */
 
@@ -175,8 +178,10 @@ QActive_subscribe((QActive *)me, ETH_LOG_TCP_SEND_SIG);
 QActive_subscribe((QActive *)me, ETH_SYS_TCP_SEND_SIG);
 QActive_subscribe((QActive *)me, DBG_LOG_SIG);
 QActive_subscribe((QActive *)me, DBG_MENU_SIG);
-QActive_subscribe((QActive *)me, TCP_DONE_SIG);</action>
-     <initial_glyph conn="1,2,4,3,8,7">
+QActive_subscribe((QActive *)me, TCP_DONE_SIG);
+QActive_subscribe((QActive *)me, ETH_DBG_TOGGLE_SIG);
+</action>
+     <initial_glyph conn="1,2,4,3,8,6">
       <action box="0,-2,6,2"/>
      </initial_glyph>
     </initial>
@@ -298,6 +303,12 @@ if (me-&gt;auto_ip_tmr &gt;= AUTOIP_TMR_INTERVAL) {
        <action box="0,-2,15,2"/>
       </tran_glyph>
      </tran>
+     <tran trig="ETH_DBG_TOGGLE">
+      <action>me-&gt;isEthDbgEnabled = !(me-&gt;isEthDbgEnabled);</action>
+      <tran_glyph conn="3,77,3,-1,15">
+       <action box="0,-2,15,2"/>
+      </tran_glyph>
+     </tran>
      <state name="Idle">
       <documentation>/**
  * @brief This state is for handling TCP send events.
@@ -330,7 +341,7 @@ QActive_recall(
         <guard brief="Dest == TCP log?">ETH_PORT_LOG == ((LrgDataEvt const *)e)-&gt;dst</guard>
         <choice>
          <guard brief="else"/>
-         <choice_glyph conn="37,14,4,-1,4">
+         <choice_glyph conn="45,14,4,-1,4">
           <action box="0,2,10,2"/>
          </choice_glyph>
         </choice>
@@ -342,7 +353,7 @@ QActive_recall(
 );</action>
          <choice>
           <guard>else</guard>
-          <choice_glyph conn="51,14,4,-1,4">
+          <choice_glyph conn="59,14,4,-1,4">
            <action box="0,2,10,2"/>
           </choice_glyph>
          </choice>
@@ -356,7 +367,7 @@ bool dataSent = LWIP_tcpSend(
     LWIPMgr_es_log
 );                                             // Queue data for sending
 pbuf_free(p);                                  // don't leak the pbuf!</action>
-          <choice target="../../../../../../6">
+          <choice target="../../../../../../7">
            <guard brief="Data not sent?">false == dataSent</guard>
            <action>if (QEQueue_getNFree(&amp;me-&gt;deferredEvtQueue) &gt; 0) {
     /* defer the request - this event will be handled
@@ -366,35 +377,35 @@ pbuf_free(p);                                  // don't leak the pbuf!</action>
     /* notify the request sender that the request was ignored.. */
     err_slow_printf(&quot;Unable to defer an ETH event&quot;);
 }</action>
-           <choice_glyph conn="64,14,5,3,35">
+           <choice_glyph conn="73,14,5,3,26">
             <action box="1,-2,14,2"/>
            </choice_glyph>
           </choice>
           <choice>
            <guard>else</guard>
-           <choice_glyph conn="64,14,4,-1,4">
+           <choice_glyph conn="73,14,4,-1,4">
             <action box="0,2,6,2"/>
            </choice_glyph>
           </choice>
-          <choice_glyph conn="51,14,5,-1,13">
+          <choice_glyph conn="59,14,5,-1,14">
            <action box="1,-2,10,2"/>
           </choice_glyph>
          </choice>
-         <choice_glyph conn="37,14,5,-1,14">
+         <choice_glyph conn="45,14,5,-1,14">
           <action box="1,-2,12,2"/>
          </choice_glyph>
         </choice>
-        <choice_glyph conn="22,14,5,-1,15">
+        <choice_glyph conn="26,14,5,-1,19">
          <action box="1,-2,13,2"/>
         </choice_glyph>
        </choice>
        <choice>
         <guard brief="else"/>
-        <choice_glyph conn="22,14,4,-1,4">
+        <choice_glyph conn="26,14,4,-1,4">
          <action box="1,2,10,2"/>
         </choice_glyph>
        </choice>
-       <tran_glyph conn="8,14,3,-1,14">
+       <tran_glyph conn="7,14,3,-1,19">
         <action box="0,-2,11,2"/>
        </tran_glyph>
       </tran>
@@ -405,20 +416,22 @@ pbuf_free(p);                                  // don't leak the pbuf!</action>
  * infinite loop. */
 /************************************************************/</action>
        <choice>
-        <guard brief="ConnExists?">NULL != LWIPMgr_es_log</guard>
-        <action>struct pbuf *p = pbuf_new(
+        <guard brief="EthDbgEnabled?">true == me-&gt;isEthDbgEnabled</guard>
+        <choice>
+         <guard brief="ConnExists?">NULL != LWIPMgr_es_log</guard>
+         <action>struct pbuf *p = pbuf_new(
     (u8_t *)((LrgDataEvt const *)e)-&gt;dataBuf,
     ((LrgDataEvt const *)e)-&gt;dataLen
 );</action>
-        <choice>
-         <guard>else</guard>
-         <choice_glyph conn="51,23,4,-1,4">
-          <action box="0,2,10,2"/>
-         </choice_glyph>
-        </choice>
-        <choice>
-         <guard brief="Mem Avail?">p != (struct pbuf *)0</guard>
-         <action>LWIPMgr_es_log-&gt;p = p;                         // Attach pbuf to the socket state
+         <choice>
+          <guard>else</guard>
+          <choice_glyph conn="59,23,4,-1,4">
+           <action box="0,2,10,2"/>
+          </choice_glyph>
+         </choice>
+         <choice>
+          <guard brief="Mem Avail?">p != (struct pbuf *)0</guard>
+          <action>LWIPMgr_es_log-&gt;p = p;                         // Attach pbuf to the socket state
 //dbg_slow_printf(&quot;c tcpSend, me-&gt;tpcb: %x, LWIPMgr_es_log-&gt;pcb: %x\n&quot;, (uint32_t) me-&gt;tpcb_log, (uint32_t) LWIPMgr_es_log-&gt;pcb);
 tcp_sent(LWIPMgr_es_log-&gt;pcb, LWIP_tcpSent);   // Set callback
 bool dataSent = LWIP_tcpSend(
@@ -426,9 +439,9 @@ bool dataSent = LWIP_tcpSend(
     LWIPMgr_es_log
 );                                             // Queue data for sending
 pbuf_free(p);                                  // don't leak the pbuf!</action>
-         <choice target="../../../../../6">
-          <guard brief="Data not sent?">false == dataSent</guard>
-          <action>/* Failed to send data.  Defer the event (if possible) */
+          <choice target="../../../../../../7">
+           <guard brief="Data not sent?">false == dataSent</guard>
+           <action>/* Failed to send data.  Defer the event (if possible) */
 if (QEQueue_getNFree(&amp;me-&gt;deferredEvtQueue) &gt; 0) {
     /* defer the request - this event will be handled
      * when the state machine goes back to Idle state */
@@ -437,31 +450,41 @@ if (QEQueue_getNFree(&amp;me-&gt;deferredEvtQueue) &gt; 0) {
     /* notify the request sender that the request was ignored.. */
     err_slow_printf(&quot;Unable to defer an ETH event&quot;);
 }</action>
-          <choice_glyph conn="64,23,5,3,35">
-           <action box="1,-2,14,2"/>
+           <choice_glyph conn="73,23,5,3,26">
+            <action box="1,-2,14,2"/>
+           </choice_glyph>
+          </choice>
+          <choice>
+           <guard>else</guard>
+           <choice_glyph conn="73,23,4,-1,4">
+            <action box="0,2,6,2"/>
+           </choice_glyph>
+          </choice>
+          <choice_glyph conn="59,23,5,-1,14">
+           <action box="1,-2,10,2"/>
           </choice_glyph>
          </choice>
-         <choice>
-          <guard>else</guard>
-          <choice_glyph conn="64,23,4,-1,4">
-           <action box="0,2,6,2"/>
-          </choice_glyph>
-         </choice>
-         <choice_glyph conn="51,23,5,-1,13">
-          <action box="1,-2,10,2"/>
+         <choice_glyph conn="45,23,5,-1,14">
+          <action box="1,-2,12,2"/>
          </choice_glyph>
         </choice>
-        <choice_glyph conn="37,23,5,-1,14">
-         <action box="1,-2,12,2"/>
+        <choice>
+         <guard brief="else"/>
+         <choice_glyph conn="45,23,4,-1,4">
+          <action box="0,2,10,2"/>
+         </choice_glyph>
+        </choice>
+        <choice_glyph conn="26,23,5,-1,19">
+         <action box="1,-2,14,2"/>
         </choice_glyph>
        </choice>
        <choice>
-        <guard brief="else"/>
-        <choice_glyph conn="37,23,4,-1,4">
+        <guard>else</guard>
+        <choice_glyph conn="26,23,4,-1,4">
          <action box="0,2,10,2"/>
         </choice_glyph>
        </choice>
-       <tran_glyph conn="8,23,3,-1,29">
+       <tran_glyph conn="7,23,3,-1,19">
         <action box="0,-4,18,4"/>
        </tran_glyph>
       </tran>
@@ -487,7 +510,7 @@ if (me-&gt;upcb-&gt;remote_port != (uint16_t)0) {
 );</action>
         <choice>
          <guard>else</guard>
-         <choice_glyph conn="51,35,4,-1,4">
+         <choice_glyph conn="59,35,4,-1,4">
           <action box="0,2,10,2"/>
          </choice_glyph>
         </choice>
@@ -501,7 +524,7 @@ bool dataSent = LWIP_tcpSend(
     LWIPMgr_es_sys
 );                                             // Queue data for sending
 pbuf_free(p);                                  // don't leak the pbuf!</action>
-         <choice target="../../../../../6">
+         <choice target="../../../../../7">
           <guard brief="Data not sent?">false == dataSent</guard>
           <action>/* Failed to send data.  Defer the event (if possible) */
 if (QEQueue_getNFree(&amp;me-&gt;deferredEvtQueue) &gt; 0) {
@@ -512,36 +535,36 @@ if (QEQueue_getNFree(&amp;me-&gt;deferredEvtQueue) &gt; 0) {
     /* notify the request sender that the request was ignored.. */
     err_slow_printf(&quot;Unable to defer an ETH event&quot;);
 }</action>
-          <choice_glyph conn="64,35,5,3,35">
+          <choice_glyph conn="73,35,5,3,26">
            <action box="1,-2,14,2"/>
           </choice_glyph>
          </choice>
          <choice>
           <guard>else</guard>
-          <choice_glyph conn="64,35,4,-1,4">
+          <choice_glyph conn="73,35,4,-1,4">
            <action box="0,2,6,2"/>
           </choice_glyph>
          </choice>
-         <choice_glyph conn="51,35,5,-1,13">
+         <choice_glyph conn="59,35,5,-1,14">
           <action box="1,-2,10,2"/>
          </choice_glyph>
         </choice>
-        <choice_glyph conn="37,35,5,-1,14">
+        <choice_glyph conn="45,35,5,-1,14">
          <action box="1,-2,12,2"/>
         </choice_glyph>
        </choice>
        <choice>
         <guard brief="else"/>
         <action>ERR_printf(&quot;Attempting to send data over system ethernet port but no connection exists.  Something is probably very wrong!\n&quot;);</action>
-        <choice_glyph conn="37,35,4,-1,4">
+        <choice_glyph conn="45,35,4,-1,4">
          <action box="0,2,10,2"/>
         </choice_glyph>
        </choice>
-       <tran_glyph conn="8,35,3,-1,29">
+       <tran_glyph conn="7,35,3,-1,38">
         <action box="0,-2,17,2"/>
        </tran_glyph>
       </tran>
-      <state_glyph node="8,6,71,48">
+      <state_glyph node="7,6,76,48">
        <entry box="1,2,6,2"/>
       </state_glyph>
      </state>
@@ -567,8 +590,8 @@ QTimeEvt_rearm(
     SEC_TO_TICKS( LL_MAX_TIMEOUT_TCP_SEND_SEC )
 );</entry>
       <exit>QTimeEvt_disarm( &amp;me-&gt;te_TcpSend );</exit>
-      <tran trig="TCP_DONE" target="../../5">
-       <tran_glyph conn="99,50,3,1,-20">
+      <tran trig="TCP_DONE" target="../../6">
+       <tran_glyph conn="99,50,3,1,-16">
         <action box="-15,-2,15,2"/>
        </tran_glyph>
       </tran>
@@ -585,9 +608,9 @@ QTimeEvt_rearm(
         <action box="0,-6,16,6"/>
        </tran_glyph>
       </tran>
-      <tran trig="TCP_TIMEOUT" target="../../5">
+      <tran trig="TCP_TIMEOUT" target="../../6">
        <action>ERR_printf(&quot;Timed out waiting for TCP acks.  Returning to Idle.  Data loss likely\n&quot;);</action>
-       <tran_glyph conn="99,53,3,1,-20">
+       <tran_glyph conn="99,53,3,1,-16">
         <action box="-15,-2,13,2"/>
        </tran_glyph>
       </tran>
@@ -1253,6 +1276,7 @@ static void udp_rx_handler(void *arg, struct udp_pcb *upcb,
  */
 enum LWIPMgrSignals {
     ETH_UDP_SEND_SIG = MAX_SHARED_SIG,
+    ETH_DBG_TOGGLE_SIG,
     ETH_LOG_TCP_SEND_SIG,
     ETH_SYS_TCP_SEND_SIG,
     ETH_TCP_DATA_RECV_SIG,

@@ -65,6 +65,10 @@ typedef struct {
 
     /**< Storage for deferred event queue. */
     QTimeEvt const * deferredEvtQSto[100];
+
+    /**< Keep track of whether serial debug is enabled or disabled.  Starts out enabled
+     * but an event can enable it. */
+    bool isSerialDbgEnabled;
 } SerialMgr;
 
 /* protected: */
@@ -161,11 +165,14 @@ static QState SerialMgr_initial(SerialMgr * const me, QEvt const * const e) {
     QS_FUN_DICTIONARY(&SerialMgr_Idle);
     QS_FUN_DICTIONARY(&SerialMgr_Busy);
 
+    me->isSerialDbgEnabled = true; // enable debug over serial by default.
+
     QActive_subscribe((QActive *)me, UART_DMA_START_SIG);
     QActive_subscribe((QActive *)me, DBG_LOG_SIG);
     QActive_subscribe((QActive *)me, DBG_MENU_SIG);
     QActive_subscribe((QActive *)me, UART_DMA_DONE_SIG);
     QActive_subscribe((QActive *)me, UART_DMA_TIMEOUT_SIG);
+    QActive_subscribe((QActive *)me, UART_DMA_DBG_TOGGLE_SIG);
     return Q_TRAN(&SerialMgr_Idle);
 }
 
@@ -193,6 +200,12 @@ static QState SerialMgr_Active(SerialMgr * const me, QEvt const * const e) {
                 SEC_TO_TICKS( LL_MAX_TIMEOUT_SERIAL_DMA_BUSY_SEC )
             );
             QTimeEvt_disarm(&me->serialTimerEvt);
+            status_ = Q_HANDLED();
+            break;
+        }
+        /* ${AOs::SerialMgr::SM::Active::UART_DMA_DBG_TOGGLE} */
+        case UART_DMA_DBG_TOGGLE_SIG: {
+            me->isSerialDbgEnabled = !(me->isSerialDbgEnabled);
             status_ = Q_HANDLED();
             break;
         }
@@ -228,10 +241,8 @@ static QState SerialMgr_Idle(SerialMgr * const me, QEvt const * const e) {
             status_ = Q_HANDLED();
             break;
         }
-        /* ${AOs::SerialMgr::SM::Active::Idle::UART_DMA_START, DBG_LOG, DBG_MENU} */
-        case UART_DMA_START_SIG: /* intentionally fall through */
-        case DBG_LOG_SIG: /* intentionally fall through */
-        case DBG_MENU_SIG: {
+        /* ${AOs::SerialMgr::SM::Active::Idle::UART_DMA_START} */
+        case UART_DMA_START_SIG: {
             /* Set up the DMA buffer here.  This copies the data from the event to the UART's
              * private buffer as well to avoid someone overwriting it */
             Serial_DMAConfig(
@@ -240,6 +251,44 @@ static QState SerialMgr_Idle(SerialMgr * const me, QEvt const * const e) {
                 ((LrgDataEvt const *) e)->dataLen
             );
             status_ = Q_TRAN(&SerialMgr_Busy);
+            break;
+        }
+        /* ${AOs::SerialMgr::SM::Active::Idle::DBG_MENU} */
+        case DBG_MENU_SIG: {
+            /* ${AOs::SerialMgr::SM::Active::Idle::DBG_MENU::[OutToSerial?]} */
+            if (SERIAL_CON == ((LrgDataEvt const *) e)->dst) {
+                /* Set up the DMA buffer here.  This copies the data from the event to the UART's
+                 * private buffer as well to avoid someone overwriting it */
+                Serial_DMAConfig(
+                    SERIAL_UART1,
+                    (char *)((LrgDataEvt const *) e)->dataBuf,
+                    ((LrgDataEvt const *) e)->dataLen
+                );
+                status_ = Q_TRAN(&SerialMgr_Busy);
+            }
+            /* ${AOs::SerialMgr::SM::Active::Idle::DBG_MENU::[else]} */
+            else {
+                status_ = Q_HANDLED();
+            }
+            break;
+        }
+        /* ${AOs::SerialMgr::SM::Active::Idle::DBG_LOG} */
+        case DBG_LOG_SIG: {
+            /* ${AOs::SerialMgr::SM::Active::Idle::DBG_LOG::[SerialDbgEnab~]} */
+            if (true == me->isSerialDbgEnabled) {
+                /* Set up the DMA buffer here.  This copies the data from the event to the UART's
+                 * private buffer as well to avoid someone overwriting it */
+                Serial_DMAConfig(
+                    SERIAL_UART1,
+                    (char *)((LrgDataEvt const *) e)->dataBuf,
+                    ((LrgDataEvt const *) e)->dataLen
+                );
+                status_ = Q_TRAN(&SerialMgr_Busy);
+            }
+            /* ${AOs::SerialMgr::SM::Active::Idle::DBG_LOG::[else]} */
+            else {
+                status_ = Q_HANDLED();
+            }
             break;
         }
         default: {

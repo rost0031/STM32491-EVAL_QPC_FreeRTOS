@@ -43,17 +43,34 @@ extern char *const menuDbgOutCntrlItem_toggleEthDebugSelectKey;
 /* Exported functions --------------------------------------------------------*/
 
 /**
- * @brief   Initialize the menu memory space with the contents of the menu
- *
- * This function initializes the menu application.
- *
- * @param [in]  iBus: I2C_Bus_t identifier for I2C bus to initialize
- *    @arg
+ * @brief Called by the menu item to toggle debugging over serial.
+ * @param [in] dataBuf: const char* pointer to the data passed in by the user at
+ * cmd line
+ * @param [in] dataLen: uint16_t length of data in the dataBuf.
+ * @param [in] dst: MsgSrc destination so MENU_printf() knows were to direct the
+ * output.
  * @return: None
  */
-void MENU_toggleSerialDebugAction( void );
+void MENU_toggleSerialDebugAction(
+      const char* dataBuf,
+      uint16_t dataLen,
+      MsgSrc dst
+);
 
-void MENU_toggleEthDebugAction( void );
+/**
+ * @brief Called by the menu item to toggle debugging over ethernet.
+ * @param [in] dataBuf: const char* pointer to the data passed in by the user at
+ * cmd line
+ * @param [in] dataLen: uint16_t length of data in the dataBuf.
+ * @param [in] dst: MsgSrc destination so MENU_printf() knows were to direct the
+ * output.
+ * @return: None
+ */
+void MENU_toggleEthDebugAction(
+      const char* dataBuf,
+      uint16_t dataLen,
+      MsgSrc dst
+);
 
 /**
  * @}

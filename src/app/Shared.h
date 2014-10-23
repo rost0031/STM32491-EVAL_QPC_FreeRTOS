@@ -35,6 +35,9 @@
 #define MEMCPY(dst,src,len)            MEM_DataCopy(dst,src,len)
 #define SMEMCPY(dst,src,len)           MEM_DataCopy(dst,src,len)
 
+#ifndef CB_UNUSED_ARG
+#define CB_UNUSED_ARG(x) (void)x
+#endif
 /* Exported types ------------------------------------------------------------*/
 /**
  * \enum Active Object priorities.

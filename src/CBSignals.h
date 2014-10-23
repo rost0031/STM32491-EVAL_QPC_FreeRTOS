@@ -47,6 +47,7 @@ enum SerialMgrSignals {
    UART_DMA_START_SIG = MSG_MAX_SIG, /** This signal must start at the previous category max signal */
    UART_DMA_DONE_SIG,
    UART_DMA_TIMEOUT_SIG,
+   UART_DMA_DBG_TOGGLE_SIG,
    UART_DMA_MAX_SIG
 };
 

@@ -124,11 +124,16 @@ extern "C" {
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f4xx.h"                                 /* For STM32F4 support */
+#include "Shared.h"
 
 /* Exported defines ----------------------------------------------------------*/
 /* Exported types ------------------------------------------------------------*/
 
-typedef void (*pFunction)(void);
+typedef void (*pMenuFunction) (
+      const char* dataBuf,
+      uint16_t dataLen,
+      MsgSrc dst
+);
 
 typedef struct treeNode {
    struct treeNode *fakeParentNode;
@@ -137,7 +142,7 @@ typedef struct treeNode {
    struct treeNode *firstSiblingNode;
    char *text;
    char *selector;
-   pFunction actionToTake;
+   pMenuFunction actionToTake;
 } treeNode_t;
 
 

@@ -44,29 +44,45 @@ char *const menuDbgOutCntrlItem_toggleEthDebugSelectKey = "E";
 /* Private functions ---------------------------------------------------------*/
 
 /******************************************************************************/
-void MENU_toggleSerialDebugAction( void )
+void MENU_toggleSerialDebugAction(
+      const char* dataBuf,
+      uint16_t dataLen,
+      MsgSrc dst
+)
 {
-   DBG_printf("Toggle Serial Debug Action test\n");
+   MENU_printf(dst, "Toggling debugging output over Serial:\n");
+   QEvt *qEvt = Q_NEW( QEvt, UART_DMA_DBG_TOGGLE_SIG );
+   QF_PUBLISH(qEvt, AO_DbgMgr);
+   LOG_printf("Toggle Serial Debug Action test\n");
 }
 
 /******************************************************************************/
-void MENU_toggleEthDebugAction( void )
+void MENU_toggleEthDebugAction(
+      const char* dataBuf,
+      uint16_t dataLen,
+      MsgSrc dst
+)
 {
-   DBG_printf("Toggle Ethernet Debug Action test\n");
-   EthEvt *ethEvt = Q_NEW(EthEvt, ETH_LOG_TCP_SEND_SIG);
-   char tmp[] = "Testing Ethernet TCP send function\n";
-   ethEvt->msg_len = sizeof(tmp);
-   MEMCPY(ethEvt->msg, tmp, ethEvt->msg_len);
-   ethEvt->msg_src = 0;
-   QF_PUBLISH((QEvent *)ethEvt, 0);
+   MENU_printf(dst, "Toggling debugging output over Ethernet:\n");
+   QEvt *qEvt = Q_NEW( QEvt, ETH_DBG_TOGGLE_SIG );
+   QF_PUBLISH(qEvt, AO_DbgMgr);
+   LOG_printf("Toggle Ethernet Debug Action test\n");
 
-
-   MENU_printf(ETH_PORT_LOG, "Test1\n");
-   MENU_printf(ETH_PORT_LOG, "Test2\n");
-   MENU_printf(ETH_PORT_LOG, "Test3\n");
-   MENU_printf(ETH_PORT_LOG, "Test4\n");
-   MENU_printf(ETH_PORT_LOG, "Test5\n");
-   MENU_printf(ETH_PORT_LOG, "Test6\n");
+//   DBG_printf("Toggle Ethernet Debug Action test\n");
+//   EthEvt *ethEvt = Q_NEW(EthEvt, ETH_LOG_TCP_SEND_SIG);
+//   char tmp[] = "Testing Ethernet TCP send function\n";
+//   ethEvt->msg_len = sizeof(tmp);
+//   MEMCPY(ethEvt->msg, tmp, ethEvt->msg_len);
+//   ethEvt->msg_src = 0;
+//   QF_PUBLISH((QEvent *)ethEvt, AO_DbgMgr);
+//
+//
+//   MENU_printf(ETH_PORT_LOG, "Test1\n");
+//   MENU_printf(ETH_PORT_LOG, "Test2\n");
+//   MENU_printf(ETH_PORT_LOG, "Test3\n");
+//   MENU_printf(ETH_PORT_LOG, "Test4\n");
+//   MENU_printf(ETH_PORT_LOG, "Test5\n");
+//   MENU_printf(ETH_PORT_LOG, "Test6\n");
 }
 
 /**

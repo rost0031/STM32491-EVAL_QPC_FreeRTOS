@@ -46,7 +46,7 @@ menuNav_t menuNav;
  * be pointed to by the node being added.
  * @param [in] menuSelectTxt: const char* pointer to the storage of the selector
  * text that will be pointed by the node being added.
- * @param [in] pFunction function pointer to the action function that will be
+ * @param [in] pMenuFunction function pointer to the action function that will be
  * pointed by the node being added.  This action is what will execute when that
  * menu item (or submenu) is selected.  Can be NULL if no action is to be taken.
  * @return: treeNode_t* pointer to the newly added node.
@@ -56,7 +56,7 @@ static treeNode_t* MENU_addChild(
       treeNode_t* parent,
       const char* menuTxt,
       const char* menuSelectTxt,
-      pFunction action
+      pMenuFunction action
 );
 
 /**
@@ -177,7 +177,7 @@ treeNode_t* MENU_parseCurrLevelMenuItems(
          if (0 == strncmp(childNode->selector, pBuffer, bufferLen-1)) {
 //            DBG_printf("Selecting %s\n", childNode->text);
             if ( NULL != childNode->actionToTake) {
-               childNode->actionToTake();
+               childNode->actionToTake( pBuffer, bufferLen, msgSrc );
             }
 
             /* If this current node is another menu, make sure to set the node
@@ -216,7 +216,7 @@ treeNode_t* MENU_addSubMenu(
       treeNode_t* parent,
       const char* menuTxt,
       const char* menuSelectTxt,
-      pFunction action
+      pMenuFunction action
 )
 {
    return( MENU_addChild(node, parent, menuTxt, menuSelectTxt, action ) );
@@ -228,7 +228,7 @@ treeNode_t* MENU_addMenuItem(
       treeNode_t* parent,
       const char* menuTxt,
       const char* menuSelectTxt,
-      pFunction action
+      pMenuFunction action
 )
 {
    return( MENU_addChild(node, parent, menuTxt, menuSelectTxt, action ) );
@@ -240,7 +240,7 @@ static treeNode_t* MENU_addChild(
       treeNode_t* parent,
       const char* menuTxt,
       const char* menuSelectTxt,
-      pFunction action
+      pMenuFunction action
 )
 {
    /* 1. Initialize this submenu */

@@ -79,75 +79,129 @@ char *const menuDbgModCntrlItem_toggleModCOMMSelectKey = "COM";
 /* Private functions ---------------------------------------------------------*/
 
 /******************************************************************************/
-void MENU_toggleDbgModGeneralAction( void )
+void MENU_toggleDbgModGeneralAction(
+      const char* dataBuf,
+      uint16_t dataLen,
+      MsgSrc dst
+)
 {
-   DBG_printf("Debugging for GENERAL module was %s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_GENERAL) ? "ON" : "OFF" );
+   CB_UNUSED_ARG(dataBuf);
+   CB_UNUSED_ARG(dataLen);
+   MENU_printf(dst, "Turning debugging for the GENERAL module from %s to ", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_GENERAL) ? "ON" : "OFF" );
    DBG_TOGGLE_DEBUG_FOR_MODULE(DBG_MODL_GENERAL);
-   LOG_printf("Debugging for GENERAL module is now %s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_GENERAL) ? "ON" : "OFF" );
+   MENU_printf(dst, "%s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_GENERAL) ? "ON" : "OFF" );
 }
 
 /******************************************************************************/
-void MENU_toggleDbgModSerialAction( void )
+void MENU_toggleDbgModSerialAction(
+      const char* dataBuf,
+      uint16_t dataLen,
+      MsgSrc dst
+)
 {
-   DBG_printf("Debugging for SERIAL module was %s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_SERIAL) ? "ON" : "OFF" );
+   CB_UNUSED_ARG(dataBuf);
+   CB_UNUSED_ARG(dataLen);
+   MENU_printf(dst, "Turning debugging for the SERIAL module from %s to ", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_SERIAL) ? "ON" : "OFF" );
    DBG_TOGGLE_DEBUG_FOR_MODULE(DBG_MODL_SERIAL);
-   LOG_printf("Debugging for SERIAL module is now %s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_SERIAL) ? "ON" : "OFF" );
+   MENU_printf(dst, "%s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_SERIAL) ? "ON" : "OFF" );
 }
 
 /******************************************************************************/
-void MENU_toggleDbgModTimeAction( void )
+void MENU_toggleDbgModTimeAction(
+      const char* dataBuf,
+      uint16_t dataLen,
+      MsgSrc dst
+)
 {
-   DBG_printf("Debugging for TIME module was %s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_TIME) ? "ON" : "OFF" );
+   CB_UNUSED_ARG(dataBuf);
+   CB_UNUSED_ARG(dataLen);
+   MENU_printf(dst, "Turning debugging for the TIME module from %s to ", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_TIME) ? "ON" : "OFF" );
    DBG_TOGGLE_DEBUG_FOR_MODULE(DBG_MODL_TIME);
-   LOG_printf("Debugging for TIME module is now %s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_TIME) ? "ON" : "OFF" );
+   MENU_printf(dst, "%s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_TIME) ? "ON" : "OFF" );
 }
 
 /******************************************************************************/
-void MENU_toggleDbgModEthAction( void )
+void MENU_toggleDbgModEthAction(
+      const char* dataBuf,
+      uint16_t dataLen,
+      MsgSrc dst
+)
 {
-   DBG_printf("Debugging for ETHERNET module was %s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_ETH) ? "ON" : "OFF" );
+   CB_UNUSED_ARG(dataBuf);
+   CB_UNUSED_ARG(dataLen);
+   MENU_printf(dst, "Turning debugging for the ETHERNET module from %s to ", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_ETH) ? "ON" : "OFF" );
    DBG_TOGGLE_DEBUG_FOR_MODULE(DBG_MODL_ETH);
-   LOG_printf("Debugging for ETHERNET module is now %s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_ETH) ? "ON" : "OFF" );
+   MENU_printf(dst, "%s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_ETH) ? "ON" : "OFF" );
 }
 
 /******************************************************************************/
-void MENU_toggleDbgModI2CAction( void )
+void MENU_toggleDbgModI2CAction(
+      const char* dataBuf,
+      uint16_t dataLen,
+      MsgSrc dst
+)
 {
-   DBG_printf("Debugging for I2C module was %s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_I2C) ? "ON" : "OFF" );
+   CB_UNUSED_ARG(dataBuf);
+   CB_UNUSED_ARG(dataLen);
+   MENU_printf(dst, "Turning debugging for the I2C module from %s to ", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_I2C) ? "ON" : "OFF" );
    DBG_TOGGLE_DEBUG_FOR_MODULE(DBG_MODL_I2C);
-   LOG_printf("Debugging for I2C module is now %s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_I2C) ? "ON" : "OFF" );
+   MENU_printf(dst, "%s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_I2C) ? "ON" : "OFF" );
 }
 
 /******************************************************************************/
-void MENU_toggleDbgModNORAction( void )
+void MENU_toggleDbgModNORAction(
+      const char* dataBuf,
+      uint16_t dataLen,
+      MsgSrc dst
+)
 {
-   DBG_printf("Debugging for NOR module was %s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_NOR) ? "ON" : "OFF" );
+   CB_UNUSED_ARG(dataBuf);
+   CB_UNUSED_ARG(dataLen);
+   MENU_printf(dst, "Turning debugging for the NOR module from %s to ", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_NOR) ? "ON" : "OFF" );
    DBG_TOGGLE_DEBUG_FOR_MODULE(DBG_MODL_NOR);
-   LOG_printf("Debugging for NOR module is now %s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_NOR) ? "ON" : "OFF" );
+   MENU_printf(dst, "%s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_NOR) ? "ON" : "OFF" );
 }
 
 /******************************************************************************/
-void MENU_toggleDbgModSDRAMAction( void )
+void MENU_toggleDbgModSDRAMAction(
+      const char* dataBuf,
+      uint16_t dataLen,
+      MsgSrc dst
+)
 {
-   DBG_printf("Debugging for SDRAM module was %s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_SDRAM) ? "ON" : "OFF" );
+   CB_UNUSED_ARG(dataBuf);
+   CB_UNUSED_ARG(dataLen);
+   MENU_printf(dst, "Turning debugging for the SDRAM module from %s to ", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_SDRAM) ? "ON" : "OFF" );
    DBG_TOGGLE_DEBUG_FOR_MODULE(DBG_MODL_SDRAM);
-   LOG_printf("Debugging for SDRAM module is now %s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_SDRAM) ? "ON" : "OFF" );
+   MENU_printf(dst, "%s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_SDRAM) ? "ON" : "OFF" );
 }
 
 /******************************************************************************/
-void MENU_toggleDbgModDBGAction( void )
+void MENU_toggleDbgModDBGAction(
+      const char* dataBuf,
+      uint16_t dataLen,
+      MsgSrc dst
+)
 {
-   DBG_printf("Debugging for DBG module was %s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_DBG) ? "ON" : "OFF" );
+   CB_UNUSED_ARG(dataBuf);
+   CB_UNUSED_ARG(dataLen);
+   MENU_printf(dst, "Turning debugging for the DEBUG/MENU module from %s to ", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_DBG) ? "ON" : "OFF" );
    DBG_TOGGLE_DEBUG_FOR_MODULE(DBG_MODL_DBG);
-   LOG_printf("Debugging for DBG module is now %s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_DBG) ? "ON" : "OFF" );
+   MENU_printf(dst, "%s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_DBG) ? "ON" : "OFF" );
 }
 
 /******************************************************************************/
-void MENU_toggleDbgModCOMMAction( void )
+void MENU_toggleDbgModCOMMAction(
+      const char* dataBuf,
+      uint16_t dataLen,
+      MsgSrc dst
+)
 {
-   DBG_printf("Debugging for COMM module was %s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_COMM) ? "ON" : "OFF" );
+   CB_UNUSED_ARG(dataBuf);
+   CB_UNUSED_ARG(dataLen);
+   MENU_printf(dst, "Turning debugging for the COMM module from %s to ", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_COMM) ? "ON" : "OFF" );
    DBG_TOGGLE_DEBUG_FOR_MODULE(DBG_MODL_COMM);
-   LOG_printf("Debugging for COMM module is now %s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_COMM) ? "ON" : "OFF" );
+   MENU_printf(dst, "%s\n", DBG_CHECK_DEBUG_FOR_MODULE(DBG_MODL_COMM) ? "ON" : "OFF" );
 }
 
 

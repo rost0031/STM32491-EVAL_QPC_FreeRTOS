@@ -31,28 +31,7 @@ extern treeNode_t menuDbg;
 extern char *const menuDbg_TitleTxt;
 extern char *const menuDbg_SelectKey;
 
-//extern treeNode_t menuDbgItem_toggleSerialDebug;
-//extern char *const menuDbgItem_toggleSerialDebugTxt;
-//extern char *const menuDbgItem_toggleSerialDebugSelectKey;
-//
-//extern treeNode_t menuDbgItem_toggleEthDebug;
-//extern char *const menuDbgItem_toggleEthDebugTxt;
-//extern char *const menuDbgItem_toggleEthDebugSelectKey;
-
 /* Exported functions --------------------------------------------------------*/
-
-///**
-// * @brief   Initialize the menu memory space with the contents of the menu
-// *
-// * This function initializes the menu application.
-// *
-// * @param [in]  iBus: I2C_Bus_t identifier for I2C bus to initialize
-// *    @arg
-// * @return: None
-// */
-//void MENU_toggleSerialDebugAction( void );
-//
-//void MENU_toggleEthDebugAction( void );
 
 /**
  * @}

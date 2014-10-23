@@ -71,15 +71,140 @@ extern char *const menuDbgModCntrlItem_toggleModCOMMSelectKey;
 
 /* Exported functions --------------------------------------------------------*/
 
-void MENU_toggleDbgModGeneralAction( void );
-void MENU_toggleDbgModSerialAction( void );
-void MENU_toggleDbgModTimeAction( void );
-void MENU_toggleDbgModEthAction( void );
-void MENU_toggleDbgModI2CAction( void );
-void MENU_toggleDbgModNORAction( void );
-void MENU_toggleDbgModSDRAMAction( void );
-void MENU_toggleDbgModDBGAction( void );
-void MENU_toggleDbgModCOMMAction( void );
+/**
+ * @brief Called by the menu item to toggle general module debugging.
+ * @param [in] dataBuf: const char* pointer to the data passed in by the user at
+ * cmd line
+ * @param [in] dataLen: uint16_t length of data in the dataBuf.
+ * @param [in] dst: MsgSrc destination so MENU_printf() knows were to direct the
+ * output.
+ * @return: None
+ */
+void MENU_toggleDbgModGeneralAction(
+      const char* dataBuf,
+      uint16_t dataLen,
+      MsgSrc dst
+);
+
+/**
+ * @brief Called by the menu item to toggle serial module debugging.
+ * @param [in] dataBuf: const char* pointer to the data passed in by the user at
+ * cmd line
+ * @param [in] dataLen: uint16_t length of data in the dataBuf.
+ * @param [in] dst: MsgSrc destination so MENU_printf() knows were to direct the
+ * output.
+ * @return: None
+ */
+void MENU_toggleDbgModSerialAction(
+      const char* dataBuf,
+      uint16_t dataLen,
+      MsgSrc dst
+);
+
+/**
+ * @brief Called by the menu item to toggle time module debugging.
+ * @param [in] dataBuf: const char* pointer to the data passed in by the user at
+ * cmd line
+ * @param [in] dataLen: uint16_t length of data in the dataBuf.
+ * @param [in] dst: MsgSrc destination so MENU_printf() knows were to direct the
+ * output.
+ * @return: None
+ */
+void MENU_toggleDbgModTimeAction(
+      const char* dataBuf,
+      uint16_t dataLen,
+      MsgSrc dst
+);
+
+/**
+ * @brief Called by the menu item to toggle ethernet module debugging.
+ * @param [in] dataBuf: const char* pointer to the data passed in by the user at
+ * cmd line
+ * @param [in] dataLen: uint16_t length of data in the dataBuf.
+ * @param [in] dst: MsgSrc destination so MENU_printf() knows were to direct the
+ * output.
+ * @return: None
+ */
+void MENU_toggleDbgModEthAction(
+      const char* dataBuf,
+      uint16_t dataLen,
+      MsgSrc dst
+);
+
+/**
+ * @brief Called by the menu item to toggle I2C module debugging.
+ * @param [in] dataBuf: const char* pointer to the data passed in by the user at
+ * cmd line
+ * @param [in] dataLen: uint16_t length of data in the dataBuf.
+ * @param [in] dst: MsgSrc destination so MENU_printf() knows were to direct the
+ * output.
+ * @return: None
+ */
+void MENU_toggleDbgModI2CAction(
+      const char* dataBuf,
+      uint16_t dataLen,
+      MsgSrc dst
+);
+
+/**
+ * @brief Called by the menu item to toggle NOR module debugging.
+ * @param [in] dataBuf: const char* pointer to the data passed in by the user at
+ * cmd line
+ * @param [in] dataLen: uint16_t length of data in the dataBuf.
+ * @param [in] dst: MsgSrc destination so MENU_printf() knows were to direct the
+ * output.
+ * @return: None
+ */
+void MENU_toggleDbgModNORAction(
+      const char* dataBuf,
+      uint16_t dataLen,
+      MsgSrc dst
+);
+
+/**
+ * @brief Called by the menu item to toggle SDRAM module debugging.
+ * @param [in] dataBuf: const char* pointer to the data passed in by the user at
+ * cmd line
+ * @param [in] dataLen: uint16_t length of data in the dataBuf.
+ * @param [in] dst: MsgSrc destination so MENU_printf() knows were to direct the
+ * output.
+ * @return: None
+ */
+void MENU_toggleDbgModSDRAMAction(
+      const char* dataBuf,
+      uint16_t dataLen,
+      MsgSrc dst
+);
+
+/**
+ * @brief Called by the menu item to toggle DEBUG module debugging.
+ * @param [in] dataBuf: const char* pointer to the data passed in by the user at
+ * cmd line
+ * @param [in] dataLen: uint16_t length of data in the dataBuf.
+ * @param [in] dst: MsgSrc destination so MENU_printf() knows were to direct the
+ * output.
+ * @return: None
+ */
+void MENU_toggleDbgModDBGAction(
+      const char* dataBuf,
+      uint16_t dataLen,
+      MsgSrc dst
+);
+
+/**
+ * @brief Called by the menu item to toggle COMM module debugging.
+ * @param [in] dataBuf: const char* pointer to the data passed in by the user at
+ * cmd line
+ * @param [in] dataLen: uint16_t length of data in the dataBuf.
+ * @param [in] dst: MsgSrc destination so MENU_printf() knows were to direct the
+ * output.
+ * @return: None
+ */
+void MENU_toggleDbgModCOMMAction(
+      const char* dataBuf,
+      uint16_t dataLen,
+      MsgSrc dst
+);
 
 
 /**
