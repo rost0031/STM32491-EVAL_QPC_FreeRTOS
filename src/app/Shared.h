@@ -24,7 +24,7 @@
 /**
  * @brief Global maximum length of message buffers (serial and ethernet).
  */
-#define MAX_MSG_LEN                                                        512
+#define MAX_MSG_LEN                                                        300
 
 /* Exported macros -----------------------------------------------------------*/
 /**
