@@ -64,12 +64,6 @@ typedef struct {
     /**< QPC timer Used to timeout I2C transfers if errors occur. */
     QTimeEvt i2cTimerEvt;
 
-    /**< Native QF queue for deferred request events. */
-    QEQueue deferredEvtQueue;
-
-    /**< Storage for deferred event queue. */
-    QTimeEvt const * deferredEvtQSto[100];
-
     /**< Specifies which I2C device is currently being handled by this AO.  This should
          be set when a new I2C_READ_START or I2C_WRITE_START events come in.  Those
          events should contain the device for which they are meant for. */
@@ -135,10 +129,12 @@ static QState I2CBusMgr_Idle(I2CBusMgr * const me, QEvt const * const e);
 /* Private defines -----------------------------------------------------------*/
 /* Private macros ------------------------------------------------------------*/
 /* Private variables and Local objects ---------------------------------------*/
-static I2CBusMgr l_I2CBusMgr;     /* the single instance of the active object */
+static I2CBusMgr l_I2CBusMgr[MAX_I2C_BUS]; /* the single instance of the active object */
 
 /* Global-scope objects ----------))------------------------------------------*/
-QActive * const AO_I2CBusMgr = (QActive *)&l_I2CBusMgr;/* "opaque" AO pointer */
+QActive * const AO_I2CBusMgr[MAX_I2C_BUS] = {
+    (QActive *)&l_I2CBusMgr[I2CBus1], /* "opaque" AO pointer to the I2CBusMgr for I2C1 */
+};
 extern I2C_BusSettings_t s_I2C_Bus[MAX_I2C_BUS];
 extern I2C_BusDevice_t   s_I2C_Dev[MAX_I2C_DEV];
 
@@ -155,20 +151,13 @@ extern I2C_BusDevice_t   s_I2C_Dev[MAX_I2C_DEV];
  */
 /*${AOs::I2CBusMgr_ctor} ...................................................*/
 void I2CBusMgr_ctor(I2C_Bus_t iBus) {
-    I2CBusMgr *me = &l_I2CBusMgr;
-    me->iBus = iBus;
+    I2CBusMgr *me = &l_I2CBusMgr[iBus]; // Get the local pointer to the external instance
+    me->iBus = iBus;  // Store which I2C bus this instance of the AO is handling
 
     QActive_ctor( &me->super, (QStateHandler)&I2CBusMgr_initial );
     QTimeEvt_ctor( &me->i2cTimerEvt, I2C_TIMEOUT_SIG );
     QTimeEvt_ctor( &me->i2cDMATimerEvt, I2C_DMA_TIMEOUT_SIG );
     QTimeEvt_ctor( &me->i2cRecoveryTimerEvt, I2C_RECOVERY_TIMEOUT_SIG );
-
-    /* Initialize the deferred event queue and storage for it */
-    QEQueue_init(
-        &me->deferredEvtQueue,
-        (QEvt const **)( me->deferredEvtQSto ),
-        Q_DIM(me->deferredEvtQSto)
-    );
 
     dbg_slow_printf("Constructor\n");
 }
@@ -266,16 +255,7 @@ static QState I2CBusMgr_Idle(I2CBusMgr * const me, QEvt const * const e) {
     switch (e->sig) {
         /* ${AOs::I2CBusMgr::SM::Active::Idle} */
         case Q_ENTRY_SIG: {
-            /* recall the request from the private requestQueue */
-            QActive_recall(
-                (QActive *)me,
-                &me->deferredEvtQueue
-            );
-
-            /* Clear out current operation */
-            me->i2cCurrOperation = I2C_OP_NONE;
-
-            DBG_printf("back in Idle\n");
+            DBG_printf("I2CBusMgr for I2CBus%d back in Idle\n", me->iBus+1);
             status_ = Q_HANDLED();
             break;
         }

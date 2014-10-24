@@ -104,7 +104,7 @@ void I2CBusMgr_ctor(I2C_Bus_t iBus);
 
 
 /**< "opaque" pointer to the Active Object */
-extern QActive * const AO_I2CBusMgr;
+extern QActive * const AO_I2CBusMgr[MAX_I2C_BUS];
 
 
 /**

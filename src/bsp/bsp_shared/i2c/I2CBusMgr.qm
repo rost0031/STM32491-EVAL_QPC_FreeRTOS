@@ -41,12 +41,6 @@
    <attribute name="i2cTimerEvt" type="QTimeEvt" visibility="0x01" properties="0x00">
     <documentation>/**&lt; QPC timer Used to timeout I2C transfers if errors occur. */</documentation>
    </attribute>
-   <attribute name="deferredEvtQueue" type="QEQueue" visibility="0x01" properties="0x00">
-    <documentation>/**&lt; Native QF queue for deferred request events. */</documentation>
-   </attribute>
-   <attribute name="deferredEvtQSto[100]" type="QTimeEvt const *" visibility="0x01" properties="0x00">
-    <documentation>/**&lt; Storage for deferred event queue. */</documentation>
-   </attribute>
    <attribute name="iDevice" type="I2C_Device_t" visibility="0x01" properties="0x00">
     <documentation>/**&lt; Specifies which I2C device is currently being handled by this AO.  This should
      be set when a new I2C_READ_START or I2C_WRITE_START events come in.  Those
@@ -140,28 +134,19 @@ I2C_BusInit( me-&gt;iBus );</entry>
  * @return status: QState type that specifies where the state
  * machine is going next.
  */</documentation>
-      <entry>/* recall the request from the private requestQueue */
-QActive_recall(
-    (QActive *)me,
-    &amp;me-&gt;deferredEvtQueue
-);
-
-/* Clear out current operation */
-me-&gt;i2cCurrOperation = I2C_OP_NONE;
-
-DBG_printf(&quot;back in Idle\n&quot;);</entry>
-      <state_glyph node="5,10,19,34">
+      <entry>DBG_printf(&quot;I2CBusMgr for I2CBus%d back in Idle\n&quot;, me-&gt;iBus+1);</entry>
+      <state_glyph node="5,10,19,74">
        <entry box="1,2,5,2"/>
       </state_glyph>
      </state>
-     <state_glyph node="3,6,106,40">
+     <state_glyph node="3,6,106,80">
       <entry box="1,2,5,2"/>
      </state_glyph>
     </state>
-    <state_diagram size="112,56"/>
+    <state_diagram size="112,88"/>
    </statechart>
   </class>
-  <attribute name="AO_I2CBusMgr" type="QActive * const" visibility="0x00" properties="0x00">
+  <attribute name="AO_I2CBusMgr[MAX_I2C_BUS]" type="QActive * const" visibility="0x00" properties="0x00">
    <documentation>/**&lt; &quot;opaque&quot; pointer to the Active Object */</documentation>
   </attribute>
   <operation name="I2CBusMgr_ctor" type="void" visibility="0x00" properties="0x00">
@@ -174,20 +159,13 @@ DBG_printf(&quot;back in Idle\n&quot;);</entry>
  * @retval None
  */</documentation>
    <parameter name="iBus" type="I2C_Bus_t"/>
-   <code>I2CBusMgr *me = &amp;l_I2CBusMgr;
-me-&gt;iBus = iBus;
+   <code>I2CBusMgr *me = &amp;l_I2CBusMgr[iBus]; // Get the local pointer to the external instance
+me-&gt;iBus = iBus;  // Store which I2C bus this instance of the AO is handling
 
 QActive_ctor( &amp;me-&gt;super, (QStateHandler)&amp;I2CBusMgr_initial );
 QTimeEvt_ctor( &amp;me-&gt;i2cTimerEvt, I2C_TIMEOUT_SIG );
 QTimeEvt_ctor( &amp;me-&gt;i2cDMATimerEvt, I2C_DMA_TIMEOUT_SIG );
 QTimeEvt_ctor( &amp;me-&gt;i2cRecoveryTimerEvt, I2C_RECOVERY_TIMEOUT_SIG );
-
-/* Initialize the deferred event queue and storage for it */
-QEQueue_init(
-    &amp;me-&gt;deferredEvtQueue,
-    (QEvt const **)( me-&gt;deferredEvtQSto ),
-    Q_DIM(me-&gt;deferredEvtQSto)
-);
 
 dbg_slow_printf(&quot;Constructor\n&quot;);</code>
   </operation>
@@ -232,10 +210,12 @@ $declare(AOs::I2CBusMgr)
 /* Private defines -----------------------------------------------------------*/
 /* Private macros ------------------------------------------------------------*/
 /* Private variables and Local objects ---------------------------------------*/
-static I2CBusMgr l_I2CBusMgr;     /* the single instance of the active object */
+static I2CBusMgr l_I2CBusMgr[MAX_I2C_BUS]; /* the single instance of the active object */
 
 /* Global-scope objects ----------))------------------------------------------*/
-QActive * const AO_I2CBusMgr = (QActive *)&amp;l_I2CBusMgr;/* &quot;opaque&quot; AO pointer */
+QActive * const AO_I2CBusMgr[MAX_I2C_BUS] = {
+    (QActive *)&amp;l_I2CBusMgr[I2CBus1], /* &quot;opaque&quot; AO pointer to the I2CBusMgr for I2C1 */
+};
 extern I2C_BusSettings_t s_I2C_Bus[MAX_I2C_BUS];
 extern I2C_BusDevice_t   s_I2C_Dev[MAX_I2C_DEV];
 
@@ -292,7 +272,7 @@ $declare(Events)
 /* Exported constants --------------------------------------------------------*/
 /* Exported functions --------------------------------------------------------*/
 $declare(AOs::I2CBusMgr_ctor)
-$declare(AOs::AO_I2CBusMgr)
+$declare(AOs::AO_I2CBusMgr[MAX_I2C_BUS])
 
 /**
  * @} end addtogroup groupI2C

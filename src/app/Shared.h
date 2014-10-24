@@ -49,7 +49,13 @@ enum AO_Priorities {
    NEVER_USE_ZERO_PRIORITY = 0,   /**< Never use this.  It breaks everything. */
    ETH_PRIORITY,       /**< Priority of LWIP AO which handles ethernet comms. */
    SERIAL_MGR_PRIORITY,                        /**< Priority of SerialMgr AO. */
-   I2CBUSMGR_PRIORITY,                         /**< Priority of I2CBusMgr AO. */
+
+   I2CBUS1MGR_PRIORITY,                        /**< Priority of I2CBusMgr AO. */
+   /* If more I2C busses are used, make sure that the priorities for them are
+    * all together since there's a loop that iterates through them and will
+    * take up the next priority if one is not added here.  You will end up with
+    * clashing priorities for your AOs.*/
+
    I2C1DEVMGR_PRIORITY,                       /**< Priority of I2C1DevMgr AO. */
    COMM_MGR_PRIORITY,                       /**< Priority of CommStackMgr AO. */
    I2C_MGR_PRIORITY,                              /**< Priority of I2CMgr AO. */

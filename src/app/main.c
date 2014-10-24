@@ -40,7 +40,7 @@ static QEvt const    *l_CommStackMgrQueueSto[100];  /**< Storage for CommStackMg
 static QEvt const    *l_LWIPMgrQueueSto[100];       /**< Storage for LWIPMgr event Queue */
 static QEvt const    *l_SerialMgrQueueSto[100];     /**< Storage for SerialMgr event Queue */
 //static QEvt const    *l_I2CMgrQueueSto[100];        /**< Storage for I2CMgr event Queue */
-static QEvt const    *l_I2CBusMgrQueueSto[100];     /**< Storage for I2CBusMgr event Queue */
+static QEvt const    *l_I2CBusMgrQueueSto[100][MAX_I2C_BUS];    /**< Storage for I2CBusMgr event Queue */
 static QEvt const    *l_I2C1DevMgrQueueSto[100];    /**< Storage for I2C1DevMgr event Queue */
 static QEvt const    *l_DbgMgrQueueSto[100];        /**< Storage for DbgMgr event Queue */
 static QSubscrList   l_subscrSto[MAX_PUB_SIG];      /**< Storage for subscribe/publish event Queue */
@@ -113,7 +113,12 @@ int main(void)
     LWIPMgr_ctor();
 //    I2CMgr_ctor( I2CBus1 );        /* Start this instance of AO for I2C1 bus. */
 
-    I2CBusMgr_ctor( I2CBus1 );        /* Start this instance of AO for I2C1 bus. */
+    /* Iterate though the available I2C busses on the system and call the ctor()
+     * for each instance of the I2CBusMgr AO for each bus. */
+    for( uint8_t i = 0; i < MAX_I2C_BUS; ++i ) {
+       I2CBusMgr_ctor( i );      /* Start this instance of AO for this bus. */
+    }
+
     I2C1DevMgr_ctor();
     CommStackMgr_ctor();
     DbgMgr_ctor();                           /* This AO should start up last */
@@ -173,12 +178,19 @@ int main(void)
 //          (QEvt *)0                                /* no initialization event */
 //    );
 
-    QACTIVE_START(AO_I2CBusMgr,
-          I2CBUSMGR_PRIORITY,                                     /* priority */
-          l_I2CBusMgrQueueSto, Q_DIM(l_I2CBusMgrQueueSto),       /* evt queue */
+    /* Iterate though the available I2C busses on the system and start an
+     * instance of the I2CBusMgr AO for each bus.
+     * WARNING!!!: make sure that the priorities for them are all together since
+     * this loop will iterates through them and will take another AO's priority.
+     * You will end up with clashing priorities for your AOs.*/
+    for( uint8_t i = 0; i < MAX_I2C_BUS; ++i ) {
+    QACTIVE_START(AO_I2CBusMgr[i],
+          I2CBUS1MGR_PRIORITY + i,                                /* priority */
+          l_I2CBusMgrQueueSto[i], Q_DIM(l_I2CBusMgrQueueSto[i]), /* evt queue */
           (void *)0, 0U,                               /* no per-thread stack */
           (QEvt *)0                                /* no initialization event */
     );
+    }
 
     QACTIVE_START(AO_I2C1DevMgr,
           I2C1DEVMGR_PRIORITY,                                    /* priority */
