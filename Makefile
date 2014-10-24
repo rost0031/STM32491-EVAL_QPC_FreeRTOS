@@ -310,7 +310,8 @@ C_SRCS                = \
 						dbg_cntrl.c \
 						\
 						LWIPMgr.c \
-						I2CMgr.c \
+						I2CBusMgr.c \
+						I2C1DevMgr.c \
 						SerialMgr.c \
 						CommStackMgr.c \
 						DbgMgr.c \

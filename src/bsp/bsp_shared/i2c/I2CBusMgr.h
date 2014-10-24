@@ -83,14 +83,8 @@ typedef struct {
 /* protected: */
     QEvt super;
 
-    /**< Which I2C device is being accessed. */
-    I2C_Device_t i2cDevice;
-
-    /**< Address on the I2C device. */
-    uint16_t wAddr;
-
-    /**< Number of bytes to read/written from I2C device. */
-    uint16_t wDataLen;
+    /**< Which I2C bus the event is for. */
+    I2C_Bus_t i2cBus;
 } I2CEvt;
 
 

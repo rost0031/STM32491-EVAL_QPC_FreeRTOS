@@ -55,46 +55,6 @@
 /* Exported macros -----------------------------------------------------------*/
 /* Exported types ------------------------------------------------------------*/
 
-/**
- * \struct Event struct type for transporting I2C data.
- */
-/*${Events::I2CDataEvt} ....................................................*/
-typedef struct {
-/* protected: */
-    QEvt super;
-
-    /**< Which I2C device data is from. */
-    I2C_Device_t i2cDevice;
-
-    /**< Buffer that holds the data. */
-    char bufData[MAX_MSG_LEN];
-
-    /**< Length of data in the buffer. */
-    uint16_t wDataLen;
-
-    /**< Address on the I2C device read/written to. */
-    uint16_t wAddr;
-} I2CDataEvt;
-
-/**
- * \struct Event struct type for requesting I2C data reads and notifying of finished
- * writes.
- */
-/*${Events::I2CEvt} ........................................................*/
-typedef struct {
-/* protected: */
-    QEvt super;
-
-    /**< Which I2C device is being accessed. */
-    I2C_Device_t i2cDevice;
-
-    /**< Address on the I2C device. */
-    uint16_t wAddr;
-
-    /**< Number of bytes to read/written from I2C device. */
-    uint16_t wDataLen;
-} I2CEvt;
-
 
 /* Exported constants --------------------------------------------------------*/
 /* Exported functions --------------------------------------------------------*/

@@ -14,8 +14,10 @@
 #include "LWIPMgr.h"                               /* for starting LWIPMgr AO */
 #include "CommStackMgr.h"                     /* for starting CommStackMgr AO */
 #include "SerialMgr.h"                           /* for starting SerialMgr AO */
-#include "I2CMgr.h"                                 /* for starting I2CMgr AO */
+//#include "I2CMgr.h"                                 /* for starting I2CMgr AO */
 #include "DbgMgr.h"                                 /* for starting DbgMgr AO */
+#include "I2CBusMgr.h"                           /* for starting I2CBusMgr AO */
+#include "I2C1DevMgr.h"                         /* for starting I2C1DevMgr AO */
 
 #include "project_includes.h"           /* Includes common to entire project. */
 #include "Shared.h"
@@ -37,7 +39,9 @@ DBG_DEFINE_THIS_MODULE( DBG_MODL_GENERAL ); /* For debug system to ID this modul
 static QEvt const    *l_CommStackMgrQueueSto[100];  /**< Storage for CommStackMgr event Queue */
 static QEvt const    *l_LWIPMgrQueueSto[100];       /**< Storage for LWIPMgr event Queue */
 static QEvt const    *l_SerialMgrQueueSto[100];     /**< Storage for SerialMgr event Queue */
-static QEvt const    *l_I2CMgrQueueSto[100];        /**< Storage for I2CMgr event Queue */
+//static QEvt const    *l_I2CMgrQueueSto[100];        /**< Storage for I2CMgr event Queue */
+static QEvt const    *l_I2CBusMgrQueueSto[100];     /**< Storage for I2CBusMgr event Queue */
+static QEvt const    *l_I2C1DevMgrQueueSto[100];    /**< Storage for I2C1DevMgr event Queue */
 static QEvt const    *l_DbgMgrQueueSto[100];        /**< Storage for DbgMgr event Queue */
 static QSubscrList   l_subscrSto[MAX_PUB_SIG];      /**< Storage for subscribe/publish event Queue */
 
@@ -107,7 +111,10 @@ int main(void)
     dbg_slow_printf("Initializing AO constructors\n");
     SerialMgr_ctor();
     LWIPMgr_ctor();
-    I2CMgr_ctor( I2CBus1 );        /* Start this instance of AO for I2C1 bus. */
+//    I2CMgr_ctor( I2CBus1 );        /* Start this instance of AO for I2C1 bus. */
+
+    I2CBusMgr_ctor( I2CBus1 );        /* Start this instance of AO for I2C1 bus. */
+    I2C1DevMgr_ctor();
     CommStackMgr_ctor();
     DbgMgr_ctor();                           /* This AO should start up last */
 
@@ -121,7 +128,9 @@ int main(void)
     QS_OBJ_DICTIONARY(l_lrgPoolSto);
     QS_OBJ_DICTIONARY(l_SerialMgrQueueSto);
     QS_OBJ_DICTIONARY(l_LWIPMgrQueueSto);
-    QS_OBJ_DICTIONARY(l_I2CMgrQueueSto);
+//    QS_OBJ_DICTIONARY(l_I2CMgrQueueSto);
+    QS_OBJ_DICTIONARY(l_I2CBusMgrQueueSto);
+    QS_OBJ_DICTIONARY(l_I2C1DevMgrQueueSto);
     QS_OBJ_DICTIONARY(l_CommStackMgrQueueSto);
     QS_OBJ_DICTIONARY(l_DbgMgrQueueSto);
 
@@ -157,9 +166,23 @@ int main(void)
           (QEvt *)0                                /* no initialization event */
     );
 
-    QACTIVE_START(AO_I2CMgr,
-          I2C_MGR_PRIORITY,                                       /* priority */
-          l_I2CMgrQueueSto, Q_DIM(l_I2CMgrQueueSto),             /* evt queue */
+//    QACTIVE_START(AO_I2CMgr,
+//          I2C_MGR_PRIORITY,                                       /* priority */
+//          l_I2CMgrQueueSto, Q_DIM(l_I2CMgrQueueSto),             /* evt queue */
+//          (void *)0, 0U,                               /* no per-thread stack */
+//          (QEvt *)0                                /* no initialization event */
+//    );
+
+    QACTIVE_START(AO_I2CBusMgr,
+          I2CBUSMGR_PRIORITY,                                     /* priority */
+          l_I2CBusMgrQueueSto, Q_DIM(l_I2CBusMgrQueueSto),       /* evt queue */
+          (void *)0, 0U,                               /* no per-thread stack */
+          (QEvt *)0                                /* no initialization event */
+    );
+
+    QACTIVE_START(AO_I2C1DevMgr,
+          I2C1DEVMGR_PRIORITY,                                    /* priority */
+          l_I2C1DevMgrQueueSto, Q_DIM(l_I2C1DevMgrQueueSto),     /* evt queue */
           (void *)0, 0U,                               /* no per-thread stack */
           (QEvt *)0                                /* no initialization event */
     );
