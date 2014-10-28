@@ -13,9 +13,6 @@
  * I2C commands that need to be sent down that are specific for the device that
  * is currently being handled.  See I2CDevMgr.qm for diagram and model.
  */</documentation>
-   <attribute name="i2cTimerEvt" type="QTimeEvt" visibility="0x01" properties="0x00">
-    <documentation>/**&lt; QPC timer Used to timeout I2C transfers if errors occur. */</documentation>
-   </attribute>
    <attribute name="deferredEvtQueue" type="QEQueue" visibility="0x01" properties="0x00">
     <documentation>/**&lt; Native QF queue for deferred request events. */</documentation>
    </attribute>
@@ -32,35 +29,24 @@
      startup and is used to index into the structure that holds all the
      I2C bus settings. */</documentation>
    </attribute>
-   <attribute name="nI2CLoopTimeout" type="uint32_t" visibility="0x01" properties="0x00">
-    <documentation>/**&lt; Counter used to manually timeout some I2C operations.  Though we supposed to
-     not do blocking operations like this, it's unavoidable in this case since
-     the I2C ISRs won't post events until they are cleared, which happens after
-     here in the AO so nothing moves forward.  With all the delays introduced by
-     just event handling, there should be no blocking in reality but just in case,
-     there will still be timeout events launched from these loops if this counter
-     gets to 0. */</documentation>
+   <attribute name="i2cTimerEvt" type="QTimeEvt" visibility="0x01" properties="0x00">
+    <documentation>/**&lt; QPC timer Used to timeout overall I2C device interactions. */</documentation>
    </attribute>
-   <attribute name="i2cDMATimerEvt" type="QTimeEvt" visibility="0x01" properties="0x00">
-    <documentation>/**&lt; QPC timer Used to time I2C DMA operations. */</documentation>
-   </attribute>
-   <attribute name="i2cCurrOperation" type="I2C_Operation_t" visibility="0x01" properties="0x00">
-    <documentation>/**&lt; Specifies what the current I2C bus operation is happening.  Gets set upon
-     reception of I2C_READ_START_SIG and I2C_WRITE_START_SIG */</documentation>
-   </attribute>
-   <attribute name="i2cRecoveryTimerEvt" type="QTimeEvt" visibility="0x01" properties="0x00">
-    <documentation>/**&lt; QPC timer Used to timeout I2C bus recovery wait states. */</documentation>
+   <attribute name="i2cOpTimerEvt" type="QTimeEvt" visibility="0x01" properties="0x00">
+    <documentation>/**&lt; QPC timer Used to timeout discrete I2C bus requests to the I2CBusMgr AO. */</documentation>
    </attribute>
    <statechart>
-    <initial target="../1/0">
+    <initial target="../1/1">
      <action>(void)e;        /* suppress the compiler warning about unused parameter */
+
+me-&gt;iBus = I2CBus1;          /* This AO only handles devices on I2CBus1 */
 
 QS_OBJ_DICTIONARY(&amp;l_I2C1DevMgr);
 QS_FUN_DICTIONARY(&amp;QHsm_top);
 QS_FUN_DICTIONARY(&amp;I2C1DevMgr_initial);
 QS_FUN_DICTIONARY(&amp;I2C1DevMgr_Active);
 QS_FUN_DICTIONARY(&amp;I2C1DevMgr_Idle);</action>
-     <initial_glyph conn="1,2,4,3,11,4">
+     <initial_glyph conn="1,2,4,3,9,5">
       <action box="0,-2,6,2"/>
      </initial_glyph>
     </initial>
@@ -75,6 +61,247 @@ QS_FUN_DICTIONARY(&amp;I2C1DevMgr_Idle);</action>
  * @return status_: QState type that specifies where the state
  * machine is going next.
  */</documentation>
+     <entry>/* Post and disarm all the timer events so they can be rearmed at any time */
+QTimeEvt_postIn(
+    &amp;me-&gt;i2cTimerEvt,
+    (QActive *)me,
+    SEC_TO_TICKS( HL_MAX_TIMEOUT_I2C_BUS_CHECK_SEC )
+);
+QTimeEvt_disarm(&amp;me-&gt;i2cTimerEvt);
+
+QTimeEvt_postIn(
+    &amp;me-&gt;i2cOpTimerEvt,
+    (QActive *)me,
+    SEC_TO_TICKS( HL_MAX_TIMEOUT_I2C_BUS_CHECK_SEC )
+);
+QTimeEvt_disarm(&amp;me-&gt;i2cOpTimerEvt);</entry>
+     <state name="Busy">
+      <documentation>/**
+ * @brief   This state indicates that the I2C is currently busy and cannot
+ * process incoming data; incoming events will be deferred in this state and
+ * handled once the AO goes back to Idle state.
+ *
+ * @param  [in,out] me: Pointer to the state machine
+ * @param  [in,out] e:  Pointer to the event being processed.
+ * @return status: QState type that specifies where the state
+ * machine is going next.
+ */</documentation>
+      <entry>/* Post a timer on entry */
+QTimeEvt_rearm(
+    &amp;me-&gt;i2cTimerEvt,
+    SEC_TO_TICKS( HL_MAX_TIMEOUT_I2C_DEV_REQ_SEC )
+);</entry>
+      <exit>QTimeEvt_disarm( &amp;me-&gt;i2cTimerEvt ); /* Disarm timer on exit */</exit>
+      <tran trig="I2C1_DEV_TIMEOUT" target="../../1">
+       <action>ERR_printf(&quot;I2C1Dev timeout occurred with error: 0x%08x\n&quot;, me-&gt;errorCode);</action>
+       <tran_glyph conn="47,81,3,1,-22">
+        <action box="-17,-2,16,2"/>
+       </tran_glyph>
+      </tran>
+      <tran trig="I2C_READ_START, I2C_WRITE_START">
+       <action>if (QEQueue_getNFree(&amp;me-&gt;deferredEvtQueue) &gt; 0) {
+   /* defer the request - this event will be handled
+    * when the state machine goes back to Idle state */
+   QActive_defer((QActive *)me, &amp;me-&gt;deferredEvtQueue, e);
+   DBG_printf(&quot;Deferring I2C request until current is done\n&quot;);
+} else {
+   /* notify the request sender that the request was ignored.. */
+   ERR_printf(&quot;Unable to defer I2C request\n&quot;);
+}</action>
+       <tran_glyph conn="47,87,3,-1,61">
+        <action box="0,-4,15,4"/>
+       </tran_glyph>
+      </tran>
+      <state name="SendingStart">
+       <entry>/* Set error code */
+me-&gt;errorCode = ERR_I2C1DEV_START_BIT_TIMEOUT;
+
+/* Set timer */
+QTimeEvt_rearm(
+    &amp;me-&gt;i2cOpTimerEvt,
+    SEC_TO_TICKS( HL_MAX_TIMEOUT_I2C_STRT_BIT_SEC )
+);
+
+/* Directly post an event to the appropriate I2CBusMgr AO */
+static QEvt const qEvt = { I2C_BUS_START_BIT_SIG, 0U, 0U };
+QACTIVE_POST(AO_I2CBusMgr[me-&gt;iBus], &amp;qEvt, me);</entry>
+       <exit>QTimeEvt_disarm(&amp;me-&gt;i2cOpTimerEvt);</exit>
+       <tran trig="I2C_BUS_DONE">
+        <choice target="../../../4">
+         <guard brief="this bus?">me-&gt;iBus == ((I2CStatusEvt const *)e)-&gt;iBus</guard>
+         <choice_glyph conn="91,20,5,3,11">
+          <action box="3,0,10,2"/>
+         </choice_glyph>
+        </choice>
+        <choice>
+         <guard>else</guard>
+         <action>/* This event is meant for a different bus and we are ignoring it */</action>
+         <choice_glyph conn="91,20,4,-1,-4">
+          <action box="0,-4,6,2"/>
+         </choice_glyph>
+        </choice>
+        <tran_glyph conn="77,20,3,-1,14">
+         <action box="0,-2,14,2"/>
+        </tran_glyph>
+       </tran>
+       <state_glyph node="77,12,18,13">
+        <entry box="1,2,6,2"/>
+        <exit box="1,4,6,2"/>
+       </state_glyph>
+      </state>
+      <state name="CheckingBus">
+       <entry>/* Set error code */
+me-&gt;errorCode = ERR_I2C1DEV_CHECK_BUS_TIMEOUT;
+
+/* Set timer */
+QTimeEvt_rearm(
+    &amp;me-&gt;i2cOpTimerEvt,
+    SEC_TO_TICKS( HL_MAX_TIMEOUT_I2C_BUS_CHECK_SEC )
+);
+
+/* Directly post an event to the appropriate I2CBusMgr AO */
+static QEvt const qEvt = { I2C_BUS_CHECK_FREE_SIG, 0U, 0U };
+QACTIVE_POST(AO_I2CBusMgr[me-&gt;iBus], &amp;qEvt, me);</entry>
+       <exit>QTimeEvt_disarm(&amp;me-&gt;i2cOpTimerEvt);</exit>
+       <tran trig="I2C_BUS_DONE">
+        <choice target="../../../2">
+         <guard brief="this bus?">me-&gt;iBus == ((I2CStatusEvt const *)e)-&gt;iBus</guard>
+         <choice_glyph conn="66,22,5,3,11">
+          <action box="3,0,10,2"/>
+         </choice_glyph>
+        </choice>
+        <choice>
+         <guard>else</guard>
+         <action>/* This event is meant for a different bus and we are ignoring it */</action>
+         <choice_glyph conn="66,22,4,-1,-4">
+          <action box="0,-4,6,2"/>
+         </choice_glyph>
+        </choice>
+        <tran_glyph conn="52,22,3,-1,14">
+         <action box="0,-2,14,2"/>
+        </tran_glyph>
+       </tran>
+       <state_glyph node="52,12,17,13">
+        <entry box="1,2,6,2"/>
+        <exit box="1,4,6,2"/>
+       </state_glyph>
+      </state>
+      <state name="SelectBusMasterMode">
+       <entry>/* Set error code */
+me-&gt;errorCode = ERR_I2C1DEV_SELECT_BUS_MASTER_TIMEOUT;
+
+/* Set timer */
+QTimeEvt_rearm(
+    &amp;me-&gt;i2cOpTimerEvt,
+    SEC_TO_TICKS( HL_MAX_TIMEOUT_I2C_EV5_SEC )
+);
+
+/* Directly post an event to the appropriate I2CBusMgr AO */
+static QEvt const qEvt = { I2C_BUS_SELECT_MASTER_SIG, 0U, 0U };
+QACTIVE_POST(AO_I2CBusMgr[me-&gt;iBus], &amp;qEvt, me);</entry>
+       <exit>QTimeEvt_disarm(&amp;me-&gt;i2cOpTimerEvt);</exit>
+       <tran trig="I2C_BUS_DONE">
+        <choice target="../../../5">
+         <guard brief="this bus?">me-&gt;iBus == ((I2CStatusEvt const *)e)-&gt;iBus</guard>
+         <choice_glyph conn="116,23,5,3,11">
+          <action box="3,0,10,2"/>
+         </choice_glyph>
+        </choice>
+        <choice>
+         <guard>else</guard>
+         <action>/* This event is meant for a different bus and we are ignoring it */</action>
+         <choice_glyph conn="116,23,4,-1,-4">
+          <action box="0,-4,6,2"/>
+         </choice_glyph>
+        </choice>
+        <tran_glyph conn="102,23,3,-1,14">
+         <action box="0,-2,14,2"/>
+        </tran_glyph>
+       </tran>
+       <state_glyph node="102,12,18,13">
+        <entry box="1,2,6,2"/>
+        <exit box="1,4,6,2"/>
+       </state_glyph>
+      </state>
+      <state name="SelectTransmitterMode">
+       <entry>/* Set error code */
+me-&gt;errorCode = ERR_I2C1DEV_START_BIT_TIMEOUT;
+
+/* Set timer */
+QTimeEvt_rearm(
+    &amp;me-&gt;i2cOpTimerEvt,
+    SEC_TO_TICKS( HL_MAX_TIMEOUT_I2C_STRT_BIT_SEC )
+);
+
+/* Directly post an event to the appropriate I2CBusMgr AO */
+static QEvt const qEvt = { I2C_BUS_START_BIT_SIG, 0U, 0U };
+QACTIVE_POST(AO_I2CBusMgr[me-&gt;iBus], &amp;qEvt, me);</entry>
+       <exit>QTimeEvt_disarm(&amp;me-&gt;i2cOpTimerEvt);</exit>
+       <tran trig="I2C_BUS_DONE">
+        <choice>
+         <guard brief="this bus?">me-&gt;iBus == ((I2CStatusEvt const *)e)-&gt;iBus</guard>
+         <choice_glyph conn="141,20,5,-1,11">
+          <action box="3,0,10,2"/>
+         </choice_glyph>
+        </choice>
+        <choice>
+         <guard>else</guard>
+         <action>/* This event is meant for a different bus and we are ignoring it */</action>
+         <choice_glyph conn="141,20,4,-1,-4">
+          <action box="0,-4,6,2"/>
+         </choice_glyph>
+        </choice>
+        <tran_glyph conn="127,20,3,-1,14">
+         <action box="0,-2,14,2"/>
+        </tran_glyph>
+       </tran>
+       <state_glyph node="127,12,18,13">
+        <entry box="1,2,6,2"/>
+        <exit box="1,4,6,2"/>
+       </state_glyph>
+      </state>
+      <state name="Send7BitAddr">
+       <entry>/* Set error code */
+me-&gt;errorCode = ERR_I2C1DEV_START_BIT_TIMEOUT;
+
+/* Set timer */
+QTimeEvt_rearm(
+    &amp;me-&gt;i2cOpTimerEvt,
+    SEC_TO_TICKS( HL_MAX_TIMEOUT_I2C_STRT_BIT_SEC )
+);
+
+/* Directly post an event to the appropriate I2CBusMgr AO */
+static QEvt const qEvt = { I2C_BUS_START_BIT_SIG, 0U, 0U };
+QACTIVE_POST(AO_I2CBusMgr[me-&gt;iBus], &amp;qEvt, me);</entry>
+       <exit>QTimeEvt_disarm(&amp;me-&gt;i2cOpTimerEvt);</exit>
+       <tran trig="I2C_BUS_DONE">
+        <choice>
+         <guard brief="this bus?">me-&gt;iBus == ((I2CStatusEvt const *)e)-&gt;iBus</guard>
+         <choice_glyph conn="66,38,5,-1,11">
+          <action box="3,0,10,2"/>
+         </choice_glyph>
+        </choice>
+        <choice>
+         <guard>else</guard>
+         <action>/* This event is meant for a different bus and we are ignoring it */</action>
+         <choice_glyph conn="66,38,4,-1,-4">
+          <action box="0,-4,6,2"/>
+         </choice_glyph>
+        </choice>
+        <tran_glyph conn="52,38,3,-1,14">
+         <action box="0,-2,14,2"/>
+        </tran_glyph>
+       </tran>
+       <state_glyph node="52,30,18,13">
+        <entry box="1,2,6,2"/>
+        <exit box="1,4,6,2"/>
+       </state_glyph>
+      </state>
+      <state_glyph node="47,7,116,81">
+       <entry box="1,2,5,2"/>
+       <exit box="1,4,5,2"/>
+      </state_glyph>
+     </state>
      <state name="Idle">
       <documentation>/**
  * @brief This state indicates that the I2C bus is currently idle and the
@@ -96,17 +323,21 @@ QActive_recall(
     &amp;me-&gt;deferredEvtQueue
 );
 
-/* Clear out current operation */
-me-&gt;i2cCurrOperation = I2C_OP_NONE;
-
 DBG_printf(&quot;back in Idle\n&quot;);</entry>
-      <state_glyph node="5,7,19,50">
+      <tran trig="EEPROM_READ" target="../../0/3">
+       <tran_glyph conn="6,14,3,3,46">
+        <action box="0,-2,14,2"/>
+       </tran_glyph>
+      </tran>
+      <state_glyph node="6,7,19,80">
        <entry box="1,2,5,2"/>
       </state_glyph>
      </state>
-     <state_glyph node="3,3,76,56"/>
+     <state_glyph node="2,3,163,86">
+      <entry box="1,2,6,2"/>
+     </state_glyph>
     </state>
-    <state_diagram size="81,66"/>
+    <state_diagram size="167,90"/>
    </statechart>
   </class>
   <attribute name="AO_I2C1DevMgr" type="QActive * const" visibility="0x00" properties="0x00">
@@ -123,9 +354,8 @@ DBG_printf(&quot;back in Idle\n&quot;);</entry>
    <code>I2C1DevMgr *me = &amp;l_I2C1DevMgr;
 
 QActive_ctor( &amp;me-&gt;super, (QStateHandler)&amp;I2C1DevMgr_initial );
-QTimeEvt_ctor( &amp;me-&gt;i2cTimerEvt, I2C_TIMEOUT_SIG );
-QTimeEvt_ctor( &amp;me-&gt;i2cDMATimerEvt, I2C_DMA_TIMEOUT_SIG );
-QTimeEvt_ctor( &amp;me-&gt;i2cRecoveryTimerEvt, I2C_RECOVERY_TIMEOUT_SIG );
+QTimeEvt_ctor( &amp;me-&gt;i2cTimerEvt, I2C1_DEV_TIMEOUT_SIG );
+QTimeEvt_ctor( &amp;me-&gt;i2cOpTimerEvt, I2C1_DEV_OP_TIMEOUT_SIG );
 
 /* Initialize the deferred event queue and storage for it */
 QEQueue_init(

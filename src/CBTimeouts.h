@@ -24,13 +24,13 @@
  *
  * 1. Is the timeout high level or low level?  Which AOs are using it
  * 2. Is it a maximum or a minimum?
- * 3. Is it a timeout or just used to time something?
+ * 3. Is it a timeout (TOUT) or just used to time something (TIME)?
  * 4. Units: seconds (SEC), minutes (MIN), or other.
  * 5. Name of the timeout and who/how/etc it's used.
  *
- * {HL/LL}_{MAX/MIN/AVE}_{TIMEOUT/TIME}_{SEC/MIN/MS}_NAME_AND_USE
+ * {HL/LL}_{MAX/MIN/AVE}_{TOUT/TIME}_{SEC/MIN/MS}_NAME_AND_USE
  *
- * Example:  HL_MAX_TIMEOUT_SEC_QUICK_HEATER_CHECK
+ * Example:  HL_MAX_TOUT_SEC_QUICK_HEATER_CHECK
  *
  * HL: indicates that this is a high level timeout and is used by a top level
  * Active Object and is visible to the printer.
@@ -50,20 +50,31 @@
    /** \name Serial Timeouts
     * These are the timeouts used by the low level SerialMgr AO.
     *@{*/
-   #define LL_MAX_TIMEOUT_SERIAL_DMA_BUSY_SEC                              1.0
+   #define LL_MAX_TIMEOUT_SERIAL_DMA_BUSY_SEC                                 1.0
    /*@} Serial Timeout Maximums*/
 
-   /** \name I2C Timeouts
-    * These are the timeouts used by the low level I2CMgr AO.
+   /** \name I2C Bus timeouts and times
+    * These are the timeouts used by the low level I2CBusMgr AO.
     *@{*/
-   #define LL_MAX_TIMEOUT_I2C_BUS_BUSY_RETRY_SEC                           0.01
-   #define LL_MAX_TIMEOUT_I2C_DMA_READ_SEC                                 0.5
-   #define LL_MAX_TIMEOUT_I2C_DMA_WRITE_SEC                                0.5
-   #define LL_MAX_TIMEOUT_I2C_BUSY_SEC                                     3.0
-   #define LL_MAX_TIMEOUT_I2C_READ_OP_SEC                                  3.0
-   #define LL_MAX_TIMEOUT_I2C_WRITE_OP_SEC                                 3.0
-   #define LL_MAX_TIMEOUT_I2C_BUS_RECOVERY_SEC                             1.2
+   #define LL_MAX_TOUT_SEC_I2C_BASIC_OP                                       0.2
+   #define LL_MAX_TOUT_SEC_I2C_BUS_RECOVERY     ( LL_MAX_TOUT_SEC_I2C_BASIC_OP * 6 )  /**< How long the recovery is expected to take */
+   #define LL_MAX_TIME_SEC_I2C_BUS_SETTLE       ( LL_MAX_TOUT_SEC_I2C_BASIC_OP * 3 )  /**< How long bus settle should take */
+   #define LL_MAX_TOUT_SEC_I2C_GLOBAL           ( LL_MAX_TOUT_SEC_I2C_BUS_RECOVERY * 3 )
+   #define LL_MAX_TOUT_SEC_I2C_MEM_READ         ( LL_MAX_TOUT_SEC_I2C_BASIC_OP * 3 )
+   #define LL_MAX_TOUT_SEC_I2C_DMA_WRITE        ( LL_MAX_TOUT_SEC_I2C_BASIC_OP * 3 )
+   #define LL_MAX_TOUT_SEC_I2C_READ_OP          ( LL_MAX_TOUT_SEC_I2C_BASIC_OP * 4 )
+   #define LL_MAX_TOUT_SEC_I2C_WRITE_OP         ( LL_MAX_TOUT_SEC_I2C_BASIC_OP * 4 )
    /*@} I2C Timeouts */
+
+   /** \name I2C1Dev timeouts and times
+    * These are the timeouts used by the higher level I2C1DevMgr AO.
+    * These should be based on the LL I2CBusMgr timeouts.
+    *@{*/
+   #define HL_MAX_TOUT_SEC_I2C_DEV_REQ          ( LL_MAX_TOUT_SEC_I2C_WRITE_OP * 1.3 )
+   #define HL_MAX_TOUT_SEC_I2C_BUS_CHECK        ( LL_MAX_TIME_SEC_I2C_BUS_RECOVERY * 1.3 )
+   #define HL_MAX_TOUT_SEC_I2C_STRT_BIT         ( LL_MAX_TOUT_SEC_I2C_DMA_READ * 1.3 )
+   #define HL_MAX_TOUT_SEC_I2C_EV5                HL_MAX_TOUT_SEC_I2C_STRT_BIT
+   /*@} I2C1Dev Timeouts */
 
    /** \name ETH Timeouts
     * These are the timeouts used by the low level LWIPMgr AO.

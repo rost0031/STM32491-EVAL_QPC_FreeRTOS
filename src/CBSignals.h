@@ -70,11 +70,43 @@ enum I2CMgrSignals {
    I2C_MAX_SIG
 };
 
+
+/**
+ * @enum Signals used by I2CBusMgr
+ */
+enum I2CBusMgrSignals {
+   I2C_BUS_CHECK_FREE_SIG = I2C_MAX_SIG, /** This signal must start at the previous category max signal */
+   I2C_BUS_GLOBAL_TOUT_SIG,
+   I2C_BUS_OP_TOUT_SIG,
+   I2C_BUS_SETTLE_TIMER_SIG,
+   I2C_BUS_START_BIT_SIG,
+   I2C_BUS_SELECT_MASTER_SIG,
+   I2C_BUS_SET_DIR_TX,
+   I2C_BUS_SET_DIR_RX,
+   I2C_BUS_SEND_7BIT_ADDR_SIG,
+   I2C_BUS_SEND_10BIT_ADDR_SIG,
+   I2C_BUS_SEND_DEV_ADDR_SIG,
+   I2C_BUS_READ_MEM_SIG,
+   I2C_BUS_DMA_READ_DONE_SIG,
+   I2C_BUS_DONE_SIG,
+   I2C_BUS_MAX_SIG
+};
+
+/**
+ * @enum Signals used by I2C1DevMgr
+ */
+enum I2C1DevMgrSignals {
+   I2C1_DEV_TIMEOUT_SIG = I2C_BUS_MAX_SIG, /** This signal must start at the previous category max signal */
+   I2C1_DEV_OP_TIMEOUT_SIG,
+   I2C1_DEV_READ_DONE_SIG,
+   I2C1_DEV_MAX_SIG
+};
+
 /**
  * @enum Signals used by DbgMgr
  */
 enum DbgMgrSignals {
-   DBG_MENU_REQ_SIG = I2C_MAX_SIG, /** This signal must start at the previous category max signal */
+   DBG_MENU_REQ_SIG = I2C_BUS_MAX_SIG, /** This signal must start at the previous category max signal */
    DBG_LOG_SIG,
    DBG_MENU_SIG,
    DBG_MAX_SIG

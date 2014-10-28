@@ -48,31 +48,35 @@
 #include "i2c.h"                               /* For I2C device declarations */
 
 /* Exported defines ----------------------------------------------------------*/
-#define MAX_BUS_RETRIES   100 /**< Max number of retries for I2C bus for busy flag */
-#define MAX_I2C_TIMEOUT 10000 /**< Max number of retries for I2C bus for busy flag */
+#define MAX_BUS_RETRIES   100      /**< Max retries for I2C bus for busy flag */
+#define MAX_I2C_TIMEOUT 10000      /**< Max retries for I2C bus for busy flag */
+#define MAX_I2C_BYTES      20        /**< Max size of the I2C buffer for data */
 /* Exported macros -----------------------------------------------------------*/
 /* Exported types ------------------------------------------------------------*/
 
 /**
  * \struct Event struct type for transporting I2C data.
  */
-/*${Events::I2CDataEvt} ....................................................*/
+/*${Events::I2CBusDataEvt} .................................................*/
 typedef struct {
 /* protected: */
     QEvt super;
 
     /**< Which I2C device data is from. */
-    I2C_Device_t i2cDevice;
+    I2C_Bus_t i2cBus;
 
     /**< Buffer that holds the data. */
-    char bufData[MAX_MSG_LEN];
+    char dataBuf[MAX_I2C_BYTES];
 
     /**< Length of data in the buffer. */
-    uint16_t wDataLen;
+    uint8_t dataLen;
 
-    /**< Address on the I2C device read/written to. */
-    uint16_t wAddr;
-} I2CDataEvt;
+    /**< Address on the I2C device read/write. */
+    uint16_t devAddr;
+
+    /**< Result error code from the completed request.  ERR_NONE if OK. */
+    CBErrorCode errorCode;
+} I2CBusDataEvt;
 
 /**
  * \struct Event struct type for requesting I2C data reads and notifying of finished
@@ -86,6 +90,73 @@ typedef struct {
     /**< Which I2C bus the event is for. */
     I2C_Bus_t i2cBus;
 } I2CEvt;
+
+/**
+ * @brief Event struct type for I2C status results.
+ */
+/*${Events::I2CStatusEvt} ..................................................*/
+typedef struct {
+/* protected: */
+    QEvt super;
+
+    /**< Which I2C bus the event is for. */
+    I2C_Bus_t i2cBus;
+
+    /**< Result error code from the completed request.  ERR_NONE if OK. */
+    CBErrorCode errorCode;
+} I2CStatusEvt;
+
+/**
+ * @brief Event struct type for specifying an address to the I2C bus.
+ */
+/*${Events::I2CAddrEvt} ....................................................*/
+typedef struct {
+/* protected: */
+    QEvt super;
+
+    /**< Which I2C bus the event is for. */
+    I2C_Bus_t i2cBus;
+
+    /**< Address on the I2C device read/written to. */
+    uint16_t addr;
+
+    /**< Specifies whether the address is 1 byte (8 bit) or 2 bytes (10 or 16 bit) */
+    uint8_t addrSize;
+
+    /**< Specifies the direction on the I2CBus.  Can be:
+     *   @arg I2C_Direction_Transmitter
+     *   @arg I2C_Direction_Receiver
+     */
+    uint8_t i2cDirection;
+} I2CAddrEvt;
+
+/**
+ * @brief Event struct type for reading internal memory of an I2C device such as an
+ * EEPROM.
+ */
+/*${Events::I2CReadMemReqEvt} ..............................................*/
+typedef struct {
+/* protected: */
+    QEvt super;
+
+    /**< Which I2C bus the event is for. */
+    I2C_Bus_t i2cBus;
+
+    /**< Address on the I2C device to read from. */
+    uint16_t addr;
+
+    /**< Specifies whether the address is 1 byte (8 bit) or 2 bytes (10 or 16 bit) */
+    uint8_t addrSize;
+
+    /**< Specifies how to access the internal memory of an I2C device:
+     *   @arg I2C_MEM_BYTE
+     *   @arg I2C_MEM_DMA
+     */
+    I2C_MemAccess_t memAccessType;
+
+    /**< How many bytes to read */
+    uint16_t bytes;
+} I2CReadMemReqEvt;
 
 
 /* Exported constants --------------------------------------------------------*/

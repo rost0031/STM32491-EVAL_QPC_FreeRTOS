@@ -22,16 +22,9 @@ extern "C" {
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f4xx.h"                                 /* For STM32F4 support */
 #include "bsp.h"
+#include "i2c_dev.h"
 
 /* Exported defines ----------------------------------------------------------*/
-/**
- * @brief   Macro to determine if an I2C device is defined in the system
- * @param [in] DEV:  I2C_Device_t type I2C device specifier.
- * @retval
- *    1: Device exists and is valid
- *    0: Device doesn't exist or isn't defined
- */
-#define IS_I2C_DEVICE(DEV) ((DEV) == EEPROM || (DEV) == SN_ROM || (DEV) == UIE_ROM)
 
 /**
  * @brief   Macro to determine if an I2C bus is defined in the system
@@ -56,6 +49,15 @@ typedef enum I2C_Operations {
 } I2C_Operation_t;
 
 /**
+ * @brief I2C_MemAccess_t
+ * I2C device internal memory access types
+ */
+typedef enum I2C_MemAccess {
+   I2C_MEM_BYTE  = 0,                   /**< Access memory one byte at a time */
+   I2C_MEM_DMA,                                    /**< Access memory via DMA */
+} I2C_MemAccess_t;
+
+/**
  * \enum I2C_Device_t
  * I2C Devices available on the system.
  */
@@ -71,18 +73,6 @@ typedef enum I2C_States {
 } I2C_State_t;
 
 /**
- * \enum I2C_Device_t
- * I2C Devices available on the system.
- */
-typedef enum I2C_Devices {
-   EEPROM  = 0,                         /**< EEPROM attached to I2C */
-   SN_ROM,
-   UIE_ROM,
-   /* Insert more I2C device enumerations here... */
-   MAX_I2C_DEV     /**< Maximum number of available I2C devices on the system */
-} I2C_Device_t;
-
-/**
  * \enum I2C_Bus_t
  * I2C Busses available on the system.
  */
@@ -91,23 +81,6 @@ typedef enum I2C_Busses {
    /* Insert more I2C device enumerations here... */
    MAX_I2C_BUS      /**< Maximum number of available I2C Busses on the system */
 } I2C_Bus_t;
-
-/**
- * \struct I2C_BusDevice_t
- * Settings for the various I2C devices that are attached to any of the I2C busses.
- */
-typedef struct I2C_BusDevices
-{
-   /* "External" device settings */
-   const I2C_Device_t      i2c_dev;          /**< System I2C device specifier */
-   const I2C_TypeDef *     i2c_bus;        /**< I2C bus device is attached to */
-   const uint16_t          i2c_dev_addr;  /**< I2C Device address of the device */
-
-   /* Internal device settings */
-   const uint8_t           i2c_mem_addr_size; /**< How many bytes are used to specify internal mem addr of the device */
-   uint16_t                i2c_mem_addr;  /**< I2C last accessed mem address  */
-
-} I2C_BusDevice_t;
 
 /**
  * \struct I2C_BusSettings_t
@@ -168,7 +141,7 @@ typedef struct I2C_BusSettings
    uint16_t                nTxIndex;         /**< I2C data buffer used length.*/
 
    /* Device management */
-   I2C_Device_t            i2c_cur_dev;     /**< Current I2C device specifier.*/
+//   I2C_Device_t            i2c_cur_dev;     /**< Current I2C device specifier.*/
    I2C_State_t             i2c_cur_st;             /**< Current I2C bus state.*/
    uint8_t                 bTransDirection;    /**< Transmitting or Receiving */
    uint16_t                nBytesExpected; /**< How many bytes expected to TX or RX. */
@@ -248,7 +221,7 @@ void I2C_SetDirection( I2C_Bus_t iBus,  uint8_t I2C_Direction);
  * @return uint8_t: number of bytes used to address the internal memory of the
  * I2C device.  1 or 2 bytes.
  */
-uint8_t I2C_getDevAddrSize( I2C_Device_t iDev );
+//uint8_t I2C_getDevAddrSize( I2C_Device_t iDev );
 
 /**
  * @brief   Start the DMA read operation on the specified I2C bus.

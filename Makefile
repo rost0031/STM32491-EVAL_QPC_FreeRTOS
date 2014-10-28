@@ -305,6 +305,7 @@ C_SRCS                = \
 						console_output.c \
 						time.c \
 						i2c.c \
+						i2c_dev.c \
 						nor.c \
 						sdram.c \
 						dbg_cntrl.c \

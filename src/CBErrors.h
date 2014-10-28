@@ -72,6 +72,22 @@ typedef enum CBErrors
    ERR_MENU_CURRENT_NODE_NULL                                  = 0x00050003,
    ERR_MENU_CMD_NOT_FOUND_AT_THIS_MENU                         = 0x00050004,
 
+   /* I2CBus error category                      0x00060000 - 0x0006FFFF */
+   ERR_I2CBUS_BUSY                                             = 0x00060000,
+   ERR_I2CBUS_RCVRY_SDA_STUCK_LOW                              = 0x00060001,
+   ERR_I2CBUS_RCVRY_EV5_NOT_REC                                = 0x00060002,
+   ERR_I2CBUS_RCVRY_EV6_NOT_REC                                = 0x00060003,
+   ERR_I2CBUS_EV5_TIMEOUT                                      = 0x00060004,
+   ERR_I2CBUS_EV5_NOT_REC                                      = 0x00060005,
+   ERR_I2CBUS_INVALID_PARAMS_FOR_7BIT_ADDR                     = 0x00060006,
+   ERR_I2CBUS_INVALID_PARAMS_FOR_SEND_DATA                     = 0x00060007,
+   ERR_I2CBUS_EV6_TIMEOUT                                      = 0x00060008,
+
+   /* I2C1Dev error category                     0x00070000 - 0x0007FFFF */
+   ERR_I2C1DEV_CHECK_BUS_TIMEOUT                               = 0x00070000,
+   ERR_I2C1DEV_START_BIT_TIMEOUT                               = 0x00070001,
+   ERR_I2C1DEV_SELECT_BUS_MASTER_TIMEOUT                       = 0x00070002,
+
    /* Reserved errors                            0xFFFFFFFE - 0xFFFFFFFF */
    ERR_UNIMPLEMENTED                                           = 0xFFFFFFFE,
    ERR_UNKNOWN                                                 = 0xFFFFFFFF

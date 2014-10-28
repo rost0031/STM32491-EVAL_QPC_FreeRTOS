@@ -72,7 +72,7 @@ static union LargeEvents {
     void   *e0;                                       /* minimum event size */
     uint8_t e1[sizeof(MsgEvt)];
     uint8_t e2[sizeof(EthEvt)];
-    uint8_t e3[sizeof(I2CDataEvt)];
+//    uint8_t e3[sizeof(I2CDataEvt)];
     uint8_t e4[sizeof(LogDataEvt)];
     uint8_t e5[sizeof(LrgDataEvt)];
 } l_lrgPoolSto[200];                    /* storage for the large event pool */
