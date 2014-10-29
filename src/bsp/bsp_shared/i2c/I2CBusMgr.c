@@ -65,11 +65,6 @@ typedef struct {
     /**< QPC timer Used to timeout I2C transfers if errors occur. */
     QTimeEvt i2cTimerEvt;
 
-    /**< Specifies which I2C device is currently being handled by this AO.  This should
-         be set when a new I2C_READ_START or I2C_WRITE_START events come in.  Those
-         events should contain the device for which they are meant for. */
-    I2C_Device_t iDevice;
-
     /**< Which I2C bus this AO is responsible for.  This variable is set on
          startup and is used to index into the structure that holds all the
          I2C bus settings. */
@@ -96,6 +91,14 @@ typedef struct {
 
     /**< QPC timer Used to timeout individual I2C bus accesses. */
     QTimeEvt i2cOpTimerEvt;
+
+    /**< Keeps track of an address sent in with events in case the address needs to be
+     * split up into multiple bytes */
+    uint16_t addr;
+
+    /**< pointer to opaque pointer to the I2CxDevMgr AO that this instance of I2CBusMgr
+     * AO will directly post events to */
+    QActive * p_AO_I2CDevMgr;
 } I2CBusMgr;
 
 /* protected: */
@@ -181,7 +184,7 @@ static QState I2CBusMgr_PollFor_I2C_EV5(I2CBusMgr * const me, QEvt const * const
  * @return status_: QState type that specifies where the state
  * machine is going next.
  */
-static QState I2CBusMgr_WaitFor_I2C_EV6(I2CBusMgr * const me, QEvt const * const e);
+static QState I2CBusMgr_WaitFor_I2C_EV6_TX(I2CBusMgr * const me, QEvt const * const e);
 
 /**
  * @brief This is a Poll state for polling for MASTER MODE (I2C EV5).
@@ -195,7 +198,7 @@ static QState I2CBusMgr_WaitFor_I2C_EV6(I2CBusMgr * const me, QEvt const * const
  * @return status_: QState type that specifies where the state
  * machine is going next.
  */
-static QState I2CBusMgr_PollFor_I2C_EV6(I2CBusMgr * const me, QEvt const * const e);
+static QState I2CBusMgr_PollFor_I2C_EV6_TX(I2CBusMgr * const me, QEvt const * const e);
 
 /**
  * @brief This is a Wait state for polling for MASTER MODE (I2C EV5).
@@ -376,6 +379,34 @@ static QState I2CBusMgr_WaitForDMAReadDone(I2CBusMgr * const me, QEvt const * co
  */
 static QState I2CBusMgr_ReadI2CByte(I2CBusMgr * const me, QEvt const * const e);
 
+/**
+ * @brief This is a Wait state for polling for selecting transmitter mode (I2C
+ * EV6).
+ * This state is a Timeout/Wait state for the polling child state for MASTER
+ * TRANSMITTER MODE on the I2C bus.  It takes care of the timeout and sending a
+ * result to anyone who is listening for this event.
+ *
+ * @param  [in,out] me: Pointer to the state machine
+ * @param  [in,out] e:  Pointer to the event being processed.
+ * @return status_: QState type that specifies where the state
+ * machine is going next.
+ */
+static QState I2CBusMgr_WaitFor_I2C_EV6_RX(I2CBusMgr * const me, QEvt const * const e);
+
+/**
+ * @brief This is a Poll state for polling for MASTER MODE (I2C EV5).
+ *
+ * This state posts an event to check for the I2C_EVENT_MASTER_MODE_SELECT (EV5)
+ * which is triggerred by posting a START bit on the I2C bus. It also checks if
+ * the system is out of retries for this action and exits if true.
+ *
+ * @param  [in,out] me: Pointer to the state machine
+ * @param  [in,out] e:  Pointer to the event being processed.
+ * @return status_: QState type that specifies where the state
+ * machine is going next.
+ */
+static QState I2CBusMgr_PollFor_I2C_EV6_RX(I2CBusMgr * const me, QEvt const * const e);
+
 
 /* Private defines -----------------------------------------------------------*/
 /* Private macros ------------------------------------------------------------*/
@@ -387,7 +418,6 @@ QActive * const AO_I2CBusMgr[MAX_I2C_BUS] = {
     (QActive *)&l_I2CBusMgr[I2CBus1], /* "opaque" AO pointer to the I2CBusMgr for I2C1 */
 };
 extern I2C_BusSettings_t s_I2C_Bus[MAX_I2C_BUS];
-extern I2C_BusDevice_t   s_I2C_Dev[MAX_I2C_DEV];
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
@@ -475,6 +505,23 @@ static QState I2CBusMgr_Active(I2CBusMgr * const me, QEvt const * const e) {
             );
             QTimeEvt_disarm(&me->i2cOpTimerEvt);
 
+            /* Get a pointer to the I2CxDevMgr AO to which this instance will directly
+             * post events to. */
+            if ( I2CBus1 == me->iBus ) {
+                me->p_AO_I2CDevMgr = AO_I2C1DevMgr;
+            //TODO: commented out since not implemented yet.  Uncomment if/when implemented
+            //}
+            //else if ( I2CBus2 == me->iBus ) {
+            //    me->p_AO_I2CDevMgr = AO_I2C2DevMgr;
+            //} else if ( I2CBus3 == me->iBus ) {
+            //    me->p_AO_I2CDevMgr = AO_I2C3DevMgr;
+            } else {
+                ERR_printf(
+                    "Unknown I2CBus%d specified for this instance of I2CBusMgr to post events to\n",
+                    me->iBus+1
+                );
+            }
+
             I2C_BusInit( me->iBus ); /* Initialize the I2C devices and associated busses */
             status_ = Q_HANDLED();
             break;
@@ -515,6 +562,8 @@ static QState I2CBusMgr_Idle(I2CBusMgr * const me, QEvt const * const e) {
         case I2C_BUS_CHECK_FREE_SIG: {
             /* Set error code assuming the operation will fail */
             me->errorCode = ERR_I2CBUS_BUSY;
+
+            DBG_printf("Got I2C_BUS_CHECK_FREE\n");
             /* ${AOs::I2CBusMgr::SM::Active::Idle::I2C_BUS_CHECK_FREE::[BusFree?]} */
             if (RESET == I2C_GetFlagStatus( s_I2C_Bus[me->iBus].i2c_bus, I2C_FLAG_BUSY )) {
                 DBG_printf("I2CBus%d free and ready to go.\n", me->iBus+1);
@@ -525,40 +574,78 @@ static QState I2CBusMgr_Idle(I2CBusMgr * const me, QEvt const * const e) {
                 I2CStatusEvt* i2cStatEvt = Q_NEW( I2CStatusEvt, I2C_BUS_DONE_SIG );
                 i2cStatEvt->i2cBus = me->iBus;         // set the bus
                 i2cStatEvt->errorCode = me->errorCode; // set the error code that was last recorded.
-                QF_PUBLISH((QEvt *)i2cStatEvt, me);    // publish the event
+                QACTIVE_POST(me->p_AO_I2CDevMgr, (QEvt *)i2cStatEvt, me); // directly post the event to the correct AO
                 status_ = Q_HANDLED();
             }
             /* ${AOs::I2CBusMgr::SM::Active::Idle::I2C_BUS_CHECK_FREE::[else]} */
             else {
-                WRN_printf("I2CBus%d not free. Attempting recovery.\n", me->iBus+1);
-                status_ = Q_TRAN(&I2CBusMgr_TogglingSCL);
+                /* ${AOs::I2CBusMgr::SM::Active::Idle::I2C_BUS_CHECK_FREE::[else]::[ValidParams?]} */
+                if (((I2CAddrEvt const *)e)->addrSize == 1 || ((I2CAddrEvt const *)e)->addrSize == 2) {
+                    WRN_printf("I2CBus%d not free. Attempting recovery.\n", me->iBus+1);
+
+                    me->addr = ((I2CAddrEvt const *)e)->addr; // Save the address
+                    status_ = Q_TRAN(&I2CBusMgr_TogglingSCL);
+                }
+                /* ${AOs::I2CBusMgr::SM::Active::Idle::I2C_BUS_CHECK_FREE::[else]::[else]} */
+                else {
+                    me->errorCode = ERR_I2CBUS_INVALID_PARAMS_FOR_BUS_CHECK_FREE;
+
+                    ERR_printf(
+                        "Invalid params for I2CBus%d check, error: 0x%08x\n",
+                        me->iBus+1,
+                        me->errorCode
+                    );
+
+                    /* Allocate a dynamic event to send back the result after attempting to recover
+                     * the I2C bus. */
+                    I2CStatusEvt* i2cStatEvt = Q_NEW( I2CStatusEvt, I2C_BUS_DONE_SIG );
+                    i2cStatEvt->i2cBus = me->iBus;         // set the bus
+                    i2cStatEvt->errorCode = me->errorCode; // set the error code that was last recorded.
+                    QF_PUBLISH((QEvt *)i2cStatEvt, me);    // publish the event
+                    status_ = Q_HANDLED();
+                }
             }
             break;
         }
         /* ${AOs::I2CBusMgr::SM::Active::Idle::I2C_BUS_START_BIT} */
         case I2C_BUS_START_BIT_SIG: {
-            /* Set error code that will be reported if things timeout or run out of retries */
-            me->errorCode = ERR_I2CBUS_EV5_TIMEOUT;
             I2C_GenerateSTART(s_I2C_Bus[me->iBus].i2c_bus, ENABLE);  /* Send START condition */
             status_ = Q_TRAN(&I2CBusMgr_PollFor_I2C_EV5);
             break;
         }
         /* ${AOs::I2CBusMgr::SM::Active::Idle::I2C_BUS_SEND_7BIT_ADDR} */
         case I2C_BUS_SEND_7BIT_ADDR_SIG: {
-            /* ${AOs::I2CBusMgr::SM::Active::Idle::I2C_BUS_SEND_7BIT_ADDR::[ValidParams?]} */
-            if (( ((I2CAddrEvt const *)e)->addrSize == 1 ) &&
-( ((I2CAddrEvt const *)e)->i2cDirection == I2C_Direction_Transmitter ||
-  ((I2CAddrEvt const *)e)->i2cDirection == I2C_Direction_Receiver )) {
-                /* Set error code that will be reported if things timeout or run out of retries */
-                me->errorCode = ERR_I2CBUS_EV6_TIMEOUT;
+            /* ${AOs::I2CBusMgr::SM::Active::Idle::I2C_BUS_SEND_7BIT_ADDR::[I2C_TX?]} */
+            if (((I2CAddrEvt const *)e)->i2cDirection == I2C_Direction_Transmitter) {
+                DBG_printf(
+                    "Sending 7bitAddr 0x%02x with direction %d\n",
+                    ((I2CAddrEvt const *)e)->addr & 0x00FF,
+                    I2C_Direction_Receiver
+                );
 
                 /* Send slave Address for write */
                 I2C_Send7bitAddress(
-                    s_I2C_Bus[me->iBus].i2c_bus,            /* This is always the bus used in this ISR */
+                    s_I2C_Bus[me->iBus].i2c_bus,            /* Get the STM32 designation of the I2C bus */
                     ((I2CAddrEvt const *)e)->addr & 0x00FF, /* Get the address from the event */
-                    ((I2CAddrEvt const *)e)->i2cDirection   /* Get the I2C bus direction from the event */
+                    I2C_Direction_Transmitter               /* TX direction on the I2C bus */
                 );
-                status_ = Q_TRAN(&I2CBusMgr_PollFor_I2C_EV6);
+                status_ = Q_TRAN(&I2CBusMgr_PollFor_I2C_EV6_TX);
+            }
+            /* ${AOs::I2CBusMgr::SM::Active::Idle::I2C_BUS_SEND_7BIT_ADDR::[I2C_RX?]} */
+            else if (((I2CAddrEvt const *)e)->i2cDirection == I2C_Direction_Receiver) {
+                DBG_printf(
+                    "Sending 7bitAddr 0x%02x with direction %d\n",
+                    ((I2CAddrEvt const *)e)->addr & 0x00FF,
+                    I2C_Direction_Receiver
+                );
+
+                /* Send slave Address for write */
+                I2C_Send7bitAddress(
+                    s_I2C_Bus[me->iBus].i2c_bus,            /* Get the STM32 designation of the I2C bus */
+                    ((I2CAddrEvt const *)e)->addr & 0x00FF, /* Get the address from the event */
+                    I2C_Direction_Receiver                  /* RX direction on the I2C bus */
+                );
+                status_ = Q_TRAN(&I2CBusMgr_PollFor_I2C_EV6_RX);
             }
             /* ${AOs::I2CBusMgr::SM::Active::Idle::I2C_BUS_SEND_7BIT_ADDR::[else]} */
             else {
@@ -575,32 +662,40 @@ static QState I2CBusMgr_Idle(I2CBusMgr * const me, QEvt const * const e) {
                 I2CStatusEvt* i2cStatEvt = Q_NEW( I2CStatusEvt, I2C_BUS_DONE_SIG );
                 i2cStatEvt->i2cBus = me->iBus;         // set the bus
                 i2cStatEvt->errorCode = me->errorCode; // set the error code that was last recorded.
-                QF_PUBLISH((QEvt *)i2cStatEvt, me);    // publish the event
+                QACTIVE_POST(me->p_AO_I2CDevMgr, (QEvt *)i2cStatEvt, me); // directly post the event to the correct AO
                 status_ = Q_HANDLED();
             }
             break;
         }
         /* ${AOs::I2CBusMgr::SM::Active::Idle::I2C_BUS_SEND_DEV_ADDR} */
         case I2C_BUS_SEND_DEV_ADDR_SIG: {
+            /* Save the address */
+            me->addr = ((I2CAddrEvt const *)e)->addr;
             /* ${AOs::I2CBusMgr::SM::Active::Idle::I2C_BUS_SEND_DEV_ADDR::[2byteAddr?]} */
             if (((I2CAddrEvt const *)e)->addrSize == 2) {
-                DBG_printf("Sending internal MSB byte of addr to the I2C Device\n");
+                DBG_printf(
+                    "Sending internal MSB addr (0x%02x) to the I2C Device\n",
+                    (uint8_t)((me->addr & 0xFF00) >> 8)
+                );
 
                 /* Send the MSB of the address first to the I2C device */
                 I2C_SendData(
                     s_I2C_Bus[me->iBus].i2c_bus,
-                    (uint8_t)((((I2CAddrEvt const *)e)->addr & 0xFF00) >> 8)
+                    (uint8_t)((me->addr & 0xFF00) >> 8)
                 );
                 status_ = Q_TRAN(&I2CBusMgr_WaitFor_I2C_EV8_MSB);
             }
             /* ${AOs::I2CBusMgr::SM::Active::Idle::I2C_BUS_SEND_DEV_ADDR::[1byteAddr?]} */
             else if (((I2CAddrEvt const *)e)->addrSize == 1) {
-                DBG_printf("Sending internal single byte of addr to the I2C Device\n");
+                DBG_printf(
+                    "Sending internal 1 byte addr (0x%02x) to the I2C Device\n",
+                    (uint8_t)(me->addr & 0x00FF)
+                );
 
                 /* Send the LSB of the address to the I2C device */
                 I2C_SendData(
                     s_I2C_Bus[me->iBus].i2c_bus,
-                    (uint8_t)(((I2CAddrEvt const *)e)->addr & 0x00FF)
+                    (uint8_t)(me->addr & 0x00FF)
                 );
                 status_ = Q_TRAN(&I2CBusMgr_WaitFor_I2C_EV8_LSB);
             }
@@ -619,7 +714,7 @@ static QState I2CBusMgr_Idle(I2CBusMgr * const me, QEvt const * const e) {
                 I2CStatusEvt* i2cStatEvt = Q_NEW( I2CStatusEvt, I2C_BUS_DONE_SIG );
                 i2cStatEvt->i2cBus = me->iBus;         // set the bus
                 i2cStatEvt->errorCode = me->errorCode; // set the error code that was last recorded.
-                QF_PUBLISH((QEvt *)i2cStatEvt, me);    // publish the event
+                QACTIVE_POST(me->p_AO_I2CDevMgr, (QEvt *)i2cStatEvt, me); // directly post the event to the correct AO
                 status_ = Q_HANDLED();
             }
             break;
@@ -631,7 +726,6 @@ static QState I2CBusMgr_Idle(I2CBusMgr * const me, QEvt const * const e) {
                 DBG_printf("Starting DMA read on a device on I2CBus%d\n", me->iBus+1);
 
                 /* Store device and operation settings from the event */
-                s_I2C_Dev[me->iDevice].i2c_mem_addr = ((I2CReadMemReqEvt const *)e)->addr;
                 s_I2C_Bus[me->iBus].nBytesExpected  = ((I2CReadMemReqEvt const *)e)->bytes;
                 s_I2C_Bus[me->iBus].nBytesCurrent = 0;
                 s_I2C_Bus[me->iBus].nRxIndex = 0;
@@ -692,13 +786,21 @@ static QState I2CBusMgr_Busy(I2CBusMgr * const me, QEvt const * const e) {
         }
         /* ${AOs::I2CBusMgr::SM::Active::Busy::I2C_BUS_GLOBAL_TOUT} */
         case I2C_BUS_GLOBAL_TOUT_SIG: {
-            ERR_printf("Global timeout on I2CBus%d.  Error: 0x%08x\n", me->iBus+1, me->errorCode);
+            ERR_printf(
+                "Global timeout on I2CBus%d with error: 0x%08x\n",
+                me->iBus+1,
+                me->errorCode
+            );
             status_ = Q_TRAN(&I2CBusMgr_Idle);
             break;
         }
         /* ${AOs::I2CBusMgr::SM::Active::Busy::I2C_BUS_OP_TOUT} */
         case I2C_BUS_OP_TOUT_SIG: {
-            ERR_printf("Operation timeout on I2CBus%d.  Error: 0x%08x\n", me->iBus+1, me->errorCode);
+            ERR_printf(
+                "Operation timeout on I2CBus%d with error: 0x%08x\n",
+                me->iBus+1,
+                me->errorCode
+            );
             status_ = Q_TRAN(&I2CBusMgr_Idle);
             break;
         }
@@ -728,6 +830,9 @@ static QState I2CBusMgr_WaitFor_I2C_EV5(I2CBusMgr * const me, QEvt const * const
     switch (e->sig) {
         /* ${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_EV5} */
         case Q_ENTRY_SIG: {
+            /* Set error code that will be reported if things timeout or run out of retries */
+            me->errorCode = ERR_I2CBUS_EV5_TIMEOUT;
+
             /* Post an operation timer on entry */
             QTimeEvt_rearm(
                 &me->i2cOpTimerEvt,
@@ -740,12 +845,11 @@ static QState I2CBusMgr_WaitFor_I2C_EV5(I2CBusMgr * const me, QEvt const * const
         case Q_EXIT_SIG: {
             /* Timer disarmed in parent state */
 
-            /* Allocate a dynamic event to send back the result after attempting to recover
-             * the I2C bus. */
+            /* Allocate a dynamic event to directly post to the proper I2CxDevMgr AO */
             I2CStatusEvt* i2cStatEvt = Q_NEW( I2CStatusEvt, I2C_BUS_DONE_SIG );
             i2cStatEvt->i2cBus       = me->iBus;      // set the bus
             i2cStatEvt->errorCode    = me->errorCode; // set the error code that was last recorded.
-            QF_PUBLISH((QEvt *)i2cStatEvt, me);       // publish the event
+            QACTIVE_POST(me->p_AO_I2CDevMgr, (QEvt *)i2cStatEvt, me); // directly post the event to the correct AO
             status_ = Q_HANDLED();
             break;
         }
@@ -786,7 +890,7 @@ static QState I2CBusMgr_PollFor_I2C_EV5(I2CBusMgr * const me, QEvt const * const
         case I2C_CHECK_EV_SIG: {
             /* Check if EV5 has happened.  If it has, go on to the next state.  Otherwise,
              * try again until number of retries is out */
-            /* ${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_EV5::PollFor_I2C_EV5::I2C_CHECK_EV::[EV5Happened?]} */
+            /* ${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_EV5::PollFor_I2C_EV5::I2C_CHECK_EV::[EV5?]} */
             if (I2C_CheckEvent(s_I2C_Bus[me->iBus].i2c_bus, I2C_EVENT_MASTER_MODE_SELECT)) {
                 me->errorCode = ERR_NONE;
                 status_ = Q_TRAN(&I2CBusMgr_Idle);
@@ -801,7 +905,11 @@ static QState I2CBusMgr_PollFor_I2C_EV5(I2CBusMgr * const me, QEvt const * const
                 /* ${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_EV5::PollFor_I2C_EV5::I2C_CHECK_EV::[else]::[else]} */
                 else {
                     me->errorCode = ERR_I2CBUS_EV5_NOT_REC;
-                    ERR_printf("Timeout waiting for I2C_EVENT_MASTER_MODE_SELECT (EV5), error: 0x%08x\n", me->errorCode);
+                    ERR_printf(
+                        "Didn't see I2C_EVENT_MASTER_MODE_SELECT (EV5) on I2CBus%d, error: 0x%08x\n",
+                        me->iBus+1,
+                        me->errorCode
+                    );
                     status_ = Q_TRAN(&I2CBusMgr_Idle);
                 }
             }
@@ -827,12 +935,15 @@ static QState I2CBusMgr_PollFor_I2C_EV5(I2CBusMgr * const me, QEvt const * const
  * @return status_: QState type that specifies where the state
  * machine is going next.
  */
-/*${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_EV6} .....................*/
-static QState I2CBusMgr_WaitFor_I2C_EV6(I2CBusMgr * const me, QEvt const * const e) {
+/*${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_EV6_TX} ..................*/
+static QState I2CBusMgr_WaitFor_I2C_EV6_TX(I2CBusMgr * const me, QEvt const * const e) {
     QState status_;
     switch (e->sig) {
-        /* ${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_EV6} */
+        /* ${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_EV6_TX} */
         case Q_ENTRY_SIG: {
+            /* Set error code that will be reported if things timeout or run out of retries */
+            me->errorCode = ERR_I2CBUS_EV6_TIMEOUT;
+
             /* Post an operation timer on entry */
             QTimeEvt_rearm(
                 &me->i2cOpTimerEvt,
@@ -841,16 +952,15 @@ static QState I2CBusMgr_WaitFor_I2C_EV6(I2CBusMgr * const me, QEvt const * const
             status_ = Q_HANDLED();
             break;
         }
-        /* ${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_EV6} */
+        /* ${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_EV6_TX} */
         case Q_EXIT_SIG: {
             /* Timer disarmed in parent state */
 
-            /* Allocate a dynamic event to send back the result after attempting to recover
-             * the I2C bus. */
+            /* Allocate a dynamic event to directly post to the proper I2CxDevMgr AO */
             I2CStatusEvt* i2cStatEvt = Q_NEW( I2CStatusEvt, I2C_BUS_DONE_SIG );
             i2cStatEvt->i2cBus       = me->iBus;      // set the bus
             i2cStatEvt->errorCode    = me->errorCode; // set the error code that was last recorded.
-            QF_PUBLISH((QEvt *)i2cStatEvt, me);       // publish the event
+            QACTIVE_POST(me->p_AO_I2CDevMgr, (QEvt *)i2cStatEvt, me); // directly post the event to the correct AO
             status_ = Q_HANDLED();
             break;
         }
@@ -874,11 +984,11 @@ static QState I2CBusMgr_WaitFor_I2C_EV6(I2CBusMgr * const me, QEvt const * const
  * @return status_: QState type that specifies where the state
  * machine is going next.
  */
-/*${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_EV6::PollFor_I2C_EV6} ....*/
-static QState I2CBusMgr_PollFor_I2C_EV6(I2CBusMgr * const me, QEvt const * const e) {
+/*${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_EV6_TX::PollFor_I2C_EV6_TX} */
+static QState I2CBusMgr_PollFor_I2C_EV6_TX(I2CBusMgr * const me, QEvt const * const e) {
     QState status_;
     switch (e->sig) {
-        /* ${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_EV6::PollFor_I2C_EV6} */
+        /* ${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_EV6_TX::PollFor_I2C_EV6_TX} */
         case Q_ENTRY_SIG: {
             /* Directly post an event to this AO to check for EV5 event. Post directly
              * instead of publishing so we don't waste memory */
@@ -887,33 +997,37 @@ static QState I2CBusMgr_PollFor_I2C_EV6(I2CBusMgr * const me, QEvt const * const
             status_ = Q_HANDLED();
             break;
         }
-        /* ${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_EV6::PollFor_I2C_EV6::I2C_CHECK_EV} */
+        /* ${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_EV6_TX::PollFor_I2C_EV6_TX::I2C_CHECK_EV} */
         case I2C_CHECK_EV_SIG: {
             /* Check if EV5 has happened.  If it has, go on to the next state.  Otherwise,
              * try again until number of retries is out */
-            /* ${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_EV6::PollFor_I2C_EV6::I2C_CHECK_EV::[EV6Happened?]} */
+            /* ${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_EV6_TX::PollFor_I2C_EV6_TX::I2C_CHECK_EV::[EV6(TX)?]} */
             if (I2C_CheckEvent( s_I2C_Bus[me->iBus].i2c_bus, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED )) {
                 me->errorCode = ERR_NONE;
                 status_ = Q_TRAN(&I2CBusMgr_Idle);
             }
-            /* ${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_EV6::PollFor_I2C_EV6::I2C_CHECK_EV::[else]} */
+            /* ${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_EV6_TX::PollFor_I2C_EV6_TX::I2C_CHECK_EV::[else]} */
             else {
                 me->nI2CLoopTimeout--;                 /* Decrement counter */
-                /* ${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_EV6::PollFor_I2C_EV6::I2C_CHECK_EV::[else]::[Retriesleft?]} */
+                /* ${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_EV6_TX::PollFor_I2C_EV6_TX::I2C_CHECK_EV::[else]::[Retriesleft?]} */
                 if (me->nI2CLoopTimeout != 0) {
-                    status_ = Q_TRAN(&I2CBusMgr_PollFor_I2C_EV6);
+                    status_ = Q_TRAN(&I2CBusMgr_PollFor_I2C_EV6_TX);
                 }
-                /* ${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_EV6::PollFor_I2C_EV6::I2C_CHECK_EV::[else]::[else]} */
+                /* ${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_EV6_TX::PollFor_I2C_EV6_TX::I2C_CHECK_EV::[else]::[else]} */
                 else {
-                    me->errorCode = ERR_I2CBUS_EV5_NOT_REC;
-                    ERR_printf("Timeout waiting for I2C_EVENT_MASTER_MODE_SELECT (EV5), error: 0x%08x\n", me->errorCode);
+                    me->errorCode = ERR_I2CBUS_EV6_NOT_REC;
+                    ERR_printf(
+                        "Didn't see I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED (EV6) on I2CBus%d, error: 0x%08x\n",
+                        me->iBus+1,
+                        me->errorCode
+                    );
                     status_ = Q_TRAN(&I2CBusMgr_Idle);
                 }
             }
             break;
         }
         default: {
-            status_ = Q_SUPER(&I2CBusMgr_WaitFor_I2C_EV6);
+            status_ = Q_SUPER(&I2CBusMgr_WaitFor_I2C_EV6_TX);
             break;
         }
     }
@@ -938,6 +1052,9 @@ static QState I2CBusMgr_WaitFor_I2C_EV8(I2CBusMgr * const me, QEvt const * const
     switch (e->sig) {
         /* ${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_EV8} */
         case Q_ENTRY_SIG: {
+            /* Set error code that will be reported if things timeout or run out of retries */
+            me->errorCode = ERR_I2CBUS_EV8_TIMEOUT;
+
             /* Post an operation timer on entry */
             QTimeEvt_rearm(
                 &me->i2cOpTimerEvt,
@@ -950,12 +1067,11 @@ static QState I2CBusMgr_WaitFor_I2C_EV8(I2CBusMgr * const me, QEvt const * const
         case Q_EXIT_SIG: {
             /* Timer disarmed in parent state */
 
-            /* Allocate a dynamic event to send back the result after attempting to recover
-             * the I2C bus. */
+            /* Allocate a dynamic event to directly post to the proper I2CxDevMgr AO */
             I2CStatusEvt* i2cStatEvt = Q_NEW( I2CStatusEvt, I2C_BUS_DONE_SIG );
             i2cStatEvt->i2cBus       = me->iBus;      // set the bus
             i2cStatEvt->errorCode    = me->errorCode; // set the error code that was last recorded.
-            QF_PUBLISH((QEvt *)i2cStatEvt, me);       // publish the event
+            QACTIVE_POST(me->p_AO_I2CDevMgr, (QEvt *)i2cStatEvt, me); // directly post the event to the correct AO
             status_ = Q_HANDLED();
             break;
         }
@@ -1000,14 +1116,17 @@ static QState I2CBusMgr_WaitFor_I2C_EV8_MSB(I2CBusMgr * const me, QEvt const * c
         case I2C_CHECK_EV_SIG: {
             /* Check if EV6 has happened.  If it has, go on to the next state.  Otherwise,
              * try again until number of retries is out */
-            /* ${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_EV8::WaitFor_I2C_EV8_MSB::I2C_CHECK_EV::[EV8Happened?]} */
+            /* ${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_EV8::WaitFor_I2C_EV8_MSB::I2C_CHECK_EV::[EV8?]} */
             if (I2C_CheckEvent( s_I2C_Bus[me->iBus].i2c_bus, I2C_EVENT_MASTER_BYTE_TRANSMITTING )) {
-                DBG_printf("Sending internal LSB addr to the I2C Device\n");
+                DBG_printf(
+                    "Sending internal LSB addr (0x%02x) to the I2C Device\n",
+                    (uint8_t)(me->addr & 0x00FF)
+                );
 
                 /* Send the LSB of the address to the I2C device */
                 I2C_SendData(
                     s_I2C_Bus[me->iBus].i2c_bus,
-                    (uint8_t)(((I2CAddrEvt const *)e)->addr & 0x00FF)
+                    (uint8_t)(me->addr & 0x00FF)
                 );
 
                 /* Reset the maximum number of times to poll the I2C bus for an event */
@@ -1023,7 +1142,12 @@ static QState I2CBusMgr_WaitFor_I2C_EV8_MSB(I2CBusMgr * const me, QEvt const * c
                 }
                 /* ${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_EV8::WaitFor_I2C_EV8_MSB::I2C_CHECK_EV::[else]::[else]} */
                 else {
-                    ERR_printf("Timeout waiting for I2C_EVENT_MASTER_BYTE_TRANSMITTING (EV8)\n");
+                    me->errorCode = ERR_I2CBUS_EV8_NOT_REC;
+                    ERR_printf(
+                        "Didn't see I2C_EVENT_MASTER_BYTE_TRANSMITTING (EV5) for MSB on I2CBus%d, error: 0x%08x\n",
+                        me->iBus+1,
+                        me->errorCode
+                    );
                     status_ = Q_TRAN(&I2CBusMgr_Idle);
                 }
             }
@@ -1070,18 +1194,9 @@ static QState I2CBusMgr_WaitFor_I2C_EV8_LSB(I2CBusMgr * const me, QEvt const * c
         case I2C_CHECK_EV_SIG: {
             /* Check if EV6 has happened.  If it has, go on to the next state.  Otherwise,
              * try again until number of retries is out */
-            /* ${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_EV8::WaitFor_I2C_EV8_LSB::I2C_CHECK_EV::[EV8Happened?]} */
+            /* ${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_EV8::WaitFor_I2C_EV8_LSB::I2C_CHECK_EV::[EV8?]} */
             if (I2C_CheckEvent( s_I2C_Bus[me->iBus].i2c_bus, I2C_EVENT_MASTER_BYTE_TRANSMITTING )) {
-                DBG_printf("Sending internal LSB addr to the I2C Device\n");
-
-                /* Send the LSB of the address to the I2C device */
-                I2C_SendData(
-                    s_I2C_Bus[me->iBus].i2c_bus,
-                    (uint8_t)(s_I2C_Dev[me->iDevice].i2c_mem_addr & 0x00FF)
-                );
-
-                /* Reset the maximum number of times to poll the I2C bus for an event */
-                me->nI2CLoopTimeout = MAX_I2C_TIMEOUT;
+                me->errorCode = ERR_NONE;
                 status_ = Q_TRAN(&I2CBusMgr_Idle);
             }
             /* ${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_EV8::WaitFor_I2C_EV8_LSB::I2C_CHECK_EV::[else]} */
@@ -1093,7 +1208,12 @@ static QState I2CBusMgr_WaitFor_I2C_EV8_LSB(I2CBusMgr * const me, QEvt const * c
                 }
                 /* ${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_EV8::WaitFor_I2C_EV8_LSB::I2C_CHECK_EV::[else]::[else]} */
                 else {
-                    ERR_printf("Timeout waiting for I2C_EVENT_MASTER_BYTE_TRANSMITTING (EV8)\n");
+                    me->errorCode = ERR_I2CBUS_EV8_NOT_REC;
+                    ERR_printf(
+                        "Didn't see I2C_EVENT_MASTER_BYTE_TRANSMITTING (EV5) for LSB on I2CBus%d, error: 0x%08x\n",
+                        me->iBus+1,
+                        me->errorCode
+                    );
                     status_ = Q_TRAN(&I2CBusMgr_Idle);
                 }
             }
@@ -1134,10 +1254,10 @@ static QState I2CBusMgr_BusRecovery(I2CBusMgr * const me, QEvt const * const e) 
                 me->errorCode = ERR_NONE;
                 DBG_printf("I2CBus%d free after recovery and ready to go.\n", me->iBus+1);
             } else {
-                ERR_printf("Attempt to recover I2CBus%d failed with error: 0x08x\n", me->iBus+1, me->errorCode);
+                ERR_printf("Attempt to recover I2CBus%d failed with error: 0x%08x\n", me->iBus+1, me->errorCode);
             }
             i2cStatEvt->errorCode = me->errorCode; // set the error code that was last recorded.
-            QF_PUBLISH((QEvt *)i2cStatEvt, me);    // publish the event
+            QACTIVE_POST(me->p_AO_I2CDevMgr, (QEvt *)i2cStatEvt, me); // directly post the event to the correct AO
             status_ = Q_HANDLED();
             break;
         }
@@ -1242,7 +1362,11 @@ static QState I2CBusMgr_TogglingSCL(I2CBusMgr * const me, QEvt const * const e) 
              * try again until number of retries is out */
             /* ${AOs::I2CBusMgr::SM::Active::Busy::BusRecovery::WaitForBusRecovery::TogglingSCL::I2C_CHECK_EV::[BusFree?]} */
             if (SET == GPIO_ReadInputDataBit( s_I2C_Bus[me->iBus].sda_port, s_I2C_Bus[me->iBus].sda_pin  )) {
-                WRN_printf("Bus free after %d SCL toggles\n", MAX_I2C_TIMEOUT - me->nI2CLoopTimeout);
+                WRN_printf(
+                    "I2CBus%d free after %d SCL toggles\n",
+                    me->iBus+1,
+                    MAX_I2C_TIMEOUT - me->nI2CLoopTimeout
+                );
 
                 /* Make sure to leave the SCL line high after exit */
                 GPIO_SetBits( s_I2C_Bus[me->iBus].scl_port, s_I2C_Bus[me->iBus].scl_pin );
@@ -1260,7 +1384,7 @@ static QState I2CBusMgr_TogglingSCL(I2CBusMgr * const me, QEvt const * const e) 
                 }
                 /* ${AOs::I2CBusMgr::SM::Active::Busy::BusRecovery::WaitForBusRecovery::TogglingSCL::I2C_CHECK_EV::[else]::[else]} */
                 else {
-                    ERR_printf("Timeout waiting for I2C bus to be free\n");
+                    ERR_printf("Timeout waiting for I2CBus%d bus to be free\n", me->iBus+1);
                     I2C_SoftwareResetCmd(s_I2C_Bus[me->iBus].i2c_bus, ENABLE);
                     I2C_SoftwareResetCmd(s_I2C_Bus[me->iBus].i2c_bus, DISABLE);
                     DBG_printf("I2C bus reset\n");
@@ -1315,12 +1439,15 @@ static QState I2CBusMgr_WaitForBusToSettle(I2CBusMgr * const me, QEvt const * co
         }
         /* ${AOs::I2CBusMgr::SM::Active::Busy::BusRecovery::WaitForBusToSettle::I2C_BUS_SETTLE_TIMER} */
         case I2C_BUS_SETTLE_TIMER_SIG: {
-            WRN_printf("Finished waiting for bus to settle after reset and intentional failure\n");
+            WRN_printf(
+                "Finished waiting for I2CBus%d to settle after reset and intentional failure\n",
+                me->iBus+1
+            );
 
             me->errorCode = ERR_I2CBUS_RCVRY_EV5_NOT_REC;
 
             /* Send START condition */
-            WRN_printf("Generating I2C start after bus reset\n");
+            WRN_printf("Generating I2C start after bus reset on I2CBus%d\n", me->iBus+1);
             I2C_GenerateSTART(s_I2C_Bus[me->iBus].i2c_bus, ENABLE);
             status_ = Q_TRAN(&I2CBusMgr_PollFor_I2C_EV5_REC);
             break;
@@ -1362,9 +1489,9 @@ static QState I2CBusMgr_PollFor_I2C_EV5_REC(I2CBusMgr * const me, QEvt const * c
         case I2C_CHECK_EV_SIG: {
             /* Check if EV5 has happened.  If it has, go on to the next state.  Otherwise,
              * try again until number of retries is out */
-            /* ${AOs::I2CBusMgr::SM::Active::Busy::BusRecovery::PollFor_I2C_EV5_REC::I2C_CHECK_EV::[EV5Happened?]} */
+            /* ${AOs::I2CBusMgr::SM::Active::Busy::BusRecovery::PollFor_I2C_EV5_REC::I2C_CHECK_EV::[EV5?]} */
             if (I2C_CheckEvent(s_I2C_Bus[me->iBus].i2c_bus, I2C_EVENT_MASTER_MODE_SELECT)) {
-                WRN_printf("Selecting slave I2C Device\n");
+                WRN_printf("Selecting slave device on I2CBus%d\n", me->iBus+1);
 
                 me->errorCode = ERR_I2CBUS_RCVRY_EV6_NOT_REC;
 
@@ -1373,9 +1500,9 @@ static QState I2CBusMgr_PollFor_I2C_EV5_REC(I2CBusMgr * const me, QEvt const * c
 
                 /* Send slave Address for write */
                 I2C_Send7bitAddress(
-                    s_I2C_Bus[me->iBus].i2c_bus,            /* This is always the bus used in this ISR */
-                    s_I2C_Dev[me->iDevice].i2c_dev_addr,    /* Look up the current device address for this bus */
-                    s_I2C_Bus[me->iBus].bTransDirection     /* Direction of data on this bus */
+                    s_I2C_Bus[me->iBus].i2c_bus,            // This is always the bus used in this ISR
+                    me->addr,                               // Look up the saved device address on this bus
+                    s_I2C_Bus[me->iBus].bTransDirection     // Direction of data on this bus
                 );
 
                 /* Reset the maximum number of times to poll the I2C bus for an event */
@@ -1391,7 +1518,7 @@ static QState I2CBusMgr_PollFor_I2C_EV5_REC(I2CBusMgr * const me, QEvt const * c
                 }
                 /* ${AOs::I2CBusMgr::SM::Active::Busy::BusRecovery::PollFor_I2C_EV5_REC::I2C_CHECK_EV::[else]::[else]} */
                 else {
-                    WRN_printf("Expected timeout waiting for EV5 after bus recovery\n");
+                    WRN_printf("Expected timeout waiting for EV5 after I2CBus%d recovery\n", me->iBus+1);
                     status_ = Q_TRAN(&I2CBusMgr_Idle);
                 }
             }
@@ -1434,8 +1561,9 @@ static QState I2CBusMgr_PollFor_I2C_EV6_REC(I2CBusMgr * const me, QEvt const * c
         case I2C_CHECK_EV_SIG: {
             /* Check if EV6 has happened.  If it has, go on to the next state.  Otherwise,
              * try again until number of retries is out */
-            /* ${AOs::I2CBusMgr::SM::Active::Busy::BusRecovery::PollFor_I2C_EV6_REC::I2C_CHECK_EV::[EV6Happened?]} */
+            /* ${AOs::I2CBusMgr::SM::Active::Busy::BusRecovery::PollFor_I2C_EV6_REC::I2C_CHECK_EV::[EV6(RX)?]} */
             if (I2C_CheckEvent( s_I2C_Bus[me->iBus].i2c_bus, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED )) {
+                WRN_printf("Got expected EV6 after I2CBus%d recovery\n", me->iBus+1);
                 status_ = Q_TRAN(&I2CBusMgr_Idle);
             }
             /* ${AOs::I2CBusMgr::SM::Active::Busy::BusRecovery::PollFor_I2C_EV6_REC::I2C_CHECK_EV::[else]} */
@@ -1447,7 +1575,7 @@ static QState I2CBusMgr_PollFor_I2C_EV6_REC(I2CBusMgr * const me, QEvt const * c
                 }
                 /* ${AOs::I2CBusMgr::SM::Active::Busy::BusRecovery::PollFor_I2C_EV6_REC::I2C_CHECK_EV::[else]::[else]} */
                 else {
-                    WRN_printf("Expected timeout waiting for I2C EV6 after bus recovery\n");
+                    WRN_printf("Expected timeout waiting for EV6 after I2CBus%d recovery\n", me->iBus+1);
                     status_ = Q_TRAN(&I2CBusMgr_Idle);
                 }
             }
@@ -1490,7 +1618,7 @@ static QState I2CBusMgr_WaitFor_I2C_MemRead(I2CBusMgr * const me, QEvt const * c
             /* Allocate a dynamic event to send back the result after attempting to recover
              * the I2C bus. */
             I2CBusDataEvt *i2cBusDataEvt = Q_NEW( I2CBusDataEvt, I2C_BUS_DONE_SIG );
-            i2cBusDataEvt->i2cBus = I2CBus1;
+            i2cBusDataEvt->i2cBus = me->iBus;
             i2cBusDataEvt->errorCode = me->errorCode;
             i2cBusDataEvt->dataLen = s_I2C_Bus[I2CBus1].nBytesExpected;
             MEMCPY(
@@ -1498,14 +1626,7 @@ static QState I2CBusMgr_WaitFor_I2C_MemRead(I2CBusMgr * const me, QEvt const * c
                 s_I2C_Bus[I2CBus1].pRxBuffer,
                 i2cBusDataEvt->dataLen
             );
-            QACTIVE_POST(AO_I2C1DevMgr, &i2cBusDataEvt, me);
-
-            /*
-            I2CStatusEvt* i2cStatEvt = Q_NEW( I2CStatusEvt, I2C_BUS_DONE_SIG );
-            i2cStatEvt->i2cBus       = me->iBus;      // set the bus
-            i2cStatEvt->errorCode    = me->errorCode; // set the error code that was last recorded.
-            QF_PUBLISH((QEvt *)i2cStatEvt, me);       // publish the event
-            */
+            QACTIVE_POST(me->p_AO_I2CDevMgr, (QEvt *)i2cBusDataEvt, me);
             status_ = Q_HANDLED();
             break;
         }
@@ -1673,6 +1794,117 @@ static QState I2CBusMgr_ReadI2CByte(I2CBusMgr * const me, QEvt const * const e) 
         }
         default: {
             status_ = Q_SUPER(&I2CBusMgr_WaitFor_I2C_MemRead);
+            break;
+        }
+    }
+    return status_;
+}
+
+/**
+ * @brief This is a Wait state for polling for selecting transmitter mode (I2C
+ * EV6).
+ * This state is a Timeout/Wait state for the polling child state for MASTER
+ * TRANSMITTER MODE on the I2C bus.  It takes care of the timeout and sending a
+ * result to anyone who is listening for this event.
+ *
+ * @param  [in,out] me: Pointer to the state machine
+ * @param  [in,out] e:  Pointer to the event being processed.
+ * @return status_: QState type that specifies where the state
+ * machine is going next.
+ */
+/*${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_EV6_RX} ..................*/
+static QState I2CBusMgr_WaitFor_I2C_EV6_RX(I2CBusMgr * const me, QEvt const * const e) {
+    QState status_;
+    switch (e->sig) {
+        /* ${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_EV6_RX} */
+        case Q_ENTRY_SIG: {
+            /* Set error code that will be reported if things timeout or run out of retries */
+            me->errorCode = ERR_I2CBUS_EV6_TIMEOUT;
+
+            /* Post an operation timer on entry */
+            QTimeEvt_rearm(
+                &me->i2cOpTimerEvt,
+                SEC_TO_TICKS( LL_MAX_TOUT_SEC_I2C_BASIC_OP )
+            );
+            status_ = Q_HANDLED();
+            break;
+        }
+        /* ${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_EV6_RX} */
+        case Q_EXIT_SIG: {
+            /* Timer disarmed in parent state */
+
+            /* Allocate a dynamic event to directly post to the proper I2CxDevMgr AO */
+            I2CStatusEvt* i2cStatEvt = Q_NEW( I2CStatusEvt, I2C_BUS_DONE_SIG );
+            i2cStatEvt->i2cBus       = me->iBus;      // set the bus
+            i2cStatEvt->errorCode    = me->errorCode; // set the error code that was last recorded.
+            QACTIVE_POST(me->p_AO_I2CDevMgr, (QEvt *)i2cStatEvt, me); // directly post the event to the correct AO
+            status_ = Q_HANDLED();
+            break;
+        }
+        default: {
+            status_ = Q_SUPER(&I2CBusMgr_Busy);
+            break;
+        }
+    }
+    return status_;
+}
+
+/**
+ * @brief This is a Poll state for polling for MASTER MODE (I2C EV5).
+ *
+ * This state posts an event to check for the I2C_EVENT_MASTER_MODE_SELECT (EV5)
+ * which is triggerred by posting a START bit on the I2C bus. It also checks if
+ * the system is out of retries for this action and exits if true.
+ *
+ * @param  [in,out] me: Pointer to the state machine
+ * @param  [in,out] e:  Pointer to the event being processed.
+ * @return status_: QState type that specifies where the state
+ * machine is going next.
+ */
+/*${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_EV6_RX::PollFor_I2C_EV6_RX} */
+static QState I2CBusMgr_PollFor_I2C_EV6_RX(I2CBusMgr * const me, QEvt const * const e) {
+    QState status_;
+    switch (e->sig) {
+        /* ${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_EV6_RX::PollFor_I2C_EV6_RX} */
+        case Q_ENTRY_SIG: {
+            /* Directly post an event to this AO to check for EV5 event. Post directly
+             * instead of publishing so we don't waste memory */
+            static QEvt const qEvt = { I2C_CHECK_EV_SIG, 0U, 0U };
+            QACTIVE_POST(AO_I2CBusMgr[me->iBus], &qEvt, me);
+            status_ = Q_HANDLED();
+            break;
+        }
+        /* ${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_EV6_RX::PollFor_I2C_EV6_RX::I2C_CHECK_EV} */
+        case I2C_CHECK_EV_SIG: {
+            /* Check if EV5 has happened.  If it has, go on to the next state.  Otherwise,
+             * try again until number of retries is out */
+            /* ${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_EV6_RX::PollFor_I2C_EV6_RX::I2C_CHECK_EV::[EV6(RX)?]} */
+            if (I2C_CheckEvent( s_I2C_Bus[me->iBus].i2c_bus, I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED )) {
+                me->errorCode = ERR_NONE;
+                status_ = Q_TRAN(&I2CBusMgr_Idle);
+            }
+            /* ${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_EV6_RX::PollFor_I2C_EV6_RX::I2C_CHECK_EV::[else]} */
+            else {
+                me->nI2CLoopTimeout--;                 /* Decrement counter */
+                /* ${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_EV6_RX::PollFor_I2C_EV6_RX::I2C_CHECK_EV::[else]::[Retriesleft?]} */
+                if (me->nI2CLoopTimeout != 0) {
+                    status_ = Q_TRAN(&I2CBusMgr_PollFor_I2C_EV6_RX);
+                }
+                /* ${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_EV6_RX::PollFor_I2C_EV6_RX::I2C_CHECK_EV::[else]::[else]} */
+                else {
+                    me->errorCode = ERR_I2CBUS_EV6_NOT_REC;
+                    ERR_printf(
+                        "Didn't see I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED (EV6) on I2CBus%d, error: 0x%08x\n",
+                        me->iBus+1,
+                        me->errorCode
+                    );
+                    status_ = Q_TRAN(&I2CBusMgr_Idle);
+                }
+            }
+            break;
+        }
+        default: {
+            status_ = Q_SUPER(&I2CBusMgr_WaitFor_I2C_EV6_RX);
             break;
         }
     }

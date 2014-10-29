@@ -82,11 +82,16 @@ typedef enum CBErrors
    ERR_I2CBUS_INVALID_PARAMS_FOR_7BIT_ADDR                     = 0x00060006,
    ERR_I2CBUS_INVALID_PARAMS_FOR_SEND_DATA                     = 0x00060007,
    ERR_I2CBUS_EV6_TIMEOUT                                      = 0x00060008,
+   ERR_I2CBUS_EV6_NOT_REC                                      = 0x00060009,
+   ERR_I2CBUS_EV8_TIMEOUT                                      = 0x0006000A,
+   ERR_I2CBUS_EV8_NOT_REC                                      = 0x0006000B,
+   ERR_I2CBUS_INVALID_PARAMS_FOR_BUS_CHECK_FREE                = 0x0006000C,
 
    /* I2C1Dev error category                     0x00070000 - 0x0007FFFF */
    ERR_I2C1DEV_CHECK_BUS_TIMEOUT                               = 0x00070000,
-   ERR_I2C1DEV_START_BIT_TIMEOUT                               = 0x00070001,
-   ERR_I2C1DEV_SELECT_BUS_MASTER_TIMEOUT                       = 0x00070002,
+   ERR_I2C1DEV_EV5_TIMEOUT                                     = 0x00070001,
+   ERR_I2C1DEV_EV6_TIMEOUT                                     = 0x00070002,
+   ERR_I2C1DEV_EV8_TIMEOUT                                     = 0x00070003,
 
    /* Reserved errors                            0xFFFFFFFE - 0xFFFFFFFF */
    ERR_UNIMPLEMENTED                                           = 0xFFFFFFFE,

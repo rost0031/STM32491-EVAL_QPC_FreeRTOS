@@ -53,11 +53,6 @@
    <attribute name="deferredEvtQSto[100]" type="QTimeEvt const *" visibility="0x01" properties="0x00">
     <documentation>/**&lt; Storage for deferred event queue. */</documentation>
    </attribute>
-   <attribute name="iDevice" type="I2C_Device_t" visibility="0x01" properties="0x00">
-    <documentation>/**&lt; Specifies which I2C device is currently being handled by this AO.  This should
-     be set when a new I2C_READ_START or I2C_WRITE_START events come in.  Those
-     events should contain the device for which they are meant for. */</documentation>
-   </attribute>
    <attribute name="iBus" type="I2C_Bus_t" visibility="0x01" properties="0x00">
     <documentation>/**&lt; Which I2C bus this AO is responsible for.  This variable is set on
      startup and is used to index into the structure that holds all the

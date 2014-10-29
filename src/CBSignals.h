@@ -99,6 +99,7 @@ enum I2C1DevMgrSignals {
    I2C1_DEV_TIMEOUT_SIG = I2C_BUS_MAX_SIG, /** This signal must start at the previous category max signal */
    I2C1_DEV_OP_TIMEOUT_SIG,
    I2C1_DEV_READ_DONE_SIG,
+   EEPROM_RAW_MEM_READ_SIG,
    I2C1_DEV_MAX_SIG
 };
 

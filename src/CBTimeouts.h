@@ -70,10 +70,12 @@
     * These are the timeouts used by the higher level I2C1DevMgr AO.
     * These should be based on the LL I2CBusMgr timeouts.
     *@{*/
-   #define HL_MAX_TOUT_SEC_I2C_DEV_REQ          ( LL_MAX_TOUT_SEC_I2C_WRITE_OP * 1.3 )
-   #define HL_MAX_TOUT_SEC_I2C_BUS_CHECK        ( LL_MAX_TIME_SEC_I2C_BUS_RECOVERY * 1.3 )
-   #define HL_MAX_TOUT_SEC_I2C_STRT_BIT         ( LL_MAX_TOUT_SEC_I2C_DMA_READ * 1.3 )
-   #define HL_MAX_TOUT_SEC_I2C_EV5                HL_MAX_TOUT_SEC_I2C_STRT_BIT
+   #define HL_MAX_TOUT_SEC_I2C_DEV_OP                                        0.3
+   #define HL_MAX_TOUT_SEC_I2C_DEV_REQ                                        10.0
+   #define HL_MAX_TOUT_SEC_I2C_BUS_CHECK        ( LL_MAX_TOUT_SEC_I2C_BUS_RECOVERY * 1.3 )
+   #define HL_MAX_TOUT_SEC_I2C_EV5              ( HL_MAX_TOUT_SEC_I2C_DEV_OP * 1.3 )
+   #define HL_MAX_TOUT_SEC_I2C_EV6              ( HL_MAX_TOUT_SEC_I2C_DEV_OP * 1.3 )
+   #define HL_MAX_TOUT_SEC_I2C_EV8              ( HL_MAX_TOUT_SEC_I2C_DEV_OP * 1.3 )
    /*@} I2C1Dev Timeouts */
 
    /** \name ETH Timeouts

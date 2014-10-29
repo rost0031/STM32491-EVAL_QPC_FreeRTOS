@@ -38,7 +38,7 @@
 #include "CommStackMgr.h"
 #include "project_includes.h"           /* Includes common to entire project. */
 #include "bsp.h"                              /* For time to ticks conversion */
-#include "I2CMgr.h"                                         /* For I2CDataEvt */
+#include "I2C1DevMgr.h"                                  /* For I2C Evt types */
 #include "time.h"
 #include "stm32f4x7_eth.h"
 #include "nor.h"
@@ -179,6 +179,12 @@ static QState CommStackMgr_Active(CommStackMgr * const me, QEvt const * const e)
              * there's a 5ms write time delay on the eeprom.  The I2CMgr AO doesn't
              * handle that since it's device specific and will be handled by the
              * AO that handles the I2CBus1 devices. */
+
+
+            I2CMemReadReqEvt *i2cMemReadReqEvt = Q_NEW(I2CMemReadReqEvt, EEPROM_RAW_MEM_READ_SIG);
+            i2cMemReadReqEvt->addr = 0x00;
+            i2cMemReadReqEvt->bytes  = 10;
+            QF_PUBLISH((QEvent *)i2cMemReadReqEvt, AO_CommStackMgr);
 
             /*
             I2CDataEvt *i2cDataEvt = Q_NEW(I2CDataEvt, I2C_WRITE_START_SIG);

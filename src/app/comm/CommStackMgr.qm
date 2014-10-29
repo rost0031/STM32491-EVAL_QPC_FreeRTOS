@@ -85,6 +85,12 @@ QTimeEvt_postEvery(
  * handle that since it's device specific and will be handled by the
  * AO that handles the I2CBus1 devices. */
 
+
+I2CMemReadReqEvt *i2cMemReadReqEvt = Q_NEW(I2CMemReadReqEvt, EEPROM_RAW_MEM_READ_SIG);
+i2cMemReadReqEvt-&gt;addr = 0x00;
+i2cMemReadReqEvt-&gt;bytes  = 10;
+QF_PUBLISH((QEvent *)i2cMemReadReqEvt, AO_CommStackMgr);
+
 /*
 I2CDataEvt *i2cDataEvt = Q_NEW(I2CDataEvt, I2C_WRITE_START_SIG);
 i2cDataEvt-&gt;i2cDevice = EEPROM;
@@ -240,7 +246,7 @@ QTimeEvt_ctor(&amp;me-&gt;timeTestTimerEvt, TIME_TEST_SIG);</code>
 #include &quot;CommStackMgr.h&quot;
 #include &quot;project_includes.h&quot;           /* Includes common to entire project. */
 #include &quot;bsp.h&quot;                              /* For time to ticks conversion */
-#include &quot;I2CMgr.h&quot;                                         /* For I2CDataEvt */
+#include &quot;I2C1DevMgr.h&quot;                                  /* For I2C Evt types */
 #include &quot;time.h&quot;
 #include &quot;stm32f4x7_eth.h&quot;
 #include &quot;nor.h&quot;

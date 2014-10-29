@@ -13,7 +13,7 @@
  */
 
 /* Includes ------------------------------------------------------------------*/
-#include "i2c.h"
+#include "i2c_dev.h"
 #include "qp_port.h"                                        /* for QP support */
 #include "stm32f4xx_it.h"
 #include "project_includes.h"
@@ -37,12 +37,12 @@ DBG_DEFINE_THIS_MODULE( DBG_MODL_I2C ); /* For debug system to ID this module */
  * @brief An internal structure that holds settings for I2C devices on all I2C
  * busses.
  */
-I2C_BusDevice_t s_I2C_Dev[MAX_I2C_DEV] =
+I2CBus1_DevSettings_t s_I2CBus1_Dev[MAX_I2C1_DEV] =
 {
       {
             /* "External" device settings */
             EEPROM,                    /**< i2c_dev */
-            I2C1,                      /**< i2c_bus */
+            1,                         /**< i2c_dev_addr_size */
             0xA0,                      /**< i2c_dev_addr */
 
             /* Internal device settings */
@@ -52,7 +52,7 @@ I2C_BusDevice_t s_I2C_Dev[MAX_I2C_DEV] =
       {
             /* "External" device settings */
             SN_ROM,                    /**< i2c_dev */
-            I2C1,                      /**< i2c_bus */
+            1,                         /**< i2c_dev_addr_size */
             0xB0,                      /**< i2c_dev_addr */
 
             /* Internal device settings */
@@ -62,7 +62,7 @@ I2C_BusDevice_t s_I2C_Dev[MAX_I2C_DEV] =
       {
             /* "External" device settings */
             UIE_ROM,                   /**< i2c_dev */
-            I2C1,                      /**< i2c_bus */
+            1,                         /**< i2c_dev_addr_size */
             0xB0,                      /**< i2c_dev_addr */
 
             /* Internal device settings */

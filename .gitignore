@@ -30,3 +30,5 @@ doc/
 .CommStackMgr
 .SerialMgr
 .MenuMgr
+.I2CBusMgr
+.I2C1DevMgr
