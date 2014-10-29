@@ -45,15 +45,17 @@ typedef enum CBErrors
    ERR_SERIAL_MSG_TOO_LONG                                     = 0x00000002,
    ERR_SERIAL_MSG_BASE64_ENC_FAILED                            = 0x00000003,
    ERR_STM32_HW_CRYPTO_FAILED                                  = 0x00000004,
+   ERR_LOW_POWER_RESET                                         = 0x00000005,
+   ERR_WINDOW_WATCHDOG_RESET                                   = 0x00000006,
+   ERR_INDEPENDENT_WATCHDOG_RESET                              = 0x00000007,
+   ERR_SOFTWARE_RESET                                          = 0x00000008,
+   ERR_POR_PDR_RESET                                           = 0x00000009,
+   ERR_PIN_RESET                                               = 0x0000000A,
+   ERR_BOR_RESET                                               = 0x0000000B,
 
-   /* Reset error category                       0x00020000 - 0x0002FFFF */
-   ERR_LOW_POWER_RESET                                         = 0x00020000,
-   ERR_WINDOW_WATCHDOG_RESET                                   = 0x00020001,
-   ERR_INDEPENDENT_WATCHDOG_RESET                              = 0x00020002,
-   ERR_SOFTWARE_RESET                                          = 0x00020003,
-   ERR_POR_PDR_RESET                                           = 0x00020004,
-   ERR_PIN_RESET                                               = 0x00020005,
-   ERR_BOR_RESET                                               = 0x00020006,
+   /* Memory error category                      0x00010000 - 0x0001FFFF */
+   ERR_MEM_NULL_VALUE                                          = 0x00010000,
+   ERR_MEM_BUFFER_LEN                                          = 0x00010001,
 
    /* NOR error category                         0x00030000 - 0x0003FFFF */
    ERR_NOR_ERROR                                               = 0x00030000,

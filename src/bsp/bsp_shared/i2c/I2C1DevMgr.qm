@@ -145,7 +145,7 @@ QTimeEvt_rearm(
    ERR_printf(&quot;Unable to defer I2C request\n&quot;);
 }</action>
        <tran_glyph conn="47,87,3,-1,61">
-        <action box="0,-2,16,2"/>
+        <action box="0,-2,22,2"/>
        </tran_glyph>
       </tran>
       <state name="GenerateStart">
@@ -475,8 +475,21 @@ QACTIVE_POST(AO_I2CBusMgr[me-&gt;iBus], (QEvt *)i2cReadMemEvt, me);</entry>
          </choice_glyph>
         </choice>
         <choice target="../../../../1">
-         <guard brief="NoErr?">ERR_NONE == ((I2CStatusEvt const *)e)-&gt;errorCode</guard>
-         <action>DBG_printf(&quot;Got I2C_BUS_DONE with no error\n&quot;);</action>
+         <guard brief="NoErr?">ERR_NONE == ((I2CBusDataEvt const *)e)-&gt;errorCode</guard>
+         <action>DBG_printf(&quot;Got I2C_BUS_DONE with no error\n&quot;);
+char tmp[80];
+memset(tmp, 0, sizeof(tmp));
+uint16_t tmpLen = 0;
+CBErrorCode err = CON_hexToStr(
+    (const uint8_t *)((I2CBusDataEvt const *)e)-&gt;dataBuf, // data to convert
+    ((I2CBusDataEvt const *)e)-&gt;dataLen, // length of data to convert
+    tmp,                                 // where to write output
+    sizeof(tmp),                         // max size of output buffer
+    &amp;tmpLen,                             // size of the resulting output
+    0,                                   // no columns
+    ' '                                  // separator
+);
+DBG_printf(&quot;Read %s\n&quot;, tmp);</action>
          <choice_glyph conn="122,53,5,1,9,12,-106">
           <action box="1,-2,10,2"/>
          </choice_glyph>

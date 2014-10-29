@@ -171,6 +171,33 @@ void CON_slow_output(
 );
 
 /**
+ * @brief   Convert a uint8_t hex array to a string array.
+ *
+ * @param [in] hexData: const char* pointer to the buffer that contains the hex
+ * data to convert.
+ * @param [in] hexDataLen: uint16_t length of data in the hexData buffer.
+ * @param [in,out] strDataBuffer: char* pointer to the buffer where to write the
+ * result.  This should be allocated by the caller.
+ * @param [in] strDataBufferSize: uint16_t max length of the strDataBuffer.
+ * @param [in,out] strDataLen: uint16_t* pointer to the size of the data in the
+ * strDataBuffer after it has been written.
+ * @param [in] outputNColumns: uint8_t number of columns to break up the
+ * resulting string into with newlines. If set to zero, a single long row is
+ * returned without any newlines.
+ * @param [in] char that will be used to separate all the printed hex numbers.
+ * @return CBErrorCode: ERR_NONE if OK.
+ */
+CBErrorCode CON_hexToStr(
+      const uint8_t* hexData,
+      uint16_t hexDataLen,
+      char* strDataBuffer,
+      uint16_t strDataBufferSize,
+      uint16_t* strDataLen,
+      uint8_t outputNColumns,
+      const char sep
+);
+
+/**
  * @} end group groupConOut
  */
 

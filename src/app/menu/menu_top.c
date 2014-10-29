@@ -20,6 +20,8 @@
 #include "debug_menu.h"
 #include "dbg_out_cntrl.h"
 #include "dbg_mod_cntrl.h"
+#include "systest_menu.h"
+#include "systest_i2c.h"
 
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */
@@ -207,6 +209,32 @@ treeNode_t* MENU_init( void )
                MENU_toggleDbgModCOMMAction /**< Action taken when menu item is selected */
          );
 
+   /* Add the SYSTEST menu */
+   MENU_addSubMenu(
+         &menuSysTest,                                  /**< Menu being added */
+         &menu,                           /**< Parent of the menu being added */
+         menuSysTest_TitleTxt,               /**< Menu being added title text */
+         menuSysTest_SelectKey,           /**< Menu being added selection key */
+         NULL                         /**< Action taken when menu is selected */
+   );
+
+      /* Add a Debug Output Control sub-menu under the DEBUG menu */
+      MENU_addSubMenu(
+            &menuSysTest_I2C,                           /**< Menu being added */
+            &menuSysTest,                 /**< Parent of the menu being added */
+            menuSysTest_I2C_TitleTxt,        /**< Menu being added title text */
+            menuSysTest_I2C_SelectKey,    /**< Menu being added selection key */
+            NULL                      /**< Action taken when menu is selected */
+      );
+
+         /* Add menu items for this menu */
+         MENU_addMenuItem(
+               &menuItem_runI2CEEPROMReadTest,     /**< Menu item being added */
+               &menuSysTest_I2C,     /**< Parent of the menu item being added */
+               menuSysTest_runI2CEEPROMReadTest_Txt,  /**< Menu item title text */
+               menuSysTest_runI2CEEPROMReadTest_SelectKey, /**< Menu item selection key */
+               MENU_i2cEEPROMReadTestAction /**< Action taken when menu item is selected */
+         );
    return( &menu ); /* return a pointer to the top level of the menu tree */
 }
 

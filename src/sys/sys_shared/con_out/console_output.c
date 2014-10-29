@@ -240,6 +240,69 @@ void CON_slow_output(
    fwrite(tmpBuffer, tmpBufferIndex, 1, stderr);
 }
 
+/******************************************************************************/
+CBErrorCode CON_hexToStr(
+      const uint8_t* hexData,
+      uint16_t hexDataLen,
+      char* strDataBuffer,
+      uint16_t strDataBufferSize,
+      uint16_t* strDataLen,
+      uint8_t outputNColumns,
+      const char sep
+)
+{
+   CBErrorCode status = ERR_NONE;
+
+   if ( NULL == hexData ) {
+      ERR_printf("Passed in a NULL buffer\n");
+      return( ERR_MEM_NULL_VALUE );
+   }
+
+   if ( 0 == hexDataLen ) {
+      ERR_printf("Passed in zero length data buffer for input\n");
+      return( ERR_MEM_BUFFER_LEN );
+   }
+
+   if ( 0 == strDataBufferSize ) {
+      ERR_printf("Passed in zero length data buffer for output\n");
+      return( ERR_MEM_BUFFER_LEN );
+   } else if ( strDataBufferSize < 5 * hexDataLen ) {
+      WRN_printf("Output buffer too small to contain all the data.\n");
+      WRN_printf("Should be at least %d long\n", 5 * hexDataLen);
+      WRN_printf("Continuing but the resulting data will be incomplete\n");
+      status = ERR_MEM_BUFFER_LEN;
+   }
+
+   /* Index used to keep track of how far into the buffer we've printed */
+   *strDataLen = 0;
+
+   for ( uint16_t i = 0; i < hexDataLen; i++ ) {
+
+      /* Let user zero num of columns but if they do, just give them back one
+       * long row of data without any linebreaks. */
+      if ( 0 != outputNColumns && i % outputNColumns == 0 && i != 0 ) {
+         *strDataLen += snprintf(
+               &strDataBuffer[*strDataLen],
+               strDataBufferSize - *strDataLen,
+               "\n"
+         );
+      }
+      *strDataLen += snprintf(
+            &strDataBuffer[*strDataLen],
+            strDataBufferSize - *strDataLen,
+            "0x%02x%c",
+            hexData[i],
+            sep
+      );
+
+      if ( *strDataLen >= strDataBufferSize ) {
+         return( ERR_MEM_BUFFER_LEN );
+      }
+   }
+   return( status );
+
+}
+
 /**
  * @} end group groupConOut
  */

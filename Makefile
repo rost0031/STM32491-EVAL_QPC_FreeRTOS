@@ -153,10 +153,11 @@ APP_DBG_DIR             = $(APP_DIR)/debug
 
 # Application Menu and submenu directories
 APP_MENU_DIR                      = $(APP_DIR)/menu
-APP_MENU_DBG_DIR                  = $(APP_DIR)/menu/dbgMenu
-APP_MENU_DBG_OUT_CNTRL_DIR        = $(APP_DIR)/menu/dbgMenu/dbgOutCntrlMenu
-APP_MENU_DBG_MOD_CNTRL_DIR        = $(APP_DIR)/menu/dbgMenu/dbgModCntrlMenu
-APP_MENU_SYSTEST_DIR              = $(APP_DIR)/menu/sysTestMenu
+APP_MENU_DBG_DIR                  = $(APP_MENU_DIR)/dbgMenu
+APP_MENU_DBG_OUT_CNTRL_DIR        = $(APP_MENU_DBG_DIR)/dbgOutCntrlMenu
+APP_MENU_DBG_MOD_CNTRL_DIR        = $(APP_MENU_DBG_DIR)/dbgModCntrlMenu
+APP_MENU_SYSTEST_DIR              = $(APP_MENU_DIR)/sysTestMenu
+APP_MENU_SYSTEST_I2C              = $(APP_MENU_SYSTEST_DIR)/sysI2CTests
 
 # Collect all the menu directories and subdirectories here so we don't have to
 # keep modifying the VPATH and INCLUDE paths.
@@ -164,13 +165,15 @@ APP_MENU_DIRS           = $(APP_MENU_DIR) \
                           $(APP_MENU_DBG_DIR) \
                           $(APP_MENU_DBG_OUT_CNTRL_DIR) \
                           $(APP_MENU_DBG_MOD_CNTRL_DIR) \
-                          $(APP_MENU_SYSTEST_DIR)
+                          $(APP_MENU_SYSTEST_DIR) \
+                          $(APP_MENU_SYSTEST_I2C)
                           
 APP_MENU_INCLUDES       = -I$(APP_MENU_DIR) \
                           -I$(APP_MENU_DBG_DIR) \
                           -I$(APP_MENU_DBG_OUT_CNTRL_DIR) \
                           -I$(APP_MENU_DBG_MOD_CNTRL_DIR) \
-                          -I$(APP_MENU_SYSTEST_DIR)
+                          -I$(APP_MENU_SYSTEST_DIR) \
+                          -I$(APP_MENU_SYSTEST_I2C)
                                                  
 # Collect all the menu c source files here so we don't have to the list of sources
 MENU_CSRCS              = ktree.c \
@@ -178,7 +181,9 @@ MENU_CSRCS              = ktree.c \
                           menu_top.c \
 						  debug_menu.c \
 						  dbg_out_cntrl.c \
-						  dbg_mod_cntrl.c
+						  dbg_mod_cntrl.c \
+						  systest_menu.c \
+						  systest_i2c.c						  
 
 # Console output directory
 CON_OUT_DIR				= $(SYS_DIR)/sys_shared/con_out

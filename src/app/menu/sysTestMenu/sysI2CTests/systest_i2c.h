@@ -1,8 +1,8 @@
 /**
- * @file    systest_menu.h
- * @brief   Handles the system tests menu section of the menu application.
+ * @file    systest_i2c.h
+ * @brief   Handles the system I2C tests menu items.
  *
- * @date    10/02/2014
+ * @date    10/29/2014
  * @author  Harry Rostovtsev
  * @email   harry_rostovtsev@datacard.com
  * Copyright (C) 2014 Datacard. All rights reserved.
@@ -12,8 +12,8 @@
  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef SYSTEST_MENU_H_
-#define SYSTEST_MENU_H_
+#ifndef SYSTEST_I2C_H_
+#define SYSTEST_I2C_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,15 +29,27 @@ extern "C" {
 /* Exported macros -----------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
 /* Exported variables --------------------------------------------------------*/
-extern treeNode_t menuSysTest;
-extern char *const menuSysTest_TitleTxt;
-extern char *const menuSysTest_SelectKey;
 
-extern treeNode_t menuSysTest_I2C;
-extern char *const menuSysTest_I2C_TitleTxt;
-extern char *const menuSysTest_I2C_SelectKey;
+/* Variables to define all the menu items in this submenu */
+extern treeNode_t menuItem_runI2CEEPROMReadTest;
+extern char *const menuSysTest_runI2CEEPROMReadTest_Txt;
+extern char *const menuSysTest_runI2CEEPROMReadTest_SelectKey;
 
 /* Exported functions --------------------------------------------------------*/
+/**
+ * @brief Called by the menu item to run an I2C EEPROM read test.
+ * @param [in] dataBuf: const char* pointer to the data passed in by the user at
+ * cmd line
+ * @param [in] dataLen: uint16_t length of data in the dataBuf.
+ * @param [in] dst: MsgSrc destination so MENU_printf() knows were to direct the
+ * output.
+ * @return: None
+ */
+void MENU_i2cEEPROMReadTestAction(
+      const char* dataBuf,
+      uint16_t dataLen,
+      MsgSrc dst
+);
 
 /**
  * @}
@@ -48,5 +60,5 @@ extern char *const menuSysTest_I2C_SelectKey;
 }
 #endif
 
-#endif                                                     /* SYSTEST_MENU_H_ */
+#endif                                                      /* SYSTEST_I2C_H_ */
 /******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/

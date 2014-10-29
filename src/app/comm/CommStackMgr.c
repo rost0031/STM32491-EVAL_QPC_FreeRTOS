@@ -180,12 +180,12 @@ static QState CommStackMgr_Active(CommStackMgr * const me, QEvt const * const e)
              * handle that since it's device specific and will be handled by the
              * AO that handles the I2CBus1 devices. */
 
-
+            /*
             I2CMemReadReqEvt *i2cMemReadReqEvt = Q_NEW(I2CMemReadReqEvt, EEPROM_RAW_MEM_READ_SIG);
             i2cMemReadReqEvt->addr = 0x00;
             i2cMemReadReqEvt->bytes  = 10;
             QF_PUBLISH((QEvent *)i2cMemReadReqEvt, AO_CommStackMgr);
-
+            */
             /*
             I2CDataEvt *i2cDataEvt = Q_NEW(I2CDataEvt, I2C_WRITE_START_SIG);
             i2cDataEvt->i2cDevice = EEPROM;
