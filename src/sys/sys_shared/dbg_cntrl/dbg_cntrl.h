@@ -137,6 +137,12 @@
 #define DEBUG 0
 #endif
 
+/**< For debugging weird problems.  Uncomment this to turn all debugging output
+ * to the regular slow and blocking version.  This will also disable debugging
+ * output to ethernet.
+ */
+//#define SLOW_PRINTF
+
 /* Exported types ------------------------------------------------------------*/
 /*! \enum DBG_LEVEL_T
  * These are the various levels of debug that are available on the system.
@@ -266,6 +272,7 @@ extern uint32_t  glbDbgConfig; /**< Allow global access to debug info */
  *
  * @return None
  */
+#ifndef SLOW_PRINTF
 #define DBG_printf(fmt, ...) \
       do { \
          if (DEBUG) { \
@@ -275,7 +282,18 @@ extern uint32_t  glbDbgConfig; /**< Allow global access to debug info */
             } \
          } \
       } while (0)
+#else
+#define DBG_printf(fmt, ...) \
+      do { \
+         if (DEBUG) { \
+            if ( glbDbgConfig & DBG_this_module_ ) { \
+               CON_slow_output(DBG, __func__, __LINE__, fmt, \
+                  ##__VA_ARGS__); \
+            } \
+         } \
+      } while (0)
 
+#endif
 /**
  * @brief Logging print function.
  *
@@ -303,11 +321,17 @@ extern uint32_t  glbDbgConfig; /**< Allow global access to debug info */
  *
  * @return None
  */
+#ifndef SLOW_PRINTF
 #define LOG_printf(fmt, ...) \
       do { if (DEBUG) CON_output(LOG, NA_SRC_DST, NA_SRC_DST, __func__, __LINE__, fmt, \
             ##__VA_ARGS__); \
       } while (0)
-
+#else
+#define LOG_printf(fmt, ...) \
+      do { if (DEBUG) CON_slow_output(LOG, __func__, __LINE__, fmt, \
+            ##__VA_ARGS__); \
+      } while (0)
+#endif
 /**
  * @brief Warning print function.
  *
@@ -335,11 +359,17 @@ extern uint32_t  glbDbgConfig; /**< Allow global access to debug info */
  *
  * @return None
  */
+#ifndef SLOW_PRINTF
 #define WRN_printf(fmt, ...) \
-      do { CON_output(WRN, NA_SRC_DST, NA_SRC_DST, __func__, __LINE__, fmt, \
+      do { if (DEBUG) CON_output(WRN, NA_SRC_DST, NA_SRC_DST, __func__, __LINE__, fmt, \
             ##__VA_ARGS__); \
       } while (0)
-
+#else
+#define WRN_printf(fmt, ...) \
+      do { if (DEBUG) CON_slow_output(WRN, __func__, __LINE__, fmt, \
+            ##__VA_ARGS__); \
+      } while (0)
+#endif
 /**
  * @brief Error print function.
  *
@@ -367,10 +397,17 @@ extern uint32_t  glbDbgConfig; /**< Allow global access to debug info */
  *
  * @return None
  */
+#ifndef SLOW_PRINTF
 #define ERR_printf(fmt, ...) \
-      do { CON_output(ERR, NA_SRC_DST, NA_SRC_DST, __func__, __LINE__, fmt, \
+      do { if (DEBUG) CON_output(ERR, NA_SRC_DST, NA_SRC_DST, __func__, __LINE__, fmt, \
             ##__VA_ARGS__); \
       } while (0)
+#else
+#define ERR_printf(fmt, ...) \
+      do { if (DEBUG) CON_slow_output(ERR, __func__, __LINE__, fmt, \
+            ##__VA_ARGS__); \
+      } while (0)
+#endif
 
 /**
  * @brief Menu print function.
@@ -402,11 +439,17 @@ extern uint32_t  glbDbgConfig; /**< Allow global access to debug info */
  *
  * @return None
  */
+#ifndef SLOW_PRINTF
 #define MENU_printf(dst, fmt, ...) \
       do { CON_output(CON, NA_SRC_DST, dst, __func__, __LINE__, fmt, \
             ##__VA_ARGS__); \
       } while (0)
-
+#else
+#define MENU_printf(dst, fmt, ...) \
+      do { CON_slow_output(CON, __func__, __LINE__, fmt, \
+            ##__VA_ARGS__); \
+      } while (0)
+#endif
 /**
  * @} end group groupDbgFast
  */

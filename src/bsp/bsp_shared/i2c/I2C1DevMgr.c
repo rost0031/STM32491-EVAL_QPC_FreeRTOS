@@ -719,7 +719,7 @@ static QState I2C1DevMgr_ReadMem(I2C1DevMgr * const me, QEvt const * const e) {
         case I2C_BUS_DONE_SIG: {
             /* ${AOs::I2C1DevMgr::SM::Active::Busy::ReadMem::I2C_BUS_DONE::[NoErr?]} */
             if (ERR_NONE == ((I2CBusDataEvt const *)e)->errorCode) {
-                DBG_printf("Got I2C_BUS_DONE with no error\n");
+                LOG_printf("Got I2C_BUS_DONE with no error\n");
                 char tmp[80];
                 memset(tmp, 0, sizeof(tmp));
                 uint16_t tmpLen = 0;
@@ -732,7 +732,7 @@ static QState I2C1DevMgr_ReadMem(I2C1DevMgr * const me, QEvt const * const e) {
                     0,                                   // no columns
                     ' '                                  // separator
                 );
-                DBG_printf("Read %s\n", tmp);
+                LOG_printf("Read %s\n", tmp);
                 status_ = Q_TRAN(&I2C1DevMgr_Idle);
             }
             /* ${AOs::I2C1DevMgr::SM::Active::Busy::ReadMem::I2C_BUS_DONE::[else]} */

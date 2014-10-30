@@ -235,6 +235,12 @@ treeNode_t* MENU_init( void )
                menuSysTest_runI2CEEPROMReadTest_SelectKey, /**< Menu item selection key */
                MENU_i2cEEPROMReadTestAction /**< Action taken when menu item is selected */
          );
+
+
+
+   /* Uncomment to print the entire tree with node addresses (for debugging only) */
+//   KTREE_printTree(&menu, 0);
+
    return( &menu ); /* return a pointer to the top level of the menu tree */
 }
 

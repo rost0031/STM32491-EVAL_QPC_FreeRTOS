@@ -310,8 +310,9 @@ static void MENU_printRevAncestry( treeNode_t* node, MsgSrc msgSrc )
 
    /* Iterate through the children of the top most node and print them */
    while( NULL != node ) {
+//      DBG_printf("About to print node %08x\n", (uint32_t) node);
       MENU_printNode( node, msgSrc );
-
+//      DBG_printf("pathToTopIndex: %d, node: %08x, menuNavNode: %08x\n", menuNav.pathToTopIndex, (uint32_t)node,  menuNav.pathToTop[ menuNav.pathToTopIndex ]);
       if ( menuNav.pathToTop[ menuNav.pathToTopIndex ] == node ) {
          /* If the ancestry node and the current node match, recurse one level
           * lower unless this is the last node in the ancestry.  In that case,
@@ -328,7 +329,6 @@ static void MENU_printRevAncestry( treeNode_t* node, MsgSrc msgSrc )
                   node->firstChildNode,
                   msgSrc
             );
-            return;
          } else if (0 != menuNav.pathToTopIndex ) {
 //            DBG_printf("Ancestry index %d\n", menuNav.pathToTopIndex);
             /* Matched an ancestry node but it's not the last one.  Recurse but
@@ -337,8 +337,14 @@ static void MENU_printRevAncestry( treeNode_t* node, MsgSrc msgSrc )
             MENU_printRevAncestry( node->firstChildNode, msgSrc );
             node = node->firstSiblingNode;
          }
-      } else {
+      }
+
+      if ( NULL != node && NULL != node->firstSiblingNode ) {
+//         DBG_printf("setting node %08x to first sibling node, sibling node is %08x\n", (uint32_t)node, (uint32_t)node->firstSiblingNode);
          node = node->firstSiblingNode;
+//         DBG_printf("set node to first sibling node\n");
+      } else {
+         return;
       }
    }
 }

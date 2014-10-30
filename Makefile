@@ -97,7 +97,8 @@ CC                      = $(CROSS)gcc
 CPP                     = $(CROSS)g++
 AS                      = $(CROSS)as
 LINK                    = $(CROSS)gcc
-OBJCPY                  = ${CROSS}objcopy
+OBJCPY                  = $(CROSS)objcopy
+SIZE                    = $(CROSS)size
 RM                      = rm -rf
 ECHO                    = echo
 MKDIR                   = mkdir
@@ -507,6 +508,7 @@ $(TARGET_BIN): $(TARGET_ELF)
 $(TARGET_ELF) : $(ASM_OBJS_EXT) $(C_OBJS_EXT) $(CPP_OBJS_EXT)
 	@echo --- Linking libraries   ---
 	$(TRACE_FLAG)$(LINK) -T$(LD_SCRIPT) $(LINKFLAGS) -L$(QP_PORT_DIR)/$(BIN_DIR) -L$(LWIP_DIR)/$(BIN_DIR) -o $@ $^ $(LIBS)
+	$(SIZE) $(TARGET_ELF)
 	
 build_libs: build_qpc build_lwip
 

@@ -476,7 +476,7 @@ QACTIVE_POST(AO_I2CBusMgr[me-&gt;iBus], (QEvt *)i2cReadMemEvt, me);</entry>
         </choice>
         <choice target="../../../../1">
          <guard brief="NoErr?">ERR_NONE == ((I2CBusDataEvt const *)e)-&gt;errorCode</guard>
-         <action>DBG_printf(&quot;Got I2C_BUS_DONE with no error\n&quot;);
+         <action>LOG_printf(&quot;Got I2C_BUS_DONE with no error\n&quot;);
 char tmp[80];
 memset(tmp, 0, sizeof(tmp));
 uint16_t tmpLen = 0;
@@ -489,7 +489,7 @@ CBErrorCode err = CON_hexToStr(
     0,                                   // no columns
     ' '                                  // separator
 );
-DBG_printf(&quot;Read %s\n&quot;, tmp);</action>
+LOG_printf(&quot;Read %s\n&quot;, tmp);</action>
          <choice_glyph conn="122,53,5,1,9,12,-106">
           <action box="1,-2,10,2"/>
          </choice_glyph>
