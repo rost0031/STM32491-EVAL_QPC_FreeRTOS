@@ -224,8 +224,9 @@ static QState I2C1DevMgr_initial(I2C1DevMgr * const me, QEvt const * const e) {
     QS_FUN_DICTIONARY(&I2C1DevMgr_Active);
     QS_FUN_DICTIONARY(&I2C1DevMgr_Idle);
 
-
     QActive_subscribe((QActive *)me, EEPROM_RAW_MEM_READ_SIG);
+    QActive_subscribe((QActive *)me, EEPROM_SN_READ_SIG);
+    QActive_subscribe((QActive *)me, EEPROM_EUI64_READ_SIG);
     return Q_TRAN(&I2C1DevMgr_Idle);
 }
 
@@ -306,8 +307,10 @@ static QState I2C1DevMgr_Busy(I2C1DevMgr * const me, QEvt const * const e) {
             status_ = Q_TRAN(&I2C1DevMgr_Idle);
             break;
         }
-        /* ${AOs::I2C1DevMgr::SM::Active::Busy::EEPROM_RAW_MEM_READ} */
-        case EEPROM_RAW_MEM_READ_SIG: {
+        /* ${AOs::I2C1DevMgr::SM::Active::Busy::EEPROM_RAW_MEM_READ, EEPROM_SN_READ, EEPROM_EUI64_READ} */
+        case EEPROM_RAW_MEM_READ_SIG: /* intentionally fall through */
+        case EEPROM_SN_READ_SIG: /* intentionally fall through */
+        case EEPROM_EUI64_READ_SIG: {
             if (QEQueue_getNFree(&me->deferredEvtQueue) > 0) {
                /* defer the request - this event will be handled
                 * when the state machine goes back to Idle state */
@@ -395,18 +398,12 @@ static QState I2C1DevMgr_Send7BitAddrTxMode(I2C1DevMgr * const me, QEvt const * 
                 SEC_TO_TICKS( HL_MAX_TOUT_SEC_I2C_EV6 )
             );
 
-            /* Directly post an event to the appropriate I2CBusMgr AO */
-            //static QEvt const qEvt = { I2C_BUS_SEND_7BIT_ADDR_SIG, 0U, 0U };
-            //QACTIVE_POST(AO_I2CBusMgr[me->iBus], &qEvt, me);
-
-            /* Allocate a dynamic event to send back the result after attempting to recover
-             * the I2C bus. */
+            /* Allocate and directly post an event to the appropriate I2CBusMgr AO */
             I2CAddrEvt *i2cAddrEvt   = Q_NEW( I2CAddrEvt, I2C_BUS_SEND_7BIT_ADDR_SIG );
             i2cAddrEvt->i2cBus       = me->iBus;
-            i2cAddrEvt->addr         = s_I2CBus1_Dev[me->iDev].i2c_dev_addr;
-            i2cAddrEvt->addrSize     = s_I2CBus1_Dev[me->iDev].i2c_dev_addr_size;
+            i2cAddrEvt->addr         = I2C_getI2C1DevAddr(me->iDev);
+            i2cAddrEvt->addrSize     = I2C_getI2C1DevAddrSize(me->iDev);
             i2cAddrEvt->i2cDirection = I2C_Direction_Transmitter;
-
             QACTIVE_POST(AO_I2CBusMgr[me->iBus], (QEvt *)i2cAddrEvt, me);
             status_ = Q_HANDLED();
             break;
@@ -456,18 +453,12 @@ static QState I2C1DevMgr_SendInternalAddr(I2C1DevMgr * const me, QEvt const * co
                 SEC_TO_TICKS( HL_MAX_TOUT_SEC_I2C_EV8 )
             );
 
-            /* Directly post an event to the appropriate I2CBusMgr AO */
-            //static QEvt const qEvt = { I2C_BUS_SEND_7BIT_ADDR_SIG, 0U, 0U };
-            //QACTIVE_POST(AO_I2CBusMgr[me->iBus], &qEvt, me);
-
-            /* Allocate a dynamic event to send back the result after attempting to recover
-             * the I2C bus. */
+            /* Allocate and directly post an event to the appropriate I2CBusMgr AO */
             I2CAddrEvt *i2cAddrEvt   = Q_NEW( I2CAddrEvt, I2C_BUS_SEND_DEV_ADDR_SIG );
             i2cAddrEvt->i2cBus       = me->iBus;
             i2cAddrEvt->addr         = me->addrStart;
-            i2cAddrEvt->addrSize     = s_I2CBus1_Dev[me->iDev].i2c_mem_addr_size;
+            i2cAddrEvt->addrSize     = I2C_getI2C1MemAddrSize(me->iDev);
             i2cAddrEvt->i2cDirection = I2C_Direction_Transmitter;
-
             QACTIVE_POST(AO_I2CBusMgr[me->iBus], (QEvt *)i2cAddrEvt, me);
             status_ = Q_HANDLED();
             break;
@@ -517,18 +508,12 @@ static QState I2C1DevMgr_CheckingBus(I2C1DevMgr * const me, QEvt const * const e
                 SEC_TO_TICKS( HL_MAX_TOUT_SEC_I2C_BUS_CHECK )
             );
 
-            /* Directly post an event to the appropriate I2CBusMgr AO */
-            //static QEvt const qEvt = { I2C_BUS_CHECK_FREE_SIG, 0U, 0U };
-            //QEvt *qEvt = Q_NEW(QEvt, I2C_BUS_CHECK_FREE_SIG);
-            //QACTIVE_POST(AO_I2CBusMgr[me->iBus], qEvt, me);
-
             /* Allocate a dynamic event to send back the result after attempting to recover
              * the I2C bus. */
-
             I2CAddrEvt *i2cAddrEvt = Q_NEW( I2CAddrEvt, I2C_BUS_CHECK_FREE_SIG );
-            i2cAddrEvt->i2cBus = me->iBus;
-            i2cAddrEvt->addr = s_I2CBus1_Dev[me->iBus].i2c_dev_addr;
-            i2cAddrEvt->addrSize = s_I2CBus1_Dev[me->iBus].i2c_dev_addr_size;
+            i2cAddrEvt->i2cBus     = me->iBus;
+            i2cAddrEvt->addr       = I2C_getI2C1DevAddr(me->iDev);
+            i2cAddrEvt->addrSize   = I2C_getI2C1DevAddrSize(me->iDev);
             QACTIVE_POST(AO_I2CBusMgr[me->iBus], (QEvt *)(i2cAddrEvt), me);
 
             DBG_printf("ActivePosted I2C_BUS_CHECK_FREE\n");
@@ -631,18 +616,12 @@ static QState I2C1DevMgr_Send7BitAddrRxMode(I2C1DevMgr * const me, QEvt const * 
                 SEC_TO_TICKS( HL_MAX_TOUT_SEC_I2C_EV6 )
             );
 
-            /* Directly post an event to the appropriate I2CBusMgr AO */
-            //static QEvt const qEvt = { I2C_BUS_SEND_7BIT_ADDR_SIG, 0U, 0U };
-            //QACTIVE_POST(AO_I2CBusMgr[me->iBus], &qEvt, me);
-
-            /* Allocate a dynamic event to send back the result after attempting to recover
-             * the I2C bus. */
+            /* Allocate and directly post an event to the appropriate I2CBusMgr AO */
             I2CAddrEvt *i2cAddrEvt   = Q_NEW( I2CAddrEvt, I2C_BUS_SEND_7BIT_ADDR_SIG );
             i2cAddrEvt->i2cBus       = me->iBus;
-            i2cAddrEvt->addr         = s_I2CBus1_Dev[me->iDev].i2c_dev_addr;
-            i2cAddrEvt->addrSize     = s_I2CBus1_Dev[me->iDev].i2c_dev_addr_size;
+            i2cAddrEvt->addr         = I2C_getI2C1DevAddr(me->iDev);
+            i2cAddrEvt->addrSize     = I2C_getI2C1DevAddrSize(me->iDev);
             i2cAddrEvt->i2cDirection = I2C_Direction_Receiver;
-
             QACTIVE_POST(AO_I2CBusMgr[me->iBus], (QEvt *)i2cAddrEvt, me);
             status_ = Q_HANDLED();
             break;
@@ -692,19 +671,13 @@ static QState I2C1DevMgr_ReadMem(I2C1DevMgr * const me, QEvt const * const e) {
                 SEC_TO_TICKS( HL_MAX_TOUT_SEC_I2C_EV6 )
             );
 
-            /* Directly post an event to the appropriate I2CBusMgr AO */
-            //static QEvt const qEvt = { I2C_BUS_SEND_7BIT_ADDR_SIG, 0U, 0U };
-            //QACTIVE_POST(AO_I2CBusMgr[me->iBus], &qEvt, me);
-
-            /* Allocate a dynamic event to send back the result after attempting to recover
-             * the I2C bus. */
+            /* Allocate and directly post an event to the appropriate I2CBusMgr AO */
             I2CReadMemReqEvt *i2cReadMemEvt = Q_NEW( I2CReadMemReqEvt, I2C_BUS_READ_MEM_SIG );
             i2cReadMemEvt->i2cBus           = me->iBus;
-            i2cReadMemEvt->addr             = s_I2CBus1_Dev[me->iDev].i2c_mem_addr;
-            i2cReadMemEvt->addrSize         = s_I2CBus1_Dev[me->iDev].i2c_mem_addr_size;
+            i2cReadMemEvt->addr             = me->addrStart;
+            i2cReadMemEvt->addrSize         = I2C_getI2C1MemAddrSize(me->iDev);
             i2cReadMemEvt->memAccessType    = I2C_MEM_DMA;
             i2cReadMemEvt->bytes            = me->bytesTotal; //TODO: remember to fix this.  This should not exceed max page size.
-
             QACTIVE_POST(AO_I2CBusMgr[me->iBus], (QEvt *)i2cReadMemEvt, me);
             status_ = Q_HANDLED();
             break;
@@ -793,8 +766,26 @@ static QState I2C1DevMgr_Idle(I2C1DevMgr * const me, QEvt const * const e) {
         case EEPROM_RAW_MEM_READ_SIG: {
             me->iDev = EEPROM; // Set which device is being accessed
             me->addrStart = ((I2CMemReadReqEvt const *)e)->addr;
-            me->addrSize  = s_I2CBus1_Dev[EEPROM].i2c_mem_addr_size;
+            me->addrSize  = I2C_getI2C1MemAddrSize(me->iDev);
             me->bytesTotal = ((I2CMemReadReqEvt const *)e)->bytes;
+            status_ = Q_TRAN(&I2C1DevMgr_CheckingBus);
+            break;
+        }
+        /* ${AOs::I2C1DevMgr::SM::Active::Idle::EEPROM_SN_READ} */
+        case EEPROM_SN_READ_SIG: {
+            me->iDev = SN_ROM; // Set which device is being accessed
+            me->addrStart = I2C_getI2C1MinMemAddr(me->iDev);
+            me->addrSize  = I2C_getI2C1MemAddrSize(me->iDev);
+            me->bytesTotal = I2C_getI2C1PageSize(me->iDev);
+            status_ = Q_TRAN(&I2C1DevMgr_CheckingBus);
+            break;
+        }
+        /* ${AOs::I2C1DevMgr::SM::Active::Idle::EEPROM_EUI64_READ} */
+        case EEPROM_EUI64_READ_SIG: {
+            me->iDev = EUI_ROM; // Set which device is being accessed
+            me->addrStart = I2C_getI2C1MinMemAddr(me->iDev);
+            me->addrSize  = I2C_getI2C1MemAddrSize(me->iDev);
+            me->bytesTotal = I2C_getI2C1PageSize(me->iDev);
             status_ = Q_TRAN(&I2C1DevMgr_CheckingBus);
             break;
         }

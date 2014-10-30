@@ -29,20 +29,18 @@ DBG_DEFINE_THIS_MODULE( DBG_MODL_I2C ); /* For debug system to ID this module */
 
 /* Private typedefs ----------------------------------------------------------*/
 /* Private defines -----------------------------------------------------------*/
-#define EE_PAGESIZE        16    /**< EEProm's internal page size (in bytes). */
-
 /* Private macros ------------------------------------------------------------*/
 /* Private variables and Local objects ---------------------------------------*/
 
 /**
- * @brief RX Buffer for I2C device
+ * @brief RX Buffer for I2C1 bus
  */
-uint8_t          i2c1RxBuffer[MAX_MSG_LEN];
+uint8_t          i2c1RxBuffer[MAX_I2C_BYTES];
 
 /**
- * @brief TX Buffer for I2C device
+ * @brief TX Buffer for I2C1 bus
  */
-uint8_t          i2c1TxBuffer[MAX_MSG_LEN];
+uint8_t          i2c1TxBuffer[MAX_I2C_BYTES];
 
 /**
  * @brief An internal structure that holds almost all the settings for the I2C
@@ -182,22 +180,16 @@ void I2C_BusInit( I2C_Bus_t iBus )
    DMA_DeInit( s_I2C_Bus[iBus].i2c_dma_tx_stream );
 
    /* 4. Set up interrupts -------------------------------------------------- */
-   /* Set up Interrupt controller to handle I2C Event interrupts */
-//   NVIC_Config(
-//         s_I2C_Bus[iBus].i2c_ev_irq_num,
-//         s_I2C_Bus[iBus].i2c_ev_irq_prio
-//   );
-
    /* Set up Interrupt controller to handle I2C Error interrupts */
    NVIC_Config(
          s_I2C_Bus[iBus].i2c_er_irq_num,
          s_I2C_Bus[iBus].i2c_er_irq_prio
    );
 
-   /* Enable All I2C Interrupts */
+   /* Enable I2C Error Interrupts */
    I2C_ITConfig(
          s_I2C_Bus[iBus].i2c_bus,
-         I2C_IT_ERR, //I2C_IT_EVT | I2C_IT_BUF |
+         I2C_IT_ERR,
          ENABLE
    );
 
@@ -211,7 +203,6 @@ void I2C_BusInit( I2C_Bus_t iBus )
          s_I2C_Bus[iBus].i2c_dma_tx_irq_num,
          s_I2C_Bus[iBus].i2c_dma_tx_irq_prio
    );
-
 
    /* I2C configuration */
    I2C_InitTypeDef  I2C_InitStructure;
@@ -320,13 +311,13 @@ void I2C_SetDirection( I2C_Bus_t iBus,  uint8_t I2C_Direction )
 }
 
 /******************************************************************************/
-//uint8_t I2C_getDevAddrSize( I2C_Device_t iDev )
-//{
-//   /* Check inputs */
-//   assert_param( IS_I2C_DEVICE( iDev ) );
-//
-//   return( s_I2C_Dev[iDev].i2c_mem_addr_size );
-//}
+uint8_t I2C_getDirection( I2C_Bus_t iBus )
+{
+   /* Check inputs */
+   assert_param( IS_I2C_BUS( iBus ) );
+
+   return( s_I2C_Bus[iBus].bTransDirection );
+}
 
 /******************************************************************************/
 void I2C_StartDMARead( I2C_Bus_t iBus, uint16_t wReadLen )

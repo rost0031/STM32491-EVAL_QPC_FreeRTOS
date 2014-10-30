@@ -25,15 +25,7 @@ extern "C" {
 #include "i2c_dev.h"
 
 /* Exported defines ----------------------------------------------------------*/
-
-/**
- * @brief   Macro to determine if an I2C bus is defined in the system
- * @param [in] BUS:  I2C_Bus_t type I2C bus specifier.
- * @retval
- *    1: Bus exists and is valid
- *    0: Bus doesn't exist or isn't defined
- */
-#define IS_I2C_BUS(BUS) ((BUS) == I2CBus1)
+#define MAX_I2C_BYTES      20        /**< Max size of the I2C buffer for data */
 
 /* Exported types ------------------------------------------------------------*/
 
@@ -150,6 +142,15 @@ typedef struct I2C_BusSettings
 } I2C_BusSettings_t;
 
 /* Exported macros -----------------------------------------------------------*/
+/**
+ * @brief   Macro to determine if an I2C bus is defined in the system
+ * @param [in] BUS:  I2C_Bus_t type I2C bus specifier.
+ * @retval
+ *    1: Bus exists and is valid
+ *    0: Bus doesn't exist or isn't defined
+ */
+#define IS_I2C_BUS(BUS) ((BUS) == I2CBus1)
+
 /* Exported constants --------------------------------------------------------*/
 /* Exported variables --------------------------------------------------------*/
 extern uint8_t i2c1RxBuffer[];          /**< Exported to I2CMgr I2C RX buffer */
@@ -203,7 +204,7 @@ void I2C_BusInitForRecovery( I2C_Bus_t iBus );
  * @param [in]  iBus: I2C_Bus_t identifier for I2C bus
  *    @arg  I2CBus1
  * @param [in]  I2C_Direction: an STM32 define that specifies the direction for
- * an I2C device
+ * an I2C bus
  *    @arg  I2C_Direction_Receiver
  *    @arg  I2C_Direction_Transmitter
  * @return: None
@@ -211,17 +212,17 @@ void I2C_BusInitForRecovery( I2C_Bus_t iBus );
 void I2C_SetDirection( I2C_Bus_t iBus,  uint8_t I2C_Direction);
 
 /**
- * @brief   Get the number of bytes used to address a device.
+ * @brief   Get the direction on the I2C bus.
  *
- * Some devices use 2 byte addresses, others use 1.  This function checks the
- * array of devices and returns the size of the memory addresses.
+ * This function gets the current direction set on the specified I2C bus.
  *
- * @param [in]  iDev: I2C_Device_t identifier for I2C device
- *    @arg  EEPROM
- * @return uint8_t: number of bytes used to address the internal memory of the
- * I2C device.  1 or 2 bytes.
+ * @param [in]  iBus: I2C_Bus_t identifier for I2C bus
+ *    @arg  I2CBus1
+ * @return I2C_Direction: the direction currently set for an I2C bus.
+ *    @arg  I2C_Direction_Receiver
+ *    @arg  I2C_Direction_Transmitter
  */
-//uint8_t I2C_getDevAddrSize( I2C_Device_t iDev );
+uint8_t I2C_getDirection( I2C_Bus_t iBus );
 
 /**
  * @brief   Start the DMA read operation on the specified I2C bus.

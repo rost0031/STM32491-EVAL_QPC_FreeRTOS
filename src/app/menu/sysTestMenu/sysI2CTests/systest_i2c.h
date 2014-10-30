@@ -35,6 +35,14 @@ extern treeNode_t menuItem_runI2CEEPROMReadTest;
 extern char *const menuSysTest_runI2CEEPROMReadTest_Txt;
 extern char *const menuSysTest_runI2CEEPROMReadTest_SelectKey;
 
+extern treeNode_t menuItem_runI2CSNReadTest;
+extern char *const menuSysTest_runI2CSNReadTest_Txt;
+extern char *const menuSysTest_runI2CSNReadTest_SelectKey;
+
+extern treeNode_t menuItem_runI2CEUI64ReadTest;
+extern char *const menuSysTest_runI2CEUI64ReadTest_Txt;
+extern char *const menuSysTest_runI2CEUI64ReadTest_SelectKey;
+
 /* Exported functions --------------------------------------------------------*/
 /**
  * @brief Called by the menu item to run an I2C EEPROM read test.
@@ -46,6 +54,36 @@ extern char *const menuSysTest_runI2CEEPROMReadTest_SelectKey;
  * @return: None
  */
 void MENU_i2cEEPROMReadTestAction(
+      const char* dataBuf,
+      uint16_t dataLen,
+      MsgSrc dst
+);
+
+/**
+ * @brief Called by the menu item to run an I2C Serial Number Read test.
+ * @param [in] dataBuf: const char* pointer to the data passed in by the user at
+ * cmd line
+ * @param [in] dataLen: uint16_t length of data in the dataBuf.
+ * @param [in] dst: MsgSrc destination so MENU_printf() knows were to direct the
+ * output.
+ * @return: None
+ */
+void MENU_i2cSNReadTestAction(
+      const char* dataBuf,
+      uint16_t dataLen,
+      MsgSrc dst
+);
+
+/**
+ * @brief Called by the menu item to run an I2C EUI64 Read test.
+ * @param [in] dataBuf: const char* pointer to the data passed in by the user at
+ * cmd line
+ * @param [in] dataLen: uint16_t length of data in the dataBuf.
+ * @param [in] dst: MsgSrc destination so MENU_printf() knows were to direct the
+ * output.
+ * @return: None
+ */
+void MENU_i2cEUI64ReadTestAction(
       const char* dataBuf,
       uint16_t dataLen,
       MsgSrc dst

@@ -1553,7 +1553,6 @@ $define(AOs::I2CBusMgr)
 /* Exported defines ----------------------------------------------------------*/
 #define MAX_BUS_RETRIES   100      /**&lt; Max retries for I2C bus for busy flag */
 #define MAX_I2C_TIMEOUT 10000      /**&lt; Max retries for I2C bus for busy flag */
-#define MAX_I2C_BYTES      20        /**&lt; Max size of the I2C buffer for data */
 /* Exported macros -----------------------------------------------------------*/
 /* Exported types ------------------------------------------------------------*/
 $declare(Events)

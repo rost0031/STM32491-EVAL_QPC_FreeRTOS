@@ -27,8 +27,6 @@ DBG_DEFINE_THIS_MODULE( DBG_MODL_I2C ); /* For debug system to ID this module */
 
 /* Private typedefs ----------------------------------------------------------*/
 /* Private defines -----------------------------------------------------------*/
-#define EE_PAGESIZE        16    /**< EEProm's internal page size (in bytes). */
-
 /* Private macros ------------------------------------------------------------*/
 /* Private variables and Local objects ---------------------------------------*/
 
@@ -47,7 +45,10 @@ I2CBus1_DevSettings_t s_I2CBus1_Dev[MAX_I2C1_DEV] =
 
             /* Internal device settings */
             1,                         /**< i2c_mem_addr_size */
-            0x00                       /**< i2c_mem_addr */
+            0x00,                      /**< i2c_mem_addr */
+            0x00,                      /**< i2c_mem_min_addr */
+            0xFF,                      /**< i2c_mem_max_addr */
+            16,                        /**< i2c_mem_page_size */
       },
       {
             /* "External" device settings */
@@ -57,17 +58,23 @@ I2CBus1_DevSettings_t s_I2CBus1_Dev[MAX_I2C1_DEV] =
 
             /* Internal device settings */
             1,                         /**< i2c_mem_addr_size */
-            0x80                       /**< i2c_mem_addr */
+            0x80,                      /**< i2c_mem_addr */
+            0x80,                      /**< i2c_mem_min_addr */
+            0x8F,                      /**< i2c_mem_max_addr */
+            16,                        /**< i2c_mem_page_size */
       },
       {
             /* "External" device settings */
-            UIE_ROM,                   /**< i2c_dev */
+            EUI_ROM,                   /**< i2c_dev */
             1,                         /**< i2c_dev_addr_size */
             0xB0,                      /**< i2c_dev_addr */
 
             /* Internal device settings */
             1,                         /**< i2c_mem_addr_size */
-            0x90                       /**< i2c_mem_addr */
+            0x98,                      /**< i2c_mem_addr */
+            0x98,                      /**< i2c_mem_min_addr */
+            0x9F,                      /**< i2c_mem_max_addr */
+            8,                         /**< i2c_mem_page_size */
       }
 };
 
@@ -75,7 +82,76 @@ I2CBus1_DevSettings_t s_I2CBus1_Dev[MAX_I2C1_DEV] =
 /* Private functions ---------------------------------------------------------*/
 
 /******************************************************************************/
+uint8_t I2C_getI2C1DevAddrSize( I2CBus1_Dev_t iDev )
+{
+   /* Check inputs */
+   assert_param( IS_I2C1_DEVICE( iDev ) );
 
+   return( s_I2CBus1_Dev[iDev].i2c_dev_addr_size );
+}
+
+/******************************************************************************/
+uint16_t I2C_getI2C1DevAddr( I2CBus1_Dev_t iDev )
+{
+   /* Check inputs */
+   assert_param( IS_I2C1_DEVICE( iDev ) );
+
+   return( s_I2CBus1_Dev[iDev].i2c_dev_addr );
+}
+
+/******************************************************************************/
+uint8_t I2C_getI2C1MemAddrSize( I2CBus1_Dev_t iDev )
+{
+   /* Check inputs */
+   assert_param( IS_I2C1_DEVICE( iDev ) );
+
+   return( s_I2CBus1_Dev[iDev].i2c_mem_addr_size );
+}
+
+/******************************************************************************/
+uint16_t I2C_getI2C1MemAddr( I2CBus1_Dev_t iDev )
+{
+   /* Check inputs */
+   assert_param( IS_I2C1_DEVICE( iDev ) );
+
+   return( s_I2CBus1_Dev[iDev].i2c_mem_addr );
+}
+
+/******************************************************************************/
+void I2C_setI2C1MemAddr( I2CBus1_Dev_t iDev, uint16_t addr )
+{
+   /* Check inputs */
+   assert_param( IS_I2C1_DEVICE( iDev ) );
+
+   s_I2CBus1_Dev[iDev].i2c_mem_addr = 0x00FF & addr;
+}
+
+/******************************************************************************/
+uint16_t I2C_getI2C1MinMemAddr( I2CBus1_Dev_t iDev )
+{
+   /* Check inputs */
+   assert_param( IS_I2C1_DEVICE( iDev ) );
+
+   return( s_I2CBus1_Dev[iDev].i2c_mem_min_addr );
+}
+
+/******************************************************************************/
+uint16_t I2C_getI2C1MaxMemAddr( I2CBus1_Dev_t iDev )
+{
+   /* Check inputs */
+   assert_param( IS_I2C1_DEVICE( iDev ) );
+
+   return( s_I2CBus1_Dev[iDev].i2c_mem_max_addr );
+}
+
+/******************************************************************************/
+uint8_t I2C_getI2C1PageSize( I2CBus1_Dev_t iDev )
+{
+   /* Check inputs */
+   assert_param( IS_I2C1_DEVICE( iDev ) );
+
+   return( s_I2CBus1_Dev[iDev].i2c_mem_page_size );
+}
 /**
  * @}
  * end addtogroup groupI2C

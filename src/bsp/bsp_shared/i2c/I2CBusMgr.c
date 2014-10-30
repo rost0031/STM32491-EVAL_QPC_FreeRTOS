@@ -1705,6 +1705,7 @@ static QState I2CBusMgr_WaitForDMAReadDone(I2CBusMgr * const me, QEvt const * co
         /* ${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_MemRead::WaitForDMAReadDone::I2C_BUS_DMA_READ_DONE} */
         case I2C_BUS_DMA_READ_DONE_SIG: {
             DBG_printf("Got I2C_BUS_DMA_READ_DONE on I2CBus%d\n", me->iBus+1);
+            me->errorCode = ERR_NONE; // Everything went fine if this signal is received
             status_ = Q_TRAN(&I2CBusMgr_Idle);
             break;
         }

@@ -236,7 +236,23 @@ treeNode_t* MENU_init( void )
                MENU_i2cEEPROMReadTestAction /**< Action taken when menu item is selected */
          );
 
+         /* Add menu items for this menu */
+         MENU_addMenuItem(
+               &menuItem_runI2CSNReadTest,         /**< Menu item being added */
+               &menuSysTest_I2C,     /**< Parent of the menu item being added */
+               menuSysTest_runI2CSNReadTest_Txt,    /**< Menu item title text */
+               menuSysTest_runI2CSNReadTest_SelectKey, /**< Menu item selection key */
+               MENU_i2cSNReadTestAction /**< Action taken when menu item is selected */
+         );
 
+         /* Add menu items for this menu */
+         MENU_addMenuItem(
+               &menuItem_runI2CEUI64ReadTest,      /**< Menu item being added */
+               &menuSysTest_I2C,     /**< Parent of the menu item being added */
+               menuSysTest_runI2CEUI64ReadTest_Txt, /**< Menu item title text */
+               menuSysTest_runI2CEUI64ReadTest_SelectKey, /**< Menu item selection key */
+               MENU_i2cEUI64ReadTestAction /**< Action taken when menu item is selected */
+         );
 
    /* Uncomment to print the entire tree with node addresses (for debugging only) */
 //   KTREE_printTree(&menu, 0);

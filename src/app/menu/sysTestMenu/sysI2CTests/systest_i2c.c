@@ -31,6 +31,14 @@ treeNode_t menuItem_runI2CEEPROMReadTest;
 char *const menuSysTest_runI2CEEPROMReadTest_Txt = "Run I2C EEPROM read test.";
 char *const menuSysTest_runI2CEEPROMReadTest_SelectKey = "EER";
 
+treeNode_t menuItem_runI2CSNReadTest;
+char *const menuSysTest_runI2CSNReadTest_Txt = "Run I2C Serial Number Read test.";
+char *const menuSysTest_runI2CSNReadTest_SelectKey = "SNR";
+
+treeNode_t menuItem_runI2CEUI64ReadTest;
+char *const menuSysTest_runI2CEUI64ReadTest_Txt = "Run I2C EUI64 Read test.";
+char *const menuSysTest_runI2CEUI64ReadTest_SelectKey = "UIR";
+
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
 /******************************************************************************/
@@ -49,7 +57,37 @@ void MENU_i2cEEPROMReadTestAction(
    I2CMemReadReqEvt *i2cMemReadReqEvt = Q_NEW(I2CMemReadReqEvt, EEPROM_RAW_MEM_READ_SIG);
    i2cMemReadReqEvt->addr = memAddr;
    i2cMemReadReqEvt->bytes  = bytes;
-   QF_PUBLISH((QEvent *)i2cMemReadReqEvt, AO_CommStackMgr);
+   QF_PUBLISH((QEvent *)i2cMemReadReqEvt, AO_DbgMgr);
+}
+
+/******************************************************************************/
+void MENU_i2cSNReadTestAction(
+      const char* dataBuf,
+      uint16_t dataLen,
+      MsgSrc dst
+)
+{
+   CB_UNUSED_ARG(dataBuf);
+   CB_UNUSED_ARG(dataLen);
+   MENU_printf(dst, "Running an Serial Number Read test...\n");
+   /* Publish event to start an Serial Number read */
+   QEvt *qEvt = Q_NEW(QEvt, EEPROM_SN_READ_SIG);
+   QF_PUBLISH((QEvent *)qEvt, AO_DbgMgr);
+}
+
+/******************************************************************************/
+void MENU_i2cEUI64ReadTestAction(
+      const char* dataBuf,
+      uint16_t dataLen,
+      MsgSrc dst
+)
+{
+   CB_UNUSED_ARG(dataBuf);
+   CB_UNUSED_ARG(dataLen);
+   MENU_printf(dst, "Running an UIE (64-bit) Read test...\n");
+   /* Publish event to start an Serial Number read */
+   QEvt *qEvt = Q_NEW(QEvt, EEPROM_EUI64_READ_SIG);
+   QF_PUBLISH((QEvent *)qEvt, AO_DbgMgr);
 }
 /**
  * @}

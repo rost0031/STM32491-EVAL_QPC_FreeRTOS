@@ -50,7 +50,6 @@
 /* Exported defines ----------------------------------------------------------*/
 #define MAX_BUS_RETRIES   100      /**< Max retries for I2C bus for busy flag */
 #define MAX_I2C_TIMEOUT 10000      /**< Max retries for I2C bus for busy flag */
-#define MAX_I2C_BYTES      20        /**< Max size of the I2C buffer for data */
 /* Exported macros -----------------------------------------------------------*/
 /* Exported types ------------------------------------------------------------*/
 
