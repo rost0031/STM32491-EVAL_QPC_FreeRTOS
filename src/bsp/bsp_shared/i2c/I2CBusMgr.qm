@@ -9,7 +9,7 @@
    <attribute name="i2cBus" type="I2C_Bus_t" visibility="0x01" properties="0x00">
     <documentation>/**&lt; Which I2C device data is from. */</documentation>
    </attribute>
-   <attribute name="dataBuf[MAX_I2C_BYTES]" type="char" visibility="0x01" properties="0x00">
+   <attribute name="dataBuf[MAX_I2C_READ_LEN]" type="char" visibility="0x01" properties="0x00">
     <documentation>/**&lt; Buffer that holds the data. */</documentation>
    </attribute>
    <attribute name="dataLen" type="uint8_t" visibility="0x01" properties="0x00">
@@ -20,15 +20,6 @@
    </attribute>
    <attribute name="errorCode" type="CBErrorCode" visibility="0x01" properties="0x00">
     <documentation>/**&lt; Result error code from the completed request.  ERR_NONE if OK. */</documentation>
-   </attribute>
-  </class>
-  <class name="I2CEvt" superclass="qpc::QEvt">
-   <documentation>/**
- * \struct Event struct type for requesting I2C data reads and notifying of finished
- * writes.
- */</documentation>
-   <attribute name="i2cBus" type="I2C_Bus_t" visibility="0x01" properties="0x00">
-    <documentation>/**&lt; Which I2C bus the event is for. */</documentation>
    </attribute>
   </class>
   <class name="I2CStatusEvt" superclass="qpc::QEvt">

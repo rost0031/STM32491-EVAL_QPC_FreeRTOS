@@ -25,7 +25,8 @@ extern "C" {
 #include "i2c_dev.h"
 
 /* Exported defines ----------------------------------------------------------*/
-#define MAX_I2C_BYTES      20        /**< Max size of the I2C buffer for data */
+#define MAX_I2C_WRITE_LEN     20  /**< Max size of the I2C buffer for writing */
+#define MAX_I2C_READ_LEN     256  /**< Max size of the I2C buffer for reading */
 
 /* Exported types ------------------------------------------------------------*/
 
@@ -47,22 +48,23 @@ typedef enum I2C_Operations {
 typedef enum I2C_MemAccess {
    I2C_MEM_BYTE  = 0,                   /**< Access memory one byte at a time */
    I2C_MEM_DMA,                                    /**< Access memory via DMA */
+   /* Insert more I2C access types here... */
 } I2C_MemAccess_t;
 
 /**
  * \enum I2C_Device_t
  * I2C Devices available on the system.
  */
-typedef enum I2C_States {
-   I2C_IDLE_ST  = 0,                         /**< I2C is idle */
-   I2C_GEN_START_ST,
-   I2C_MASTER_TX_MODE_SELECTED_ST,
-   I2C_SENT_MSB_ADDR_ST,
-   I2C_SENT_LSB_ADDR_ST,
-   I2C_GEN_2ND_START_ST,
-   /* Insert more I2C states here... */
-   I2C_MAX_ST     /**< Maximum number of available I2C states */
-} I2C_State_t;
+//typedef enum I2C_States {
+//   I2C_IDLE_ST  = 0,                         /**< I2C is idle */
+//   I2C_GEN_START_ST,
+//   I2C_MASTER_TX_MODE_SELECTED_ST,
+//   I2C_SENT_MSB_ADDR_ST,
+//   I2C_SENT_LSB_ADDR_ST,
+//   I2C_GEN_2ND_START_ST,
+//   /* Insert more I2C states here... */
+//   I2C_MAX_ST     /**< Maximum number of available I2C states */
+//} I2C_State_t;
 
 /**
  * \enum I2C_Bus_t
@@ -133,8 +135,6 @@ typedef struct I2C_BusSettings
    uint16_t                nTxIndex;         /**< I2C data buffer used length.*/
 
    /* Device management */
-//   I2C_Device_t            i2c_cur_dev;     /**< Current I2C device specifier.*/
-   I2C_State_t             i2c_cur_st;             /**< Current I2C bus state.*/
    uint8_t                 bTransDirection;    /**< Transmitting or Receiving */
    uint16_t                nBytesExpected; /**< How many bytes expected to TX or RX. */
    uint16_t                nBytesCurrent; /**< How many bytes have already been TXed or RXed. */

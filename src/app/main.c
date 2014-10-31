@@ -14,7 +14,6 @@
 #include "LWIPMgr.h"                               /* for starting LWIPMgr AO */
 #include "CommStackMgr.h"                     /* for starting CommStackMgr AO */
 #include "SerialMgr.h"                           /* for starting SerialMgr AO */
-//#include "I2CMgr.h"                                 /* for starting I2CMgr AO */
 #include "DbgMgr.h"                                 /* for starting DbgMgr AO */
 #include "I2CBusMgr.h"                           /* for starting I2CBusMgr AO */
 #include "I2C1DevMgr.h"                         /* for starting I2C1DevMgr AO */
@@ -39,7 +38,6 @@ DBG_DEFINE_THIS_MODULE( DBG_MODL_GENERAL ); /* For debug system to ID this modul
 static QEvt const    *l_CommStackMgrQueueSto[100];  /**< Storage for CommStackMgr event Queue */
 static QEvt const    *l_LWIPMgrQueueSto[100];       /**< Storage for LWIPMgr event Queue */
 static QEvt const    *l_SerialMgrQueueSto[100];     /**< Storage for SerialMgr event Queue */
-//static QEvt const    *l_I2CMgrQueueSto[100];        /**< Storage for I2CMgr event Queue */
 static QEvt const    *l_I2CBusMgrQueueSto[100][MAX_I2C_BUS];    /**< Storage for I2CBusMgr event Queue */
 static QEvt const    *l_I2C1DevMgrQueueSto[100];    /**< Storage for I2C1DevMgr event Queue */
 static QEvt const    *l_DbgMgrQueueSto[100];        /**< Storage for DbgMgr event Queue */
@@ -52,9 +50,8 @@ static QSubscrList   l_subscrSto[MAX_PUB_SIG];      /**< Storage for subscribe/p
 static union SmallEvents {
     void   *e0;                                       /* minimum event size */
     uint8_t e1[sizeof(QEvt)];
-    uint8_t e2[sizeof(I2CEvt)];
     uint8_t e3[sizeof(I2CStatusEvt)];
-    uint8_t e4[sizeof(I2CMemReadReqEvt)];
+    uint8_t e4[sizeof(I2CEEPROMReadReqEvt)];
 } l_smlPoolSto[100];                     /* storage for the small event pool */
 
 /**
@@ -76,9 +73,9 @@ static union LargeEvents {
     void   *e0;                                       /* minimum event size */
     uint8_t e1[sizeof(MsgEvt)];
     uint8_t e2[sizeof(EthEvt)];
-//    uint8_t e3[sizeof(I2CDataEvt)];
     uint8_t e4[sizeof(LogDataEvt)];
     uint8_t e5[sizeof(LrgDataEvt)];
+    uint8_t e6[sizeof(I2CEEPROMWriteReqEvt)];
 } l_lrgPoolSto[200];                    /* storage for the large event pool */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -115,7 +112,6 @@ int main(void)
     dbg_slow_printf("Initializing AO constructors\n");
     SerialMgr_ctor();
     LWIPMgr_ctor();
-//    I2CMgr_ctor( I2CBus1 );        /* Start this instance of AO for I2C1 bus. */
 
     /* Iterate though the available I2C busses on the system and call the ctor()
      * for each instance of the I2CBusMgr AO for each bus. */
@@ -137,7 +133,6 @@ int main(void)
     QS_OBJ_DICTIONARY(l_lrgPoolSto);
     QS_OBJ_DICTIONARY(l_SerialMgrQueueSto);
     QS_OBJ_DICTIONARY(l_LWIPMgrQueueSto);
-//    QS_OBJ_DICTIONARY(l_I2CMgrQueueSto);
     QS_OBJ_DICTIONARY(l_I2CBusMgrQueueSto);
     QS_OBJ_DICTIONARY(l_I2C1DevMgrQueueSto);
     QS_OBJ_DICTIONARY(l_CommStackMgrQueueSto);
@@ -174,13 +169,6 @@ int main(void)
           (void *)0, 0U,                               /* no per-thread stack */
           (QEvt *)0                                /* no initialization event */
     );
-
-//    QACTIVE_START(AO_I2CMgr,
-//          I2C_MGR_PRIORITY,                                       /* priority */
-//          l_I2CMgrQueueSto, Q_DIM(l_I2CMgrQueueSto),             /* evt queue */
-//          (void *)0, 0U,                               /* no per-thread stack */
-//          (QEvt *)0                                /* no initialization event */
-//    );
 
     /* Iterate though the available I2C busses on the system and start an
      * instance of the I2CBusMgr AO for each bus.

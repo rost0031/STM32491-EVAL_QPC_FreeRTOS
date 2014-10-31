@@ -48,7 +48,7 @@ I2CBus1_DevSettings_t s_I2CBus1_Dev[MAX_I2C1_DEV] =
             0x00,                      /**< i2c_mem_addr */
             0x00,                      /**< i2c_mem_min_addr */
             0xFF,                      /**< i2c_mem_max_addr */
-            16,                        /**< i2c_mem_page_size */
+            EEPROM_PAGE_SIZE,          /**< i2c_mem_page_size */
       },
       {
             /* "External" device settings */
@@ -61,7 +61,7 @@ I2CBus1_DevSettings_t s_I2CBus1_Dev[MAX_I2C1_DEV] =
             0x80,                      /**< i2c_mem_addr */
             0x80,                      /**< i2c_mem_min_addr */
             0x8F,                      /**< i2c_mem_max_addr */
-            16,                        /**< i2c_mem_page_size */
+            EEPROM_PAGE_SIZE,          /**< i2c_mem_page_size */
       },
       {
             /* "External" device settings */
@@ -74,7 +74,7 @@ I2CBus1_DevSettings_t s_I2CBus1_Dev[MAX_I2C1_DEV] =
             0x98,                      /**< i2c_mem_addr */
             0x98,                      /**< i2c_mem_min_addr */
             0x9F,                      /**< i2c_mem_max_addr */
-            8,                         /**< i2c_mem_page_size */
+            EEPROM_PAGE_SIZE / 2,      /**< i2c_mem_page_size */
       }
 };
 

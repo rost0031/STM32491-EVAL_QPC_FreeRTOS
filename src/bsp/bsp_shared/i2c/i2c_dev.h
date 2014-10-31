@@ -28,6 +28,8 @@ extern "C" {
 #include "stm32f4xx_i2c.h"                           /* For STM32 DMA support */
 
 /* Exported defines ----------------------------------------------------------*/
+
+#define EEPROM_PAGE_SIZE   16 /**< Size of the page in bytes on the EEPROM */
 /* Exported types ------------------------------------------------------------*/
 
 /**

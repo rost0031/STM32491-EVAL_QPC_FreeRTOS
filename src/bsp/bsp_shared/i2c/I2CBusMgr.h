@@ -65,7 +65,7 @@ typedef struct {
     I2C_Bus_t i2cBus;
 
     /**< Buffer that holds the data. */
-    char dataBuf[MAX_I2C_BYTES];
+    char dataBuf[MAX_I2C_READ_LEN];
 
     /**< Length of data in the buffer. */
     uint8_t dataLen;
@@ -76,19 +76,6 @@ typedef struct {
     /**< Result error code from the completed request.  ERR_NONE if OK. */
     CBErrorCode errorCode;
 } I2CBusDataEvt;
-
-/**
- * \struct Event struct type for requesting I2C data reads and notifying of finished
- * writes.
- */
-/*${Events::I2CEvt} ........................................................*/
-typedef struct {
-/* protected: */
-    QEvt super;
-
-    /**< Which I2C bus the event is for. */
-    I2C_Bus_t i2cBus;
-} I2CEvt;
 
 /**
  * @brief Event struct type for I2C status results.

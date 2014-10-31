@@ -110,6 +110,9 @@ typedef struct {
 
     /**< Keep track of last error that occurs. */
     CBErrorCode errorCode;
+
+    /**< Keep track of whether a read, write or other was requested */
+    I2C_Operation_t i2cDevOp;
 } I2C1DevMgr;
 
 /* protected: */
@@ -171,8 +174,6 @@ static I2C1DevMgr l_I2C1DevMgr;   /* the single instance of the active object */
 /* Global-scope objects ----------))------------------------------------------*/
 QActive * const AO_I2C1DevMgr = (QActive *)&l_I2C1DevMgr;/**< "opaque" AO pointer */
 
-extern I2CBus1_DevSettings_t s_I2CBus1_Dev[MAX_I2C1_DEV]; /**< I2C devices this AO uses */
-
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
 
@@ -224,9 +225,10 @@ static QState I2C1DevMgr_initial(I2C1DevMgr * const me, QEvt const * const e) {
     QS_FUN_DICTIONARY(&I2C1DevMgr_Active);
     QS_FUN_DICTIONARY(&I2C1DevMgr_Idle);
 
-    QActive_subscribe((QActive *)me, EEPROM_RAW_MEM_READ_SIG);
     QActive_subscribe((QActive *)me, EEPROM_SN_READ_SIG);
     QActive_subscribe((QActive *)me, EEPROM_EUI64_READ_SIG);
+    QActive_subscribe((QActive *)me, EEPROM_RAW_MEM_WRITE_SIG);
+    QActive_subscribe((QActive *)me, EEPROM_RAW_MEM_READ_SIG);
     return Q_TRAN(&I2C1DevMgr_Idle);
 }
 
@@ -307,10 +309,11 @@ static QState I2C1DevMgr_Busy(I2C1DevMgr * const me, QEvt const * const e) {
             status_ = Q_TRAN(&I2C1DevMgr_Idle);
             break;
         }
-        /* ${AOs::I2C1DevMgr::SM::Active::Busy::EEPROM_RAW_MEM_READ, EEPROM_SN_READ, EEPROM_EUI64_READ} */
+        /* ${AOs::I2C1DevMgr::SM::Active::Busy::EEPROM_RAW_MEM_READ, EEPROM_SN_READ, EEPROM_EUI64_READ, EEPROM_RAW_MEM_WRITE} */
         case EEPROM_RAW_MEM_READ_SIG: /* intentionally fall through */
         case EEPROM_SN_READ_SIG: /* intentionally fall through */
-        case EEPROM_EUI64_READ_SIG: {
+        case EEPROM_EUI64_READ_SIG: /* intentionally fall through */
+        case EEPROM_RAW_MEM_WRITE_SIG: {
             if (QEQueue_getNFree(&me->deferredEvtQueue) > 0) {
                /* defer the request - this event will be handled
                 * when the state machine goes back to Idle state */
@@ -705,6 +708,9 @@ static QState I2C1DevMgr_ReadMem(I2C1DevMgr * const me, QEvt const * const e) {
                     0,                                   // no columns
                     ' '                                  // separator
                 );
+                if ( ERR_NONE != err ) {
+                    WRN_printf("Got an error converting hex array to string.  Error: 0x%08x\n", err);
+                }
                 LOG_printf("Read %s\n", tmp);
                 status_ = Q_TRAN(&I2C1DevMgr_Idle);
             }
@@ -765,9 +771,10 @@ static QState I2C1DevMgr_Idle(I2C1DevMgr * const me, QEvt const * const e) {
         /* ${AOs::I2C1DevMgr::SM::Active::Idle::EEPROM_RAW_MEM_READ} */
         case EEPROM_RAW_MEM_READ_SIG: {
             me->iDev = EEPROM; // Set which device is being accessed
-            me->addrStart = ((I2CMemReadReqEvt const *)e)->addr;
+            me->addrStart = ((I2CEEPROMReadReqEvt const *)e)->addr;
             me->addrSize  = I2C_getI2C1MemAddrSize(me->iDev);
-            me->bytesTotal = ((I2CMemReadReqEvt const *)e)->bytes;
+            me->bytesTotal = ((I2CEEPROMReadReqEvt const *)e)->bytes;
+            me->i2cDevOp = I2C_OP_READ;
             status_ = Q_TRAN(&I2C1DevMgr_CheckingBus);
             break;
         }
@@ -777,6 +784,7 @@ static QState I2C1DevMgr_Idle(I2C1DevMgr * const me, QEvt const * const e) {
             me->addrStart = I2C_getI2C1MinMemAddr(me->iDev);
             me->addrSize  = I2C_getI2C1MemAddrSize(me->iDev);
             me->bytesTotal = I2C_getI2C1PageSize(me->iDev);
+            me->i2cDevOp = I2C_OP_READ;
             status_ = Q_TRAN(&I2C1DevMgr_CheckingBus);
             break;
         }
@@ -786,6 +794,17 @@ static QState I2C1DevMgr_Idle(I2C1DevMgr * const me, QEvt const * const e) {
             me->addrStart = I2C_getI2C1MinMemAddr(me->iDev);
             me->addrSize  = I2C_getI2C1MemAddrSize(me->iDev);
             me->bytesTotal = I2C_getI2C1PageSize(me->iDev);
+            me->i2cDevOp = I2C_OP_READ;
+            status_ = Q_TRAN(&I2C1DevMgr_CheckingBus);
+            break;
+        }
+        /* ${AOs::I2C1DevMgr::SM::Active::Idle::EEPROM_RAW_MEM_WRITE} */
+        case EEPROM_RAW_MEM_WRITE_SIG: {
+            me->iDev = EEPROM; // Set which device is being accessed
+            me->addrStart = ((I2CEEPROMWriteReqEvt const *)e)->addr;
+            me->addrSize  = I2C_getI2C1MemAddrSize(me->iDev);
+            me->bytesTotal = ((I2CEEPROMWriteReqEvt const *)e)->bytes;
+            me->i2cDevOp = I2C_OP_WRITE;
             status_ = Q_TRAN(&I2C1DevMgr_CheckingBus);
             break;
         }

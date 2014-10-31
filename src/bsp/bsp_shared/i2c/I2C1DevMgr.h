@@ -47,6 +47,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "qp_port.h"                                        /* for QP support */
 #include "Shared.h"                                   /*  Common Declarations */
+#include "i2c.h"
 
 /* Exported defines ----------------------------------------------------------*/
 #define MAX_BUS_RETRIES   100 /**< Max number of retries for I2C bus for busy flag */
@@ -57,7 +58,7 @@
 /**
  * @brief Event struct type for specifying a raw memory read request.
  */
-/*${Events::I2CMemReadReqEvt} ..............................................*/
+/*${Events::I2CEEPROMReadReqEvt} ...........................................*/
 typedef struct {
 /* protected: */
     QEvt super;
@@ -67,7 +68,25 @@ typedef struct {
 
     /**< Specify how many bytes to read */
     uint16_t bytes;
-} I2CMemReadReqEvt;
+} I2CEEPROMReadReqEvt;
+
+/**
+ * @brief Event struct type for specifying a memory write request.
+ */
+/*${Events::I2CEEPROMWriteReqEvt} ..........................................*/
+typedef struct {
+/* protected: */
+    QEvt super;
+
+    /**< Internal memory address of the I2C device*/
+    uint16_t addr;
+
+    /**< Specify how many bytes to read */
+    uint16_t bytes;
+
+    /**< Buffer that holds the data. */
+    uint8_t dataBuf[MAX_I2C_READ_LEN];
+} I2CEEPROMWriteReqEvt;
 
 
 /* Exported constants --------------------------------------------------------*/

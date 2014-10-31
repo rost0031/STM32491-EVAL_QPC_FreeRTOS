@@ -54,10 +54,10 @@ void MENU_i2cEEPROMReadTestAction(
    uint8_t bytes = 16;
    MENU_printf(dst, "Running an EEPROM read test. Reading %d bytes from 0x%02x\n", bytes, memAddr);
    /* Publish event to start an EEPROM read */
-   I2CMemReadReqEvt *i2cMemReadReqEvt = Q_NEW(I2CMemReadReqEvt, EEPROM_RAW_MEM_READ_SIG);
-   i2cMemReadReqEvt->addr = memAddr;
-   i2cMemReadReqEvt->bytes  = bytes;
-   QF_PUBLISH((QEvent *)i2cMemReadReqEvt, AO_DbgMgr);
+   I2CEEPROMReadReqEvt *i2cEERPOMReadReqEvt = Q_NEW(I2CEEPROMReadReqEvt, EEPROM_RAW_MEM_READ_SIG);
+   i2cEERPOMReadReqEvt->addr = memAddr;
+   i2cEERPOMReadReqEvt->bytes  = bytes;
+   QF_PUBLISH((QEvent *)i2cEERPOMReadReqEvt, AO_DbgMgr);
 }
 
 /******************************************************************************/
