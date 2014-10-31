@@ -218,7 +218,7 @@ treeNode_t* MENU_init( void )
          NULL                         /**< Action taken when menu is selected */
    );
 
-      /* Add a Debug Output Control sub-menu under the DEBUG menu */
+      /* Add an I2C system test menu under the SYSTEST menu */
       MENU_addSubMenu(
             &menuSysTest_I2C,                           /**< Menu being added */
             &menuSysTest,                 /**< Parent of the menu being added */
