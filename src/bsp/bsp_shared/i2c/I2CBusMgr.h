@@ -65,7 +65,7 @@ typedef struct {
     I2C_Bus_t i2cBus;
 
     /**< Buffer that holds the data. */
-    char dataBuf[MAX_I2C_READ_LEN];
+    uint8_t dataBuf[MAX_I2C_READ_LEN];
 
     /**< Length of data in the buffer. */
     uint8_t dataLen;

@@ -483,7 +483,7 @@ inline void I2C1_DMAReadCallback( void )
       /* Don't transport the data with the event.  The appropriate I2CBusMgr AO
        * will handle copying out the data from the buffers.  Nobody else is
        * allowed to touch this bus so there's no contention. */
-      static QEvt const qEvt = { I2C_BUS_DMA_READ_DONE_SIG, 0U, 0U };
+      static QEvt const qEvt = { I2C_BUS_DMA_DONE_SIG, 0U, 0U };
       QACTIVE_POST(AO_I2CBusMgr[I2CBus1], &qEvt, AO_I2CBusMgr[I2CBus1]);
 
 //      DBG_printf("%d loop iters\n", MAX_I2C_TIMEOUT - nI2CBusTimeout);
@@ -517,12 +517,14 @@ inline void I2C1_DMAWriteCallback( void )
 //      i2cEvt->i2cDevice = s_I2C_Bus[I2CBus1].i2c_cur_dev;
 //      i2cEvt->wDataLen = s_I2C_Bus[I2CBus1].nBytesExpected;
 //      QF_PUBLISH( (QEvent *)i2cEvt, AO_I2CMgr );
+      static QEvt const qEvt = { I2C_BUS_DMA_DONE_SIG, 0U, 0U };
+      QACTIVE_POST(AO_I2CBusMgr[I2CBus1], &qEvt, AO_I2CBusMgr[I2CBus1]);
 
 /* Tag for a common exit from this handler.  DON'T call return.  Instead, use
  * goto I2C1_DMAWriteCallback_cleanup;
  * This allows for always correctly clearing the interrupt status bits. Else
  * things will lock up. */
-I2C1_DMAWriteCallback_cleanup:
+//I2C1_DMAWriteCallback_cleanup:  // Currently not used.
       /* Clear DMA Stream Transfer Complete interrupt pending bit */
       DMA_ClearITPendingBit( DMA1_Stream6, DMA_IT_TCIF6 );
    }

@@ -332,7 +332,8 @@ static QState I2CBusMgr_PollFor_I2C_EV5_REC(I2CBusMgr * const me, QEvt const * c
 static QState I2CBusMgr_PollFor_I2C_EV6_REC(I2CBusMgr * const me, QEvt const * const e);
 
 /**
- * @brief This is a Wait state for reading the internal memory on an I2C bus.
+ * @brief This is a Wait state for reading the internal memory of some device
+ * on an I2C bus.
  *
  * @param  [in,out] me: Pointer to the state machine
  * @param  [in,out] e:  Pointer to the event being processed.
@@ -406,6 +407,58 @@ static QState I2CBusMgr_WaitFor_I2C_EV6_RX(I2CBusMgr * const me, QEvt const * co
  * machine is going next.
  */
 static QState I2CBusMgr_PollFor_I2C_EV6_RX(I2CBusMgr * const me, QEvt const * const e);
+
+/**
+ * @brief This is a Wait state for writing the internal memory of some device
+ * on an I2C bus.
+ *
+ * @param  [in,out] me: Pointer to the state machine
+ * @param  [in,out] e:  Pointer to the event being processed.
+ * @return status_: QState type that specifies where the state
+ * machine is going next.
+ */
+static QState I2CBusMgr_WaitFor_I2C_MemWrite(I2CBusMgr * const me, QEvt const * const e);
+
+/**
+ * @brief This is a Wait state for DMA I2C write.
+ *
+ * This state issues a DMA write command which does all the work and posts a timer
+ * to make sure it happens in a timely manner.  The callback from the ISR for the
+ * associated DMA stream will post the event signaling completion, which will also
+ * take the state machine out of this state and back to Idle.
+ *
+ * @note: this state is READ operation specific.
+ *
+ * @param  [in,out] me: Pointer to the state machine
+ * @param  [in,out] e:  Pointer to the event being processed.
+ * @return status_: QState type that specifies where the state
+ * machine is going next.
+ */
+static QState I2CBusMgr_WaitForDMAWriteDone(I2CBusMgr * const me, QEvt const * const e);
+
+/**
+ * @brief This is a Wait state for polling for writing I2C bytes manually.
+ *
+ * This state posts an event to check for the I2C_EVENT_MASTER_BYTE_TRANSMITTED
+ * I2C event which indicates that I2C data is ready to be written out.
+ * It also checks if the system is out of retries for this action and exits
+ * if true.
+ * If data is ready to write, the state machine writes the byte of data and
+ * loops back into the state to wait for next I2C event until no more bytes are
+ * left to be written.  It then issues a STOP bit on the I2C bus and returns to
+ * Idle.
+ *
+ * @note: this state is WRITE operation specific.
+ * @note: some devices on I2C bus, such as EEPROMs, require a post write delay
+ * during which the device will not respond to any data. This should be accounted
+ * for by the user of this AO since this AO is not device specific.
+ *
+ * @param  [in,out] me: Pointer to the state machine
+ * @param  [in,out] e:  Pointer to the event being processed.
+ * @return status_: QState type that specifies where the state
+ * machine is going next.
+ */
+static QState I2CBusMgr_WriteI2CByte(I2CBusMgr * const me, QEvt const * const e);
 
 
 /* Private defines -----------------------------------------------------------*/
@@ -721,20 +774,50 @@ static QState I2CBusMgr_Idle(I2CBusMgr * const me, QEvt const * const e) {
         }
         /* ${AOs::I2CBusMgr::SM::Active::Idle::I2C_BUS_READ_MEM} */
         case I2C_BUS_READ_MEM_SIG: {
+            /* Store device and operation settings from the event */
+            s_I2C_Bus[me->iBus].nBytesExpected  = ((I2CReadMemReqEvt const *)e)->bytes;
+            s_I2C_Bus[me->iBus].nBytesCurrent = 0;
+            s_I2C_Bus[me->iBus].nRxIndex = 0;
             /* ${AOs::I2CBusMgr::SM::Active::Idle::I2C_BUS_READ_MEM::[DMAAccess?]} */
             if (((I2CReadMemReqEvt const *)e)->memAccessType == I2C_MEM_DMA) {
                 DBG_printf("Starting DMA read on a device on I2CBus%d\n", me->iBus+1);
 
-                /* Store device and operation settings from the event */
-                s_I2C_Bus[me->iBus].nBytesExpected  = ((I2CReadMemReqEvt const *)e)->bytes;
-                s_I2C_Bus[me->iBus].nBytesCurrent = 0;
-                s_I2C_Bus[me->iBus].nRxIndex = 0;
+
                 status_ = Q_TRAN(&I2CBusMgr_WaitForDMAReadDone);
             }
             /* ${AOs::I2CBusMgr::SM::Active::Idle::I2C_BUS_READ_MEM::[ByteAccess?]} */
             else if (((I2CReadMemReqEvt const *)e)->memAccessType == I2C_MEM_BYTE) {
                 DBG_printf("Starting Byte-by-byte read on a device on I2CBus%d\n", me->iBus+1);
                 status_ = Q_TRAN(&I2CBusMgr_ReadI2CByte);
+            }
+            else {
+                status_ = Q_UNHANDLED();
+            }
+            break;
+        }
+        /* ${AOs::I2CBusMgr::SM::Active::Idle::I2C_BUS_WRITE_MEM} */
+        case I2C_BUS_WRITE_MEM_SIG: {
+            /* Store device and operation settings from the event */
+            s_I2C_Bus[me->iBus].nBytesExpected  = ((I2CBusDataEvt const *)e)->dataLen;
+            s_I2C_Bus[me->iBus].nBytesCurrent = 0;
+            s_I2C_Bus[me->iBus].nTxIndex = 0;
+            /* Copy the data right into the TX buffer for this I2C Bus. */
+            MEMCPY(
+                s_I2C_Bus[me->iBus].pTxBuffer,
+                ((I2CBusDataEvt const *)e)->dataBuf,
+                s_I2C_Bus[me->iBus].nBytesExpected
+            );
+            /* ${AOs::I2CBusMgr::SM::Active::Idle::I2C_BUS_WRITE_MEM::[DMAAccess?]} */
+            if (((I2CReadMemReqEvt const *)e)->memAccessType == I2C_MEM_DMA) {
+                DBG_printf("Starting DMA write on a device on I2CBus%d\n", me->iBus+1);
+
+
+                status_ = Q_TRAN(&I2CBusMgr_WaitForDMAWriteDone);
+            }
+            /* ${AOs::I2CBusMgr::SM::Active::Idle::I2C_BUS_WRITE_MEM::[ByteAccess?]} */
+            else if (((I2CReadMemReqEvt const *)e)->memAccessType == I2C_MEM_BYTE) {
+                DBG_printf("Starting Byte-by-byte read on a device on I2CBus%d\n", me->iBus+1);
+                status_ = Q_TRAN(&I2CBusMgr_WriteI2CByte);
             }
             else {
                 status_ = Q_UNHANDLED();
@@ -1590,7 +1673,8 @@ static QState I2CBusMgr_PollFor_I2C_EV6_REC(I2CBusMgr * const me, QEvt const * c
 }
 
 /**
- * @brief This is a Wait state for reading the internal memory on an I2C bus.
+ * @brief This is a Wait state for reading the internal memory of some device
+ * on an I2C bus.
  *
  * @param  [in,out] me: Pointer to the state machine
  * @param  [in,out] e:  Pointer to the event being processed.
@@ -1702,8 +1786,8 @@ static QState I2CBusMgr_WaitForDMAReadDone(I2CBusMgr * const me, QEvt const * co
             status_ = Q_TRAN(&I2CBusMgr_Idle);
             break;
         }
-        /* ${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_MemRead::WaitForDMAReadDone::I2C_BUS_DMA_READ_DONE} */
-        case I2C_BUS_DMA_READ_DONE_SIG: {
+        /* ${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_MemRead::WaitForDMAReadDone::I2C_BUS_DMA_DONE} */
+        case I2C_BUS_DMA_DONE_SIG: {
             DBG_printf("Got I2C_BUS_DMA_READ_DONE on I2CBus%d\n", me->iBus+1);
             me->errorCode = ERR_NONE; // Everything went fine if this signal is received
             status_ = Q_TRAN(&I2CBusMgr_Idle);
@@ -1906,6 +1990,213 @@ static QState I2CBusMgr_PollFor_I2C_EV6_RX(I2CBusMgr * const me, QEvt const * co
         }
         default: {
             status_ = Q_SUPER(&I2CBusMgr_WaitFor_I2C_EV6_RX);
+            break;
+        }
+    }
+    return status_;
+}
+
+/**
+ * @brief This is a Wait state for writing the internal memory of some device
+ * on an I2C bus.
+ *
+ * @param  [in,out] me: Pointer to the state machine
+ * @param  [in,out] e:  Pointer to the event being processed.
+ * @return status_: QState type that specifies where the state
+ * machine is going next.
+ */
+/*${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_MemWrite} ................*/
+static QState I2CBusMgr_WaitFor_I2C_MemWrite(I2CBusMgr * const me, QEvt const * const e) {
+    QState status_;
+    switch (e->sig) {
+        /* ${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_MemWrite} */
+        case Q_ENTRY_SIG: {
+            /* Post an operation timer on entry */
+            QTimeEvt_rearm(
+                &me->i2cOpTimerEvt,
+                SEC_TO_TICKS( LL_MAX_TOUT_SEC_I2C_MEM_WRITE )
+            );
+            status_ = Q_HANDLED();
+            break;
+        }
+        /* ${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_MemWrite} */
+        case Q_EXIT_SIG: {
+            /* Timer disarmed in parent state */
+
+            /* Allocate a dynamic event to send back the result after attempting to recover
+             * the I2C bus. */
+            I2CStatusEvt *i2cStatusEvt = Q_NEW( I2CStatusEvt, I2C_BUS_DONE_SIG );
+            i2cStatusEvt->i2cBus = me->iBus;
+            i2cStatusEvt->errorCode = me->errorCode;
+            QACTIVE_POST(me->p_AO_I2CDevMgr, (QEvt *)i2cStatusEvt, me);
+            status_ = Q_HANDLED();
+            break;
+        }
+        default: {
+            status_ = Q_SUPER(&I2CBusMgr_Busy);
+            break;
+        }
+    }
+    return status_;
+}
+
+/**
+ * @brief This is a Wait state for DMA I2C write.
+ *
+ * This state issues a DMA write command which does all the work and posts a timer
+ * to make sure it happens in a timely manner.  The callback from the ISR for the
+ * associated DMA stream will post the event signaling completion, which will also
+ * take the state machine out of this state and back to Idle.
+ *
+ * @note: this state is READ operation specific.
+ *
+ * @param  [in,out] me: Pointer to the state machine
+ * @param  [in,out] e:  Pointer to the event being processed.
+ * @return status_: QState type that specifies where the state
+ * machine is going next.
+ */
+/*${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_MemWrite::WaitForDMAWriteDone} */
+static QState I2CBusMgr_WaitForDMAWriteDone(I2CBusMgr * const me, QEvt const * const e) {
+    QState status_;
+    switch (e->sig) {
+        /* ${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_MemWrite::WaitForDMAWriteDone} */
+        case Q_ENTRY_SIG: {
+            /* Reset the number of bytes already read to 0 */
+            s_I2C_Bus[me->iBus].nBytesCurrent = 0;
+
+            /* Start the DMA read operation */
+            I2C_StartDMAWrite(
+                me->iBus,
+                s_I2C_Bus[me->iBus].nBytesExpected
+            );
+            status_ = Q_HANDLED();
+            break;
+        }
+        /* ${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_MemWrite::WaitForDMAWriteDone::I2C_BUS_OP_TOUT} */
+        case I2C_BUS_OP_TOUT_SIG: {
+            ERR_printf("DMA READ Operation timeout on I2CBus%d.  Error: 0x%08x\n", me->iBus+1, me->errorCode);
+
+            /* These operations are bus specific */
+            if ( I2CBus1 == me->iBus ) {
+                ERR_printf("DMA1_St0 fifo is at %d\n", DMA_GetFIFOStatus(DMA1_Stream0) );
+                ERR_printf("DMA1_St0 TC flag: %d\n", DMA_GetFlagStatus(DMA1_Stream0,DMA_IT_TCIF0) );
+                ERR_printf("DMA1_St0 FE flag: %d\n", DMA_GetFlagStatus(DMA1_Stream0,DMA_FLAG_FEIF0) );
+                ERR_printf("DMA1_St0 DM flag: %d\n", DMA_GetFlagStatus(DMA1_Stream0,DMA_FLAG_DMEIF0) );
+                ERR_printf("DMA1_St0 TE flag: %d\n", DMA_GetFlagStatus(DMA1_Stream0,DMA_FLAG_TEIF0) );
+                ERR_printf("DMA1_St0 HT flag: %d\n", DMA_GetFlagStatus(DMA1_Stream0,DMA_FLAG_HTIF0) );
+
+
+                if (DMA_GetCmdStatus(DMA1_Stream0)== ENABLE) {
+                    ERR_printf("DMA1_Stream0 still enabled, turning off\n");
+                    DMA_Cmd( DMA1_Stream0, DISABLE );
+                }
+            }
+
+            /* Disable Acknowledgment */
+            I2C_AcknowledgeConfig(s_I2C_Bus[me->iBus].i2c_bus, DISABLE);
+
+            I2C_GenerateSTOP(s_I2C_Bus[me->iBus].i2c_bus, ENABLE);
+
+            /* Re-Enable Acknowledgment to be ready for another reception */
+            I2C_AcknowledgeConfig(s_I2C_Bus[me->iBus].i2c_bus, ENABLE);
+
+            DBG_printf("Generating I2C stop\n");
+            status_ = Q_TRAN(&I2CBusMgr_Idle);
+            break;
+        }
+        /* ${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_MemWrite::WaitForDMAWriteDone::I2C_BUS_DMA_DONE} */
+        case I2C_BUS_DMA_DONE_SIG: {
+            DBG_printf("Got I2C_BUS_DMA_READ_DONE on I2CBus%d\n", me->iBus+1);
+            me->errorCode = ERR_NONE; // Everything went fine if this signal is received
+            status_ = Q_TRAN(&I2CBusMgr_Idle);
+            break;
+        }
+        default: {
+            status_ = Q_SUPER(&I2CBusMgr_WaitFor_I2C_MemWrite);
+            break;
+        }
+    }
+    return status_;
+}
+
+/**
+ * @brief This is a Wait state for polling for writing I2C bytes manually.
+ *
+ * This state posts an event to check for the I2C_EVENT_MASTER_BYTE_TRANSMITTED
+ * I2C event which indicates that I2C data is ready to be written out.
+ * It also checks if the system is out of retries for this action and exits
+ * if true.
+ * If data is ready to write, the state machine writes the byte of data and
+ * loops back into the state to wait for next I2C event until no more bytes are
+ * left to be written.  It then issues a STOP bit on the I2C bus and returns to
+ * Idle.
+ *
+ * @note: this state is WRITE operation specific.
+ * @note: some devices on I2C bus, such as EEPROMs, require a post write delay
+ * during which the device will not respond to any data. This should be accounted
+ * for by the user of this AO since this AO is not device specific.
+ *
+ * @param  [in,out] me: Pointer to the state machine
+ * @param  [in,out] e:  Pointer to the event being processed.
+ * @return status_: QState type that specifies where the state
+ * machine is going next.
+ */
+/*${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_MemWrite::WriteI2CByte} ..*/
+static QState I2CBusMgr_WriteI2CByte(I2CBusMgr * const me, QEvt const * const e) {
+    QState status_;
+    switch (e->sig) {
+        /* ${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_MemWrite::WriteI2CByte} */
+        case Q_ENTRY_SIG: {
+            /* Post an event to check for EV5 event */
+            QEvt *qEvt = Q_NEW(QEvt, I2C_CHECK_EV_SIG);
+            QF_PUBLISH((QEvt *)qEvt, AO_I2CMgr);
+            status_ = Q_HANDLED();
+            break;
+        }
+        /* ${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_MemWrite::WriteI2CByte::I2C_CHECK_EV} */
+        case I2C_CHECK_EV_SIG: {
+            /* Check if EV6 has happened.  If it has, go on to the next state.  Otherwise,
+             * try again until number of retries is out */
+            /* ${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_MemWrite::WriteI2CByte::I2C_CHECK_EV::[ReadyToWrite?]} */
+            if (I2C_CheckEvent(s_I2C_Bus[me->iBus].i2c_bus, I2C_EVENT_MASTER_BYTE_TRANSMITTED)) {
+                /* ${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_MemWrite::WriteI2CByte::I2C_CHECK_EV::[ReadyToWrite?]::[Nomorebytes?]} */
+                if (0 == (s_I2C_Bus[me->iBus].nBytesExpected - s_I2C_Bus[me->iBus].nTxIndex)) {
+                    I2C_GenerateSTOP(I2C1, ENABLE);                        /* Generate Stop */
+                    DBG_printf("Done writing I2C data\n");
+                    status_ = Q_TRAN(&I2CBusMgr_Idle);
+                }
+                /* ${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_MemWrite::WriteI2CByte::I2C_CHECK_EV::[ReadyToWrite?]::[else]} */
+                else {
+                    DBG_printf("Writing 0x%02x byte %d to I2C Device\n",
+                        s_I2C_Bus[me->iBus].pTxBuffer[ s_I2C_Bus[me->iBus].nTxIndex ],
+                        s_I2C_Bus[me->iBus].nTxIndex
+                    );
+
+                    /* Send the single byte address to the device */
+                    I2C_SendData(
+                        s_I2C_Bus[me->iBus].i2c_bus,
+                        s_I2C_Bus[me->iBus].pTxBuffer[ s_I2C_Bus[me->iBus].nTxIndex++ ]
+                    );
+                    status_ = Q_TRAN(&I2CBusMgr_WriteI2CByte);
+                }
+            }
+            /* ${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_MemWrite::WriteI2CByte::I2C_CHECK_EV::[else]} */
+            else {
+                me->nI2CLoopTimeout--;                 /* Decrement counter */
+                /* ${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_MemWrite::WriteI2CByte::I2C_CHECK_EV::[else]::[Retriesleft?]} */
+                if (me->nI2CLoopTimeout != 0) {
+                    status_ = Q_TRAN(&I2CBusMgr_WriteI2CByte);
+                }
+                /* ${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_MemWrite::WriteI2CByte::I2C_CHECK_EV::[else]::[else]} */
+                else {
+                    ERR_printf("Timeout waiting for I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED (EV6)\n");
+                    status_ = Q_TRAN(&I2CBusMgr_Idle);
+                }
+            }
+            break;
+        }
+        default: {
+            status_ = Q_SUPER(&I2CBusMgr_WaitFor_I2C_MemWrite);
             break;
         }
     }

@@ -61,7 +61,7 @@
    #define LL_MAX_TIME_SEC_I2C_BUS_SETTLE       ( LL_MAX_TOUT_SEC_I2C_BASIC_OP * 3 )  /**< How long bus settle should take */
    #define LL_MAX_TOUT_SEC_I2C_GLOBAL           ( LL_MAX_TOUT_SEC_I2C_BUS_RECOVERY * 3 )
    #define LL_MAX_TOUT_SEC_I2C_MEM_READ         ( LL_MAX_TOUT_SEC_I2C_BASIC_OP * 3 )
-   #define LL_MAX_TOUT_SEC_I2C_DMA_WRITE        ( LL_MAX_TOUT_SEC_I2C_BASIC_OP * 3 )
+   #define LL_MAX_TOUT_SEC_I2C_MEM_WRITE        ( LL_MAX_TOUT_SEC_I2C_BASIC_OP * 3 )
    #define LL_MAX_TOUT_SEC_I2C_READ_OP          ( LL_MAX_TOUT_SEC_I2C_BASIC_OP * 4 )
    #define LL_MAX_TOUT_SEC_I2C_WRITE_OP         ( LL_MAX_TOUT_SEC_I2C_BASIC_OP * 4 )
    /*@} I2C Timeouts */
