@@ -339,12 +339,26 @@ static void MENU_printRevAncestry( treeNode_t* node, MsgSrc msgSrc )
          }
       }
 
-      if ( NULL != node && NULL != node->firstSiblingNode ) {
-//         DBG_printf("setting node %08x to first sibling node, sibling node is %08x\n", (uint32_t)node, (uint32_t)node->firstSiblingNode);
-         node = node->firstSiblingNode;
-//         DBG_printf("set node to first sibling node\n");
-      } else {
-         return;
+      /* Check the next node.  If it's there, print it, otherwise go up to the
+       * parent and over to first sibling of parent so the rest of the nodes
+       * get printed.*/
+      if ( NULL != node ) {
+         if ( NULL != node->firstSiblingNode ) {
+            //         DBG_printf("setting node %08x to first sibling node, sibling node is %08x\n", (uint32_t)node, (uint32_t)node->firstSiblingNode);
+            node = node->firstSiblingNode;
+            //         DBG_printf("set node to first sibling node\n");
+         } else {
+            //         return;
+            if ( NULL != node->fakeParentNode ) {
+               if ( NULL != node->fakeParentNode->firstSiblingNode ) {
+                  node = node->fakeParentNode->firstSiblingNode;
+               } else {
+                  return;
+               }
+            } else {
+               return;
+            }
+         }
       }
    }
 }
