@@ -43,6 +43,14 @@
  */
 #define SEC_TO_TICKS( seconds )   (uint32_t)( (1.0 * seconds) * BSP_TICKS_PER_SEC )
 
+/**
+ * @brief   Convert milliseconds to BSP ticks used by timers in QPC.
+ *
+ * @param [in] ms: number of seconds that is desired
+ * @return  ticks: number of ticks to actually arm the QP timer on the board.
+ */
+#define MS_TO_TICKS( ms )   (uint32_t)( (1.0 * ms) * BSP_TICKS_PER_MS )
+
 /* Exported types ------------------------------------------------------------*/
 
 /*****************************************************************************

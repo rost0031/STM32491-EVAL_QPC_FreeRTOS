@@ -53,7 +53,7 @@ I2C_BusSettings_t s_I2C_Bus[MAX_I2C_BUS] =
 
             /* I2C bus settings */
             I2C1,                      /**< i2c_bus */
-            100000,                    /**< i2c_bus_speed (Hz)*/
+            400000,                    /**< i2c_bus_speed (Hz)*/
             RCC_APB1Periph_I2C1,       /**< i2c_clk */
 
             /* I2C interrupt settings */
@@ -442,8 +442,10 @@ inline void I2C1_DMAReadCallback( void )
        * this means doing it before you shut off the DMA stream.
        * See the STM32 errata for more details. - HR */
 
-      I2C_AcknowledgeConfig( I2C1, DISABLE);        /* Disable Acknowledgment */
+//      I2C_AcknowledgeConfig( I2C1, DISABLE);        /* Disable Acknowledgment */
 
+      /* Disable DMA so it doesn't keep outputting the buffer. */
+      DMA_Cmd( DMA1_Stream0, DISABLE );
       I2C_GenerateSTOP(I2C1, ENABLE);                        /* Generate Stop */
 
       /* Wait for the byte to be received.
@@ -451,34 +453,21 @@ inline void I2C1_DMAReadCallback( void )
        * outside of the ISR since you have to do this BEFORE you shut off DMA
        * which has to be done in this ISR. Thankfully, this flag gets reset
        * fairly quickly (125 times through the loop). - HR. */
-      uint16_t nI2CBusTimeout = MAX_I2C_TIMEOUT;
-      while(I2C_GetFlagStatus(I2C1, I2C_FLAG_RXNE) == RESET) {
-         if((nI2CBusTimeout--) == 0) {
-            ERR_printf("Timeout waiting for I2C Stop bit flag reset!\n");
+//      uint16_t nI2CBusTimeout = MAX_I2C_TIMEOUT;
+//      while(I2C_GetFlagStatus(I2C1, I2C_FLAG_RXNE) == RESET) {
+//         if((nI2CBusTimeout--) == 0) {
+//            ERR_printf("Timeout waiting for I2C Stop bit flag reset!\n");
+//
+//            /* Error condition.  Make sure to do proper cleanup*/
+//            goto I2C1_DMAReadCallback_cleanup;
+//         }
+//      }
 
-            /* Error condition.  Make sure to do proper cleanup*/
-            goto I2C1_DMAReadCallback_cleanup;
-         }
-      }
-
-      I2C_AcknowledgeConfig(I2C1, ENABLE);        /* Re-enable Acknowledgment */
+//      I2C_AcknowledgeConfig(I2C1, ENABLE);        /* Re-enable Acknowledgment */
       /* End of STM32 I2C HW bug workaround */
 
-      /* Disable DMA so it doesn't keep outputting the buffer. */
-      DMA_Cmd( DMA1_Stream0, DISABLE );
-
-//      /* Publish event with the read data directly to the target AO */
-//      I2CBusDataEvt *i2cBusDataEvt = Q_NEW( I2CBusDataEvt, I2C_READ_DONE_SIG );
-//      i2cBusDataEvt->i2cBus = I2CBus1;
-//      i2cBusDataEvt->errorCode = ERR_NONE;
-//      i2cBusDataEvt->dataLen = s_I2C_Bus[I2CBus1].nBytesExpected;
-//      MEMCPY(
-//            i2cBusDataEvt->dataBuf,
-//            s_I2C_Bus[I2CBus1].pRxBuffer,
-//            i2cBusDataEvt->dataLen
-//      );
-//      QACTIVE_POST(AO_I2CBusMgr[I2CBus1], &i2cBusDataEvt, AO_I2CBusMgr[I2CBus1]);
-//      QF_PUBLISH( (QEvent *)i2cBusDataEvt, AO_I2CBusMgr[I2CBus1] );
+//      /* Disable DMA so it doesn't keep outputting the buffer. */
+//      DMA_Cmd( DMA1_Stream0, DISABLE );
 
       /* Don't transport the data with the event.  The appropriate I2CBusMgr AO
        * will handle copying out the data from the buffers.  Nobody else is
@@ -492,7 +481,7 @@ inline void I2C1_DMAReadCallback( void )
  * goto I2C1_DMAReadCallback_cleanup;
  * This allows for always correctly clearing the interrupt status bits. Else
  * things will lock up. */
-I2C1_DMAReadCallback_cleanup:
+//I2C1_DMAReadCallback_cleanup:
 
       /* Clear DMA Stream Transfer Complete interrupt pending bit */
       DMA_ClearITPendingBit( DMA1_Stream0, DMA_IT_TCIF0 );
@@ -508,23 +497,39 @@ inline void I2C1_DMAWriteCallback( void )
 
    /* Test on DMA Stream Transfer Complete interrupt */
    if ( RESET != DMA_GetITStatus(DMA1_Stream6, DMA_IT_TCIF6) ) {
-      DMA_Cmd( DMA1_Stream6, DISABLE );
+
+      /* Wait for the byte to be sent over the I2C bus.
+       * Note: There's really no way around waiting for this flag to be reset
+       * outside of the ISR since you have to do this BEFORE you shut off DMA
+       * which has to be done in this ISR. Thankfully, this flag gets reset
+       * fairly quickly (125 times through the loop at 100kHz and 57 at 400kHz).
+       * - HR. */
+      uint16_t nI2CBusTimeout = MAX_I2C_TIMEOUT;
+      while(I2C_GetFlagStatus(I2C1, I2C_FLAG_BTF) == RESET) {
+         if((nI2CBusTimeout--) == 0) {
+            ERR_printf("Timeout waiting for I2C Stop bit flag reset!\n");
+
+            /* Error condition.  Make sure to do proper cleanup*/
+            goto I2C1_DMAWriteCallback_cleanup;
+         }
+      }
 
       I2C_GenerateSTOP(I2C1, ENABLE);                        /* Generate Stop */
 
-      /* Publish event with the read data */
-//      I2CEvt *i2cEvt = Q_NEW( I2CEvt, I2C_WRITE_DONE_SIG );
-//      i2cEvt->i2cDevice = s_I2C_Bus[I2CBus1].i2c_cur_dev;
-//      i2cEvt->wDataLen = s_I2C_Bus[I2CBus1].nBytesExpected;
-//      QF_PUBLISH( (QEvent *)i2cEvt, AO_I2CMgr );
+      DMA_Cmd( DMA1_Stream6, DISABLE );            /* Disable the DMA stream. */
+
+      /* Directly post event to the correct I2CBusMgr AO instance indicating
+       * that the DMA is finished. Let it decide what to do. */
       static QEvt const qEvt = { I2C_BUS_DMA_DONE_SIG, 0U, 0U };
       QACTIVE_POST(AO_I2CBusMgr[I2CBus1], &qEvt, AO_I2CBusMgr[I2CBus1]);
+
+      DBG_printf("%d loop iters\n", MAX_I2C_TIMEOUT - nI2CBusTimeout);
 
 /* Tag for a common exit from this handler.  DON'T call return.  Instead, use
  * goto I2C1_DMAWriteCallback_cleanup;
  * This allows for always correctly clearing the interrupt status bits. Else
  * things will lock up. */
-//I2C1_DMAWriteCallback_cleanup:  // Currently not used.
+I2C1_DMAWriteCallback_cleanup:
       /* Clear DMA Stream Transfer Complete interrupt pending bit */
       DMA_ClearITPendingBit( DMA1_Stream6, DMA_IT_TCIF6 );
    }

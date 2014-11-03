@@ -144,6 +144,37 @@ typedef struct {
     uint16_t bytes;
 } I2CReadMemReqEvt;
 
+/**
+ * @brief Event struct type for reading internal memory of an I2C device such as an
+ * EEPROM.
+ */
+/*${Events::I2CWriteMemReqEvt} .............................................*/
+typedef struct {
+/* protected: */
+    QEvt super;
+
+    /**< Which I2C bus the event is for. */
+    I2C_Bus_t i2cBus;
+
+    /**< Address on the I2C device to read from. */
+    uint16_t addr;
+
+    /**< Specifies whether the address is 1 byte (8 bit) or 2 bytes (10 or 16 bit) */
+    uint8_t addrSize;
+
+    /**< Specifies how to access the internal memory of an I2C device:
+     *   @arg I2C_MEM_BYTE
+     *   @arg I2C_MEM_DMA
+     */
+    I2C_MemAccess_t memAccessType;
+
+    /**< How many bytes to read */
+    uint16_t bytes;
+
+    /**< Buffer that holds the data. */
+    uint8_t dataBuf[MAX_I2C_WRITE_LEN];
+} I2CWriteMemReqEvt;
+
 
 /* Exported constants --------------------------------------------------------*/
 /* Exported functions --------------------------------------------------------*/

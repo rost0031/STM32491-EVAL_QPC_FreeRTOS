@@ -94,6 +94,8 @@ typedef enum CBErrors
    ERR_I2C1DEV_EV5_TIMEOUT                                     = 0x00070001,
    ERR_I2C1DEV_EV6_TIMEOUT                                     = 0x00070002,
    ERR_I2C1DEV_EV8_TIMEOUT                                     = 0x00070003,
+   ERR_I2C1DEV_READ_MEM_TIMEOUT                                = 0x00070004,
+   ERR_I2C1DEV_WRITE_MEM_TIMEOUT                               = 0x00070005,
 
    /* Reserved errors                            0xFFFFFFFE - 0xFFFFFFFF */
    ERR_UNIMPLEMENTED                                           = 0xFFFFFFFE,

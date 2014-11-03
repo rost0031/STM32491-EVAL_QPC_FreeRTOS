@@ -76,6 +76,9 @@
    #define HL_MAX_TOUT_SEC_I2C_EV5              ( HL_MAX_TOUT_SEC_I2C_DEV_OP * 1.3 )
    #define HL_MAX_TOUT_SEC_I2C_EV6              ( HL_MAX_TOUT_SEC_I2C_DEV_OP * 1.3 )
    #define HL_MAX_TOUT_SEC_I2C_EV8              ( HL_MAX_TOUT_SEC_I2C_DEV_OP * 1.3 )
+   #define HL_MAX_TOUT_SEC_I2C_READ             ( HL_MAX_TOUT_SEC_I2C_DEV_OP * 1.3 )
+   #define HL_MAX_TOUT_SEC_I2C_WRITE            ( HL_MAX_TOUT_SEC_I2C_DEV_OP * 1.3 )
+   #define HL_MAX_TIME_MS_I2C_POST_WRITE                                      5.0 // 5ms post write wait on the I2C EEPROM.
    /*@} I2C1Dev Timeouts */
 
    /** \name ETH Timeouts

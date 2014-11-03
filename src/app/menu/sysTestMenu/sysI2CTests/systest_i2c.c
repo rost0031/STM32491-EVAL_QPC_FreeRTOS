@@ -39,6 +39,10 @@ treeNode_t menuItem_runI2CEUI64ReadTest;
 char *const menuSysTest_runI2CEUI64ReadTest_Txt = "Run I2C EUI64 Read test.";
 char *const menuSysTest_runI2CEUI64ReadTest_SelectKey = "UIR";
 
+treeNode_t menuItem_runI2CEEPROMWriteTest;
+char *const menuSysTest_runI2CEEPROMWriteTest_Txt = "Run I2C EEPROM write test.";
+char *const menuSysTest_runI2CEEPROMWriteTest_SelectKey = "EEW";
+
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
 /******************************************************************************/
@@ -88,6 +92,36 @@ void MENU_i2cEUI64ReadTestAction(
    /* Publish event to start an Serial Number read */
    QEvt *qEvt = Q_NEW(QEvt, EEPROM_EUI64_READ_SIG);
    QF_PUBLISH((QEvent *)qEvt, AO_DbgMgr);
+}
+
+/******************************************************************************/
+void MENU_i2cEEPROMWriteTestAction(
+      const char* dataBuf,
+      uint16_t dataLen,
+      MsgSrc dst
+)
+{
+   CB_UNUSED_ARG(dataBuf);
+   CB_UNUSED_ARG(dataLen);
+   uint16_t memAddr = 0x00;
+   uint8_t bytes = 16;
+   uint8_t tmp[bytes];
+   memset(tmp, 0, sizeof(tmp));
+   for( uint8_t i=0; i< bytes; i++ ) {
+      tmp[i] = i+5; // Write some numbers to the buffer.
+   }
+   MENU_printf(dst, "Running an EEPROM write test. Writing %d bytes to 0x%02x\n", bytes, memAddr);
+   /* Publish event to start an EEPROM read */
+   I2CEEPROMWriteReqEvt *i2cEERPOMWriteReqEvt = Q_NEW(I2CEEPROMWriteReqEvt, EEPROM_RAW_MEM_WRITE_SIG);
+   i2cEERPOMWriteReqEvt->addr = memAddr;
+   i2cEERPOMWriteReqEvt->bytes  = bytes;
+   MEMCPY(
+         i2cEERPOMWriteReqEvt->dataBuf,
+         tmp,
+         bytes
+   );
+
+   QF_PUBLISH((QEvent *)i2cEERPOMWriteReqEvt, AO_DbgMgr);
 }
 /**
  * @}

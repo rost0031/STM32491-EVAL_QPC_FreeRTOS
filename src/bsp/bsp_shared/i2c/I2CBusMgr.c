@@ -798,13 +798,13 @@ static QState I2CBusMgr_Idle(I2CBusMgr * const me, QEvt const * const e) {
         /* ${AOs::I2CBusMgr::SM::Active::Idle::I2C_BUS_WRITE_MEM} */
         case I2C_BUS_WRITE_MEM_SIG: {
             /* Store device and operation settings from the event */
-            s_I2C_Bus[me->iBus].nBytesExpected  = ((I2CBusDataEvt const *)e)->dataLen;
+            s_I2C_Bus[me->iBus].nBytesExpected  = ((I2CWriteMemReqEvt const *)e)->bytes;
             s_I2C_Bus[me->iBus].nBytesCurrent = 0;
             s_I2C_Bus[me->iBus].nTxIndex = 0;
             /* Copy the data right into the TX buffer for this I2C Bus. */
             MEMCPY(
                 s_I2C_Bus[me->iBus].pTxBuffer,
-                ((I2CBusDataEvt const *)e)->dataBuf,
+                ((I2CWriteMemReqEvt const *)e)->dataBuf,
                 s_I2C_Bus[me->iBus].nBytesExpected
             );
             /* ${AOs::I2CBusMgr::SM::Active::Idle::I2C_BUS_WRITE_MEM::[DMAAccess?]} */
@@ -1788,7 +1788,7 @@ static QState I2CBusMgr_WaitForDMAReadDone(I2CBusMgr * const me, QEvt const * co
         }
         /* ${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_MemRead::WaitForDMAReadDone::I2C_BUS_DMA_DONE} */
         case I2C_BUS_DMA_DONE_SIG: {
-            DBG_printf("Got I2C_BUS_DMA_READ_DONE on I2CBus%d\n", me->iBus+1);
+            DBG_printf("Got I2C_BUS_DMA_DONE on I2CBus%d\n", me->iBus+1);
             me->errorCode = ERR_NONE; // Everything went fine if this signal is received
             status_ = Q_TRAN(&I2CBusMgr_Idle);
             break;
@@ -2064,6 +2064,12 @@ static QState I2CBusMgr_WaitForDMAWriteDone(I2CBusMgr * const me, QEvt const * c
             /* Reset the number of bytes already read to 0 */
             s_I2C_Bus[me->iBus].nBytesCurrent = 0;
 
+            DBG_printf(
+                "Issuing a DMA write on I2CBus%d with %d bytes\n",
+                me->iBus+1,
+                s_I2C_Bus[me->iBus].nBytesExpected
+            );
+
             /* Start the DMA read operation */
             I2C_StartDMAWrite(
                 me->iBus,
@@ -2106,7 +2112,7 @@ static QState I2CBusMgr_WaitForDMAWriteDone(I2CBusMgr * const me, QEvt const * c
         }
         /* ${AOs::I2CBusMgr::SM::Active::Busy::WaitFor_I2C_MemWrite::WaitForDMAWriteDone::I2C_BUS_DMA_DONE} */
         case I2C_BUS_DMA_DONE_SIG: {
-            DBG_printf("Got I2C_BUS_DMA_READ_DONE on I2CBus%d\n", me->iBus+1);
+            DBG_printf("Got I2C_BUS_DMA_DONE on I2CBus%d\n", me->iBus+1);
             me->errorCode = ERR_NONE; // Everything went fine if this signal is received
             status_ = Q_TRAN(&I2CBusMgr_Idle);
             break;

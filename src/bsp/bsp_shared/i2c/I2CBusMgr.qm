@@ -77,6 +77,33 @@
     <documentation>/**&lt; How many bytes to read */</documentation>
    </attribute>
   </class>
+  <class name="I2CWriteMemReqEvt" superclass="qpc::QEvt">
+   <documentation>/**
+ * @brief Event struct type for reading internal memory of an I2C device such as an
+ * EEPROM.
+ */</documentation>
+   <attribute name="i2cBus" type="I2C_Bus_t" visibility="0x01" properties="0x00">
+    <documentation>/**&lt; Which I2C bus the event is for. */</documentation>
+   </attribute>
+   <attribute name="addr" type="uint16_t" visibility="0x01" properties="0x00">
+    <documentation>/**&lt; Address on the I2C device to read from. */</documentation>
+   </attribute>
+   <attribute name="addrSize" type="uint8_t" visibility="0x01" properties="0x00">
+    <documentation>/**&lt; Specifies whether the address is 1 byte (8 bit) or 2 bytes (10 or 16 bit) */</documentation>
+   </attribute>
+   <attribute name="memAccessType" type="I2C_MemAccess_t" visibility="0x01" properties="0x00">
+    <documentation>/**&lt; Specifies how to access the internal memory of an I2C device:
+ *   @arg I2C_MEM_BYTE
+ *   @arg I2C_MEM_DMA
+ */</documentation>
+   </attribute>
+   <attribute name="bytes" type="uint16_t" visibility="0x01" properties="0x00">
+    <documentation>/**&lt; How many bytes to read */</documentation>
+   </attribute>
+   <attribute name="dataBuf[MAX_I2C_WRITE_LEN]" type="uint8_t" visibility="0x01" properties="0x00">
+    <documentation>/**&lt; Buffer that holds the data. */</documentation>
+   </attribute>
+  </class>
  </package>
  <package name="AOs" stereotype="0x02">
   <class name="I2CBusMgr" superclass="qpc::QActive">
@@ -420,13 +447,13 @@ s_I2C_Bus[me-&gt;iBus].nRxIndex = 0;</action>
       </tran>
       <tran trig="I2C_BUS_WRITE_MEM">
        <action>/* Store device and operation settings from the event */
-s_I2C_Bus[me-&gt;iBus].nBytesExpected  = ((I2CBusDataEvt const *)e)-&gt;dataLen;
+s_I2C_Bus[me-&gt;iBus].nBytesExpected  = ((I2CWriteMemReqEvt const *)e)-&gt;bytes;
 s_I2C_Bus[me-&gt;iBus].nBytesCurrent = 0;
 s_I2C_Bus[me-&gt;iBus].nTxIndex = 0;
 /* Copy the data right into the TX buffer for this I2C Bus. */
 MEMCPY(
     s_I2C_Bus[me-&gt;iBus].pTxBuffer,
-    ((I2CBusDataEvt const *)e)-&gt;dataBuf,
+    ((I2CWriteMemReqEvt const *)e)-&gt;dataBuf,
     s_I2C_Bus[me-&gt;iBus].nBytesExpected
 );</action>
        <choice target="../../../1/8/0">
@@ -1249,7 +1276,7 @@ DBG_printf(&quot;Generating I2C stop\n&quot;);</action>
          </tran_glyph>
         </tran>
         <tran trig="I2C_BUS_DMA_DONE" target="../../../../0">
-         <action>DBG_printf(&quot;Got I2C_BUS_DMA_READ_DONE on I2CBus%d\n&quot;, me-&gt;iBus+1);
+         <action>DBG_printf(&quot;Got I2C_BUS_DMA_DONE on I2CBus%d\n&quot;, me-&gt;iBus+1);
 me-&gt;errorCode = ERR_NONE; // Everything went fine if this signal is received</action>
          <tran_glyph conn="100,111,1,1,-59">
           <action box="-20,-2,18,2"/>
@@ -1488,6 +1515,12 @@ QACTIVE_POST(me-&gt;p_AO_I2CDevMgr, (QEvt *)i2cStatusEvt, me);</exit>
         <entry>/* Reset the number of bytes already read to 0 */
 s_I2C_Bus[me-&gt;iBus].nBytesCurrent = 0;
 
+DBG_printf(
+    &quot;Issuing a DMA write on I2CBus%d with %d bytes\n&quot;,
+    me-&gt;iBus+1, 
+    s_I2C_Bus[me-&gt;iBus].nBytesExpected
+);
+
 /* Start the DMA read operation */
 I2C_StartDMAWrite(
     me-&gt;iBus,
@@ -1526,7 +1559,7 @@ DBG_printf(&quot;Generating I2C stop\n&quot;);</action>
          </tran_glyph>
         </tran>
         <tran trig="I2C_BUS_DMA_DONE" target="../../../../0">
-         <action>DBG_printf(&quot;Got I2C_BUS_DMA_READ_DONE on I2CBus%d\n&quot;, me-&gt;iBus+1);
+         <action>DBG_printf(&quot;Got I2C_BUS_DMA_DONE on I2CBus%d\n&quot;, me-&gt;iBus+1);
 me-&gt;errorCode = ERR_NONE; // Everything went fine if this signal is received</action>
          <tran_glyph conn="100,141,1,1,-59">
           <action box="-19,-2,18,2"/>
