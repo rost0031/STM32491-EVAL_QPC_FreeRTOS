@@ -112,7 +112,7 @@ enum I2C1DevMgrSignals {
  * @enum Signals used by DbgMgr
  */
 enum DbgMgrSignals {
-   DBG_MENU_REQ_SIG = I2C_BUS_MAX_SIG, /** This signal must start at the previous category max signal */
+   DBG_MENU_REQ_SIG = I2C1_DEV_MAX_SIG, /** This signal must start at the previous category max signal */
    DBG_LOG_SIG,
    DBG_MENU_SIG,
    DBG_MAX_SIG
