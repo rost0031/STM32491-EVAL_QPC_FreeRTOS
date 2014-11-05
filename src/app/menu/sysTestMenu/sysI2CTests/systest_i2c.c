@@ -159,8 +159,8 @@ void MENU_i2cIOExpRegWriteTestAction(
 {
    CB_UNUSED_ARG(dataBuf);
    CB_UNUSED_ARG(dataLen);
-   uint16_t memAddr = 0x00;
-   uint8_t regValue = 0x01;
+   uint16_t memAddr = IOE16_REG_SYS_CTRL;
+   uint8_t regValue = IOE16_IT_EN;
    MENU_printf(dst, "Running IO Expander Register Write test. Writing 0x%02x to register 0x%02x\n", regValue, memAddr);
 
    /* Publish event to start an register read */

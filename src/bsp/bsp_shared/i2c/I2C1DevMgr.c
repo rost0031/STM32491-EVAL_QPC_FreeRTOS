@@ -158,9 +158,7 @@ static QState I2C1DevMgr_Send7BitAddrRxMode(I2C1DevMgr * const me, QEvt const * 
 static QState I2C1DevMgr_ReadMem(I2C1DevMgr * const me, QEvt const * const e);
 static QState I2C1DevMgr_WriteMem(I2C1DevMgr * const me, QEvt const * const e);
 static QState I2C1DevMgr_PostWriteWait(I2C1DevMgr * const me, QEvt const * const e);
-static QState I2C1DevMgr_IOExpRegRead(I2C1DevMgr * const me, QEvt const * const e);
 static QState I2C1DevMgr_CheckingBus(I2C1DevMgr * const me, QEvt const * const e);
-static QState I2C1DevMgr_IOExpRegWrite(I2C1DevMgr * const me, QEvt const * const e);
 static QState I2C1DevMgr_CheckingBusIOE(I2C1DevMgr * const me, QEvt const * const e);
 static QState I2C1DevMgr_GenerateStartIOE(I2C1DevMgr * const me, QEvt const * const e);
 static QState I2C1DevMgr_DisableAckIOE(I2C1DevMgr * const me, QEvt const * const e);
@@ -168,9 +166,11 @@ static QState I2C1DevMgr_Send7BitAddrTxModeIOE(I2C1DevMgr * const me, QEvt const
 static QState I2C1DevMgr_SendInternalAddrIOE(I2C1DevMgr * const me, QEvt const * const e);
 static QState I2C1DevMgr_GenerateStartIOE1(I2C1DevMgr * const me, QEvt const * const e);
 static QState I2C1DevMgr_Send7BitAddrRxModeIOE(I2C1DevMgr * const me, QEvt const * const e);
-static QState I2C1DevMgr_GenerateStopIOE(I2C1DevMgr * const me, QEvt const * const e);
+static QState I2C1DevMgr_GenerateStopRIOE(I2C1DevMgr * const me, QEvt const * const e);
 static QState I2C1DevMgr_ReadRegIOE(I2C1DevMgr * const me, QEvt const * const e);
 static QState I2C1DevMgr_EnableAckIOE(I2C1DevMgr * const me, QEvt const * const e);
+static QState I2C1DevMgr_SendRegValueIOE(I2C1DevMgr * const me, QEvt const * const e);
+static QState I2C1DevMgr_GenerateStopWIOE(I2C1DevMgr * const me, QEvt const * const e);
 
 /**
  * @brief This state indicates that the I2C bus is currently idle and the
@@ -848,36 +848,6 @@ static QState I2C1DevMgr_PostWriteWait(I2C1DevMgr * const me, QEvt const * const
     }
     return status_;
 }
-/*${AOs::I2C1DevMgr::SM::Active::Busy::IOExpRegRead} .......................*/
-static QState I2C1DevMgr_IOExpRegRead(I2C1DevMgr * const me, QEvt const * const e) {
-    QState status_;
-    switch (e->sig) {
-        /* ${AOs::I2C1DevMgr::SM::Active::Busy::IOExpRegRead} */
-        case Q_ENTRY_SIG: {
-            /* Set error code */
-            me->errorCode = ERR_I2C1DEV_READ_REG_TIMEOUT;
-
-            /* Set timer */
-            QTimeEvt_rearm(
-                &me->i2cOpTimerEvt,
-                SEC_TO_TICKS( HL_MAX_TOUT_SEC_I2C_READ )
-            );
-            status_ = Q_HANDLED();
-            break;
-        }
-        /* ${AOs::I2C1DevMgr::SM::Active::Busy::IOExpRegRead} */
-        case Q_EXIT_SIG: {
-            QTimeEvt_disarm(&me->i2cOpTimerEvt);
-            status_ = Q_HANDLED();
-            break;
-        }
-        default: {
-            status_ = Q_SUPER(&I2C1DevMgr_Busy);
-            break;
-        }
-    }
-    return status_;
-}
 /*${AOs::I2C1DevMgr::SM::Active::Busy::CheckingBus} ........................*/
 static QState I2C1DevMgr_CheckingBus(I2C1DevMgr * const me, QEvt const * const e) {
     QState status_;
@@ -927,36 +897,6 @@ static QState I2C1DevMgr_CheckingBus(I2C1DevMgr * const me, QEvt const * const e
                 );
                 status_ = Q_TRAN(&I2C1DevMgr_Idle);
             }
-            break;
-        }
-        default: {
-            status_ = Q_SUPER(&I2C1DevMgr_Busy);
-            break;
-        }
-    }
-    return status_;
-}
-/*${AOs::I2C1DevMgr::SM::Active::Busy::IOExpRegWrite} ......................*/
-static QState I2C1DevMgr_IOExpRegWrite(I2C1DevMgr * const me, QEvt const * const e) {
-    QState status_;
-    switch (e->sig) {
-        /* ${AOs::I2C1DevMgr::SM::Active::Busy::IOExpRegWrite} */
-        case Q_ENTRY_SIG: {
-            /* Set error code */
-            me->errorCode = ERR_I2C1DEV_WRITE_REG_TIMEOUT;
-
-            /* Set timer */
-            QTimeEvt_rearm(
-                &me->i2cOpTimerEvt,
-                SEC_TO_TICKS( HL_MAX_TOUT_SEC_I2C_WRITE )
-            );
-            status_ = Q_HANDLED();
-            break;
-        }
-        /* ${AOs::I2C1DevMgr::SM::Active::Busy::IOExpRegWrite} */
-        case Q_EXIT_SIG: {
-            QTimeEvt_disarm(&me->i2cOpTimerEvt);
-            status_ = Q_HANDLED();
             break;
         }
         default: {
@@ -1058,7 +998,17 @@ static QState I2C1DevMgr_GenerateStartIOE(I2C1DevMgr * const me, QEvt const * co
             /* ${AOs::I2C1DevMgr::SM::Active::Busy::GenerateStartIOE::I2C_BUS_DONE::[NoErr?]} */
             if (ERR_NONE == ((I2CStatusEvt const *)e)->errorCode) {
                 DBG_printf("Got I2C_BUS_DONE with no error\n");
-                status_ = Q_TRAN(&I2C1DevMgr_DisableAckIOE);
+                /* ${AOs::I2C1DevMgr::SM::Active::Busy::GenerateStartIOE::I2C_BUS_DONE::[NoErr?]::[Write?]} */
+                if (I2C_OP_MEM_WRITE == me->i2cDevOp || I2C_OP_REG_WRITE == me->i2cDevOp) {
+                    status_ = Q_TRAN(&I2C1DevMgr_Send7BitAddrTxModeIOE);
+                }
+                /* ${AOs::I2C1DevMgr::SM::Active::Busy::GenerateStartIOE::I2C_BUS_DONE::[NoErr?]::[Read?]} */
+                else if (I2C_OP_MEM_READ == me->i2cDevOp || I2C_OP_REG_READ == me->i2cDevOp) {
+                    status_ = Q_TRAN(&I2C1DevMgr_DisableAckIOE);
+                }
+                else {
+                    status_ = Q_UNHANDLED();
+                }
             }
             /* ${AOs::I2C1DevMgr::SM::Active::Busy::GenerateStartIOE::I2C_BUS_DONE::[else]} */
             else {
@@ -1230,7 +1180,7 @@ static QState I2C1DevMgr_SendInternalAddrIOE(I2C1DevMgr * const me, QEvt const *
                 }
                 /* ${AOs::I2C1DevMgr::SM::Active::Busy::SendInternalAddrIOE::I2C_BUS_DONE::[NoErr?]::[Write?]} */
                 else if (I2C_OP_MEM_WRITE == me->i2cDevOp || I2C_OP_REG_WRITE == me->i2cDevOp) {
-                    status_ = Q_HANDLED();
+                    status_ = Q_TRAN(&I2C1DevMgr_SendRegValueIOE);
                 }
                 else {
                     status_ = Q_UNHANDLED();
@@ -1344,7 +1294,7 @@ static QState I2C1DevMgr_Send7BitAddrRxModeIOE(I2C1DevMgr * const me, QEvt const
             /* ${AOs::I2C1DevMgr::SM::Active::Busy::Send7BitAddrRxModeIOE::I2C_BUS_DONE::[NoErr?]} */
             if (ERR_NONE == ((I2CStatusEvt const *)e)->errorCode) {
                 DBG_printf("Got I2C_BUS_DONE with no error\n");
-                status_ = Q_TRAN(&I2C1DevMgr_GenerateStopIOE);
+                status_ = Q_TRAN(&I2C1DevMgr_GenerateStopRIOE);
             }
             /* ${AOs::I2C1DevMgr::SM::Active::Busy::Send7BitAddrRxModeIOE::I2C_BUS_DONE::[else]} */
             else {
@@ -1364,11 +1314,11 @@ static QState I2C1DevMgr_Send7BitAddrRxModeIOE(I2C1DevMgr * const me, QEvt const
     }
     return status_;
 }
-/*${AOs::I2C1DevMgr::SM::Active::Busy::GenerateStopIOE} ....................*/
-static QState I2C1DevMgr_GenerateStopIOE(I2C1DevMgr * const me, QEvt const * const e) {
+/*${AOs::I2C1DevMgr::SM::Active::Busy::GenerateStopRIOE} ...................*/
+static QState I2C1DevMgr_GenerateStopRIOE(I2C1DevMgr * const me, QEvt const * const e) {
     QState status_;
     switch (e->sig) {
-        /* ${AOs::I2C1DevMgr::SM::Active::Busy::GenerateStopIOE} */
+        /* ${AOs::I2C1DevMgr::SM::Active::Busy::GenerateStopRIOE} */
         case Q_ENTRY_SIG: {
             /* Set error code */
             me->errorCode = ERR_I2C1DEV_EV5_TIMEOUT;
@@ -1387,20 +1337,20 @@ static QState I2C1DevMgr_GenerateStopIOE(I2C1DevMgr * const me, QEvt const * con
             status_ = Q_HANDLED();
             break;
         }
-        /* ${AOs::I2C1DevMgr::SM::Active::Busy::GenerateStopIOE} */
+        /* ${AOs::I2C1DevMgr::SM::Active::Busy::GenerateStopRIOE} */
         case Q_EXIT_SIG: {
             QTimeEvt_disarm(&me->i2cOpTimerEvt);
             status_ = Q_HANDLED();
             break;
         }
-        /* ${AOs::I2C1DevMgr::SM::Active::Busy::GenerateStopIOE::I2C_BUS_DONE} */
+        /* ${AOs::I2C1DevMgr::SM::Active::Busy::GenerateStopRIOE::I2C_BUS_DONE} */
         case I2C_BUS_DONE_SIG: {
-            /* ${AOs::I2C1DevMgr::SM::Active::Busy::GenerateStopIOE::I2C_BUS_DONE::[NoErr?]} */
+            /* ${AOs::I2C1DevMgr::SM::Active::Busy::GenerateStopRIOE::I2C_BUS_DONE::[NoErr?]} */
             if (ERR_NONE == ((I2CStatusEvt const *)e)->errorCode) {
                 DBG_printf("Got I2C_BUS_DONE with no error\n");
                 status_ = Q_TRAN(&I2C1DevMgr_ReadRegIOE);
             }
-            /* ${AOs::I2C1DevMgr::SM::Active::Busy::GenerateStopIOE::I2C_BUS_DONE::[else]} */
+            /* ${AOs::I2C1DevMgr::SM::Active::Busy::GenerateStopRIOE::I2C_BUS_DONE::[else]} */
             else {
                 me->errorCode = ((I2CStatusEvt const *)e)->errorCode;
                 ERR_printf(
@@ -1545,6 +1495,123 @@ static QState I2C1DevMgr_EnableAckIOE(I2C1DevMgr * const me, QEvt const * const 
     }
     return status_;
 }
+/*${AOs::I2C1DevMgr::SM::Active::Busy::SendRegValueIOE} ....................*/
+static QState I2C1DevMgr_SendRegValueIOE(I2C1DevMgr * const me, QEvt const * const e) {
+    QState status_;
+    switch (e->sig) {
+        /* ${AOs::I2C1DevMgr::SM::Active::Busy::SendRegValueIOE} */
+        case Q_ENTRY_SIG: {
+            /* Set error code */
+            me->errorCode = ERR_I2C1DEV_EV8_TIMEOUT;
+
+            /* Set timer */
+            QTimeEvt_rearm(
+                &me->i2cOpTimerEvt,
+                SEC_TO_TICKS( HL_MAX_TOUT_SEC_I2C_EV8 )
+            );
+
+            /* Allocate and directly post an event to the appropriate I2CBusMgr AO */
+            I2CAddrEvt *i2cAddrEvt   = Q_NEW( I2CAddrEvt, I2C_BUS_SEND_DEV_ADDR_SIG );
+            i2cAddrEvt->i2cBus       = me->iBus;
+            i2cAddrEvt->addr         = me->dataBuf[0];
+            i2cAddrEvt->addrSize     = I2C_getI2C1MemAddrSize(me->iDev);
+            i2cAddrEvt->i2cDirection = I2C_Direction_Transmitter;
+            QACTIVE_POST(AO_I2CBusMgr[me->iBus], (QEvt *)i2cAddrEvt, me);
+            status_ = Q_HANDLED();
+            break;
+        }
+        /* ${AOs::I2C1DevMgr::SM::Active::Busy::SendRegValueIOE} */
+        case Q_EXIT_SIG: {
+            QTimeEvt_disarm(&me->i2cOpTimerEvt);
+            status_ = Q_HANDLED();
+            break;
+        }
+        /* ${AOs::I2C1DevMgr::SM::Active::Busy::SendRegValueIOE::I2C_BUS_DONE} */
+        case I2C_BUS_DONE_SIG: {
+            /* ${AOs::I2C1DevMgr::SM::Active::Busy::SendRegValueIOE::I2C_BUS_DONE::[NoErr?]} */
+            if (ERR_NONE == ((I2CStatusEvt const *)e)->errorCode) {
+                DBG_printf("Got I2C_BUS_DONE with no error\n");
+                status_ = Q_TRAN(&I2C1DevMgr_GenerateStopWIOE);
+            }
+            /* ${AOs::I2C1DevMgr::SM::Active::Busy::SendRegValueIOE::I2C_BUS_DONE::[else]} */
+            else {
+                me->errorCode = ((I2CStatusEvt const *)e)->errorCode;
+                ERR_printf(
+                    "Got I2C_BUS_DONE with error: 0x%08x\n",
+                    me->errorCode
+                );
+                status_ = Q_TRAN(&I2C1DevMgr_Idle);
+            }
+            break;
+        }
+        default: {
+            status_ = Q_SUPER(&I2C1DevMgr_Busy);
+            break;
+        }
+    }
+    return status_;
+}
+/*${AOs::I2C1DevMgr::SM::Active::Busy::GenerateStopWIOE} ...................*/
+static QState I2C1DevMgr_GenerateStopWIOE(I2C1DevMgr * const me, QEvt const * const e) {
+    QState status_;
+    switch (e->sig) {
+        /* ${AOs::I2C1DevMgr::SM::Active::Busy::GenerateStopWIOE} */
+        case Q_ENTRY_SIG: {
+            /* Set error code */
+            me->errorCode = ERR_I2C1DEV_EV5_TIMEOUT;
+
+            /* Set timer */
+            QTimeEvt_rearm(
+                &me->i2cOpTimerEvt,
+                SEC_TO_TICKS( HL_MAX_TOUT_SEC_I2C_EV5 )
+            );
+
+            /* Directly post an event to the appropriate I2CBusMgr AO */
+            static QEvt const qEvt = { I2C_BUS_STOP_BIT_SIG, 0U, 0U };
+            QACTIVE_POST(AO_I2CBusMgr[me->iBus], &qEvt, me);
+
+            DBG_printf("ActivePosted I2C_BUS_STOP_BIT\n");
+            status_ = Q_HANDLED();
+            break;
+        }
+        /* ${AOs::I2C1DevMgr::SM::Active::Busy::GenerateStopWIOE} */
+        case Q_EXIT_SIG: {
+            QTimeEvt_disarm(&me->i2cOpTimerEvt);
+            status_ = Q_HANDLED();
+            break;
+        }
+        /* ${AOs::I2C1DevMgr::SM::Active::Busy::GenerateStopWIOE::I2C_BUS_DONE} */
+        case I2C_BUS_DONE_SIG: {
+            /* ${AOs::I2C1DevMgr::SM::Active::Busy::GenerateStopWIOE::I2C_BUS_DONE::[NoErr?]} */
+            if (ERR_NONE == ((I2CStatusEvt const *)e)->errorCode) {
+                DBG_printf("Got I2C_BUS_DONE with no error\n");
+                LOG_printf(
+                    "Wrote 0x%02x to address 0x%02x on I2CBus%d device %d\n",
+                    me->dataBuf[0],
+                    me->addrStart,
+                    me->iBus+1,
+                    me->iDev
+                );
+                status_ = Q_TRAN(&I2C1DevMgr_Idle);
+            }
+            /* ${AOs::I2C1DevMgr::SM::Active::Busy::GenerateStopWIOE::I2C_BUS_DONE::[else]} */
+            else {
+                me->errorCode = ((I2CStatusEvt const *)e)->errorCode;
+                ERR_printf(
+                    "Got I2C_BUS_DONE with error: 0x%08x\n",
+                    me->errorCode
+                );
+                status_ = Q_TRAN(&I2C1DevMgr_Idle);
+            }
+            break;
+        }
+        default: {
+            status_ = Q_SUPER(&I2C1DevMgr_Busy);
+            break;
+        }
+    }
+    return status_;
+}
 
 /**
  * @brief This state indicates that the I2C bus is currently idle and the
@@ -1651,8 +1718,8 @@ static QState I2C1DevMgr_Idle(I2C1DevMgr * const me, QEvt const * const e) {
             me->addrSize  = I2C_getI2C1MemAddrSize(me->iDev);
             me->bytesTotal = 1;
             me->dataBuf[0] = ((I2CDevRegWriteReqEvt const *)e)->regValue;
-            me->i2cDevOp = I2C_OP_REG_READ;
-            status_ = Q_TRAN(&I2C1DevMgr_IOExpRegWrite);
+            me->i2cDevOp = I2C_OP_REG_WRITE;
+            status_ = Q_TRAN(&I2C1DevMgr_CheckingBusIOE);
             break;
         }
         default: {
