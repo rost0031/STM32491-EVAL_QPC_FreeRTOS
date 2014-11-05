@@ -476,6 +476,44 @@ MEMCPY(
         <action box="0,-2,18,2"/>
        </tran_glyph>
       </tran>
+      <tran trig="I2C_BUS_ACK_EN">
+       <action>I2C_AcknowledgeConfig(s_I2C_Bus[me-&gt;iBus].i2c_bus, ENABLE);
+DBG_printf(&quot;Enabling Ack on I2CBus%d\n&quot;, me-&gt;iBus+1);
+
+/* Allocate a dynamic event to directly post to the proper I2CxDevMgr AO */
+I2CStatusEvt* i2cStatEvt = Q_NEW( I2CStatusEvt, I2C_BUS_DONE_SIG );
+i2cStatEvt-&gt;i2cBus       = me-&gt;iBus;      // set the bus
+i2cStatEvt-&gt;errorCode    = me-&gt;errorCode; // set the error code that was last recorded.
+QACTIVE_POST(me-&gt;p_AO_I2CDevMgr, (QEvt *)i2cStatEvt, me); // directly post the event to the correct AO</action>
+       <tran_glyph conn="4,160,3,-1,24">
+        <action box="0,-2,15,2"/>
+       </tran_glyph>
+      </tran>
+      <tran trig="I2C_BUS_ACK_DIS">
+       <action>I2C_AcknowledgeConfig(s_I2C_Bus[me-&gt;iBus].i2c_bus, DISABLE);
+DBG_printf(&quot;Disabling Ack on I2CBus%d\n&quot;, me-&gt;iBus+1);
+
+/* Allocate a dynamic event to directly post to the proper I2CxDevMgr AO */
+I2CStatusEvt* i2cStatEvt = Q_NEW( I2CStatusEvt, I2C_BUS_DONE_SIG );
+i2cStatEvt-&gt;i2cBus       = me-&gt;iBus;      // set the bus
+i2cStatEvt-&gt;errorCode    = me-&gt;errorCode; // set the error code that was last recorded.
+QACTIVE_POST(me-&gt;p_AO_I2CDevMgr, (QEvt *)i2cStatEvt, me); // directly post the event to the correct AO</action>
+       <tran_glyph conn="4,162,3,-1,24">
+        <action box="0,-2,15,2"/>
+       </tran_glyph>
+      </tran>
+      <tran trig="I2C_BUS_STOP_BIT">
+       <action>I2C_GenerateSTOP(s_I2C_Bus[me-&gt;iBus].i2c_bus, ENABLE);  /* Send STOP condition */
+
+/* Allocate a dynamic event to directly post to the proper I2CxDevMgr AO */
+I2CStatusEvt* i2cStatEvt = Q_NEW( I2CStatusEvt, I2C_BUS_DONE_SIG );
+i2cStatEvt-&gt;i2cBus       = me-&gt;iBus;      // set the bus
+i2cStatEvt-&gt;errorCode    = me-&gt;errorCode; // set the error code that was last recorded.
+QACTIVE_POST(me-&gt;p_AO_I2CDevMgr, (QEvt *)i2cStatEvt, me); // directly post the event to the correct AO</action>
+       <tran_glyph conn="4,53,3,-1,27">
+        <action box="0,-2,17,2"/>
+       </tran_glyph>
+      </tran>
       <state_glyph node="4,8,37,160">
        <entry box="1,2,5,2"/>
       </state_glyph>
@@ -1790,8 +1828,8 @@ $define(AOs::I2CBusMgr)
 #include &quot;i2c.h&quot;                               /* For I2C device declarations */
 
 /* Exported defines ----------------------------------------------------------*/
-#define MAX_BUS_RETRIES   100      /**&lt; Max retries for I2C bus for busy flag */
-#define MAX_I2C_TIMEOUT 10000      /**&lt; Max retries for I2C bus for busy flag */
+#define MAX_BUS_RETRIES    100     /**&lt; Max retries for I2C bus for busy flag */
+#define MAX_I2C_TIMEOUT 0xF000     /**&lt; Max retries for I2C bus for busy flag */
 /* Exported macros -----------------------------------------------------------*/
 /* Exported types ------------------------------------------------------------*/
 $declare(Events)

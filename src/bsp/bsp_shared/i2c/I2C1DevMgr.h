@@ -50,8 +50,6 @@
 #include "i2c.h"
 
 /* Exported defines ----------------------------------------------------------*/
-#define MAX_BUS_RETRIES   100 /**< Max number of retries for I2C bus for busy flag */
-#define MAX_I2C_TIMEOUT 10000 /**< Max number of retries for I2C bus for busy flag */
 /* Exported macros -----------------------------------------------------------*/
 /* Exported types ------------------------------------------------------------*/
 
@@ -87,6 +85,33 @@ typedef struct {
     /**< Buffer that holds the data. */
     uint8_t dataBuf[MAX_I2C_READ_LEN];
 } I2CEEPROMWriteReqEvt;
+
+/**
+ * @brief Event struct type for specifying a register write request.
+ */
+/*${Events::I2CDevRegWriteReqEvt} ..........................................*/
+typedef struct {
+/* protected: */
+    QEvt super;
+
+    /**< Internal register address of the I2C device*/
+    uint8_t regAddr;
+
+    /**< Value to write to register. */
+    uint8_t regValue;
+} I2CDevRegWriteReqEvt;
+
+/**
+ * @brief Event struct type for specifying a register read request.
+ */
+/*${Events::I2CDevRegReadReqEvt} ...........................................*/
+typedef struct {
+/* protected: */
+    QEvt super;
+
+    /**< Internal register address of the I2C device*/
+    uint8_t regAddr;
+} I2CDevRegReadReqEvt;
 
 
 /* Exported constants --------------------------------------------------------*/

@@ -50,8 +50,8 @@ static QSubscrList   l_subscrSto[MAX_PUB_SIG];      /**< Storage for subscribe/p
 static union SmallEvents {
     void   *e0;                                       /* minimum event size */
     uint8_t e1[sizeof(QEvt)];
-    uint8_t e3[sizeof(I2CStatusEvt)];
-    uint8_t e4[sizeof(I2CEEPROMReadReqEvt)];
+    uint8_t e2[sizeof(I2CStatusEvt)];
+    uint8_t e3[sizeof(I2CEEPROMReadReqEvt)];
 } l_smlPoolSto[100];                     /* storage for the small event pool */
 
 /**
@@ -63,6 +63,8 @@ static union MediumEvents {
     uint8_t e1[sizeof(MenuEvt)];
     uint8_t e2[sizeof(I2CAddrEvt)];
     uint8_t e3[sizeof(I2CReadMemReqEvt)];
+    uint8_t e4[sizeof(I2CDevRegWriteReqEvt)];
+    uint8_t e5[sizeof(I2CDevRegReadReqEvt)];
 } l_medPoolSto[100];                    /* storage for the medium event pool */
 
 /**
@@ -73,9 +75,9 @@ static union LargeEvents {
     void   *e0;                                       /* minimum event size */
     uint8_t e1[sizeof(MsgEvt)];
     uint8_t e2[sizeof(EthEvt)];
-    uint8_t e4[sizeof(LogDataEvt)];
-    uint8_t e5[sizeof(LrgDataEvt)];
-    uint8_t e6[sizeof(I2CEEPROMWriteReqEvt)];
+    uint8_t e3[sizeof(LogDataEvt)];
+    uint8_t e4[sizeof(LrgDataEvt)];
+    uint8_t e5[sizeof(I2CEEPROMWriteReqEvt)];
 } l_lrgPoolSto[200];                    /* storage for the large event pool */
 
 /* Private function prototypes -----------------------------------------------*/

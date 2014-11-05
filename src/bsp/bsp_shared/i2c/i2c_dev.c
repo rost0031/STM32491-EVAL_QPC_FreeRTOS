@@ -75,6 +75,19 @@ I2CBus1_DevSettings_t s_I2CBus1_Dev[MAX_I2C1_DEV] =
             0x98,                      /**< i2c_mem_min_addr */
             0x9F,                      /**< i2c_mem_max_addr */
             EEPROM_PAGE_SIZE / 2,      /**< i2c_mem_page_size */
+      },
+      {
+            /* "External" device settings */
+            IO_EXP,                    /**< i2c_dev */
+            1,                         /**< i2c_dev_addr_size */
+            IOE16_ADDR,                /**< i2c_dev_addr */
+
+            /* Internal device settings */
+            1,                         /**< i2c_mem_addr_size */
+            0x00,                      /**< i2c_mem_addr */
+            0x00,                      /**< i2c_mem_min_addr */
+            0x24,                      /**< i2c_mem_max_addr */
+            1,                         /**< i2c_mem_page_size */
       }
 };
 

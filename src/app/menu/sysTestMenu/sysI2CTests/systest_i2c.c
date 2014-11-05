@@ -28,7 +28,7 @@ DBG_DEFINE_THIS_MODULE( DBG_MODL_DBG );/* For debug system to ID this module */
 
 /* Variables to define all the menu items in this submenu */
 treeNode_t menuItem_runI2CEEPROMReadTest;
-char *const menuSysTest_runI2CEEPROMReadTest_Txt = "Run I2C EEPROM read test.";
+char *const menuSysTest_runI2CEEPROMReadTest_Txt = "Run I2C EEPROM Read test.";
 char *const menuSysTest_runI2CEEPROMReadTest_SelectKey = "EER";
 
 treeNode_t menuItem_runI2CSNReadTest;
@@ -40,8 +40,16 @@ char *const menuSysTest_runI2CEUI64ReadTest_Txt = "Run I2C EUI64 Read test.";
 char *const menuSysTest_runI2CEUI64ReadTest_SelectKey = "UIR";
 
 treeNode_t menuItem_runI2CEEPROMWriteTest;
-char *const menuSysTest_runI2CEEPROMWriteTest_Txt = "Run I2C EEPROM write test.";
+char *const menuSysTest_runI2CEEPROMWriteTest_Txt = "Run I2C EEPROM Write test.";
 char *const menuSysTest_runI2CEEPROMWriteTest_SelectKey = "EEW";
+
+treeNode_t menuItem_runI2CIOExpRegReadTest;
+char *const menuSysTest_runI2CIOExpRegReadTest_Txt = "Run I2C IO Expander Register Read test.";
+char *const menuSysTest_runI2CIOExpRegReadTest_SelectKey = "IRR";
+
+treeNode_t menuItem_runI2CIOExpRegWriteTest;
+char *const menuSysTest_runI2CIOExpRegWriteTest_Txt = "Run I2C IO Expander Register Write test.";
+char *const menuSysTest_runI2CIOExpRegWriteTest_SelectKey = "IRW";
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
@@ -123,6 +131,45 @@ void MENU_i2cEEPROMWriteTestAction(
 
    QF_PUBLISH((QEvent *)i2cEERPOMWriteReqEvt, AO_DbgMgr);
 }
+
+/******************************************************************************/
+void MENU_i2cIOExpRegReadTestAction(
+      const char* dataBuf,
+      uint16_t dataLen,
+      MsgSrc dst
+)
+{
+   CB_UNUSED_ARG(dataBuf);
+   CB_UNUSED_ARG(dataLen);
+   uint16_t memAddr = 0x00;
+   MENU_printf(dst, "Running IO Expander Register Read test. Reading from register 0x%02x\n", memAddr);
+
+   /* Publish event to start an register read */
+   I2CDevRegReadReqEvt *i2cReqEvt = Q_NEW(I2CDevRegReadReqEvt, IOEXP_REG_READ_SIG);
+   i2cReqEvt->regAddr = memAddr;
+   QF_PUBLISH((QEvent *)i2cReqEvt, AO_DbgMgr);
+}
+
+/******************************************************************************/
+void MENU_i2cIOExpRegWriteTestAction(
+      const char* dataBuf,
+      uint16_t dataLen,
+      MsgSrc dst
+)
+{
+   CB_UNUSED_ARG(dataBuf);
+   CB_UNUSED_ARG(dataLen);
+   uint16_t memAddr = 0x00;
+   uint8_t regValue = 0x01;
+   MENU_printf(dst, "Running IO Expander Register Write test. Writing 0x%02x to register 0x%02x\n", regValue, memAddr);
+
+   /* Publish event to start an register read */
+   I2CDevRegWriteReqEvt *i2cReqEvt = Q_NEW(I2CDevRegWriteReqEvt, IOEXP_REG_WRITE_SIG);
+   i2cReqEvt->regAddr = memAddr;
+   i2cReqEvt->regValue = regValue;
+   QF_PUBLISH((QEvent *)i2cReqEvt, AO_DbgMgr);
+}
+
 /**
  * @}
  * end addtogroup groupMenu

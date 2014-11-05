@@ -87,10 +87,10 @@ void BSP_init( void )
 
    /* Read the NOR memory ID */
    NOR_ReadID(&pNOR_ID);
-   dbg_slow_printf("NOR ID: MfgCode  : 0x%02x\n", pNOR_ID.Manufacturer_Code);
-   dbg_slow_printf("NOR ID: DevCode1 : 0x%02x\n", pNOR_ID.Device_Code1);
-   dbg_slow_printf("NOR ID: DevCode2 : 0x%02x\n", pNOR_ID.Device_Code2);
-   dbg_slow_printf("NOR ID: DevCode3 : 0x%02x\n", pNOR_ID.Device_Code3);
+   dbg_slow_printf("NOR ID: MfgCode  : 0x%04x\n", pNOR_ID.Manufacturer_Code);
+   dbg_slow_printf("NOR ID: DevCode1 : 0x%04x\n", pNOR_ID.Device_Code1);
+   dbg_slow_printf("NOR ID: DevCode2 : 0x%04x\n", pNOR_ID.Device_Code2);
+   dbg_slow_printf("NOR ID: DevCode3 : 0x%04x\n", pNOR_ID.Device_Code3);
 
    /* 6. Initialize the SDRAM */
 //   SDRAM_Init();

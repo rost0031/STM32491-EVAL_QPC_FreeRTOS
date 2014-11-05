@@ -312,6 +312,7 @@ C_SRCS                = \
 						time.c \
 						i2c.c \
 						i2c_dev.c \
+						stm324x9i_eval_ioe16.c \
 						nor.c \
 						sdram.c \
 						dbg_cntrl.c \

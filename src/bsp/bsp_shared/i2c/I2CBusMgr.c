@@ -824,6 +824,44 @@ static QState I2CBusMgr_Idle(I2CBusMgr * const me, QEvt const * const e) {
             }
             break;
         }
+        /* ${AOs::I2CBusMgr::SM::Active::Idle::I2C_BUS_ACK_EN} */
+        case I2C_BUS_ACK_EN_SIG: {
+            I2C_AcknowledgeConfig(s_I2C_Bus[me->iBus].i2c_bus, ENABLE);
+            DBG_printf("Enabling Ack on I2CBus%d\n", me->iBus+1);
+
+            /* Allocate a dynamic event to directly post to the proper I2CxDevMgr AO */
+            I2CStatusEvt* i2cStatEvt = Q_NEW( I2CStatusEvt, I2C_BUS_DONE_SIG );
+            i2cStatEvt->i2cBus       = me->iBus;      // set the bus
+            i2cStatEvt->errorCode    = me->errorCode; // set the error code that was last recorded.
+            QACTIVE_POST(me->p_AO_I2CDevMgr, (QEvt *)i2cStatEvt, me); // directly post the event to the correct AO
+            status_ = Q_HANDLED();
+            break;
+        }
+        /* ${AOs::I2CBusMgr::SM::Active::Idle::I2C_BUS_ACK_DIS} */
+        case I2C_BUS_ACK_DIS_SIG: {
+            I2C_AcknowledgeConfig(s_I2C_Bus[me->iBus].i2c_bus, DISABLE);
+            DBG_printf("Disabling Ack on I2CBus%d\n", me->iBus+1);
+
+            /* Allocate a dynamic event to directly post to the proper I2CxDevMgr AO */
+            I2CStatusEvt* i2cStatEvt = Q_NEW( I2CStatusEvt, I2C_BUS_DONE_SIG );
+            i2cStatEvt->i2cBus       = me->iBus;      // set the bus
+            i2cStatEvt->errorCode    = me->errorCode; // set the error code that was last recorded.
+            QACTIVE_POST(me->p_AO_I2CDevMgr, (QEvt *)i2cStatEvt, me); // directly post the event to the correct AO
+            status_ = Q_HANDLED();
+            break;
+        }
+        /* ${AOs::I2CBusMgr::SM::Active::Idle::I2C_BUS_STOP_BIT} */
+        case I2C_BUS_STOP_BIT_SIG: {
+            I2C_GenerateSTOP(s_I2C_Bus[me->iBus].i2c_bus, ENABLE);  /* Send STOP condition */
+
+            /* Allocate a dynamic event to directly post to the proper I2CxDevMgr AO */
+            I2CStatusEvt* i2cStatEvt = Q_NEW( I2CStatusEvt, I2C_BUS_DONE_SIG );
+            i2cStatEvt->i2cBus       = me->iBus;      // set the bus
+            i2cStatEvt->errorCode    = me->errorCode; // set the error code that was last recorded.
+            QACTIVE_POST(me->p_AO_I2CDevMgr, (QEvt *)i2cStatEvt, me); // directly post the event to the correct AO
+            status_ = Q_HANDLED();
+            break;
+        }
         default: {
             status_ = Q_SUPER(&I2CBusMgr_Active);
             break;

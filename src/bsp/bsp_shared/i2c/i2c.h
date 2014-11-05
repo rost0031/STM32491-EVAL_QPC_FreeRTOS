@@ -36,8 +36,10 @@ extern "C" {
  */
 typedef enum I2C_Operations {
    I2C_OP_NONE  = 0,                                /**< No current operation */
-   I2C_OP_READ,                               /**< Reading from an I2C device */
-   I2C_OP_WRITE,                                /**< Writing to an I2C device */
+   I2C_OP_MEM_READ,                    /**< Reading from an I2C device memory */
+   I2C_OP_MEM_WRITE,                     /**< Writing to an I2C device memory */
+   I2C_OP_REG_READ,                  /**< Reading from an I2C device register */
+   I2C_OP_REG_WRITE,                   /**< Writing to an I2C device register */
    /* Insert more I2C operations here... */
 } I2C_Operation_t;
 
