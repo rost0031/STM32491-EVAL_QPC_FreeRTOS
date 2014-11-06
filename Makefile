@@ -122,6 +122,9 @@ SERIAL_DIR              = $(BSP_DIR)/bsp_shared/serial
 # I2C Driver and AO
 I2C_DIR                 = $(BSP_DIR)/bsp_shared/i2c
 
+# LCD and TSC drivers
+LCD_DIR                 = $(BSP_DIR)/lcd
+
 # NOR Driver and AO
 NOR_DIR                 = $(BSP_DIR)/nor
 
@@ -209,6 +212,7 @@ VPATH 					= $(APP_DIR) \
 						  $(ETH_DRV_DIR)/src \
 						  $(SERIAL_DIR) \
 						  $(I2C_DIR) \
+						  $(LCD_DIR) \
 						  $(NOR_DIR) \
 						  $(SDRAM_DIR) \
 						  \
@@ -244,6 +248,7 @@ INCLUDES  				= -I$(SRC_DIR) \
 						  -I$(BSP_DIR)/bsp_shared/runtime \
 						  -I$(SERIAL_DIR) \
 						  -I$(I2C_DIR) \
+						  -I$(LCD_DIR) \
 						  -I$(NOR_DIR) \
 						  -I$(SDRAM_DIR) \
 						  \

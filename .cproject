@@ -42,9 +42,7 @@
 					</folderInfo>
 					<fileInfo id="org.eclipse.cdt.cross.arm.gnu.sourcery.windows.toolchain.base.272356297.900958739" name="CommStackMgr_gen.h" rcbsApplicability="disable" resourcePath="src/app/comm/CommStackMgr_gen.h" toolsToInvoke=""/>
 					<fileInfo id="org.eclipse.cdt.cross.arm.gnu.sourcery.windows.toolchain.base.272356297.941940446" name="DbgMgr_gen.h" rcbsApplicability="disable" resourcePath="src/app/debug/DbgMgr_gen.h" toolsToInvoke=""/>
-					<fileInfo id="org.eclipse.cdt.cross.arm.gnu.sourcery.windows.toolchain.base.272356297.1811953072" name="I2CBusMgr.h.bak" rcbsApplicability="disable" resourcePath="src/bsp/bsp_shared/i2c/I2CBusMgr.h.bak" toolsToInvoke=""/>
 					<fileInfo id="org.eclipse.cdt.cross.arm.gnu.sourcery.windows.toolchain.base.272356297.841866702" name="I2CMgr_gen.h" rcbsApplicability="disable" resourcePath="src/bsp/bsp_shared/i2c/I2CMgr_gen.h" toolsToInvoke=""/>
-					<fileInfo id="org.eclipse.cdt.cross.arm.gnu.sourcery.windows.toolchain.base.272356297.636191062" name="I2CBusMgr.c.bak" rcbsApplicability="disable" resourcePath="src/bsp/bsp_shared/i2c/I2CBusMgr.c.bak" toolsToInvoke=""/>
 					<fileInfo id="org.eclipse.cdt.cross.arm.gnu.sourcery.windows.toolchain.base.272356297.92218172" name="I2CBusMgr_gen.h" rcbsApplicability="disable" resourcePath="src/bsp/bsp_shared/i2c/I2CBusMgr_gen.h" toolsToInvoke=""/>
 					<fileInfo id="org.eclipse.cdt.cross.arm.gnu.sourcery.windows.toolchain.base.272356297.1919681341" name="I2C1DevMgr_gen.h" rcbsApplicability="disable" resourcePath="src/bsp/bsp_shared/i2c/I2C1DevMgr_gen.h" toolsToInvoke=""/>
 					<folderInfo id="org.eclipse.cdt.cross.arm.gnu.sourcery.windows.toolchain.base.272356297.830219175" name="/" resourcePath="src/bsp/bsp_shared/CMSIS_shared/Device/ST/STM32F4xx/Source">
