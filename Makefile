@@ -192,9 +192,12 @@ CON_OUT_DIR				= $(SYS_DIR)/sys_shared/con_out
 # Debug control directory
 DBG_CNTRL_DIR			= $(SYS_DIR)/sys_shared/dbg_cntrl
 
-# Console output directory
+# K-ary tree directory
 KTREE_DIR				= $(SYS_DIR)/ktree
 
+# Fonts directory
+FONTS_DIR               = $(SYS_DIR)/fonts
+	
 # Source virtual directories
 VPATH 					= $(APP_DIR) \
 						  $(APP_COMM_DIR) \
@@ -219,6 +222,7 @@ VPATH 					= $(APP_DIR) \
 						  \
 						  $(CON_OUT_DIR) \
 						  $(KTREE_DIR) \
+						  $(FONTS_DIR) \
 						  $(DBG_CNTRL_DIR)
 
 # include directories
@@ -259,6 +263,7 @@ INCLUDES  				= -I$(SRC_DIR) \
 						  \
 						  -I$(CON_OUT_DIR) \
 						  -I$(KTREE_DIR) \
+						  -I$(FONTS_DIR) \
 						  -I$(DBG_CNTRL_DIR)
 
 #-----------------------------------------------------------------------------
@@ -313,6 +318,7 @@ C_SRCS                = \
 						i2c.c \
 						i2c_dev.c \
 						stm324x9i_eval_ioe16.c \
+						stm324x9i_eval_lcd.c \
 						nor.c \
 						sdram.c \
 						dbg_cntrl.c \

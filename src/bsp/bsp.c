@@ -26,6 +26,7 @@
 #include "serial.h"
 #include "nor.h"                               /* M29WV128G NOR Flash support */
 #include "sdram.h"                          /* MT48LC2M3B2B5-7E SDRAM support */
+#include "stm324x9i_eval_ioe16.h"
 
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */
@@ -36,6 +37,8 @@ DBG_DEFINE_THIS_MODULE( DBG_MODL_GENERAL ); /* For debug system to ID this modul
 /* Private macros ------------------------------------------------------------*/
 /* Private variables and Local objects ---------------------------------------*/
 static uint32_t l_nTicks;
+
+__IO uint32_t TS_Pressed;
 
 #ifdef Q_SPY
 static uint8_t  l_SysTick_Handler;
@@ -50,12 +53,22 @@ QSTimeCtr QS_tickPeriod_;
 
 /* Private function prototypes -----------------------------------------------*/
 
+/**
+  * @brief  Initializes the IO Expander registers.
+  * @param  None
+  * @retval - 0: if all initializations are OK.
+*/
+uint32_t BSP_TSC_Init( void );
+
 /* Private functions ---------------------------------------------------------*/
 /******************************************************************************/
 void BSP_init( void )
 {
    /* Enable syscfg clock */
    RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
+
+   /* Enable the CRC Module */
+   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_CRC, ENABLE);
 
    /* 1. Initialize the Serial for printfs to the serial port */
    Serial_Init( SERIAL_UART1 );
@@ -92,8 +105,11 @@ void BSP_init( void )
    dbg_slow_printf("NOR ID: DevCode2 : 0x%04x\n", pNOR_ID.Device_Code2);
    dbg_slow_printf("NOR ID: DevCode3 : 0x%04x\n", pNOR_ID.Device_Code3);
 
-   /* 6. Initialize the SDRAM */
+   /* 6. Initialize the SDRAM  - this is already init in low_level startup code */
 //   SDRAM_Init();
+
+   /* 7. Initialize the touchscreen */
+   BSP_TSC_Init();
 }
 
 /******************************************************************************/
@@ -115,6 +131,26 @@ void BSP_Delay(__IO uint32_t nCount)
 {
    while(nCount--) {
    }
+}
+
+/******************************************************************************/
+uint32_t BSP_TSC_Init(void)
+{
+   uint32_t ret = 1;
+
+   TS_Pressed = 0;
+
+   if (IOE16_Config() == IOE16_OK) {
+      dbg_slow_printf("IOE16 initialized\n");
+      /* Enable Interrupt */
+      IOE16_ITConfig(IOE16_TS_IT);
+      /* Read GPMR register */
+      uint8_t regValRead = IOE16_I2C_ReadDeviceRegister(IOE16_REG_GPMR_LSB);
+      dbg_slow_printf("Read 0x%02x from IOE16 IOE16_REG_GPMR_LSB register\n", regValRead);
+      ret = 0;
+   }
+
+   return ret;
 }
 
 /* Externally referenced functions and callbacks -----------------------------*/

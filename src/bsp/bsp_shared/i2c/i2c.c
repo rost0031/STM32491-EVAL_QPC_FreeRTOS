@@ -53,7 +53,7 @@ I2C_BusSettings_t s_I2C_Bus[MAX_I2C_BUS] =
 
             /* I2C bus settings */
             I2C1,                      /**< i2c_bus */
-            400000,                    /**< i2c_bus_speed (Hz)*/
+            I2C_SPEED,                 /**< i2c_bus_speed (Hz)*/
             RCC_APB1Periph_I2C1,       /**< i2c_clk */
 
             /* I2C interrupt settings */
