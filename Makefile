@@ -196,7 +196,14 @@ CON_OUT_DIR				= $(SYS_DIR)/sys_shared/con_out
 DBG_CNTRL_DIR			= $(SYS_DIR)/sys_shared/dbg_cntrl
 
 # K-ary tree directory
-KTREE_DIR				= $(SYS_DIR)/ktree
+KTREE_DIR               = $(SYS_DIR)/ktree
+
+# STemWin directories
+STEMWIN_DIR             = $(SYS_DIR)/STemWinLibrary522
+STEMWIN_INC_DIR         = $(STEMWIN_DIR)/inc
+STEMWIN_LIB_DIR         = $(STEMWIN_DIR)/Lib
+STEMWIN_OS_DIR          = $(STEMWIN_DIR)/OS
+STEMWIN_CONF_DIR        = $(STEMWIN_DIR)/OS
 
 # Fonts directory
 FONTS_DIR               = $(SYS_DIR)/fonts
@@ -338,11 +345,13 @@ C_SRCS                = \
 			            misc.c  \
 			      		stm32f4xx_crc.c \
 			      		stm32f4xx_dma.c \
+			      		stm32f4xx_dma2d.c \
 			      		stm32f4xx_exti.c \
 			      		stm32f4xx_flash.c \
 			      		stm32f4xx_fmc.c \
 			      		stm32f4xx_i2c.c \
 						stm32f4xx_gpio.c \
+			      		stm32f4xx_ltdc.c \
 			      		stm32f4xx_pwr.c \
 			      		stm32f4xx_rcc.c \
 			      		stm32f4xx_rtc.c \
@@ -365,12 +374,10 @@ C_SRCS                = \
 #			      		stm32f4xx_dac.c \
 #			      		stm32f4xx_dbgmcu.c \
 #			      		stm32f4xx_dcmi.c \
-#			      		stm32f4xx_dmad2.c \
 #			      		stm32f4xx_hash.c \
 #			      		stm32f4xx_hash_md5.c \
 #			      		stm32f4xx_hash_sha1.c \
 #			      		stm32f4xx_iwdg.c \
-#			      		stm32f4xx_ltdc.c \
 #			      		stm32f4xx_rng.c \
 #			      		stm32f4xx_sai.c \
 #			      		stm32f4xx_sdio.c \
@@ -388,11 +395,15 @@ LDFLAGS  				:= -T$(LDSCRIPT)
 # build options for various configurations
 #
 
+# Common options for all configurations. 
+LIBS    	= -lqp_$(ARM_CORE)_cs -llwip_$(ARM_CORE)_cs -lSTemWin522_CM4_GCC
+LIB_PATHS   = -L$(QP_PORT_DIR)/$(BIN_DIR) -L$(LWIP_DIR)/$(BIN_DIR) -L$(STEMWIN_LIB_DIR)
+
+# Specific options depending on the build configuration
 ifeq (rel, $(CONF))       # Release configuration ............................
 
 BIN_DIR 	:= rel
 DEFINES		+= -DNDEBUG
-LIBS    	:= -lqp_$(ARM_CORE)_cs -llwip_$(ARM_CORE)_cs
 ASFLAGS     = $(MFLAGS)
 CFLAGS      = $(MFLAGS) -std=gnu99 -Wall -ffunction-sections -fdata-sections \
 			  -Os $(INCLUDES) $(DEFINES)
@@ -407,7 +418,6 @@ else ifeq (spy, $(CONF))  # Spy configuration ................................
 
 BIN_DIR 	:= spy
 DEFINES		+= -DQ_SPY
-LIBS    	:= -lqp_$(ARM_CORE)_cs -llwip_$(ARM_CORE)_cs
 ASFLAGS 	= -g $(MFLAGS)
 CFLAGS 		= $(MFLAGS) -std=gnu99 -Wall -ffunction-sections -fdata-sections \
 			  -Os -g -O $(INCLUDES) $(DEFINES)
@@ -421,9 +431,9 @@ LINKFLAGS 	= -nodefaultlibs -Xlinker --gc-sections -Wl,--strip-all -Wl,-Map,$(BI
 else                     # default Debug configuration .......................
 
 BIN_DIR 	:= dbg
-LIBS    	:= -lqp_$(ARM_CORE)_cs -llwip_$(ARM_CORE)_cs
 ASFLAGS 	= -g $(MFLAGS)
-CFLAGS 		= $(MFLAGS) -std=gnu99 -Wall -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,--strip-all \
+CFLAGS 		= $(MFLAGS) -std=gnu99 -Wall -ffunction-sections -fdata-sections \
+              -Wl,--gc-sections -Wl,--strip-all \
 			  -g -Os $(INCLUDES) $(DEFINES)
 
 CPPFLAGS 	= $(MFLAGS) \
@@ -519,7 +529,8 @@ $(TARGET_BIN): $(TARGET_ELF)
 
 $(TARGET_ELF) : $(ASM_OBJS_EXT) $(C_OBJS_EXT) $(CPP_OBJS_EXT)
 	@echo --- Linking libraries   ---
-	$(TRACE_FLAG)$(LINK) -T$(LD_SCRIPT) $(LINKFLAGS) -L$(QP_PORT_DIR)/$(BIN_DIR) -L$(LWIP_DIR)/$(BIN_DIR) -o $@ $^ $(LIBS)
+	$(TRACE_FLAG)$(LINK) -T$(LD_SCRIPT) $(LINKFLAGS) $(LIB_PATHS) -o $@ $^ $(LIBS)
+	
 	$(SIZE) $(TARGET_ELF)
 	
 build_libs: build_qpc build_lwip
@@ -604,4 +615,6 @@ show:
 	@echo CPP_DEPS_EXT = $(CPP_DEPS_EXT)
 	@echo TARGET_ELF = $(TARGET_ELF)
 	@echo LIBS = $(LIBS)
+	@echo LIB_PATHS = $(LIB_PATHS)
 	@echo MCU = $(MCU)
+	@echo STEMWIN_LIB_DIR = $(STEMWIN_LIB_DIR)
