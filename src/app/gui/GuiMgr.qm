@@ -20,6 +20,9 @@ WM_SetCreateFlags(WM_CF_MEMDEV);
 /* Init the STemWin GUI Library */
 GUI_Init();
 
+/* Display a test message to verify LCD is working */
+GUI_DispStringAt(&quot;Hello World!&quot;, 0, 0);
+
 QS_OBJ_DICTIONARY(&amp;l_GuiMgr);
 QS_FUN_DICTIONARY(&amp;QHsm_top);
 QS_FUN_DICTIONARY(&amp;GuiMgr_initial);
@@ -87,7 +90,7 @@ QActive_ctor(&amp;me-&gt;super, (QStateHandler)&amp;GuiMgr_initial);</code>
 #include &quot;GuiMgr.h&quot;
 #include &quot;project_includes.h&quot;           /* Includes common to entire project. */
 #include &quot;GUI.h&quot;
-#include &quot;WM.h&quot;                                    /* emWin Windows Manager */
+#include &quot;WM.h&quot;                                      /* emWin Windows Manager */
 #include &quot;DIALOG.h&quot;
 
 /* Compile-time called macros ------------------------------------------------*/

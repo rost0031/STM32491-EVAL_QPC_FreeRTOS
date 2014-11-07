@@ -37,7 +37,7 @@
 #include "GuiMgr.h"
 #include "project_includes.h"           /* Includes common to entire project. */
 #include "GUI.h"
-#include "WM.h"                                    /* emWin Windows Manager */
+#include "WM.h"                                      /* emWin Windows Manager */
 #include "DIALOG.h"
 
 /* Compile-time called macros ------------------------------------------------*/
@@ -106,15 +106,13 @@ static QState GuiMgr_initial(GuiMgr * const me, QEvt const * const e) {
     /* ${AOs::GuiMgr::SM::initial} */
     (void)e;        /* suppress the compiler warning about unused parameter */
 
-    dbg_slow_printf("Creating WM flags\n");
     /* Activate the use of memory device feature */
     WM_SetCreateFlags(WM_CF_MEMDEV);
 
-    dbg_slow_printf("Initializing GUI\n");
     /* Init the STemWin GUI Library */
     GUI_Init();
 
-    dbg_slow_printf("Finished initializing GUI\n");
+    /* Display a test message to verify LCD is working */
     GUI_DispStringAt("Hello World!", 0, 0);
 
     QS_OBJ_DICTIONARY(&l_GuiMgr);
