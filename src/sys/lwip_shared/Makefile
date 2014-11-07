@@ -29,32 +29,43 @@ ifndef LWIP_SRC_DIR
 $(error Please call the LWIP Makefile with the "make LWIP_SRC_DIR=relative_location_of _src_dir".  The directory should be where ever you have lwip config files.)
 endif
 
-
+# Leave this blank here.  This gets appended with needed defines as the options
+# are parsed 
+DEFINES                     =
+ 
 #------------------------------------------------------------------------------
 #  MCU SETUP - these defaults can be overridden by passing in MCU=
 #------------------------------------------------------------------------------
 ARM_CORE 					= cortex-m3
 MFLAGS                      = -mcpu=$(ARM_CORE) -mthumb -mfloat-abi=soft
+AFLAGS                      = -mcpu=$(ARM_CORE)
 
 ifeq (cortex-m0, $(MCU))
 	ARM_CORE                = cortex-m0
 	MFLAGS                  = -mcpu=$(ARM_CORE) -mthumb -mfloat-abi=soft
+	AFLAGS                  = -mcpu=$(ARM_CORE)
 else ifeq (cortex-m0plus, $(MCU))
 	ARM_CORE                = cortex-m0plus
 	MFLAGS                  = -mcpu=$(ARM_CORE) -mthumb -mfloat-abi=soft
+	AFLAGS                  = -mcpu=$(ARM_CORE)
 else ifeq (cortex-m3, $(MCU))
 	ARM_CORE                = cortex-m3
 	MFLAGS                  = -mcpu=$(ARM_CORE) -mthumb -mfloat-abi=soft
+	AFLAGS                  = -mcpu=$(ARM_CORE)
 else ifeq (cortex-m4-vfp, $(MCU))
 	ARM_CORE                = cortex-m4
 	ARM_FPU                 = fpv4-sp-d16
-	MFLAGS                  = -mcpu=$(ARM_CORE) -mfpu=$(ARM_FPU) \
-							  -mlittle-endian -mthumb -mthumb-interwork
+	MFLAGS                  = -mcpu=$(ARM_CORE) -mfpu=$(ARM_FPU) -mfloat-abi=softfp \
+							  -mlittle-endian -mthumb
+	AFLAGS                  = -mcpu=$(ARM_CORE) -defsym=FPU_VFP_V4_SP_D16=1
+    DEFINES                += -D__VFP_FP__
 else ifeq (cortex-m4-fpv4-sp-d16, $(MCU))
 	ARM_CORE                = cortex-m4
 	ARM_FPU                 = fpv4-sp-d16
-	MFLAGS                  = -mcpu=$(ARM_CORE) -mfpu=$(ARM_FPU) -mfloat-abi=softfp \
-	                          -mlittle-endian -mthumb -mthumb-interwork
+	MFLAGS                  = -mcpu=$(ARM_CORE) -mfpu=$(ARM_FPU) -mfloat-abi=hard \
+	                          -mlittle-endian -mthumb
+	AFLAGS                  = -mcpu=$(ARM_CORE) -defsym=FPU_VFP_V4_SP_D16=1
+    DEFINES                += -D__VFP_FP__
 else
 	$(error Must specify the MCU, like MCU=cortex-m0 )
 endif
@@ -82,22 +93,22 @@ ifeq (rel, $(CONF))       # Release configuration ............................
 
 BINDIR   				= $(LWIP_DIR)/rel
 CFLAGS  				= -c $(MFLAGS) -std=gnu99 -mthumb -Wall \
-                          -ffunction-sections -fdata-sections -Os -DNDEBUG
-ASMFLAGS 				= -c $(MFLAGS)
+                          -ffunction-sections -fdata-sections -Os -DNDEBUG $(DEFINES)
+ASMFLAGS 				= -c $(AFLAGS)
 
 else ifeq (spy, $(CONF))  # Spy configuration ................................
 
 BINDIR   				= $(LWIP_DIR)/spy
 CFLAGS  				= -g -c $(MFLAGS) -std=gnu99 -mthumb -Wall \
-                          -ffunction-sections -fdata-sections -Os -DQ_SPY
-ASMFLAGS 				= -g -c $(MFLAGS)
+                          -ffunction-sections -fdata-sections -Os -DQ_SPY $(DEFINES)
+ASMFLAGS 				= -g -c $(AFLAGS)
 
 else                     # default Debug configuration .......................
 
 BINDIR   				= $(LWIP_DIR)/dbg
-CFLAGS  				= -g -c $(MFLAGS) -std=gnu99 -mthumb -Wall \
+CFLAGS  				= -g -c $(MFLAGS) -std=gnu99 -mthumb -Wall $(DEFINES) \
                           -ffunction-sections -fdata-sections -Os
-ASMFLAGS 				= -g -c $(MFLAGS)
+ASMFLAGS 				= -g -c $(AFLAGS)
 
 endif
 

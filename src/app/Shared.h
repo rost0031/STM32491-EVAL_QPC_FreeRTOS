@@ -59,6 +59,7 @@ enum AO_Priorities {
    I2C1DEVMGR_PRIORITY,                       /**< Priority of I2C1DevMgr AO. */
    COMM_MGR_PRIORITY,                       /**< Priority of CommStackMgr AO. */
    I2C_MGR_PRIORITY,                              /**< Priority of I2CMgr AO. */
+   GUI_MGR_PRIORITY,                              /**< Priority of GuiMgr AO. */
 
    /* Insert new priorities here ... */
    DBG_MGR_PRIORITY,                             /**< Priority of MenuMgr AO. */

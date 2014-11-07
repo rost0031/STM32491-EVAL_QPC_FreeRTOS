@@ -60,31 +60,49 @@ TRACE_FLAG=$(TRACEON:1=)
 # Output file basename (should be the same as the directory name)
 PROJECT_NAME            = CBBootLdr
 
+# Leave this blank here.  This gets appended with needed defines as the options
+# are parsed 
+DEFINES                  =
+
 #------------------------------------------------------------------------------
 #  MCU SETUP - This specifies which core to pass down to all the other makefiles
 #  and to compile options for different ARM cortex-m processors.
 #------------------------------------------------------------------------------
-MCU                     = cortex-m4-vfp
+MCU                     = cortex-m4-fpv4-sp-d16
+#MCU = cortex-m3
+
+
+# defaults
+ARM_CORE                = cortex-m3
+MFLAGS                  = -mcpu=$(ARM_CORE) -mthumb -mfloat-abi=soft
+AFLAGS                  = -mcpu=$(ARM_CORE)
 
 ifeq (cortex-m0, $(MCU))
 	ARM_CORE            = cortex-m0
 	MFLAGS              = -mcpu=$(ARM_CORE) -mthumb -mfloat-abi=soft
+	AFLAGS              = -mcpu=$(ARM_CORE)
 else ifeq (cortex-m0plus, $(MCU))
 	ARM_CORE            = cortex-m0plus
 	MFLAGS              = -mcpu=$(ARM_CORE) -mthumb -mfloat-abi=soft
+	AFLAGS              = -mcpu=$(ARM_CORE)
 else ifeq (cortex-m3, $(MCU))
 	ARM_CORE            = cortex-m3
 	MFLAGS              = -mcpu=$(ARM_CORE) -mthumb -mfloat-abi=soft
+	AFLAGS              = -mcpu=$(ARM_CORE)
 else ifeq (cortex-m4-vfp, $(MCU))
 	ARM_CORE            = cortex-m4
 	ARM_FPU             = fpv4-sp-d16
-	MFLAGS              = -mcpu=$(ARM_CORE) -mfpu=$(ARM_FPU) \
-						  -mlittle-endian -mthumb -mthumb-interwork
+	MFLAGS              = -mcpu=$(ARM_CORE) -mfpu=$(ARM_FPU) -mfloat-abi=softfp \
+						  -mlittle-endian -mthumb
+	AFLAGS              = -mcpu=$(ARM_CORE) -defsym=FPU_VFP_V4_SP_D16=1
+    DEFINES            += -D__VFP_FP__
 else ifeq (cortex-m4-fpv4-sp-d16, $(MCU))
 	ARM_CORE            = cortex-m4
 	ARM_FPU             = fpv4-sp-d16
-	MFLAGS              = -mcpu=$(ARM_CORE) -mfpu=$(ARM_FPU) -mfloat-abi=softfp \
-	                      -mlittle-endian -mthumb -mthumb-interwork
+	MFLAGS              = -mcpu=$(ARM_CORE) -mfpu=$(ARM_FPU) -mfloat-abi=hard \
+	                      -mlittle-endian -mthumb
+	AFLAGS              = -mcpu=$(ARM_CORE) -defsym=FPU_VFP_V4_SP_D16=1
+    DEFINES            += -D__VFP_FP__	
 else
 	$(error Must specify the MCU, like MCU=cortex-m0 )
 endif
@@ -151,7 +169,10 @@ LWIP_SRC_DIR            = ../../
 
 # Application Comm directory
 APP_COMM_DIR            = $(APP_DIR)/comm
-						  						
+
+# Application Comm directory
+APP_GUI_DIR             = $(APP_DIR)/gui
+
 # Application Debug directory
 APP_DBG_DIR             = $(APP_DIR)/debug
 
@@ -203,7 +224,6 @@ STEMWIN_DIR             = $(SYS_DIR)/STemWinLibrary522
 STEMWIN_INC_DIR         = $(STEMWIN_DIR)/inc
 STEMWIN_LIB_DIR         = $(STEMWIN_DIR)/Lib
 STEMWIN_OS_DIR          = $(STEMWIN_DIR)/OS
-STEMWIN_CONF_DIR        = $(STEMWIN_DIR)/OS
 
 # Fonts directory
 FONTS_DIR               = $(SYS_DIR)/fonts
@@ -211,6 +231,7 @@ FONTS_DIR               = $(SYS_DIR)/fonts
 # Source virtual directories
 VPATH 					= $(APP_DIR) \
 						  $(APP_COMM_DIR) \
+						  $(APP_GUI_DIR) \
 						  $(APP_DBG_DIR) \
 						  $(APP_MENU_DIRS) \
 						  \
@@ -230,6 +251,7 @@ VPATH 					= $(APP_DIR) \
 						  $(BSP_DIR)/bsp_shared/runtime \
 						  \
 						  $(STM32F4XX_STD_PERIPH_DIR)/src \
+						  $(STEMWIN_OS_DIR) \
 						  \
 						  $(CON_OUT_DIR) \
 						  $(KTREE_DIR) \
@@ -241,6 +263,7 @@ INCLUDES  				= -I$(SRC_DIR) \
 						  -I$(APP_DIR) \
 						  \
 						  -I$(APP_COMM_DIR) \
+						  -I$(APP_GUI_DIR) \
 						  -I$(APP_DBG_DIR) \
 						  $(APP_MENU_INCLUDES) \
 						  \
@@ -276,24 +299,25 @@ INCLUDES  				= -I$(SRC_DIR) \
 						  -I$(CON_OUT_DIR) \
 						  -I$(KTREE_DIR) \
 						  -I$(FONTS_DIR) \
-						  -I$(DBG_CNTRL_DIR)
+						  -I$(DBG_CNTRL_DIR) \
+						  -I$(STEMWIN_INC_DIR)
 
 #-----------------------------------------------------------------------------
 # defines
 # HSE_VALUE=8000000 overrides the External Clock setting for the 
 # board since the development kit runs at a 25MHz external clock
 #-----------------------------------------------------------------------------
-#DEFINES   				= -DSTM32F439xx \
+#DEFINES   			   += -DSTM32F439xx \
 #						  -DUSE_STDPERIPH_DRIVER \
 #						  -DHSE_VALUE=8000000 \
 #						  -DLWIP_TCP=1 \
 #						  -DFLASH_BASE=0x08000000
 
 # Temporary for devel kit						  
-DEFINES                 = -DSTM32F429_439xx \
+DEFINES                += -DSTM32F429_439xx \
 						  -DUSE_STDPERIPH_DRIVER \
 						  -DLWIP_TCP=1 \
-						  -DFLASH_BASE=0x08000000			  
+						  -DFLASH_BASE=0x08000000
 						  
 #-----------------------------------------------------------------------------
 # files
@@ -341,6 +365,10 @@ C_SRCS                = \
 						SerialMgr.c \
 						CommStackMgr.c \
 						DbgMgr.c \
+						GuiMgr.c \
+						GUIConf.c \
+						LCDConf.c \
+						GUI_X.c \
 						\
 			            misc.c  \
 			      		stm32f4xx_crc.c \
@@ -396,8 +424,12 @@ LDFLAGS  				:= -T$(LDSCRIPT)
 #
 
 # Common options for all configurations. 
+#LIBS    	= -lqp_$(ARM_CORE)_cs -llwip_$(ARM_CORE)_cs -lSTemWin522_CM3_GCC
 LIBS    	= -lqp_$(ARM_CORE)_cs -llwip_$(ARM_CORE)_cs -lSTemWin522_CM4_GCC
+
+#LIBS    	= -lqp_$(ARM_CORE)_cs -llwip_$(ARM_CORE)_cs
 LIB_PATHS   = -L$(QP_PORT_DIR)/$(BIN_DIR) -L$(LWIP_DIR)/$(BIN_DIR) -L$(STEMWIN_LIB_DIR)
+#LIB_PATHS   = -L$(QP_PORT_DIR)/$(BIN_DIR) -L$(LWIP_DIR)/$(BIN_DIR)
 
 # Specific options depending on the build configuration
 ifeq (rel, $(CONF))       # Release configuration ............................
@@ -440,7 +472,7 @@ CPPFLAGS 	= $(MFLAGS) \
 			  -Wall -fno-rtti -fno-exceptions \
 			  -g -O $(INCLUDES) $(DEFINES)
 	
-LINKFLAGS 	= -nodefaultlibs -Xlinker --gc-sections -Wl,--strip-all -Wl,-Map,$(BIN_DIR)/$(PROJECT_NAME).map -mcpu=$(ARM_CORE) -mthumb -g3 -gdwarf-2 
+LINKFLAGS 	= -nodefaultlibs -Xlinker --gc-sections -Wl,--strip-all -Wl,-Map,$(BIN_DIR)/$(PROJECT_NAME).map $(MFLAGS) -g3 -gdwarf-2 
 
 endif
 
@@ -530,7 +562,6 @@ $(TARGET_BIN): $(TARGET_ELF)
 $(TARGET_ELF) : $(ASM_OBJS_EXT) $(C_OBJS_EXT) $(CPP_OBJS_EXT)
 	@echo --- Linking libraries   ---
 	$(TRACE_FLAG)$(LINK) -T$(LD_SCRIPT) $(LINKFLAGS) $(LIB_PATHS) -o $@ $^ $(LIBS)
-	
 	$(SIZE) $(TARGET_ELF)
 	
 build_libs: build_qpc build_lwip
@@ -617,4 +648,6 @@ show:
 	@echo LIBS = $(LIBS)
 	@echo LIB_PATHS = $(LIB_PATHS)
 	@echo MCU = $(MCU)
+	@echo MFLAGS = $(MFLAGS)
+	@echo CFLAGS = $(CFLAGS)
 	@echo STEMWIN_LIB_DIR = $(STEMWIN_LIB_DIR)

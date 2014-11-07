@@ -87,23 +87,23 @@ void BSP_init( void )
    /* 4. Initialize the I2C devices and associated busses */
    I2C_BusInit( I2CBus1 );
 
-   /* 5. Initialize the NOR flash */
-   NOR_Init();
-
-   /* NOR IDs structure */
-   NOR_IDTypeDef pNOR_ID;
-   /* Initialize the ID structure */
-   pNOR_ID.Manufacturer_Code = (uint16_t)0x00;
-   pNOR_ID.Device_Code1 = (uint16_t)0x00;
-   pNOR_ID.Device_Code2 = (uint16_t)0x00;
-   pNOR_ID.Device_Code3 = (uint16_t)0x00;
-
-   /* Read the NOR memory ID */
-   NOR_ReadID(&pNOR_ID);
-   dbg_slow_printf("NOR ID: MfgCode  : 0x%04x\n", pNOR_ID.Manufacturer_Code);
-   dbg_slow_printf("NOR ID: DevCode1 : 0x%04x\n", pNOR_ID.Device_Code1);
-   dbg_slow_printf("NOR ID: DevCode2 : 0x%04x\n", pNOR_ID.Device_Code2);
-   dbg_slow_printf("NOR ID: DevCode3 : 0x%04x\n", pNOR_ID.Device_Code3);
+//   /* 5. Initialize the NOR flash */
+//   NOR_Init();
+//
+//   /* NOR IDs structure */
+//   NOR_IDTypeDef pNOR_ID;
+//   /* Initialize the ID structure */
+//   pNOR_ID.Manufacturer_Code = (uint16_t)0x00;
+//   pNOR_ID.Device_Code1 = (uint16_t)0x00;
+//   pNOR_ID.Device_Code2 = (uint16_t)0x00;
+//   pNOR_ID.Device_Code3 = (uint16_t)0x00;
+//
+//   /* Read the NOR memory ID */
+//   NOR_ReadID(&pNOR_ID);
+//   dbg_slow_printf("NOR ID: MfgCode  : 0x%04x\n", pNOR_ID.Manufacturer_Code);
+//   dbg_slow_printf("NOR ID: DevCode1 : 0x%04x\n", pNOR_ID.Device_Code1);
+//   dbg_slow_printf("NOR ID: DevCode2 : 0x%04x\n", pNOR_ID.Device_Code2);
+//   dbg_slow_printf("NOR ID: DevCode3 : 0x%04x\n", pNOR_ID.Device_Code3);
 
    /* 6. Initialize the SDRAM  - this is already init in low_level startup code */
 //   SDRAM_Init();

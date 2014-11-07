@@ -86,6 +86,7 @@
 enum KernelUnawareISRs {                                        /* see NOTE00 */
    RTC_WKUP_PRIO = 0,
    TIM5_PRIO,
+   LCD_PRIO,
    /* ... */
    MAX_KERNEL_UNAWARE_CMSIS_PRI                          /* keep always last */
 };

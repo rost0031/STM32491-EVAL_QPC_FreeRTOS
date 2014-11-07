@@ -31,6 +31,7 @@
 #include "i2c.h"                                /* For I2C callback functions */
 #include "serial.h"                          /* For Serial callback functions */
 #include "eth_driver.h"                    /* For Ethernet callback functions */
+#include "LCDConf.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -211,6 +212,20 @@ void TIM5_IRQHandler( void )
          uwPeriodValue = (uint16_t)(0xFFFF - tmpCC4[0] + tmpCC4[1] + 1);
       }
    }
+}
+
+/******************************************************************************/
+void LTDC_IRQHandler(void)
+{
+   /* Issue the callback function which does the actual work. */
+   LTDC_ISR_Handler();
+}
+
+/******************************************************************************/
+void DMA2D_IRQHandler(void)
+{
+   /* Issue the callback function which does the actual work. */
+   DMA2D_ISR_Handler();
 }
 
 /******************************************************************************/

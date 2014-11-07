@@ -138,8 +138,9 @@ The STM32F207 allows computing and verifying the IP, UDP, TCP and ICMP checksums
 //#define SYS_LIGHTWEIGHT_PROT            0
 #define NO_SYS                          1           // default is 0
 //#define NO_SYS_NO_TIMERS                0
-#define MEMCPY(dst,src,len)             MEM_DataCopy(dst,src,len)
-#define SMEMCPY(dst,src,len)            MEM_DataCopy(dst,src,len)
+//#define MEMCPY(dst,src,len)             MEM_DataCopy(dst,src,len)
+//#define SMEMCPY(dst,src,len)            MEM_DataCopy(dst,src,len)
+
 
 //****************************************************************************
 //

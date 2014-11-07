@@ -199,6 +199,28 @@ void SysTick_Handler( void ) __attribute__((__interrupt__));
 void TIM5_IRQHandler( void ) __attribute__((__interrupt__));
 
 /**
+ * @brief  This function handles LTDC global interrupt request.
+ *
+ * This ISR should use the callback function which should be defined wherever
+ * LTDC communication is handled.
+ *
+ * @param  None
+ * @retval None
+ */
+void LTDC_IRQHandler(void) __attribute__((__interrupt__));
+
+/**
+ * @brief  This function handles DMA2D global interrupt request.
+ *
+ * This ISR should use the callback function which should be defined wherever
+ * DMA2D is handled.
+ *
+ * @param  None
+ * @retval None
+ */
+void DMA2D_IRQHandler(void) __attribute__((__interrupt__));
+
+/**
  * @brief   ISR that handles incoming data on UART1 (debug serial) port.
  *
  * This ISR should use the callback function which should be defined wherever

@@ -32,3 +32,4 @@ doc/
 .MenuMgr
 .I2CBusMgr
 .I2C1DevMgr
+.GuiMgr

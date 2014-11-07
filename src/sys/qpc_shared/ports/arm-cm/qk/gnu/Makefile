@@ -37,31 +37,43 @@
 # make CONF=rel clean
 # make CONF=spy clean
 
+# Leave this blank here.  This gets appended with needed defines as the options
+# are parsed 
+DEFINES                     =
+
 #------------------------------------------------------------------------------
 #  MCU SETUP - these defaults can be overridden by passing in MCU=
 #------------------------------------------------------------------------------
 ARM_CORE 					= cortex-m3
 MFLAGS                      = -mcpu=$(ARM_CORE) -mthumb -mfloat-abi=soft
+AFLAGS                      = -mcpu=$(ARM_CORE)
 
 ifeq (cortex-m0, $(MCU))
 	ARM_CORE                = cortex-m0
 	MFLAGS                  = -mcpu=$(ARM_CORE) -mthumb -mfloat-abi=soft
+	AFLAGS                  = -mcpu=$(ARM_CORE)
 else ifeq (cortex-m0plus, $(MCU))
 	ARM_CORE                = cortex-m0plus
 	MFLAGS                  = -mcpu=$(ARM_CORE) -mthumb -mfloat-abi=soft
+	AFLAGS                  = -mcpu=$(ARM_CORE)
 else ifeq (cortex-m3, $(MCU))
 	ARM_CORE                = cortex-m3
 	MFLAGS                  = -mcpu=$(ARM_CORE) -mthumb -mfloat-abi=soft
+	AFLAGS                  = -mcpu=$(ARM_CORE)
 else ifeq (cortex-m4-vfp, $(MCU))
 	ARM_CORE                = cortex-m4
 	ARM_FPU                 = fpv4-sp-d16
-	MFLAGS                  = -mcpu=$(ARM_CORE) -mfpu=$(ARM_FPU) \
-							  -mlittle-endian -mthumb -mthumb-interwork
+	MFLAGS                  = -mcpu=$(ARM_CORE) -mfpu=$(ARM_FPU) -mfloat-abi=softfp \
+							  -mlittle-endian -mthumb
+	AFLAGS                  = -mcpu=$(ARM_CORE) -defsym=FPU_VFP_V4_SP_D16=1
+    DEFINES                += -D__VFP_FP__
 else ifeq (cortex-m4-fpv4-sp-d16, $(MCU))
 	ARM_CORE                = cortex-m4
 	ARM_FPU                 = fpv4-sp-d16
-	MFLAGS                  = -mcpu=$(ARM_CORE) -mfpu=$(ARM_FPU) -mfloat-abi=softfp \
-	                          -mlittle-endian -mthumb -mthumb-interwork
+	MFLAGS                  = -mcpu=$(ARM_CORE) -mfpu=$(ARM_FPU) -mfloat-abi=hard \
+	                          -mlittle-endian -mthumb
+	AFLAGS                  = -mcpu=$(ARM_CORE) -defsym=FPU_VFP_V4_SP_D16=1
+    DEFINES                += -D__VFP_FP__			
 else
 	$(error Must specify the MCU, like MCU=cortex-m0 )
 endif
@@ -105,8 +117,8 @@ BINDIR  					= rel
 # gcc options
 # -c    : compile only
 # -O    : optimize
-CCFLAGS 					= -c $(MFLAGS) -std=gnu99 -Wall -ffunction-sections -fdata-sections -Os -DNDEBUG -o$@
-ASMFLAGS 					= -c $(MFLAGS)
+CCFLAGS 					= -c $(MFLAGS) -std=gnu99 -Wall -ffunction-sections -fdata-sections -Os -DNDEBUG $(DEFINES) -o$@
+ASMFLAGS 					= -c $(AFLAGS)
 else ifeq (spy, $(CONF))  # Spy configuration ................................
 BINDIR  = spy
 
@@ -114,7 +126,7 @@ BINDIR  = spy
 # -c    : compile only
 # -g    : source level debugging
 # -D    : define preprocessor macro
-CCFLAGS 					= -g -c $(MFLAGS) -std=gnu99 -Wall -ffunction-sections -fdata-sections -Os -DQ_SPY -o$@
+CCFLAGS 					= -g -c $(MFLAGS) -std=gnu99 -Wall -ffunction-sections -fdata-sections -Os -DQ_SPY $(DEFINES) -o$@
 QS_CSRC   					= qs.c \
 					          qs_.c \
 					          qs_blk.c \
@@ -127,7 +139,7 @@ QS_CSRC   					= qs.c \
 					          	
 QS_OBJS 					= $(patsubst %.c, $(BINDIR)/%.o, $(QS_CSRC))
 
-ASMFLAGS 					= -g -c $(MFLAGS)
+ASMFLAGS 					= -g -c $(AFLAGS)
 else                     # default Debug configuration .......................
 
 BINDIR  					= dbg
@@ -136,8 +148,8 @@ QP_DEP  					= $(QP_INCDIR)\qassert.h
 # gcc options
 # -c    : compile only
 # -g    : source level debugging
-CCFLAGS 					= -g -c $(MFLAGS) -std=gnu99 -Wall -ffunction-sections -fdata-sections -Os
-ASMFLAGS 					= -g -c $(MFLAGS)
+CCFLAGS 					= -g -c $(MFLAGS) -std=gnu99 -Wall -ffunction-sections -fdata-sections $(DEFINES) -Os
+ASMFLAGS 					= -g -c $(AFLAGS)
 endif
 
 VPATH = $(QEP_SRCDIR) $(QF_SRCDIR) $(QS_SRCDIR) $(QK_SRCDIR) $(QP_PRTDIR)/src

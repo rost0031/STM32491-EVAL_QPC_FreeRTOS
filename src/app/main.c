@@ -17,6 +17,7 @@
 #include "DbgMgr.h"                                 /* for starting DbgMgr AO */
 #include "I2CBusMgr.h"                           /* for starting I2CBusMgr AO */
 #include "I2C1DevMgr.h"                         /* for starting I2C1DevMgr AO */
+#include "GuiMgr.h"                                 /* for starting GuiMgr AO */
 
 #include "project_includes.h"           /* Includes common to entire project. */
 #include "Shared.h"
@@ -36,11 +37,12 @@ DBG_DEFINE_THIS_MODULE( DBG_MODL_GENERAL ); /* For debug system to ID this modul
 /* Private macros ------------------------------------------------------------*/
 /* Private variables and Local objects ---------------------------------------*/
 static QEvt const    *l_CommStackMgrQueueSto[100];  /**< Storage for CommStackMgr event Queue */
-static QEvt const    *l_LWIPMgrQueueSto[100];       /**< Storage for LWIPMgr event Queue */
-static QEvt const    *l_SerialMgrQueueSto[100];     /**< Storage for SerialMgr event Queue */
+static QEvt const    *l_LWIPMgrQueueSto[200];       /**< Storage for LWIPMgr event Queue */
+static QEvt const    *l_SerialMgrQueueSto[200];     /**< Storage for SerialMgr event Queue */
 static QEvt const    *l_I2CBusMgrQueueSto[100][MAX_I2C_BUS];    /**< Storage for I2CBusMgr event Queue */
 static QEvt const    *l_I2C1DevMgrQueueSto[100];    /**< Storage for I2C1DevMgr event Queue */
-static QEvt const    *l_DbgMgrQueueSto[100];        /**< Storage for DbgMgr event Queue */
+static QEvt const    *l_DbgMgrQueueSto[200];        /**< Storage for DbgMgr event Queue */
+static QEvt const    *l_GuiMgrQueueSto[30];         /**< Storage for GuiMgr event Queue */
 static QSubscrList   l_subscrSto[MAX_PUB_SIG];      /**< Storage for subscribe/publish event Queue */
 
 /**
@@ -103,6 +105,7 @@ int main(void)
     DBG_ENABLE_DEBUG_FOR_MODULE(DBG_MODL_SDRAM);
     DBG_ENABLE_DEBUG_FOR_MODULE(DBG_MODL_DBG);
     DBG_ENABLE_DEBUG_FOR_MODULE(DBG_MODL_COMM);
+    DBG_ENABLE_DEBUG_FOR_MODULE(DBG_MODL_GUI);
 
     /* initialize the Board Support Package */
     BSP_init();
@@ -123,6 +126,7 @@ int main(void)
 
     I2C1DevMgr_ctor();
     CommStackMgr_ctor();
+    GuiMgr_ctor();
     DbgMgr_ctor();                           /* This AO should start up last */
 
     dbg_slow_printf("Initializing QF\n");
@@ -139,6 +143,7 @@ int main(void)
     QS_OBJ_DICTIONARY(l_I2C1DevMgrQueueSto);
     QS_OBJ_DICTIONARY(l_CommStackMgrQueueSto);
     QS_OBJ_DICTIONARY(l_DbgMgrQueueSto);
+    QS_OBJ_DICTIONARY(l_GuiMgrQueueSto);
 
     QF_psInit(l_subscrSto, Q_DIM(l_subscrSto));     /* init publish-subscribe */
 
@@ -196,6 +201,13 @@ int main(void)
     QACTIVE_START(AO_CommStackMgr,
           COMM_MGR_PRIORITY,                                      /* priority */
           l_CommStackMgrQueueSto, Q_DIM(l_CommStackMgrQueueSto), /* evt queue */
+          (void *)0, 0U,                               /* no per-thread stack */
+          (QEvt *)0                                /* no initialization event */
+    );
+
+    QACTIVE_START(AO_GuiMgr,
+          GUI_MGR_PRIORITY,                                       /* priority */
+          l_GuiMgrQueueSto, Q_DIM(l_GuiMgrQueueSto),             /* evt queue */
           (void *)0, 0U,                               /* no per-thread stack */
           (QEvt *)0                                /* no initialization event */
     );
