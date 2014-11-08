@@ -21,7 +21,7 @@ WM_SetCreateFlags(WM_CF_MEMDEV);
 GUI_Init();
 
 /* Display a test message to verify LCD is working */
-GUI_DispStringAt(&quot;Hello World!&quot;, 0, 0);
+//GUI_DispStringAt(&quot;Hello World!&quot;, 0, 0);
 
 QS_OBJ_DICTIONARY(&amp;l_GuiMgr);
 QS_FUN_DICTIONARY(&amp;QHsm_top);
@@ -42,7 +42,21 @@ QS_FUN_DICTIONARY(&amp;GuiMgr_Active);</action>
  * @return status: QState type that specifies where the state
  * machine is going next.
  */</documentation>
-     <entry>DBG_printf(&quot;GuiMgr successfully started\n&quot;);</entry>
+     <entry>DBG_printf(&quot;GuiMgr successfully started\n&quot;);
+
+l_cb_WM_HBKWIN = WM_SetCallback(WM_HBKWIN, &amp;onMainWndGUI);
+
+             /* create the diaglog box and return right away... */
+l_hDlg = GUI_CreateDialogBox(
+    l_dialog, // Pointer to widget
+    GUI_COUNTOF(l_dialog), // Number of widgets
+    &amp;onDialogGUI, //Callback to call on completion
+    0,    // Parent
+    0,    // X0 position
+    0     // Y0 position
+);
+
+WM_Exec();                 /* update the screen and invoke WM callbacks */</entry>
      <state_glyph node="3,3,101,85">
       <entry box="1,2,6,2"/>
      </state_glyph>
@@ -106,13 +120,80 @@ $declare(AOs::GuiMgr)
 
 static GuiMgr l_GuiMgr;           /* the single instance of the active object */
 
+/* GUI handles */
+static WM_HWIN      l_hDlg;
+static WM_CALLBACK *l_cb_WM_HBKWIN;
+static const GUI_WIDGET_CREATE_INFO l_dialog[] = {
+    { &amp;FRAMEWIN_CreateIndirect, &quot;Main Window&quot;,
+        0,  30,  30, 260, 180, FRAMEWIN_CF_MOVEABLE },
+    { &amp;TEXT_CreateIndirect, &quot;Thing 1&quot;,
+        GUI_ID_TEXT9,  50,  10, 0, 0, TEXT_CF_LEFT },
+    { &amp;TEXT_CreateIndirect, &quot;Thing 2&quot;,
+        GUI_ID_TEXT9,  50,  30, 0, 0, TEXT_CF_LEFT },
+
+    { &amp;TEXT_CreateIndirect, &quot;status 1&quot;,
+        GUI_ID_TEXT0, 130,  10, 0, 0, TEXT_CF_LEFT },
+    { &amp;TEXT_CreateIndirect, &quot;status 2&quot;,
+        GUI_ID_TEXT1, 130,  30, 0, 0, TEXT_CF_LEFT },
+
+    { &amp;BUTTON_CreateIndirect,&quot;Button&quot;,
+        GUI_ID_BUTTON0,    160, 130, 80, 30 }
+};
 /* Global-scope objects ------------------------------------------------------*/
 QActive * const AO_GuiMgr = (QActive *)&amp;l_GuiMgr;      /* &quot;opaque&quot; AO pointer */
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
+/*..........................................................................*/
+static void onMainWndGUI(WM_MESSAGE* pMsg) {
+    switch (pMsg-&gt;MsgId) {
+        case WM_PAINT: {
+            GUI_SetBkColor(GUI_GRAY);
+            GUI_Clear();
+            GUI_SetColor(GUI_BLACK);
+            GUI_SetFont(&amp;GUI_Font24_ASCII);
+            GUI_DispStringHCenterAt(&quot;Window Manager Test&quot;, 160, 5);
+            break;
+        }
+        default: {
+            WM_DefaultProc(pMsg);
+            break;
+        }
+    }
+}
+
+/*..........................................................................*/
+static void onDialogGUI(WM_MESSAGE * pMsg) {
+    switch (pMsg-&gt;MsgId) {
+        case WM_INIT_DIALOG: {
+            break;
+        }
+        case WM_NOTIFY_PARENT: {
+            switch (pMsg-&gt;Data.v) {
+                case WM_NOTIFICATION_RELEASED: {  /* react only if released */
+                    switch (WM_GetId(pMsg-&gt;hWinSrc)) {
+                        case GUI_ID_BUTTON0: {
+                                     /* static PAUSE event for the Table AO */
+                            static QEvent const pauseEvt = { GUI_TEST_SIG, 0 };
+                            QACTIVE_POST(AO_GuiMgr, &amp;pauseEvt, &amp;l_onDialogGUI);
+                            break;
+                        }
+                    }
+                    break;
+                }
+            }
+            break;
+        }
+        default: {
+            WM_DefaultProc(pMsg);
+            break;
+        }
+    }
+}
+
 $define(AOs::GuiMgr_ctor)
 $define(AOs::GuiMgr)
+
 
 /**
  * @} end addtogroup groupGui

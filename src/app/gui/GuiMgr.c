@@ -77,11 +77,77 @@ static QState GuiMgr_Active(GuiMgr * const me, QEvt const * const e);
 
 static GuiMgr l_GuiMgr;           /* the single instance of the active object */
 
+/* GUI handles */
+static WM_HWIN      l_hDlg;
+static WM_CALLBACK *l_cb_WM_HBKWIN;
+static const GUI_WIDGET_CREATE_INFO l_dialog[] = {
+    { &FRAMEWIN_CreateIndirect, "Main Window",
+        0,  30,  30, 260, 180, FRAMEWIN_CF_MOVEABLE },
+    { &TEXT_CreateIndirect, "Thing 1",
+        GUI_ID_TEXT9,  50,  10, 0, 0, TEXT_CF_LEFT },
+    { &TEXT_CreateIndirect, "Thing 2",
+        GUI_ID_TEXT9,  50,  30, 0, 0, TEXT_CF_LEFT },
+
+    { &TEXT_CreateIndirect, "status 1",
+        GUI_ID_TEXT0, 130,  10, 0, 0, TEXT_CF_LEFT },
+    { &TEXT_CreateIndirect, "status 2",
+        GUI_ID_TEXT1, 130,  30, 0, 0, TEXT_CF_LEFT },
+
+    { &BUTTON_CreateIndirect,"Button",
+        GUI_ID_BUTTON0,    160, 130, 80, 30 }
+};
 /* Global-scope objects ------------------------------------------------------*/
 QActive * const AO_GuiMgr = (QActive *)&l_GuiMgr;      /* "opaque" AO pointer */
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
+/*..........................................................................*/
+static void onMainWndGUI(WM_MESSAGE* pMsg) {
+    switch (pMsg->MsgId) {
+        case WM_PAINT: {
+            GUI_SetBkColor(GUI_GRAY);
+            GUI_Clear();
+            GUI_SetColor(GUI_BLACK);
+            GUI_SetFont(&GUI_Font24_ASCII);
+            GUI_DispStringHCenterAt("Window Manager Test", 160, 5);
+            break;
+        }
+        default: {
+            WM_DefaultProc(pMsg);
+            break;
+        }
+    }
+}
+
+/*..........................................................................*/
+static void onDialogGUI(WM_MESSAGE * pMsg) {
+    switch (pMsg->MsgId) {
+        case WM_INIT_DIALOG: {
+            break;
+        }
+        case WM_NOTIFY_PARENT: {
+            switch (pMsg->Data.v) {
+                case WM_NOTIFICATION_RELEASED: {  /* react only if released */
+                    switch (WM_GetId(pMsg->hWinSrc)) {
+                        case GUI_ID_BUTTON0: {
+                                     /* static PAUSE event for the Table AO */
+                            static QEvent const pauseEvt = { GUI_TEST_SIG, 0 };
+                            QACTIVE_POST(AO_GuiMgr, &pauseEvt, &l_onDialogGUI);
+                            break;
+                        }
+                    }
+                    break;
+                }
+            }
+            break;
+        }
+        default: {
+            WM_DefaultProc(pMsg);
+            break;
+        }
+    }
+}
+
 
 /**
  * @brief C "constructor" for GuiMgr "class".
@@ -113,7 +179,7 @@ static QState GuiMgr_initial(GuiMgr * const me, QEvt const * const e) {
     GUI_Init();
 
     /* Display a test message to verify LCD is working */
-    GUI_DispStringAt("Hello World!", 0, 0);
+    //GUI_DispStringAt("Hello World!", 0, 0);
 
     QS_OBJ_DICTIONARY(&l_GuiMgr);
     QS_FUN_DICTIONARY(&QHsm_top);
@@ -139,6 +205,20 @@ static QState GuiMgr_Active(GuiMgr * const me, QEvt const * const e) {
         /* ${AOs::GuiMgr::SM::Active} */
         case Q_ENTRY_SIG: {
             DBG_printf("GuiMgr successfully started\n");
+
+            l_cb_WM_HBKWIN = WM_SetCallback(WM_HBKWIN, &onMainWndGUI);
+
+                         /* create the diaglog box and return right away... */
+            l_hDlg = GUI_CreateDialogBox(
+                l_dialog, // Pointer to widget
+                GUI_COUNTOF(l_dialog), // Number of widgets
+                &onDialogGUI, //Callback to call on completion
+                0,    // Parent
+                0,    // X0 position
+                0     // Y0 position
+            );
+
+            WM_Exec();                 /* update the screen and invoke WM callbacks */
             status_ = Q_HANDLED();
             break;
         }
@@ -149,6 +229,7 @@ static QState GuiMgr_Active(GuiMgr * const me, QEvt const * const e) {
     }
     return status_;
 }
+
 
 
 /**

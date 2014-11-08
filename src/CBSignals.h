@@ -123,6 +123,14 @@ enum DbgMgrSignals {
    DBG_MAX_SIG
 };
 
+/**
+ * @enum Signals used by DbgMgr
+ */
+enum GuiMgrSignals {
+   GUI_TEST_SIG = DBG_MAX_SIG, /** This signal must start at the previous category max signal */
+   GUI_MAX_SIG
+};
+
 /* INSERT NEW SIGNAL CATEGORIES BEFORE HERE...POINT MAX_SHARED_SIG TO LAST SIGNAL */
 
 /**
@@ -131,7 +139,7 @@ enum DbgMgrSignals {
  * before it.
  */
 enum FinalSignal {
-   MAX_SHARED_SIG = DBG_MAX_SIG,  /**< Last published shared signal - should always be at the bottom of this list */
+   MAX_SHARED_SIG = GUI_MAX_SIG,  /**< Last published shared signal - should always be at the bottom of this list */
 };
 
 /* Exported constants --------------------------------------------------------*/
