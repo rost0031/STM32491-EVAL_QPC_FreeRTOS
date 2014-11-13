@@ -37,7 +37,7 @@ DBG_DEFINE_THIS_MODULE( DBG_MODL_GENERAL ); /* For debug system to ID this modul
 /* Private macros ------------------------------------------------------------*/
 /* Private variables and Local objects ---------------------------------------*/
 static QEvt const    *l_CommStackMgrQueueSto[100];  /**< Storage for CommStackMgr event Queue */
-static QEvt const    *l_LWIPMgrQueueSto[200];       /**< Storage for LWIPMgr event Queue */
+static QEvt const    *l_LWIPMgrQueueSto[100];       /**< Storage for LWIPMgr event Queue */
 static QEvt const    *l_SerialMgrQueueSto[200];     /**< Storage for SerialMgr event Queue */
 static QEvt const    *l_I2CBusMgrQueueSto[100][MAX_I2C_BUS];    /**< Storage for I2CBusMgr event Queue */
 static QEvt const    *l_I2C1DevMgrQueueSto[100];    /**< Storage for I2C1DevMgr event Queue */

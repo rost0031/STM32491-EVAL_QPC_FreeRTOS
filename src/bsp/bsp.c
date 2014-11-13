@@ -109,7 +109,9 @@ void BSP_init( void )
 //   SDRAM_Init();
 
    /* 7. Initialize the touchscreen */
+   dbg_slow_printf("Starting initializing touch screen\n");
    BSP_TSC_Init();
+   dbg_slow_printf("Finished initializing touch screen\n");
 }
 
 /******************************************************************************/
@@ -136,6 +138,7 @@ void BSP_Delay(__IO uint32_t nCount)
 /******************************************************************************/
 uint32_t BSP_TSC_Init(void)
 {
+   dbg_slow_printf("Enter\n");
    uint32_t ret = 1;
 
    TS_Pressed = 0;
@@ -144,12 +147,71 @@ uint32_t BSP_TSC_Init(void)
       dbg_slow_printf("IOE16 initialized\n");
       /* Enable Interrupt */
       IOE16_ITConfig(IOE16_TS_IT);
-      /* Read GPMR register */
-      uint8_t regValRead = IOE16_I2C_ReadDeviceRegister(IOE16_REG_GPMR_LSB);
-      dbg_slow_printf("Read 0x%02x from IOE16 IOE16_REG_GPMR_LSB register\n", regValRead);
-      ret = 0;
-   }
 
+      IOE16_I2C_ReadDeviceRegister(IOE16_REG_GPMR_LSB);
+
+      IOE16_GITCmd(ENABLE);
+
+//      /* Read all the registers on the damn thing */
+//      __IO uint16_t tmp = 0x0000;
+//
+//      /* Read the device ID  */
+//      tmp = IOE16_I2C_ReadDeviceRegister(IOE16_REG_CHP_ID_MSB);
+//      tmp = (uint32_t)(tmp << 8);
+//      tmp |= (uint32_t)IOE16_I2C_ReadDeviceRegister(IOE16_REG_CHP_ID_LSB);
+//      dbg_slow_printf("Read 0x%04x from IOE16_REG_CHP_ID (0x%02x) register\n", tmp, IOE16_REG_CHP_ID_LSB);
+//      tmp = 0x0000;
+//
+//      tmp = (uint16_t)IOE16_I2C_ReadDeviceRegister(IOE16_REG_ID_VER);
+//      dbg_slow_printf("Read 0x%04x from IOE16_REG_ID (0x%02x) register\n", tmp, IOE16_REG_ID_VER);
+//      tmp = 0x0000;
+//
+//      tmp = (uint16_t)IOE16_I2C_ReadDeviceRegister(IOE16_REG_SYS_CTRL);
+//      dbg_slow_printf("Read 0x%04x from IOE16_REG_SYS_CTRL (0x%02x) register\n", tmp, IOE16_REG_SYS_CTRL);
+//      tmp = 0x0000;
+//
+//      /* Read the interrupt control register */
+//      tmp = IOE16_I2C_ReadDeviceRegister(IOE16_REG_IEGPIOR_MSB);
+//      tmp = (uint32_t)(tmp << 8);
+//      tmp |= (uint32_t)IOE16_I2C_ReadDeviceRegister(IOE16_REG_IEGPIOR_LSB);
+//      dbg_slow_printf("Read 0x%04x from IOE16_REG_IEGPIOR (0x%02x) register\n", tmp, IOE16_REG_IEGPIOR_LSB);
+//      tmp = 0x0000;
+//
+//      tmp = IOE16_I2C_ReadDeviceRegister(IOE16_REG_ISGPIOR_MSB);
+//      tmp = (uint32_t)(tmp << 8);
+//      tmp |= (uint32_t)IOE16_I2C_ReadDeviceRegister(IOE16_REG_ISGPIOR_LSB);
+//      dbg_slow_printf("Read 0x%04x from IOE16_REG_ISGPIOR (0x%02x) register\n", tmp, IOE16_REG_ISGPIOR_LSB);
+//      tmp = 0x0000;
+//
+//      /* Read GPMR register */
+//      tmp = IOE16_I2C_ReadDeviceRegister(IOE16_REG_GPMR_MSB);
+//      tmp = (uint32_t)(tmp << 8);
+//      tmp |= (uint32_t)IOE16_I2C_ReadDeviceRegister(IOE16_REG_GPMR_LSB);
+//      dbg_slow_printf("Read 0x%04x from IOE16_REG_GPMR (0x%02x) register\n", tmp, IOE16_REG_GPMR_LSB);
+//      tmp = 0x0000;
+//
+//      tmp = IOE16_I2C_ReadDeviceRegister(IOE16_REG_GPSR_MSB);
+//      tmp = (uint32_t)(tmp << 8);
+//      tmp |= (uint32_t)IOE16_I2C_ReadDeviceRegister(IOE16_REG_GPSR_LSB);
+//      dbg_slow_printf("Read 0x%04x from IOE16_REG_GPSR (0x%02x) register\n", tmp, IOE16_REG_GPSR_LSB);
+//      tmp = 0x0000;
+//
+//      tmp = IOE16_I2C_ReadDeviceRegister(IOE16_REG_GPDR_MSB);
+//      tmp = (uint32_t)(tmp << 8);
+//      tmp |= (uint32_t)IOE16_I2C_ReadDeviceRegister(IOE16_REG_GPDR_LSB);
+//      dbg_slow_printf("Read 0x%04x from IOE16_REG_GPDR (0x%02x) register\n", tmp, IOE16_REG_GPDR_LSB);
+//      tmp = 0x0000;
+//
+//      tmp = IOE16_I2C_ReadDeviceRegister(IOE16_REG_GPPIR_MSB);
+//      tmp = (uint32_t)(tmp << 8);
+//      tmp |= (uint32_t)IOE16_I2C_ReadDeviceRegister(IOE16_REG_GPPIR_LSB);
+//      dbg_slow_printf("Read 0x%04x from IOE16_REG_GPPIR (0x%02x) register\n", tmp, IOE16_REG_GPPIR_LSB);
+//      tmp = 0x0000;
+
+      ret = 0;
+//      IOE16_GetITStatus();
+   }
+dbg_slow_printf("Exit\n");
    return ret;
 }
 

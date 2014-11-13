@@ -143,6 +143,18 @@ void DMA2_Stream7_IRQHandler( void ) __attribute__((__interrupt__));
 void ETH_IRQHandler( void ) __attribute__((__interrupt__));
 
 /**
+ * @brief   This ISR function handles the SysTick global interrupt request.
+ *
+ * This ISR function mostly just processes all the QPC events that are ready to
+ * be executed.  If QSPY is compiled in, it also handles its timing and clock
+ * rollover.  The SysTick interrupt is fired @def BSP_TICKS_PER_SEC / second.
+ *
+ * @param     None
+ * @retval    None
+ */
+void EXTI9_5_IRQHandler(void) __attribute__((__interrupt__));
+
+/**
  * @brief   This ISR function handles I2C1 bus event interrupt requests.
  * See i2c.c for implementation.
  * @param  None

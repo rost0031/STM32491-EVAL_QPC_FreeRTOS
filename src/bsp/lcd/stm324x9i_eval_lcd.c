@@ -33,6 +33,10 @@
 #include "stm324x9i_eval_lcd.h"
 #include "fonts.c"
 #include "i2c.h"
+#include "dbg_cntrl.h"
+
+
+DBG_DEFINE_THIS_MODULE( DBG_MODL_GUI ); /* For debug system to ID this module */
 
 /** @addtogroup Utilities
   * @{
@@ -232,7 +236,7 @@ void LCD_Init(void)
   LCD_AF_GPIOConfig();  
   
   /* Configure the FMC Parallel interface : SDRAM is used as Frame Buffer for LCD */
-  SDRAM_Init();
+//  SDRAM_Init();
   
   /* Check if the LCD is AMPIRE480272 or AMPIRE640480 */
   LCD_CheckDevice();
@@ -1936,9 +1940,11 @@ static void LCD_I2C_Config(void)
   I2C_InitTypeDef I2C_InitStructure;
   GPIO_InitTypeDef GPIO_InitStructure; 
   
+  dbg_slow_printf("Initializing LCD I2C interface\n");
+
   /* If the I2C peripheral is already enabled, don't reconfigure it */
-  if ((I2C1->CR1 & I2C_CR1_PE) == 0)
-  { 
+  if ((I2C1->CR1 & I2C_CR1_PE) == 0) {
+     dbg_slow_printf("Reconfiguring LCD I2C interface\n");
     /* Enable LCD_I2C and LCD_I2C_GPIO_PORT & Alternate Function clocks */
     RCC_APB1PeriphClockCmd(LCD_I2C_CLK, ENABLE);
     RCC_AHB1PeriphClockCmd(LCD_I2C_SCL_GPIO_CLK | LCD_I2C_SDA_GPIO_CLK, ENABLE);
@@ -1974,6 +1980,8 @@ static void LCD_I2C_Config(void)
     I2C_InitStructure.I2C_ClockSpeed = I2C_SPEED;
     
     I2C_Init(LCD_I2C, &I2C_InitStructure);
+  } else {
+     dbg_slow_printf("LCD I2C interface already configured. Not touching.\n");
   }
 }  
   

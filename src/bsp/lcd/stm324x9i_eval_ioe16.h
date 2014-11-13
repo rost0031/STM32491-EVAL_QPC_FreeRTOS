@@ -369,6 +369,8 @@ uint8_t  IOE16_I2C_WriteDeviceRegister(uint8_t RegisterAddr, uint8_t RegisterVal
 uint8_t  IOE16_I2C_ReadDeviceRegister(uint8_t RegisterAddr);
 uint16_t IOE16_I2C_ReadDataBuffer(uint32_t RegisterAddr);
 
+void TSC_EventCallback( void );
+
 /** 
   * @brief  Timeout user callback function. This function is called when a timeout
   *         condition occurs during communication with IO Expander. Only prototype

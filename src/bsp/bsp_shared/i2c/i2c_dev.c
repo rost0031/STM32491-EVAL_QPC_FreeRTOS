@@ -20,6 +20,7 @@
 #include "Shared.h"
 #include "stm32f4xx_dma.h"                           /* For STM32 DMA support */
 #include "stm32f4xx_i2c.h"                           /* For STM32 DMA support */
+#include "stm324x9i_eval_ioe16.h"
 
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */

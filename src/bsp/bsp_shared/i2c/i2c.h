@@ -25,7 +25,7 @@ extern "C" {
 #include "i2c_dev.h"
 
 /* Exported defines ----------------------------------------------------------*/
-#define I2C_SPEED             400000 /**< Speed of the I2C Bus */
+#define I2C_SPEED             100000 /**< Speed of the I2C Bus */
 #define MAX_I2C_WRITE_LEN     20  /**< Max size of the I2C buffer for writing */
 #define MAX_I2C_READ_LEN     256  /**< Max size of the I2C buffer for reading */
 

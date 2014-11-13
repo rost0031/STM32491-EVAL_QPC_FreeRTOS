@@ -297,9 +297,9 @@ static QState I2C1DevMgr_Active(I2C1DevMgr * const me, QEvt const * const e) {
             QTimeEvt_disarm(&me->i2cWriteTimerEvt);
 
             /* Enable and test the IO expander */
-            DBG_printf("Initializing IOExpander\n");
-            uint8_t status = IOE16_Config();
-            DBG_printf("Init returned status %d\n", status);
+//            DBG_printf("Initializing IOExpander\n");
+//            uint8_t status = IOE16_Config();
+//            DBG_printf("Init returned status %d\n", status);
             status_ = Q_HANDLED();
             break;
         }

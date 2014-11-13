@@ -864,8 +864,11 @@ static void LCD_LL_Init(uint32_t LayerIndex)
       LTDC_Init(&LTDC_InitStruct);
 
       LTDC_ITConfig(LTDC_IT_LI, ENABLE);
-      NVIC_SetPriority(LTDC_IRQn, LCD_PRIO);
-      NVIC_EnableIRQ(LTDC_IRQn);
+//      NVIC_SetPriority(LTDC_IRQn, LCD_PRIO);
+//      NVIC_EnableIRQ(LTDC_IRQn);
+
+        /* Enable and set LCD Interrupt */
+      NVIC_Config(LTDC_IRQn, LCD_PRIO);
 
    }
 

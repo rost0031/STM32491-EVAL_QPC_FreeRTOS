@@ -19,6 +19,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "Shared.h"                                   /*  Common Declarations */
 #include "qp_port.h"                                        /* for QP support */
+#include "qf_port.h"
 #include "stm32f4xx.h"
 #include "stm32f4xx_gpio.h"
 #include "stm32f4xx_rcc.h"
@@ -103,6 +104,7 @@ typedef enum KernelAwareISRs {   /* ISR priorities starting from the highest urg
 	I2C1_EV_PRIO,
 	ETH_PRIO,                      /* Ethernet should take the lowest priority */
 	ETH_LINK_PRIO,
+   EXTI_8_PRIO,
 	/* ... */
 	MAX_KERNEL_AWARE_CMSIS_PRI                             /* keep always last */
 } ISR_Priority;
