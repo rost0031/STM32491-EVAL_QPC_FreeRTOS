@@ -109,14 +109,14 @@ QACTIVE_POST(AO_GuiMgr, &amp;qEvt, me);</action>
      <tran trig="GUI_LCD_POS_UPDATE_TIMER">
       <action>/* Direct post an event to request LCD position update data from I2C1DevMgr AO. */
 static QEvt const qEvt = { TSC_POS_READ_SIG, 0U, 0U };
-QACTIVE_POST(AO_I2C1DevMgr, &amp;qEvt, me);
-DBG_printf(&quot;Timer\n&quot;);</action>
+QACTIVE_POST(AO_I2C1DevMgr, &amp;qEvt, me);</action>
       <tran_glyph conn="3,80,3,-1,20">
        <action box="0,-2,24,2"/>
       </tran_glyph>
      </tran>
      <tran trig="GUI_LCD_POS_DATA">
-      <action>char tmp[120];
+      <action>/*
+char tmp[120];
 memset(tmp, 0, sizeof(tmp));
 uint16_t tmpLen = 0;
 CBErrorCode err = CON_hexToStr(
@@ -132,6 +132,7 @@ if ( ERR_NONE != err ) {
     WRN_printf(&quot;Got an error converting hex array to string.  Error: 0x%08x\n&quot;, err);
 }
 DBG_printf(&quot;Read LCD POS array: %s\n&quot;, tmp);
+*/
 
 /* Update the TSC position and notify the GUI/LCD system. */
 GUI_PID_STATE TS_State;
@@ -142,7 +143,6 @@ y = ((I2CBusDataEvt const *)e)-&gt;dataBuf[4] | ((I2CBusDataEvt const *)e)-&gt;d
 DBG_printf(&quot;X=%0x, Y=%0x\n&quot;, x, y);
 if(((x == 0xFFFF ) &amp;&amp; (y == 0xFFFF ))|| ((x == 0 ) &amp;&amp; (y == 0 ))) {
     me-&gt;tsPressed = false;
-    DBG_printf(&quot;setting stPressed = false\n&quot;);
 }
 
 if ( me-&gt;tsPressed == true ) {
@@ -160,12 +160,10 @@ if ( me-&gt;tsPressed == true ) {
         &amp;me-&gt;lcdTimerEvt,
         SEC_TO_TICKS( LL_MAX_TIME_SEC_LCD_UPDATE )
     );
-    DBG_printf(&quot;Rearming timer\n&quot;);
 } else {
     /* TSC not being touched.  Turn off the timer that triggers
      * GUI_LCD_POS_UPDATE_TIMER signals which request TSC position data.*/
     QTimeEvt_disarm(&amp;me-&gt;lcdTimerEvt);
-    DBG_printf(&quot;Disarming timer\n&quot;);
 }
 
 TS_State.x = me-&gt;_x;

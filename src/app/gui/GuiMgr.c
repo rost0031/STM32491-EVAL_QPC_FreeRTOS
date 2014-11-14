@@ -279,12 +279,12 @@ static QState GuiMgr_Active(GuiMgr * const me, QEvt const * const e) {
             /* Direct post an event to request LCD position update data from I2C1DevMgr AO. */
             static QEvt const qEvt = { TSC_POS_READ_SIG, 0U, 0U };
             QACTIVE_POST(AO_I2C1DevMgr, &qEvt, me);
-            DBG_printf("Timer\n");
             status_ = Q_HANDLED();
             break;
         }
         /* ${AOs::GuiMgr::SM::Active::GUI_LCD_POS_DATA} */
         case GUI_LCD_POS_DATA_SIG: {
+            /*
             char tmp[120];
             memset(tmp, 0, sizeof(tmp));
             uint16_t tmpLen = 0;
@@ -301,6 +301,7 @@ static QState GuiMgr_Active(GuiMgr * const me, QEvt const * const e) {
                 WRN_printf("Got an error converting hex array to string.  Error: 0x%08x\n", err);
             }
             DBG_printf("Read LCD POS array: %s\n", tmp);
+            */
 
             /* Update the TSC position and notify the GUI/LCD system. */
             GUI_PID_STATE TS_State;
@@ -311,7 +312,6 @@ static QState GuiMgr_Active(GuiMgr * const me, QEvt const * const e) {
             DBG_printf("X=%0x, Y=%0x\n", x, y);
             if(((x == 0xFFFF ) && (y == 0xFFFF ))|| ((x == 0 ) && (y == 0 ))) {
                 me->tsPressed = false;
-                DBG_printf("setting stPressed = false\n");
             }
 
             if ( me->tsPressed == true ) {
@@ -329,12 +329,10 @@ static QState GuiMgr_Active(GuiMgr * const me, QEvt const * const e) {
                     &me->lcdTimerEvt,
                     SEC_TO_TICKS( LL_MAX_TIME_SEC_LCD_UPDATE )
                 );
-                DBG_printf("Rearming timer\n");
             } else {
                 /* TSC not being touched.  Turn off the timer that triggers
                  * GUI_LCD_POS_UPDATE_TIMER signals which request TSC position data.*/
                 QTimeEvt_disarm(&me->lcdTimerEvt);
-                DBG_printf("Disarming timer\n");
             }
 
             TS_State.x = me->_x;
