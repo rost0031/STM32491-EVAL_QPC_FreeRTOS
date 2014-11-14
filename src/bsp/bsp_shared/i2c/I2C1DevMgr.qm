@@ -496,7 +496,7 @@ if ( ERR_NONE != err ) {
     WRN_printf(&quot;Got an error converting hex array to string.  Error: 0x%08x\n&quot;, err);
 }
 LOG_printf(&quot;Read %s\n&quot;, tmp);</action>
-         <choice_glyph conn="111,44,5,1,9,8,-93">
+         <choice_glyph conn="111,44,5,1,9,10,-93">
           <action box="1,-2,10,2"/>
          </choice_glyph>
         </choice>
@@ -542,7 +542,7 @@ ERR_printf(
     &quot;Got I2C_BUS_DONE with error: 0x%08x\n&quot;,
     me-&gt;errorCode
 );</action>
-         <choice_glyph conn="158,22,4,1,8,-17,23,-114">
+         <choice_glyph conn="158,22,4,1,8,-17,25,-114">
           <action box="-6,6,7,2"/>
          </choice_glyph>
         </choice>
@@ -1798,113 +1798,6 @@ LOG_printf(&quot;Read %s\n&quot;, tmp);</action>
         </tran_glyph>
        </tran>
        <state_glyph node="74,174,18,13">
-        <entry box="1,2,6,2"/>
-        <exit box="1,4,6,2"/>
-       </state_glyph>
-      </state>
-      <state name="DisableAckTSC">
-       <entry>/* Set error code */
-me-&gt;errorCode = ERR_I2C1DEV_ACK_DIS_TIMEOUT;
-
-/* Set timer */
-QTimeEvt_rearm(
-    &amp;me-&gt;i2cOpTimerEvt,
-    SEC_TO_TICKS( HL_MAX_TOUT_SEC_I2C_EV5 )
-);
-
-/* Directly post an event to the appropriate I2CBusMgr AO */
-static QEvt const qEvt = { I2C_BUS_ACK_DIS_SIG, 0U, 0U };
-QACTIVE_POST(AO_I2CBusMgr[me-&gt;iBus], &amp;qEvt, me);
-
-DBG_printf(&quot;ActivePosted I2C_BUS_ACK_DIS\n&quot;);</entry>
-       <exit>QTimeEvt_disarm(&amp;me-&gt;i2cOpTimerEvt);</exit>
-       <tran trig="I2C_BUS_DONE">
-        <choice target="../../../../1">
-         <guard>else</guard>
-         <action>me-&gt;errorCode = ((I2CStatusEvt const *)e)-&gt;errorCode;
-ERR_printf(
-    &quot;Got I2C_BUS_DONE with error: 0x%08x\n&quot;,
-    me-&gt;errorCode
-);</action>
-         <choice_glyph conn="112,184,4,1,6,-85">
-          <action box="0,2,10,2"/>
-         </choice_glyph>
-        </choice>
-        <choice target="../../../37">
-         <guard brief="NoErr?">ERR_NONE == ((I2CStatusEvt const *)e)-&gt;errorCode</guard>
-         <action>DBG_printf(&quot;Got I2C_BUS_DONE with no error\n&quot;);</action>
-         <choice_glyph conn="112,184,5,3,6,1,2">
-          <action box="1,-2,7,2"/>
-         </choice_glyph>
-        </choice>
-        <tran_glyph conn="98,184,3,-1,14">
-         <action box="0,-2,14,2"/>
-        </tran_glyph>
-       </tran>
-       <state_glyph node="98,174,16,13">
-        <entry box="1,2,6,2"/>
-        <exit box="1,4,6,2"/>
-       </state_glyph>
-      </state>
-      <state name="ReadMemDMATSC1">
-       <entry>/* Set error code */
-me-&gt;errorCode = ERR_I2C1DEV_READ_MEM_TIMEOUT;
-
-/* Set timer */
-QTimeEvt_rearm(
-    &amp;me-&gt;i2cOpTimerEvt,
-    SEC_TO_TICKS( HL_MAX_TOUT_SEC_I2C_READ )
-);
-
-/* Allocate and directly post an event to the appropriate I2CBusMgr AO */
-I2CReadMemReqEvt *i2cReadMemEvt = Q_NEW( I2CReadMemReqEvt, I2C_BUS_READ_MEM_SIG );
-i2cReadMemEvt-&gt;i2cBus           = me-&gt;iBus;
-i2cReadMemEvt-&gt;addr             = me-&gt;addrStart;
-i2cReadMemEvt-&gt;addrSize         = I2C_getI2C1MemAddrSize(me-&gt;iDev);
-i2cReadMemEvt-&gt;memAccessType    = I2C_MEM_BYTE;
-i2cReadMemEvt-&gt;bytes            = 1; // This is how many bytes we'll read over DMA
-QACTIVE_POST(AO_I2CBusMgr[me-&gt;iBus], (QEvt *)i2cReadMemEvt, me);</entry>
-       <exit>QTimeEvt_disarm(&amp;me-&gt;i2cOpTimerEvt);</exit>
-       <tran trig="I2C_BUS_DONE">
-        <choice target="../../../../1">
-         <guard>else</guard>
-         <action>me-&gt;errorCode = ((I2CStatusEvt const *)e)-&gt;errorCode;
-ERR_printf(
-    &quot;Got I2C_BUS_DONE with error: 0x%08x\n&quot;,
-    me-&gt;errorCode
-);</action>
-         <choice_glyph conn="134,184,4,1,7,-107">
-          <action box="0,2,10,2"/>
-         </choice_glyph>
-        </choice>
-        <choice>
-         <guard brief="NoErr?">ERR_NONE == ((I2CBusDataEvt const *)e)-&gt;errorCode</guard>
-         <action>LOG_printf(&quot;Got I2C_BUS_DONE with no error\n&quot;);
-char tmp[120];
-memset(tmp, 0, sizeof(tmp));
-uint16_t tmpLen = 0;
-CBErrorCode err = CON_hexToStr(
-    (const uint8_t *)((I2CBusDataEvt const *)e)-&gt;dataBuf, // data to convert
-    ((I2CBusDataEvt const *)e)-&gt;dataLen, // length of data to convert
-    tmp,                                 // where to write output
-    sizeof(tmp),                         // max size of output buffer
-    &amp;tmpLen,                             // size of the resulting output
-    0,                                   // no columns
-    ' '                                  // separator
-);
-if ( ERR_NONE != err ) {
-    WRN_printf(&quot;Got an error converting hex array to string.  Error: 0x%08x\n&quot;, err);
-}
-LOG_printf(&quot;Read %s\n&quot;, tmp);</action>
-         <choice_glyph conn="134,184,5,-1,8,1,2">
-          <action box="1,-2,10,2"/>
-         </choice_glyph>
-        </choice>
-        <tran_glyph conn="120,184,3,-1,14">
-         <action box="0,-2,14,2"/>
-        </tran_glyph>
-       </tran>
-       <state_glyph node="120,174,18,13">
         <entry box="1,2,6,2"/>
         <exit box="1,4,6,2"/>
        </state_glyph>
