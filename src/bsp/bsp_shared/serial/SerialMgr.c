@@ -64,7 +64,7 @@ typedef struct {
     QEQueue deferredEvtQueue;
 
     /**< Storage for deferred event queue. */
-    QTimeEvt const * deferredEvtQSto[100];
+    QTimeEvt const * deferredEvtQSto[200];
 
     /**< Keep track of whether serial debug is enabled or disabled.  Starts out enabled
      * but an event can enable it. */

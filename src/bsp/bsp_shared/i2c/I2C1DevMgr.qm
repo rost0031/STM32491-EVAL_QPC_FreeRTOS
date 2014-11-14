@@ -129,7 +129,8 @@ QActive_subscribe((QActive *)me, EEPROM_EUI64_READ_SIG);
 QActive_subscribe((QActive *)me, EEPROM_RAW_MEM_WRITE_SIG);
 QActive_subscribe((QActive *)me, EEPROM_RAW_MEM_READ_SIG);
 QActive_subscribe((QActive *)me, IOEXP_REG_READ_SIG);
-QActive_subscribe((QActive *)me, IOEXP_REG_WRITE_SIG);</action>
+QActive_subscribe((QActive *)me, IOEXP_REG_WRITE_SIG);
+QActive_subscribe((QActive *)me, TSC_POS_READ_SIG);</action>
      <initial_glyph conn="1,2,4,3,9,5">
       <action box="0,-2,6,2"/>
      </initial_glyph>
@@ -165,12 +166,7 @@ QTimeEvt_postIn(
     (QActive *)me,
     SEC_TO_TICKS( HL_MAX_TOUT_SEC_I2C_EV5 )
 );
-QTimeEvt_disarm(&amp;me-&gt;i2cWriteTimerEvt);
-
-/* Enable and test the IO expander */
-DBG_printf(&quot;Initializing IOExpander\n&quot;);
-uint8_t status = IOE16_Config();
-DBG_printf(&quot;Init returned status %d\n&quot;, status);</entry>
+QTimeEvt_disarm(&amp;me-&gt;i2cWriteTimerEvt);</entry>
      <state name="Busy">
       <documentation>/**
  * @brief   This state indicates that the I2C is currently busy and cannot
@@ -190,11 +186,11 @@ QTimeEvt_rearm(
       <exit>QTimeEvt_disarm( &amp;me-&gt;i2cTimerEvt ); /* Disarm timer on exit */</exit>
       <tran trig="I2C1_DEV_TIMEOUT" target="../../1">
        <action>ERR_printf(&quot;I2C1Dev timeout occurred with error: 0x%08x\n&quot;, me-&gt;errorCode);</action>
-       <tran_glyph conn="47,11,3,1,-22">
+       <tran_glyph conn="46,11,3,1,-19">
         <action box="-17,-2,16,2"/>
        </tran_glyph>
       </tran>
-      <tran trig="EEPROM_RAW_MEM_READ, EEPROM_SN_READ, EEPROM_EUI64_READ, EEPROM_RAW_MEM_WRITE, IOEXP_REG_READ, IOEXP_REG_WRITE">
+      <tran trig="EEPROM_RAW_MEM_READ, EEPROM_SN_READ, EEPROM_EUI64_READ, EEPROM_RAW_MEM_WRITE, IOEXP_REG_READ, IOEXP_REG_WRITE, TSC_POS_READ">
        <action>if (QEQueue_getNFree(&amp;me-&gt;deferredEvtQueue) &gt; 0) {
    /* defer the request - this event will be handled
     * when the state machine goes back to Idle state */
@@ -204,13 +200,13 @@ QTimeEvt_rearm(
    /* notify the request sender that the request was ignored.. */
    ERR_printf(&quot;Unable to defer I2C request\n&quot;);
 }</action>
-       <tran_glyph conn="47,181,3,-1,22">
-        <action box="0,-12,21,11"/>
+       <tran_glyph conn="46,224,3,-1,21">
+        <action box="0,-14,21,13"/>
        </tran_glyph>
       </tran>
       <tran trig="I2C1_DEV_OP_TIMEOUT" target="../../1">
        <action>ERR_printf(&quot;I2C1Dev Op timeout occurred with error: 0x%08x\n&quot;, me-&gt;errorCode);</action>
-       <tran_glyph conn="47,81,3,1,-22">
+       <tran_glyph conn="46,13,3,1,-19">
         <action box="-20,-2,21,2"/>
        </tran_glyph>
       </tran>
@@ -238,22 +234,22 @@ ERR_printf(
     &quot;Got I2C_BUS_DONE with error: 0x%08x\n&quot;,
     me-&gt;errorCode
 );</action>
-         <choice_glyph conn="96,26,4,1,8,-71">
+         <choice_glyph conn="85,22,4,1,5,-58">
           <action box="0,2,10,2"/>
          </choice_glyph>
         </choice>
         <choice target="../../../4">
          <guard brief="NoErr?">ERR_NONE == ((I2CStatusEvt const *)e)-&gt;errorCode</guard>
          <action>DBG_printf(&quot;Got I2C_BUS_DONE with no error\n&quot;);</action>
-         <choice_glyph conn="96,26,5,3,9,1,3">
+         <choice_glyph conn="85,22,5,3,5,1,3">
           <action box="1,-2,10,2"/>
          </choice_glyph>
         </choice>
-        <tran_glyph conn="82,26,3,-1,14">
+        <tran_glyph conn="71,22,3,-1,14">
          <action box="0,-2,14,2"/>
         </tran_glyph>
        </tran>
-       <state_glyph node="82,16,18,13">
+       <state_glyph node="71,12,16,13">
         <entry box="1,2,6,2"/>
         <exit box="1,4,6,2"/>
        </state_glyph>
@@ -284,22 +280,22 @@ ERR_printf(
     &quot;Got I2C_BUS_DONE with error: 0x%08x\n&quot;,
     me-&gt;errorCode
 );</action>
-         <choice_glyph conn="122,26,4,1,9,-97">
+         <choice_glyph conn="107,22,4,1,6,-80">
           <action box="0,2,10,2"/>
          </choice_glyph>
         </choice>
         <choice target="../../../5">
          <guard brief="NoErr?">ERR_NONE == ((I2CStatusEvt const *)e)-&gt;errorCode</guard>
          <action>DBG_printf(&quot;Got I2C_BUS_DONE with no error\n&quot;);</action>
-         <choice_glyph conn="122,26,5,3,9,1,3">
+         <choice_glyph conn="107,22,5,3,5,1,3">
           <action box="1,-2,10,2"/>
          </choice_glyph>
         </choice>
-        <tran_glyph conn="108,26,3,-1,14">
+        <tran_glyph conn="93,22,3,-1,14">
          <action box="0,-2,14,2"/>
         </tran_glyph>
        </tran>
-       <state_glyph node="108,16,18,13">
+       <state_glyph node="93,12,16,13">
         <entry box="1,2,6,2"/>
         <exit box="1,4,6,2"/>
        </state_glyph>
@@ -330,7 +326,7 @@ ERR_printf(
     &quot;Got I2C_BUS_DONE with error: 0x%08x\n&quot;,
     me-&gt;errorCode
 );</action>
-         <choice_glyph conn="148,26,4,1,10,-123">
+         <choice_glyph conn="129,22,4,1,7,-102">
           <action box="0,2,10,2"/>
          </choice_glyph>
         </choice>
@@ -339,25 +335,25 @@ ERR_printf(
          <action>DBG_printf(&quot;Got I2C_BUS_DONE with no error\n&quot;);</action>
          <choice target="../../../../6">
           <guard brief="Read?">I2C_OP_MEM_READ == me-&gt;i2cDevOp || I2C_OP_REG_READ == me-&gt;i2cDevOp</guard>
-          <choice_glyph conn="143,38,5,0,-88,5">
-           <action box="-11,-2,10,2"/>
+          <choice_glyph conn="137,22,4,0,10,-86,2">
+           <action box="-6,10,7,2"/>
           </choice_glyph>
          </choice>
          <choice target="../../../../9">
           <guard brief="Write?">I2C_OP_MEM_WRITE == me-&gt;i2cDevOp || I2C_OP_REG_WRITE == me-&gt;i2cDevOp</guard>
-          <choice_glyph conn="143,38,4,0,5">
-           <action box="0,2,10,2"/>
+          <choice_glyph conn="137,22,4,3,-7,7">
+           <action box="0,-9,10,2"/>
           </choice_glyph>
          </choice>
-         <choice_glyph conn="148,26,5,-1,9,12,-14">
+         <choice_glyph conn="129,22,5,-1,8">
           <action box="1,-2,10,2"/>
          </choice_glyph>
         </choice>
-        <tran_glyph conn="134,26,3,-1,14">
+        <tran_glyph conn="115,22,3,-1,14">
          <action box="0,-2,14,2"/>
         </tran_glyph>
        </tran>
-       <state_glyph node="134,16,18,13">
+       <state_glyph node="115,12,16,13">
         <entry box="1,2,6,2"/>
         <exit box="1,4,6,2"/>
        </state_glyph>
@@ -384,22 +380,22 @@ ERR_printf(
     &quot;Got I2C_BUS_DONE with error: 0x%08x\n&quot;,
     me-&gt;errorCode
 );</action>
-         <choice_glyph conn="67,53,4,1,4,-42">
+         <choice_glyph conn="63,44,4,1,5,-36">
           <action box="0,2,10,2"/>
          </choice_glyph>
         </choice>
         <choice target="../../../7">
          <guard brief="NoErr?">ERR_NONE == ((I2CStatusEvt const *)e)-&gt;errorCode</guard>
          <action>DBG_printf(&quot;Got I2C_BUS_DONE with no error\n&quot;);</action>
-         <choice_glyph conn="67,53,5,3,10,1,5">
+         <choice_glyph conn="63,44,5,3,8,1,2">
           <action box="1,-2,10,2"/>
          </choice_glyph>
         </choice>
-        <tran_glyph conn="53,53,3,-1,14">
+        <tran_glyph conn="49,44,3,-1,14">
          <action box="0,-2,14,2"/>
         </tran_glyph>
        </tran>
-       <state_glyph node="53,43,18,13">
+       <state_glyph node="49,34,18,13">
         <entry box="1,2,6,2"/>
         <exit box="1,4,6,2"/>
        </state_glyph>
@@ -430,22 +426,22 @@ ERR_printf(
     &quot;Got I2C_BUS_DONE with error: 0x%08x\n&quot;,
     me-&gt;errorCode
 );</action>
-         <choice_glyph conn="96,53,4,1,5,-71">
+         <choice_glyph conn="87,44,4,1,6,-60">
           <action box="0,2,10,2"/>
          </choice_glyph>
         </choice>
         <choice target="../../../8">
          <guard brief="NoErr?">ERR_NONE == ((I2CStatusEvt const *)e)-&gt;errorCode</guard>
          <action>DBG_printf(&quot;Got I2C_BUS_DONE with no error\n&quot;);</action>
-         <choice_glyph conn="96,53,5,3,10,1,2">
+         <choice_glyph conn="87,44,5,3,8,1,2">
           <action box="1,-2,10,2"/>
          </choice_glyph>
         </choice>
-        <tran_glyph conn="82,53,3,-1,14">
+        <tran_glyph conn="73,44,3,-1,14">
          <action box="0,-2,14,2"/>
         </tran_glyph>
        </tran>
-       <state_glyph node="82,43,18,13">
+       <state_glyph node="73,34,18,13">
         <entry box="1,2,6,2"/>
         <exit box="1,4,6,2"/>
        </state_glyph>
@@ -477,7 +473,7 @@ ERR_printf(
     &quot;Got I2C_BUS_DONE with error: 0x%08x\n&quot;,
     me-&gt;errorCode
 );</action>
-         <choice_glyph conn="122,53,4,1,6,-97">
+         <choice_glyph conn="111,44,4,1,7,-84">
           <action box="0,2,10,2"/>
          </choice_glyph>
         </choice>
@@ -500,15 +496,15 @@ if ( ERR_NONE != err ) {
     WRN_printf(&quot;Got an error converting hex array to string.  Error: 0x%08x\n&quot;, err);
 }
 LOG_printf(&quot;Read %s\n&quot;, tmp);</action>
-         <choice_glyph conn="122,53,5,1,9,8,-106">
+         <choice_glyph conn="111,44,5,1,9,8,-93">
           <action box="1,-2,10,2"/>
          </choice_glyph>
         </choice>
-        <tran_glyph conn="108,53,3,-1,14">
+        <tran_glyph conn="97,44,3,-1,14">
          <action box="0,-2,14,2"/>
         </tran_glyph>
        </tran>
-       <state_glyph node="108,43,18,13">
+       <state_glyph node="97,34,18,13">
         <entry box="1,2,6,2"/>
         <exit box="1,4,6,2"/>
        </state_glyph>
@@ -546,8 +542,8 @@ ERR_printf(
     &quot;Got I2C_BUS_DONE with error: 0x%08x\n&quot;,
     me-&gt;errorCode
 );</action>
-         <choice_glyph conn="148,53,4,1,11,-123">
-          <action box="0,2,10,2"/>
+         <choice_glyph conn="158,22,4,1,8,-17,23,-114">
+          <action box="-6,6,7,2"/>
          </choice_glyph>
         </choice>
         <choice target="../../../10">
@@ -569,15 +565,15 @@ if ( ERR_NONE != err ) {
     WRN_printf(&quot;Got an error converting hex array to string.  Error: 0x%08x\n&quot;, err);
 }
 LOG_printf(&quot;Read %s\n&quot;, tmp);</action>
-         <choice_glyph conn="148,53,5,1,9,15,-19">
+         <choice_glyph conn="158,22,5,1,13,19,-2">
           <action box="1,-2,10,2"/>
          </choice_glyph>
         </choice>
-        <tran_glyph conn="134,53,3,-1,14">
+        <tran_glyph conn="144,22,3,-1,14">
          <action box="0,-2,14,2"/>
         </tran_glyph>
        </tran>
-       <state_glyph node="134,43,18,13">
+       <state_glyph node="144,12,18,13">
         <entry box="1,2,6,2"/>
         <exit box="1,4,6,2"/>
        </state_glyph>
@@ -591,11 +587,11 @@ QTimeEvt_rearm(
        <exit>QTimeEvt_disarm(&amp;me-&gt;i2cWriteTimerEvt);</exit>
        <tran trig="EEPROM_POST_WRITE_TIMER" target="../../../1">
         <action>DBG_printf(&quot;Write to EEPROM finished with error: 0x%08x\n&quot;, me-&gt;errorCode);</action>
-        <tran_glyph conn="124,68,3,1,-99">
-         <action box="-24,-2,24,2"/>
+        <tran_glyph conn="145,47,3,1,26,9,-144">
+         <action box="0,-2,24,2"/>
         </tran_glyph>
        </tran>
-       <state_glyph node="124,65,14,6">
+       <state_glyph node="145,37,24,12">
         <entry box="1,2,6,2"/>
         <exit box="1,4,6,2"/>
        </state_glyph>
@@ -628,22 +624,22 @@ ERR_printf(
     &quot;Got I2C_BUS_DONE with error: 0x%08x\n&quot;,
     me-&gt;errorCode
 );</action>
-         <choice_glyph conn="71,26,4,1,7,-46">
+         <choice_glyph conn="63,22,4,1,4,-36">
           <action box="0,2,10,2"/>
          </choice_glyph>
         </choice>
         <choice target="../../../3">
          <guard brief="NoErr?">ERR_NONE == ((I2CStatusEvt const *)e)-&gt;errorCode</guard>
          <action>DBG_printf(&quot;Got I2C_BUS_DONE with no error\n&quot;);</action>
-         <choice_glyph conn="71,26,5,3,9,1,2">
+         <choice_glyph conn="63,22,5,3,5,1,3">
           <action box="1,-2,10,2"/>
          </choice_glyph>
         </choice>
-        <tran_glyph conn="53,26,3,-1,18">
+        <tran_glyph conn="49,22,3,-1,14">
          <action box="0,-2,14,2"/>
         </tran_glyph>
        </tran>
-       <state_glyph node="53,12,21,20">
+       <state_glyph node="49,12,16,13">
         <entry box="1,2,6,2"/>
         <exit box="1,4,6,2"/>
        </state_glyph>
@@ -676,22 +672,22 @@ ERR_printf(
     &quot;Got I2C_BUS_DONE with error: 0x%08x\n&quot;,
     me-&gt;errorCode
 );</action>
-         <choice_glyph conn="64,89,4,1,5,-39">
+         <choice_glyph conn="63,73,4,1,4,-36">
           <action box="0,2,10,2"/>
          </choice_glyph>
         </choice>
         <choice target="../../../13">
          <guard brief="NoErr?">ERR_NONE == ((I2CStatusEvt const *)e)-&gt;errorCode</guard>
          <action>DBG_printf(&quot;Got I2C_BUS_DONE with no error\n&quot;);</action>
-         <choice_glyph conn="64,89,5,3,6,2,2">
+         <choice_glyph conn="63,73,5,3,6,2,2">
           <action box="1,-2,10,2"/>
          </choice_glyph>
         </choice>
-        <tran_glyph conn="50,89,3,-1,14">
+        <tran_glyph conn="49,73,3,-1,14">
          <action box="0,-2,14,2"/>
         </tran_glyph>
        </tran>
-       <state_glyph node="50,80,16,12">
+       <state_glyph node="49,64,16,12">
         <entry box="1,2,6,2"/>
         <exit box="1,4,6,2"/>
        </state_glyph>
@@ -720,7 +716,7 @@ ERR_printf(
     &quot;Got I2C_BUS_DONE with error: 0x%08x\n&quot;,
     me-&gt;errorCode
 );</action>
-         <choice_glyph conn="86,89,4,1,6,-61">
+         <choice_glyph conn="85,73,4,1,5,-58">
           <action box="0,2,10,2"/>
          </choice_glyph>
         </choice>
@@ -729,25 +725,25 @@ ERR_printf(
          <action>DBG_printf(&quot;Got I2C_BUS_DONE with no error\n&quot;);</action>
          <choice target="../../../../15">
           <guard brief="Write?">I2C_OP_MEM_WRITE == me-&gt;i2cDevOp || I2C_OP_REG_WRITE == me-&gt;i2cDevOp</guard>
-          <choice_glyph conn="93,89,4,3,-10,25,5,2">
+          <choice_glyph conn="92,73,4,3,-10,25,5,1">
            <action box="0,-12,10,2"/>
           </choice_glyph>
          </choice>
          <choice target="../../../../14">
           <guard brief="Read?">I2C_OP_MEM_READ == me-&gt;i2cDevOp || I2C_OP_REG_READ == me-&gt;i2cDevOp</guard>
-          <choice_glyph conn="93,89,4,3,2,5">
+          <choice_glyph conn="92,73,4,3,2,4">
            <action box="0,2,7,2"/>
           </choice_glyph>
          </choice>
-         <choice_glyph conn="86,89,5,-1,7">
+         <choice_glyph conn="85,73,5,-1,7">
           <action box="1,-2,10,2"/>
          </choice_glyph>
         </choice>
-        <tran_glyph conn="72,89,3,-1,14">
+        <tran_glyph conn="71,73,3,-1,14">
          <action box="0,-2,14,2"/>
         </tran_glyph>
        </tran>
-       <state_glyph node="72,80,16,12">
+       <state_glyph node="71,64,16,12">
         <entry box="1,2,6,2"/>
         <exit box="1,4,6,2"/>
        </state_glyph>
@@ -776,22 +772,22 @@ ERR_printf(
     &quot;Got I2C_BUS_DONE with error: 0x%08x\n&quot;,
     me-&gt;errorCode
 );</action>
-         <choice_glyph conn="112,89,4,1,7,-87">
+         <choice_glyph conn="110,73,4,1,6,-83">
           <action box="0,2,10,2"/>
          </choice_glyph>
         </choice>
         <choice target="../../../15">
          <guard brief="NoErr?">ERR_NONE == ((I2CStatusEvt const *)e)-&gt;errorCode</guard>
          <action>DBG_printf(&quot;Got I2C_BUS_DONE with no error\n&quot;);</action>
-         <choice_glyph conn="112,89,5,3,6,2,2">
+         <choice_glyph conn="110,73,5,3,6,2,2">
           <action box="1,-2,10,2"/>
          </choice_glyph>
         </choice>
-        <tran_glyph conn="98,89,3,-1,14">
+        <tran_glyph conn="96,73,3,-1,14">
          <action box="0,-2,14,2"/>
         </tran_glyph>
        </tran>
-       <state_glyph node="98,80,16,12">
+       <state_glyph node="96,64,16,12">
         <entry box="1,2,6,2"/>
         <exit box="1,4,6,2"/>
        </state_glyph>
@@ -822,22 +818,22 @@ ERR_printf(
     &quot;Got I2C_BUS_DONE with error: 0x%08x\n&quot;,
     me-&gt;errorCode
 );</action>
-         <choice_glyph conn="134,89,4,1,8,-109">
+         <choice_glyph conn="132,73,4,1,7,-105">
           <action box="0,2,10,2"/>
          </choice_glyph>
         </choice>
         <choice target="../../../16">
          <guard brief="NoErr?">ERR_NONE == ((I2CStatusEvt const *)e)-&gt;errorCode</guard>
          <action>DBG_printf(&quot;Got I2C_BUS_DONE with no error\n&quot;);</action>
-         <choice_glyph conn="134,89,5,3,10,2,3">
+         <choice_glyph conn="132,73,5,3,10,2,3">
           <action box="1,-2,10,2"/>
          </choice_glyph>
         </choice>
-        <tran_glyph conn="120,89,3,-1,14">
+        <tran_glyph conn="118,73,3,-1,14">
          <action box="0,-2,14,2"/>
         </tran_glyph>
        </tran>
-       <state_glyph node="120,80,20,12">
+       <state_glyph node="118,64,20,12">
         <entry box="1,2,6,2"/>
         <exit box="1,4,6,2"/>
        </state_glyph>
@@ -868,7 +864,7 @@ ERR_printf(
     &quot;Got I2C_BUS_DONE with error: 0x%08x\n&quot;,
     me-&gt;errorCode
 );</action>
-         <choice_glyph conn="161,90,4,1,8,-136">
+         <choice_glyph conn="159,74,4,1,7,-132">
           <action box="0,2,10,2"/>
          </choice_glyph>
         </choice>
@@ -877,25 +873,25 @@ ERR_printf(
          <action>DBG_printf(&quot;Got I2C_BUS_DONE with no error\n&quot;);</action>
          <choice target="../../../../17">
           <guard brief="Read?">I2C_OP_MEM_READ == me-&gt;i2cDevOp || I2C_OP_REG_READ == me-&gt;i2cDevOp</guard>
-          <choice_glyph conn="170,90,5,3,7,12,-129,6,2">
+          <choice_glyph conn="168,84,5,0,-115,2">
            <action box="1,-2,10,2"/>
           </choice_glyph>
          </choice>
          <choice target="../../../../22">
           <guard brief="Write?">I2C_OP_MEM_WRITE == me-&gt;i2cDevOp || I2C_OP_REG_WRITE == me-&gt;i2cDevOp</guard>
-          <choice_glyph conn="170,90,4,3,40,-122,5,2">
+          <choice_glyph conn="168,84,4,0,24,-115,2">
            <action box="0,2,10,2"/>
           </choice_glyph>
          </choice>
-         <choice_glyph conn="161,90,5,-1,9">
+         <choice_glyph conn="159,74,5,-1,9,10">
           <action box="1,-2,10,2"/>
          </choice_glyph>
         </choice>
-        <tran_glyph conn="147,90,3,-1,14">
+        <tran_glyph conn="145,74,3,-1,14">
          <action box="0,-2,14,2"/>
         </tran_glyph>
        </tran>
-       <state_glyph node="147,80,18,12">
+       <state_glyph node="145,64,18,12">
         <entry box="1,2,6,2"/>
         <exit box="1,4,6,2"/>
        </state_glyph>
@@ -924,22 +920,22 @@ ERR_printf(
     &quot;Got I2C_BUS_DONE with error: 0x%08x\n&quot;,
     me-&gt;errorCode
 );</action>
-         <choice_glyph conn="64,114,4,1,5,-39">
+         <choice_glyph conn="63,96,4,1,4,-36">
           <action box="0,2,10,2"/>
          </choice_glyph>
         </choice>
         <choice target="../../../18">
          <guard brief="NoErr?">ERR_NONE == ((I2CStatusEvt const *)e)-&gt;errorCode</guard>
          <action>DBG_printf(&quot;Got I2C_BUS_DONE with no error\n&quot;);</action>
-         <choice_glyph conn="64,114,5,3,6,2,2">
+         <choice_glyph conn="63,96,5,3,6,1,2">
           <action box="1,-2,10,2"/>
          </choice_glyph>
         </choice>
-        <tran_glyph conn="50,114,3,-1,14">
+        <tran_glyph conn="49,96,3,-1,14">
          <action box="0,-2,14,2"/>
         </tran_glyph>
        </tran>
-       <state_glyph node="50,104,16,13">
+       <state_glyph node="49,86,16,13">
         <entry box="1,2,6,2"/>
         <exit box="1,4,6,2"/>
        </state_glyph>
@@ -970,22 +966,22 @@ ERR_printf(
     &quot;Got I2C_BUS_DONE with error: 0x%08x\n&quot;,
     me-&gt;errorCode
 );</action>
-         <choice_glyph conn="86,114,4,1,6,-61">
+         <choice_glyph conn="85,96,4,1,5,-58">
           <action box="0,2,10,2"/>
          </choice_glyph>
         </choice>
         <choice target="../../../19">
          <guard brief="NoErr?">ERR_NONE == ((I2CStatusEvt const *)e)-&gt;errorCode</guard>
          <action>DBG_printf(&quot;Got I2C_BUS_DONE with no error\n&quot;);</action>
-         <choice_glyph conn="86,114,5,3,10,2,2">
+         <choice_glyph conn="85,96,5,3,10,1,2">
           <action box="1,-2,10,2"/>
          </choice_glyph>
         </choice>
-        <tran_glyph conn="72,114,3,-1,14">
+        <tran_glyph conn="71,96,3,-1,14">
          <action box="0,-2,14,2"/>
         </tran_glyph>
        </tran>
-       <state_glyph node="72,104,20,13">
+       <state_glyph node="71,86,20,13">
         <entry box="1,2,6,2"/>
         <exit box="1,4,6,2"/>
        </state_glyph>
@@ -1014,22 +1010,22 @@ ERR_printf(
     &quot;Got I2C_BUS_DONE with error: 0x%08x\n&quot;,
     me-&gt;errorCode
 );</action>
-         <choice_glyph conn="112,114,4,1,7,-87">
+         <choice_glyph conn="111,96,4,1,6,-84">
           <action box="0,2,10,2"/>
          </choice_glyph>
         </choice>
         <choice target="../../../20">
          <guard brief="NoErr?">ERR_NONE == ((I2CStatusEvt const *)e)-&gt;errorCode</guard>
          <action>DBG_printf(&quot;Got I2C_BUS_DONE with no error\n&quot;);</action>
-         <choice_glyph conn="112,114,5,3,8,2,2">
+         <choice_glyph conn="111,96,5,3,8,1,2">
           <action box="1,-2,10,2"/>
          </choice_glyph>
         </choice>
-        <tran_glyph conn="98,114,3,-1,14">
+        <tran_glyph conn="97,96,3,-1,14">
          <action box="0,-2,14,2"/>
         </tran_glyph>
        </tran>
-       <state_glyph node="98,104,18,13">
+       <state_glyph node="97,86,18,13">
         <entry box="1,2,6,2"/>
         <exit box="1,4,6,2"/>
        </state_glyph>
@@ -1061,7 +1057,7 @@ ERR_printf(
     &quot;Got I2C_BUS_DONE with error: 0x%08x\n&quot;,
     me-&gt;errorCode
 );</action>
-         <choice_glyph conn="136,114,4,1,8,-111">
+         <choice_glyph conn="135,96,4,1,7,-108">
           <action box="0,2,10,2"/>
          </choice_glyph>
         </choice>
@@ -1084,15 +1080,15 @@ if ( ERR_NONE != err ) {
     WRN_printf(&quot;Got an error converting hex array to string.  Error: 0x%08x\n&quot;, err);
 }
 LOG_printf(&quot;Read %s\n&quot;, tmp);</action>
-         <choice_glyph conn="136,114,5,3,9,2,-1">
+         <choice_glyph conn="135,96,5,3,6,1,2">
           <action box="1,-2,10,2"/>
          </choice_glyph>
         </choice>
-        <tran_glyph conn="122,114,3,-1,14">
+        <tran_glyph conn="121,96,3,-1,14">
          <action box="0,-2,14,2"/>
         </tran_glyph>
        </tran>
-       <state_glyph node="122,104,16,13">
+       <state_glyph node="121,86,16,13">
         <entry box="1,2,6,2"/>
         <exit box="1,4,6,2"/>
        </state_glyph>
@@ -1121,22 +1117,22 @@ ERR_printf(
     &quot;Got I2C_BUS_DONE with error: 0x%08x\n&quot;,
     me-&gt;errorCode
 );</action>
-         <choice_glyph conn="158,114,4,1,9,-133">
+         <choice_glyph conn="157,96,4,1,8,-130">
           <action box="0,2,10,2"/>
          </choice_glyph>
         </choice>
         <choice target="../../../../1">
          <guard brief="NoErr?">ERR_NONE == ((I2CStatusEvt const *)e)-&gt;errorCode</guard>
          <action>LOG_printf(&quot;Got I2C_BUS_DONE with no error\n&quot;);</action>
-         <choice_glyph conn="158,114,5,1,9,12,-142">
+         <choice_glyph conn="157,96,5,1,9,10,-139">
           <action box="1,-2,10,2"/>
          </choice_glyph>
         </choice>
-        <tran_glyph conn="144,114,3,-1,14">
+        <tran_glyph conn="143,96,3,-1,14">
          <action box="0,-2,14,2"/>
         </tran_glyph>
        </tran>
-       <state_glyph node="144,104,18,13">
+       <state_glyph node="143,86,18,13">
         <entry box="1,2,6,2"/>
         <exit box="1,4,6,2"/>
        </state_glyph>
@@ -1167,22 +1163,22 @@ ERR_printf(
     &quot;Got I2C_BUS_DONE with error: 0x%08x\n&quot;,
     me-&gt;errorCode
 );</action>
-         <choice_glyph conn="64,142,4,1,3,-39">
+         <choice_glyph conn="63,120,4,1,3,-36">
           <action box="0,2,10,2"/>
          </choice_glyph>
         </choice>
         <choice target="../../../23">
          <guard brief="NoErr?">ERR_NONE == ((I2CStatusEvt const *)e)-&gt;errorCode</guard>
          <action>DBG_printf(&quot;Got I2C_BUS_DONE with no error\n&quot;);</action>
-         <choice_glyph conn="64,142,5,3,8,2,2">
+         <choice_glyph conn="63,120,5,3,8,1,2">
           <action box="1,-2,10,2"/>
          </choice_glyph>
         </choice>
-        <tran_glyph conn="50,142,3,-1,14">
+        <tran_glyph conn="49,120,3,-1,14">
          <action box="0,-2,14,2"/>
         </tran_glyph>
        </tran>
-       <state_glyph node="50,132,18,12">
+       <state_glyph node="49,110,18,12">
         <entry box="1,2,6,2"/>
         <exit box="1,4,6,2"/>
        </state_glyph>
@@ -1211,7 +1207,7 @@ ERR_printf(
     &quot;Got I2C_BUS_DONE with error: 0x%08x\n&quot;,
     me-&gt;errorCode
 );</action>
-         <choice_glyph conn="88,142,4,1,4,-63">
+         <choice_glyph conn="87,120,4,1,4,-60">
           <action box="0,2,10,2"/>
          </choice_glyph>
         </choice>
@@ -1225,20 +1221,695 @@ LOG_printf(
     me-&gt;iBus+1,
     me-&gt;iDev
 );</action>
-         <choice_glyph conn="88,142,5,1,8,8,-71">
+         <choice_glyph conn="87,120,5,1,8,7,-68">
           <action box="1,-2,10,2"/>
          </choice_glyph>
         </choice>
-        <tran_glyph conn="74,142,3,-1,14">
+        <tran_glyph conn="73,120,3,-1,14">
          <action box="0,-2,14,2"/>
         </tran_glyph>
        </tran>
-       <state_glyph node="74,132,18,13">
+       <state_glyph node="73,110,18,12">
         <entry box="1,2,6,2"/>
         <exit box="1,4,6,2"/>
        </state_glyph>
       </state>
-      <state_glyph node="47,7,132,176">
+      <state name="GenerateStartTSC">
+       <entry>/* Set error code */
+me-&gt;errorCode = ERR_I2C1DEV_EV5_TIMEOUT;
+
+/* Set timer */
+QTimeEvt_rearm(
+    &amp;me-&gt;i2cOpTimerEvt,
+    SEC_TO_TICKS( HL_MAX_TOUT_SEC_I2C_EV5 )
+);
+
+/* Directly post an event to the appropriate I2CBusMgr AO */
+static QEvt const qEvt = { I2C_BUS_START_BIT_SIG, 0U, 0U };
+QACTIVE_POST(AO_I2CBusMgr[me-&gt;iBus], &amp;qEvt, me);
+
+DBG_printf(&quot;ActivePosted I2C_BUS_START_BIT\n&quot;);</entry>
+       <exit>QTimeEvt_disarm(&amp;me-&gt;i2cOpTimerEvt);</exit>
+       <tran trig="I2C_BUS_DONE">
+        <choice target="../../../../1">
+         <guard>else</guard>
+         <action>me-&gt;errorCode = ((I2CStatusEvt const *)e)-&gt;errorCode;
+ERR_printf(
+    &quot;Got I2C_BUS_DONE with error: 0x%08x\n&quot;,
+    me-&gt;errorCode
+);</action>
+         <choice_glyph conn="63,141,4,1,3,-36">
+          <action box="0,2,10,2"/>
+         </choice_glyph>
+        </choice>
+        <choice target="../../../25">
+         <guard brief="NoErr?">ERR_NONE == ((I2CStatusEvt const *)e)-&gt;errorCode</guard>
+         <action>DBG_printf(&quot;Got I2C_BUS_DONE with no error\n&quot;);</action>
+         <choice_glyph conn="63,141,5,3,6,1,3">
+          <action box="1,-2,10,2"/>
+         </choice_glyph>
+        </choice>
+        <tran_glyph conn="49,141,3,-1,14">
+         <action box="0,-2,14,2"/>
+        </tran_glyph>
+       </tran>
+       <state_glyph node="49,131,17,12">
+        <entry box="1,2,6,2"/>
+        <exit box="1,4,6,2"/>
+       </state_glyph>
+      </state>
+      <state name="Send7BitAddrTxModeTSC">
+       <entry>/* Set error code */
+me-&gt;errorCode = ERR_I2C1DEV_EV6_TIMEOUT;
+
+/* Set timer */
+QTimeEvt_rearm(
+    &amp;me-&gt;i2cOpTimerEvt,
+    SEC_TO_TICKS( HL_MAX_TOUT_SEC_I2C_EV6 )
+);
+
+/* Allocate and directly post an event to the appropriate I2CBusMgr AO */
+I2CAddrEvt *i2cAddrEvt   = Q_NEW( I2CAddrEvt, I2C_BUS_SEND_7BIT_ADDR_SIG );
+i2cAddrEvt-&gt;i2cBus       = me-&gt;iBus;
+i2cAddrEvt-&gt;addr         = I2C_getI2C1DevAddr(me-&gt;iDev);
+i2cAddrEvt-&gt;addrSize     = I2C_getI2C1DevAddrSize(me-&gt;iDev);
+i2cAddrEvt-&gt;i2cDirection = I2C_Direction_Transmitter;
+QACTIVE_POST(AO_I2CBusMgr[me-&gt;iBus], (QEvt *)i2cAddrEvt, me);</entry>
+       <exit>QTimeEvt_disarm(&amp;me-&gt;i2cOpTimerEvt);</exit>
+       <tran trig="I2C_BUS_DONE">
+        <choice target="../../../../1">
+         <guard>else</guard>
+         <action>me-&gt;errorCode = ((I2CStatusEvt const *)e)-&gt;errorCode;
+ERR_printf(
+    &quot;Got I2C_BUS_DONE with error: 0x%08x\n&quot;,
+    me-&gt;errorCode
+);</action>
+         <choice_glyph conn="86,140,4,1,5,-59">
+          <action box="0,2,10,2"/>
+         </choice_glyph>
+        </choice>
+        <choice target="../../../26">
+         <guard brief="NoErr?">ERR_NONE == ((I2CStatusEvt const *)e)-&gt;errorCode</guard>
+         <action>DBG_printf(&quot;Got I2C_BUS_DONE with no error\n&quot;);</action>
+         <choice_glyph conn="86,140,5,3,10,1,2">
+          <action box="1,-2,10,2"/>
+         </choice_glyph>
+        </choice>
+        <tran_glyph conn="72,140,3,-1,14">
+         <action box="0,-2,14,2"/>
+        </tran_glyph>
+       </tran>
+       <state_glyph node="72,131,20,12">
+        <entry box="1,2,6,2"/>
+        <exit box="1,4,6,2"/>
+       </state_glyph>
+      </state>
+      <state name="SendInternalAddrTSC">
+       <entry>/* Set error code */
+me-&gt;errorCode = ERR_I2C1DEV_EV8_TIMEOUT;
+
+/* Set timer */
+QTimeEvt_rearm(
+    &amp;me-&gt;i2cOpTimerEvt,
+    SEC_TO_TICKS( HL_MAX_TOUT_SEC_I2C_EV8 )
+);
+
+/* Allocate and directly post an event to the appropriate I2CBusMgr AO */
+I2CAddrEvt *i2cAddrEvt   = Q_NEW( I2CAddrEvt, I2C_BUS_SEND_DEV_ADDR_SIG );
+i2cAddrEvt-&gt;i2cBus       = me-&gt;iBus;
+i2cAddrEvt-&gt;addr         = I2C_getI2C1MemAddr(me-&gt;iDev);
+i2cAddrEvt-&gt;addrSize     = I2C_getI2C1MemAddrSize(me-&gt;iDev);
+i2cAddrEvt-&gt;i2cDirection = I2C_Direction_Transmitter;
+QACTIVE_POST(AO_I2CBusMgr[me-&gt;iBus], (QEvt *)i2cAddrEvt, me);</entry>
+       <exit>QTimeEvt_disarm(&amp;me-&gt;i2cOpTimerEvt);</exit>
+       <tran trig="I2C_BUS_DONE">
+        <choice target="../../../../1">
+         <guard>else</guard>
+         <action>me-&gt;errorCode = ((I2CStatusEvt const *)e)-&gt;errorCode;
+ERR_printf(
+    &quot;Got I2C_BUS_DONE with error: 0x%08x\n&quot;,
+    me-&gt;errorCode
+);</action>
+         <choice_glyph conn="112,141,4,1,5,-85">
+          <action box="0,2,10,2"/>
+         </choice_glyph>
+        </choice>
+        <choice target="../../../27">
+         <guard brief="NoErr?">ERR_NONE == ((I2CStatusEvt const *)e)-&gt;errorCode</guard>
+         <action>DBG_printf(&quot;Got I2C_BUS_DONE with no error\n&quot;);</action>
+         <choice_glyph conn="112,141,5,3,8,1,2">
+          <action box="1,-2,10,2"/>
+         </choice_glyph>
+        </choice>
+        <tran_glyph conn="98,141,3,-1,14">
+         <action box="0,-2,14,2"/>
+        </tran_glyph>
+       </tran>
+       <state_glyph node="98,131,18,12">
+        <entry box="1,2,6,2"/>
+        <exit box="1,4,6,2"/>
+       </state_glyph>
+      </state>
+      <state name="SendInternalAddrTSC1">
+       <entry>/* Set error code */
+me-&gt;errorCode = ERR_I2C1DEV_EV8_TIMEOUT;
+
+/* Set timer */
+QTimeEvt_rearm(
+    &amp;me-&gt;i2cOpTimerEvt,
+    SEC_TO_TICKS( HL_MAX_TOUT_SEC_I2C_EV8 )
+);
+
+/* Allocate and directly post an event to the appropriate I2CBusMgr AO */
+I2CAddrEvt *i2cAddrEvt   = Q_NEW( I2CAddrEvt, I2C_BUS_SEND_DEV_ADDR_SIG );
+i2cAddrEvt-&gt;i2cBus       = me-&gt;iBus;
+i2cAddrEvt-&gt;addr         = I2C_getI2C1MinMemAddr(me-&gt;iDev);
+i2cAddrEvt-&gt;addrSize     = I2C_getI2C1MemAddrSize(me-&gt;iDev);
+i2cAddrEvt-&gt;i2cDirection = I2C_Direction_Transmitter;
+QACTIVE_POST(AO_I2CBusMgr[me-&gt;iBus], (QEvt *)i2cAddrEvt, me);</entry>
+       <exit>QTimeEvt_disarm(&amp;me-&gt;i2cOpTimerEvt);</exit>
+       <tran trig="I2C_BUS_DONE">
+        <choice target="../../../../1">
+         <guard>else</guard>
+         <action>me-&gt;errorCode = ((I2CStatusEvt const *)e)-&gt;errorCode;
+ERR_printf(
+    &quot;Got I2C_BUS_DONE with error: 0x%08x\n&quot;,
+    me-&gt;errorCode
+);</action>
+         <choice_glyph conn="136,141,4,1,6,-109">
+          <action box="0,2,10,2"/>
+         </choice_glyph>
+        </choice>
+        <choice target="../../../28">
+         <guard brief="NoErr?">ERR_NONE == ((I2CStatusEvt const *)e)-&gt;errorCode</guard>
+         <action>DBG_printf(&quot;Got I2C_BUS_DONE with no error\n&quot;);</action>
+         <choice_glyph conn="136,141,5,3,8,1,2">
+          <action box="1,-2,10,2"/>
+         </choice_glyph>
+        </choice>
+        <tran_glyph conn="122,141,3,-1,14">
+         <action box="0,-2,14,2"/>
+        </tran_glyph>
+       </tran>
+       <state_glyph node="122,131,18,12">
+        <entry box="1,2,6,2"/>
+        <exit box="1,4,6,2"/>
+       </state_glyph>
+      </state>
+      <state name="SendInternalAddrTSC2">
+       <entry>/* Set error code */
+me-&gt;errorCode = ERR_I2C1DEV_EV8_TIMEOUT;
+
+/* Set timer */
+QTimeEvt_rearm(
+    &amp;me-&gt;i2cOpTimerEvt,
+    SEC_TO_TICKS( HL_MAX_TOUT_SEC_I2C_EV8 )
+);
+
+/* Allocate and directly post an event to the appropriate I2CBusMgr AO */
+I2CAddrEvt *i2cAddrEvt   = Q_NEW( I2CAddrEvt, I2C_BUS_SEND_DEV_ADDR_SIG );
+i2cAddrEvt-&gt;i2cBus       = me-&gt;iBus;
+i2cAddrEvt-&gt;addr         = I2C_getI2C1PageSize(me-&gt;iDev);
+i2cAddrEvt-&gt;addrSize     = I2C_getI2C1MemAddrSize(me-&gt;iDev);
+i2cAddrEvt-&gt;i2cDirection = I2C_Direction_Transmitter;
+QACTIVE_POST(AO_I2CBusMgr[me-&gt;iBus], (QEvt *)i2cAddrEvt, me);</entry>
+       <exit>QTimeEvt_disarm(&amp;me-&gt;i2cOpTimerEvt);</exit>
+       <tran trig="I2C_BUS_DONE">
+        <choice target="../../../../1">
+         <guard>else</guard>
+         <action>me-&gt;errorCode = ((I2CStatusEvt const *)e)-&gt;errorCode;
+ERR_printf(
+    &quot;Got I2C_BUS_DONE with error: 0x%08x\n&quot;,
+    me-&gt;errorCode
+);</action>
+         <choice_glyph conn="160,141,4,1,7,-133">
+          <action box="0,2,10,2"/>
+         </choice_glyph>
+        </choice>
+        <choice target="../../../29">
+         <guard brief="NoErr?">ERR_NONE == ((I2CStatusEvt const *)e)-&gt;errorCode</guard>
+         <action>DBG_printf(&quot;Got I2C_BUS_DONE with no error\n&quot;);</action>
+         <choice_glyph conn="160,141,5,0,8,9,-117,2">
+          <action box="1,-2,8,2"/>
+         </choice_glyph>
+        </choice>
+        <tran_glyph conn="146,141,3,-1,14">
+         <action box="0,-2,14,2"/>
+        </tran_glyph>
+       </tran>
+       <state_glyph node="146,131,18,12">
+        <entry box="1,2,6,2"/>
+        <exit box="1,4,6,2"/>
+       </state_glyph>
+      </state>
+      <state name="GenerateStopTSC">
+       <entry>/* Set error code */
+me-&gt;errorCode = ERR_I2C1DEV_EV5_TIMEOUT;
+
+/* Set timer */
+QTimeEvt_rearm(
+    &amp;me-&gt;i2cOpTimerEvt,
+    SEC_TO_TICKS( HL_MAX_TOUT_SEC_I2C_EV5 )
+);
+
+/* Directly post an event to the appropriate I2CBusMgr AO */
+static QEvt const qEvt = { I2C_BUS_STOP_BIT_SIG, 0U, 0U };
+QACTIVE_POST(AO_I2CBusMgr[me-&gt;iBus], &amp;qEvt, me);
+
+DBG_printf(&quot;ActivePosted I2C_BUS_STOP_BIT\n&quot;);</entry>
+       <exit>QTimeEvt_disarm(&amp;me-&gt;i2cOpTimerEvt);</exit>
+       <tran trig="I2C_BUS_DONE">
+        <choice target="../../../../1">
+         <guard>else</guard>
+         <action>me-&gt;errorCode = ((I2CStatusEvt const *)e)-&gt;errorCode;
+ERR_printf(
+    &quot;Got I2C_BUS_DONE with error: 0x%08x\n&quot;,
+    me-&gt;errorCode
+);</action>
+         <choice_glyph conn="63,162,4,1,3,-36">
+          <action box="0,2,10,2"/>
+         </choice_glyph>
+        </choice>
+        <choice target="../../../30">
+         <guard brief="NoErr?">ERR_NONE == ((I2CStatusEvt const *)e)-&gt;errorCode</guard>
+         <action>DBG_printf(&quot;Got I2C_BUS_DONE with no error\n&quot;);
+LOG_printf(
+    &quot;Wrote 0x%02x to address 0x%02x on I2CBus%d device %d\n&quot;, 
+    me-&gt;dataBuf[0],
+    me-&gt;addrStart,
+    me-&gt;iBus+1,
+    me-&gt;iDev
+);</action>
+         <choice_glyph conn="63,162,5,3,8,1,2">
+          <action box="1,-2,10,2"/>
+         </choice_glyph>
+        </choice>
+        <tran_glyph conn="49,162,3,-1,14">
+         <action box="0,-2,14,2"/>
+        </tran_glyph>
+       </tran>
+       <state_glyph node="49,152,18,12">
+        <entry box="1,2,6,2"/>
+        <exit box="1,4,6,2"/>
+       </state_glyph>
+      </state>
+      <state name="GenerateStartTSC1">
+       <entry>/* Set error code */
+me-&gt;errorCode = ERR_I2C1DEV_EV5_TIMEOUT;
+
+/* Set timer */
+QTimeEvt_rearm(
+    &amp;me-&gt;i2cOpTimerEvt,
+    SEC_TO_TICKS( HL_MAX_TOUT_SEC_I2C_EV5 )
+);
+
+/* Directly post an event to the appropriate I2CBusMgr AO */
+static QEvt const qEvt = { I2C_BUS_START_BIT_SIG, 0U, 0U };
+QACTIVE_POST(AO_I2CBusMgr[me-&gt;iBus], &amp;qEvt, me);
+
+DBG_printf(&quot;ActivePosted I2C_BUS_START_BIT\n&quot;);</entry>
+       <exit>QTimeEvt_disarm(&amp;me-&gt;i2cOpTimerEvt);</exit>
+       <tran trig="I2C_BUS_DONE">
+        <choice target="../../../../1">
+         <guard>else</guard>
+         <action>me-&gt;errorCode = ((I2CStatusEvt const *)e)-&gt;errorCode;
+ERR_printf(
+    &quot;Got I2C_BUS_DONE with error: 0x%08x\n&quot;,
+    me-&gt;errorCode
+);</action>
+         <choice_glyph conn="87,162,4,1,4,-60">
+          <action box="0,2,10,2"/>
+         </choice_glyph>
+        </choice>
+        <choice target="../../../31">
+         <guard brief="NoErr?">ERR_NONE == ((I2CStatusEvt const *)e)-&gt;errorCode</guard>
+         <action>DBG_printf(&quot;Got I2C_BUS_DONE with no error\n&quot;);</action>
+         <choice_glyph conn="87,162,5,3,6,1,3">
+          <action box="1,-2,10,2"/>
+         </choice_glyph>
+        </choice>
+        <tran_glyph conn="73,162,3,-1,14">
+         <action box="0,-2,14,2"/>
+        </tran_glyph>
+       </tran>
+       <state_glyph node="73,152,17,12">
+        <entry box="1,2,6,2"/>
+        <exit box="1,4,6,2"/>
+       </state_glyph>
+      </state>
+      <state name="Send7BitAddrTxModeTSC1">
+       <entry>/* Set error code */
+me-&gt;errorCode = ERR_I2C1DEV_EV6_TIMEOUT;
+
+/* Set timer */
+QTimeEvt_rearm(
+    &amp;me-&gt;i2cOpTimerEvt,
+    SEC_TO_TICKS( HL_MAX_TOUT_SEC_I2C_EV6 )
+);
+
+/* Allocate and directly post an event to the appropriate I2CBusMgr AO */
+I2CAddrEvt *i2cAddrEvt   = Q_NEW( I2CAddrEvt, I2C_BUS_SEND_7BIT_ADDR_SIG );
+i2cAddrEvt-&gt;i2cBus       = me-&gt;iBus;
+i2cAddrEvt-&gt;addr         = I2C_getI2C1DevAddr(me-&gt;iDev);
+i2cAddrEvt-&gt;addrSize     = I2C_getI2C1DevAddrSize(me-&gt;iDev);
+i2cAddrEvt-&gt;i2cDirection = I2C_Direction_Transmitter;
+QACTIVE_POST(AO_I2CBusMgr[me-&gt;iBus], (QEvt *)i2cAddrEvt, me);</entry>
+       <exit>QTimeEvt_disarm(&amp;me-&gt;i2cOpTimerEvt);</exit>
+       <tran trig="I2C_BUS_DONE">
+        <choice target="../../../../1">
+         <guard>else</guard>
+         <action>me-&gt;errorCode = ((I2CStatusEvt const *)e)-&gt;errorCode;
+ERR_printf(
+    &quot;Got I2C_BUS_DONE with error: 0x%08x\n&quot;,
+    me-&gt;errorCode
+);</action>
+         <choice_glyph conn="110,162,4,1,5,-83">
+          <action box="0,2,10,2"/>
+         </choice_glyph>
+        </choice>
+        <choice target="../../../32">
+         <guard brief="NoErr?">ERR_NONE == ((I2CStatusEvt const *)e)-&gt;errorCode</guard>
+         <action>DBG_printf(&quot;Got I2C_BUS_DONE with no error\n&quot;);</action>
+         <choice_glyph conn="110,162,5,3,10,1,2">
+          <action box="1,-2,10,2"/>
+         </choice_glyph>
+        </choice>
+        <tran_glyph conn="96,162,3,-1,14">
+         <action box="0,-2,14,2"/>
+        </tran_glyph>
+       </tran>
+       <state_glyph node="96,152,20,12">
+        <entry box="1,2,6,2"/>
+        <exit box="1,4,6,2"/>
+       </state_glyph>
+      </state>
+      <state name="SendInternalAddrTSC3">
+       <entry>/* Set error code */
+me-&gt;errorCode = ERR_I2C1DEV_EV8_TIMEOUT;
+
+/* Set timer */
+QTimeEvt_rearm(
+    &amp;me-&gt;i2cOpTimerEvt,
+    SEC_TO_TICKS( HL_MAX_TOUT_SEC_I2C_EV8 )
+);
+
+/* Allocate and directly post an event to the appropriate I2CBusMgr AO */
+I2CAddrEvt *i2cAddrEvt   = Q_NEW( I2CAddrEvt, I2C_BUS_SEND_DEV_ADDR_SIG );
+i2cAddrEvt-&gt;i2cBus       = me-&gt;iBus;
+i2cAddrEvt-&gt;addr         = I2C_getI2C1MaxMemAddr(me-&gt;iDev);
+i2cAddrEvt-&gt;addrSize     = I2C_getI2C1MemAddrSize(me-&gt;iDev);
+i2cAddrEvt-&gt;i2cDirection = I2C_Direction_Receiver;
+QACTIVE_POST(AO_I2CBusMgr[me-&gt;iBus], (QEvt *)i2cAddrEvt, me);</entry>
+       <exit>QTimeEvt_disarm(&amp;me-&gt;i2cOpTimerEvt);</exit>
+       <tran trig="I2C_BUS_DONE">
+        <choice target="../../../../1">
+         <guard>else</guard>
+         <action>me-&gt;errorCode = ((I2CStatusEvt const *)e)-&gt;errorCode;
+ERR_printf(
+    &quot;Got I2C_BUS_DONE with error: 0x%08x\n&quot;,
+    me-&gt;errorCode
+);</action>
+         <choice_glyph conn="136,162,4,1,6,-109">
+          <action box="0,2,10,2"/>
+         </choice_glyph>
+        </choice>
+        <choice target="../../../33">
+         <guard brief="NoErr?">ERR_NONE == ((I2CStatusEvt const *)e)-&gt;errorCode</guard>
+         <action>DBG_printf(&quot;Got I2C_BUS_DONE with no error\n&quot;);</action>
+         <choice_glyph conn="136,162,5,3,8,1,2">
+          <action box="1,-2,10,2"/>
+         </choice_glyph>
+        </choice>
+        <tran_glyph conn="122,162,3,-1,14">
+         <action box="0,-2,14,2"/>
+        </tran_glyph>
+       </tran>
+       <state_glyph node="122,152,18,12">
+        <entry box="1,2,6,2"/>
+        <exit box="1,4,6,2"/>
+       </state_glyph>
+      </state>
+      <state name="GenerateStartTSC2">
+       <entry>/* Set error code */
+me-&gt;errorCode = ERR_I2C1DEV_EV5_TIMEOUT;
+
+/* Set timer */
+QTimeEvt_rearm(
+    &amp;me-&gt;i2cOpTimerEvt,
+    SEC_TO_TICKS( HL_MAX_TOUT_SEC_I2C_EV5 )
+);
+
+/* Directly post an event to the appropriate I2CBusMgr AO */
+static QEvt const qEvt = { I2C_BUS_START_BIT_SIG, 0U, 0U };
+QACTIVE_POST(AO_I2CBusMgr[me-&gt;iBus], &amp;qEvt, me);
+
+DBG_printf(&quot;ActivePosted I2C_BUS_START_BIT\n&quot;);</entry>
+       <exit>QTimeEvt_disarm(&amp;me-&gt;i2cOpTimerEvt);</exit>
+       <tran trig="I2C_BUS_DONE">
+        <choice target="../../../../1">
+         <guard>else</guard>
+         <action>me-&gt;errorCode = ((I2CStatusEvt const *)e)-&gt;errorCode;
+ERR_printf(
+    &quot;Got I2C_BUS_DONE with error: 0x%08x\n&quot;,
+    me-&gt;errorCode
+);</action>
+         <choice_glyph conn="160,162,4,1,7,-133">
+          <action box="0,2,10,2"/>
+         </choice_glyph>
+        </choice>
+        <choice target="../../../34">
+         <guard brief="NoErr?">ERR_NONE == ((I2CStatusEvt const *)e)-&gt;errorCode</guard>
+         <action>DBG_printf(&quot;Got I2C_BUS_DONE with no error\n&quot;);</action>
+         <choice_glyph conn="160,162,5,0,8,9,-116,3">
+          <action box="1,-2,10,2"/>
+         </choice_glyph>
+        </choice>
+        <tran_glyph conn="146,162,3,-1,14">
+         <action box="0,-2,14,2"/>
+        </tran_glyph>
+       </tran>
+       <state_glyph node="146,152,17,12">
+        <entry box="1,2,6,2"/>
+        <exit box="1,4,6,2"/>
+       </state_glyph>
+      </state>
+      <state name="Send7BitAddrRxModeTSC">
+       <entry>/* Set error code */
+me-&gt;errorCode = ERR_I2C1DEV_EV6_TIMEOUT;
+
+/* Set timer */
+QTimeEvt_rearm(
+    &amp;me-&gt;i2cOpTimerEvt,
+    SEC_TO_TICKS( HL_MAX_TOUT_SEC_I2C_EV6 )
+);
+
+/* Allocate and directly post an event to the appropriate I2CBusMgr AO */
+I2CAddrEvt *i2cAddrEvt   = Q_NEW( I2CAddrEvt, I2C_BUS_SEND_7BIT_ADDR_SIG );
+i2cAddrEvt-&gt;i2cBus       = me-&gt;iBus;
+i2cAddrEvt-&gt;addr         = I2C_getI2C1DevAddr(me-&gt;iDev);
+i2cAddrEvt-&gt;addrSize     = I2C_getI2C1DevAddrSize(me-&gt;iDev);
+i2cAddrEvt-&gt;i2cDirection = I2C_Direction_Receiver;
+QACTIVE_POST(AO_I2CBusMgr[me-&gt;iBus], (QEvt *)i2cAddrEvt, me);</entry>
+       <exit>QTimeEvt_disarm(&amp;me-&gt;i2cOpTimerEvt);</exit>
+       <tran trig="I2C_BUS_DONE">
+        <choice target="../../../../1">
+         <guard>else</guard>
+         <action>me-&gt;errorCode = ((I2CStatusEvt const *)e)-&gt;errorCode;
+ERR_printf(
+    &quot;Got I2C_BUS_DONE with error: 0x%08x\n&quot;,
+    me-&gt;errorCode
+);</action>
+         <choice_glyph conn="63,184,4,1,4,-36">
+          <action box="0,2,10,2"/>
+         </choice_glyph>
+        </choice>
+        <choice target="../../../35">
+         <guard brief="NoErr?">ERR_NONE == ((I2CStatusEvt const *)e)-&gt;errorCode</guard>
+         <action>DBG_printf(&quot;Got I2C_BUS_DONE with no error\n&quot;);</action>
+         <choice_glyph conn="63,184,5,3,9,1,2">
+          <action box="1,-2,10,2"/>
+         </choice_glyph>
+        </choice>
+        <tran_glyph conn="49,184,3,-1,14">
+         <action box="0,-2,14,2"/>
+        </tran_glyph>
+       </tran>
+       <state_glyph node="49,174,19,13">
+        <entry box="1,2,6,2"/>
+        <exit box="1,4,6,2"/>
+       </state_glyph>
+      </state>
+      <state name="ReadMemDMATSC">
+       <entry>/* Set error code */
+me-&gt;errorCode = ERR_I2C1DEV_READ_MEM_TIMEOUT;
+
+/* Set timer */
+QTimeEvt_rearm(
+    &amp;me-&gt;i2cOpTimerEvt,
+    SEC_TO_TICKS( HL_MAX_TOUT_SEC_I2C_READ )
+);
+
+/* Allocate and directly post an event to the appropriate I2CBusMgr AO */
+I2CReadMemReqEvt *i2cReadMemEvt = Q_NEW( I2CReadMemReqEvt, I2C_BUS_READ_MEM_SIG );
+i2cReadMemEvt-&gt;i2cBus           = me-&gt;iBus;
+i2cReadMemEvt-&gt;addr             = me-&gt;addrStart;
+i2cReadMemEvt-&gt;addrSize         = I2C_getI2C1MemAddrSize(me-&gt;iDev);
+i2cReadMemEvt-&gt;memAccessType    = I2C_MEM_DMA;
+i2cReadMemEvt-&gt;bytes            = 11; // This is how many bytes we'll read over DMA
+QACTIVE_POST(AO_I2CBusMgr[me-&gt;iBus], (QEvt *)i2cReadMemEvt, me);</entry>
+       <exit>QTimeEvt_disarm(&amp;me-&gt;i2cOpTimerEvt);</exit>
+       <tran trig="I2C_BUS_DONE">
+        <choice target="../../../../1">
+         <guard>else</guard>
+         <action>me-&gt;errorCode = ((I2CStatusEvt const *)e)-&gt;errorCode;
+ERR_printf(
+    &quot;Got I2C_BUS_DONE with error: 0x%08x\n&quot;,
+    me-&gt;errorCode
+);</action>
+         <choice_glyph conn="88,184,4,1,5,-61">
+          <action box="0,2,10,2"/>
+         </choice_glyph>
+        </choice>
+        <choice target="../../../../1">
+         <guard brief="NoErr?">ERR_NONE == ((I2CBusDataEvt const *)e)-&gt;errorCode</guard>
+         <action>LOG_printf(&quot;Got I2C_BUS_DONE with no error\n&quot;);
+char tmp[120];
+memset(tmp, 0, sizeof(tmp));
+uint16_t tmpLen = 0;
+CBErrorCode err = CON_hexToStr(
+    (const uint8_t *)((I2CBusDataEvt const *)e)-&gt;dataBuf, // data to convert
+    ((I2CBusDataEvt const *)e)-&gt;dataLen, // length of data to convert
+    tmp,                                 // where to write output
+    sizeof(tmp),                         // max size of output buffer
+    &amp;tmpLen,                             // size of the resulting output
+    0,                                   // no columns
+    ' '                                  // separator
+);
+if ( ERR_NONE != err ) {
+    WRN_printf(&quot;Got an error converting hex array to string.  Error: 0x%08x\n&quot;, err);
+}
+LOG_printf(&quot;Read %s\n&quot;, tmp);</action>
+         <choice_glyph conn="88,184,5,1,8,10,-69">
+          <action box="1,-2,10,2"/>
+         </choice_glyph>
+        </choice>
+        <tran_glyph conn="74,184,3,-1,14">
+         <action box="0,-2,14,2"/>
+        </tran_glyph>
+       </tran>
+       <state_glyph node="74,174,18,13">
+        <entry box="1,2,6,2"/>
+        <exit box="1,4,6,2"/>
+       </state_glyph>
+      </state>
+      <state name="DisableAckTSC">
+       <entry>/* Set error code */
+me-&gt;errorCode = ERR_I2C1DEV_ACK_DIS_TIMEOUT;
+
+/* Set timer */
+QTimeEvt_rearm(
+    &amp;me-&gt;i2cOpTimerEvt,
+    SEC_TO_TICKS( HL_MAX_TOUT_SEC_I2C_EV5 )
+);
+
+/* Directly post an event to the appropriate I2CBusMgr AO */
+static QEvt const qEvt = { I2C_BUS_ACK_DIS_SIG, 0U, 0U };
+QACTIVE_POST(AO_I2CBusMgr[me-&gt;iBus], &amp;qEvt, me);
+
+DBG_printf(&quot;ActivePosted I2C_BUS_ACK_DIS\n&quot;);</entry>
+       <exit>QTimeEvt_disarm(&amp;me-&gt;i2cOpTimerEvt);</exit>
+       <tran trig="I2C_BUS_DONE">
+        <choice target="../../../../1">
+         <guard>else</guard>
+         <action>me-&gt;errorCode = ((I2CStatusEvt const *)e)-&gt;errorCode;
+ERR_printf(
+    &quot;Got I2C_BUS_DONE with error: 0x%08x\n&quot;,
+    me-&gt;errorCode
+);</action>
+         <choice_glyph conn="112,184,4,1,6,-85">
+          <action box="0,2,10,2"/>
+         </choice_glyph>
+        </choice>
+        <choice target="../../../37">
+         <guard brief="NoErr?">ERR_NONE == ((I2CStatusEvt const *)e)-&gt;errorCode</guard>
+         <action>DBG_printf(&quot;Got I2C_BUS_DONE with no error\n&quot;);</action>
+         <choice_glyph conn="112,184,5,3,6,1,2">
+          <action box="1,-2,7,2"/>
+         </choice_glyph>
+        </choice>
+        <tran_glyph conn="98,184,3,-1,14">
+         <action box="0,-2,14,2"/>
+        </tran_glyph>
+       </tran>
+       <state_glyph node="98,174,16,13">
+        <entry box="1,2,6,2"/>
+        <exit box="1,4,6,2"/>
+       </state_glyph>
+      </state>
+      <state name="ReadMemDMATSC1">
+       <entry>/* Set error code */
+me-&gt;errorCode = ERR_I2C1DEV_READ_MEM_TIMEOUT;
+
+/* Set timer */
+QTimeEvt_rearm(
+    &amp;me-&gt;i2cOpTimerEvt,
+    SEC_TO_TICKS( HL_MAX_TOUT_SEC_I2C_READ )
+);
+
+/* Allocate and directly post an event to the appropriate I2CBusMgr AO */
+I2CReadMemReqEvt *i2cReadMemEvt = Q_NEW( I2CReadMemReqEvt, I2C_BUS_READ_MEM_SIG );
+i2cReadMemEvt-&gt;i2cBus           = me-&gt;iBus;
+i2cReadMemEvt-&gt;addr             = me-&gt;addrStart;
+i2cReadMemEvt-&gt;addrSize         = I2C_getI2C1MemAddrSize(me-&gt;iDev);
+i2cReadMemEvt-&gt;memAccessType    = I2C_MEM_BYTE;
+i2cReadMemEvt-&gt;bytes            = 1; // This is how many bytes we'll read over DMA
+QACTIVE_POST(AO_I2CBusMgr[me-&gt;iBus], (QEvt *)i2cReadMemEvt, me);</entry>
+       <exit>QTimeEvt_disarm(&amp;me-&gt;i2cOpTimerEvt);</exit>
+       <tran trig="I2C_BUS_DONE">
+        <choice target="../../../../1">
+         <guard>else</guard>
+         <action>me-&gt;errorCode = ((I2CStatusEvt const *)e)-&gt;errorCode;
+ERR_printf(
+    &quot;Got I2C_BUS_DONE with error: 0x%08x\n&quot;,
+    me-&gt;errorCode
+);</action>
+         <choice_glyph conn="134,184,4,1,7,-107">
+          <action box="0,2,10,2"/>
+         </choice_glyph>
+        </choice>
+        <choice>
+         <guard brief="NoErr?">ERR_NONE == ((I2CBusDataEvt const *)e)-&gt;errorCode</guard>
+         <action>LOG_printf(&quot;Got I2C_BUS_DONE with no error\n&quot;);
+char tmp[120];
+memset(tmp, 0, sizeof(tmp));
+uint16_t tmpLen = 0;
+CBErrorCode err = CON_hexToStr(
+    (const uint8_t *)((I2CBusDataEvt const *)e)-&gt;dataBuf, // data to convert
+    ((I2CBusDataEvt const *)e)-&gt;dataLen, // length of data to convert
+    tmp,                                 // where to write output
+    sizeof(tmp),                         // max size of output buffer
+    &amp;tmpLen,                             // size of the resulting output
+    0,                                   // no columns
+    ' '                                  // separator
+);
+if ( ERR_NONE != err ) {
+    WRN_printf(&quot;Got an error converting hex array to string.  Error: 0x%08x\n&quot;, err);
+}
+LOG_printf(&quot;Read %s\n&quot;, tmp);</action>
+         <choice_glyph conn="134,184,5,-1,8,1,2">
+          <action box="1,-2,10,2"/>
+         </choice_glyph>
+        </choice>
+        <tran_glyph conn="120,184,3,-1,14">
+         <action box="0,-2,14,2"/>
+        </tran_glyph>
+       </tran>
+       <state_glyph node="120,174,18,13">
+        <entry box="1,2,6,2"/>
+        <exit box="1,4,6,2"/>
+       </state_glyph>
+      </state>
+      <state_glyph node="46,7,132,220">
        <entry box="1,2,5,2"/>
        <exit box="1,4,5,2"/>
       </state_glyph>
@@ -1272,7 +1943,7 @@ me-&gt;addrStart = ((I2CEEPROMReadReqEvt const *)e)-&gt;addr;
 me-&gt;addrSize  = I2C_getI2C1MemAddrSize(me-&gt;iDev);
 me-&gt;bytesTotal = ((I2CEEPROMReadReqEvt const *)e)-&gt;bytes;
 me-&gt;i2cDevOp = I2C_OP_MEM_READ;</action>
-       <tran_glyph conn="6,15,3,3,47">
+       <tran_glyph conn="6,15,3,3,43">
         <action box="0,-2,23,2"/>
        </tran_glyph>
       </tran>
@@ -1282,7 +1953,7 @@ me-&gt;addrStart = I2C_getI2C1MinMemAddr(me-&gt;iDev);
 me-&gt;addrSize  = I2C_getI2C1MemAddrSize(me-&gt;iDev);
 me-&gt;bytesTotal = I2C_getI2C1PageSize(me-&gt;iDev);
 me-&gt;i2cDevOp = I2C_OP_MEM_READ;</action>
-       <tran_glyph conn="6,17,3,3,47">
+       <tran_glyph conn="6,17,3,3,43">
         <action box="0,-2,17,2"/>
        </tran_glyph>
       </tran>
@@ -1292,7 +1963,7 @@ me-&gt;addrStart = I2C_getI2C1MinMemAddr(me-&gt;iDev);
 me-&gt;addrSize  = I2C_getI2C1MemAddrSize(me-&gt;iDev);
 me-&gt;bytesTotal = I2C_getI2C1PageSize(me-&gt;iDev);
 me-&gt;i2cDevOp = I2C_OP_MEM_READ;</action>
-       <tran_glyph conn="6,19,3,3,47">
+       <tran_glyph conn="6,19,3,3,43">
         <action box="0,-2,17,2"/>
        </tran_glyph>
       </tran>
@@ -1307,7 +1978,7 @@ MEMCPY(
     ((I2CEEPROMWriteReqEvt const *)e)-&gt;dataBuf,
     me-&gt;bytesTotal
 );</action>
-       <tran_glyph conn="6,21,3,3,47">
+       <tran_glyph conn="6,21,3,3,43">
         <action box="0,-2,22,2"/>
        </tran_glyph>
       </tran>
@@ -1324,7 +1995,7 @@ DBG_printf(&quot;Testing IOExpander (blocking): init\n&quot;);
 uint8_t status = IOE16_Config();
 DBG_printf(&quot;Init returned status %d\n&quot;, status);
 */</action>
-       <tran_glyph conn="6,84,3,3,44">
+       <tran_glyph conn="6,68,3,3,43">
         <action box="0,-2,23,2"/>
        </tran_glyph>
       </tran>
@@ -1335,20 +2006,37 @@ me-&gt;addrSize  = I2C_getI2C1MemAddrSize(me-&gt;iDev);
 me-&gt;bytesTotal = 1;
 me-&gt;dataBuf[0] = ((I2CDevRegWriteReqEvt const *)e)-&gt;regValue;
 me-&gt;i2cDevOp = I2C_OP_REG_WRITE;</action>
-       <tran_glyph conn="6,86,3,3,44">
+       <tran_glyph conn="6,70,3,3,43">
         <action box="0,-2,23,2"/>
        </tran_glyph>
       </tran>
-      <state_glyph node="6,7,19,176">
+      <tran trig="TSC_POS_READ" target="../../0/24">
+       <action>me-&gt;iDev = TS_CNTRL; // Set which device is being accessed
+me-&gt;addrStart = I2C_getI2C1MinMemAddr(me-&gt;iDev);
+me-&gt;addrSize  = I2C_getI2C1MemAddrSize(me-&gt;iDev);
+me-&gt;bytesTotal = I2C_getI2C1PageSize(me-&gt;iDev);
+me-&gt;i2cDevOp = I2C_OP_MEM_READ;
+
+/*
+// Testing IO Expander manually
+DBG_printf(&quot;Testing IOExpander (blocking): init\n&quot;);
+uint8_t status = IOE16_Config();
+DBG_printf(&quot;Init returned status %d\n&quot;, status);
+*/</action>
+       <tran_glyph conn="6,136,3,3,43">
+        <action box="0,-2,23,2"/>
+       </tran_glyph>
+      </tran>
+      <state_glyph node="6,7,21,220">
        <entry box="1,2,5,2"/>
        <exit box="1,4,6,2"/>
       </state_glyph>
      </state>
-     <state_glyph node="2,3,178,182">
+     <state_glyph node="2,3,178,226">
       <entry box="1,2,6,2"/>
      </state_glyph>
     </state>
-    <state_diagram size="183,186"/>
+    <state_diagram size="183,230"/>
    </statechart>
   </class>
   <attribute name="AO_I2C1DevMgr" type="QActive * const" visibility="0x00" properties="0x00">

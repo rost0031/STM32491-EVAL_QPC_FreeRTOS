@@ -984,24 +984,14 @@ static void IOE16_EXTI_Config(void)
 
 void TSC_EventCallback( void ) {
    QK_ISR_ENTRY();                         /* inform QK about entering an ISR */
-   //   dbg_slow_printf("ei\n");
+
    if(EXTI_GetITStatus( EXTI_Line8 ) != RESET) {
-      EXTI_ClearITPendingBit( EXTI_Line8 );
-//      dbg_slow_printf("EXTI ISR\n");
 
       __IO uint16_t tmpsr = IOE16_GetITStatus();
-//      dbg_slow_printf("tmpsr: 0x%04x\n", tmpsr);
       if((tmpsr & IOE16_TS_IT) != 0 ) {
 
-         /* Publish event to start an register read */
-
-//         static I2CDevRegReadReqEvt i2cReqEvt8;
-//         i2cReqEvt8.super.sig = IOEXP_REG_READ_SIG;
-//         i2cReqEvt8.super.refCtr_ = 0;
-//         i2cReqEvt8.super.poolId_ = 0;
-//         i2cReqEvt8.regAddr = IOE16_REG_GPMR_MSB;
-//         QACTIVE_POST(AO_I2C1DevMgr, (QEvt *)&i2cReqEvt8, AO_GuiMgr);
-//
+         /* Publish event to start an GPMR register read.  If this doesn't
+          * happen, you get no more interrupts from the IO expander. */
          static I2CDevRegReadReqEvt i2cReqEvt9;
          i2cReqEvt9.super.sig = IOEXP_REG_READ_SIG;
          i2cReqEvt9.super.refCtr_ = 0;
@@ -1009,71 +999,11 @@ void TSC_EventCallback( void ) {
          i2cReqEvt9.regAddr = IOE16_REG_GPMR_LSB;
          QACTIVE_POST(AO_I2C1DevMgr, (QEvt *)&i2cReqEvt9, AO_GuiMgr);
 
-
-         /* Read all the registers on the damn thing - this works for some reason */
-         uint16_t tmp = 0x0000;
-
-         /* Read the device ID  */
-//         tmp = IOE16_I2C_ReadDeviceRegister(IOE16_REG_CHP_ID_MSB);
-//         tmp = (uint32_t)(tmp << 8);
-//         tmp |= (uint32_t)IOE16_I2C_ReadDeviceRegister(IOE16_REG_CHP_ID_LSB);
-//         DBG_printf("Read 0x%04x from IOE16_REG_CHP_ID:   (0x%02x) register\n", tmp, IOE16_REG_CHP_ID_LSB);
-//         tmp = 0x0000;
-//
-//         tmp = (uint16_t)IOE16_I2C_ReadDeviceRegister(IOE16_REG_ID_VER);
-//         DBG_printf("Read 0x%04x from IOE16_REG_ID:       (0x%02x) register\n", tmp, IOE16_REG_ID_VER);
-//         tmp = 0x0000;
-//
-//         tmp = IOE16_I2C_ReadDeviceRegister(IOE16_REG_SYS_CTRL);
-//         DBG_printf("Read 0x%04x from IOE16_REG_SYS_CTRL: (0x%02x) register\n", tmp, IOE16_REG_SYS_CTRL);
-//         tmp = 0x0000;
-
-         /* Read the interrupt control register */
-//         tmp = IOE16_I2C_ReadDeviceRegister(IOE16_REG_IEGPIOR_MSB);
-//         tmp = (uint32_t)(tmp << 8);
-//         tmp |= (uint32_t)IOE16_I2C_ReadDeviceRegister(IOE16_REG_IEGPIOR_LSB);
-//         DBG_printf("Read 0x%04x from IOE16_REG_IEGPIOR:  (0x%02x) register\n", tmp, IOE16_REG_IEGPIOR_LSB);
-//         tmp = 0x0000;
-
-//         tmp = IOE16_I2C_ReadDeviceRegister(IOE16_REG_ISGPIOR_MSB);
-//         tmp = (uint32_t)(tmp << 8);
-//         tmp |= (uint32_t)IOE16_I2C_ReadDeviceRegister(IOE16_REG_ISGPIOR_LSB);
-//         DBG_printf("Read 0x%04x from IOE16_REG_ISGPIOR:  (0x%02x) register\n", tmp, IOE16_REG_ISGPIOR_LSB);
-//         tmp = 0x0000;
-
-         /* Read GPMR register */
-//         tmp = IOE16_I2C_ReadDeviceRegister(IOE16_REG_GPMR_MSB);
-//         tmp = (uint32_t)(tmp << 8);
-
-/* THIS WORKS!!! */
-//         tmp = (uint32_t)IOE16_I2C_ReadDeviceRegister(IOE16_REG_GPMR_LSB);
-//         DBG_printf("Read 0x%04x from IOE16_REG_GPMR:     (0x%02x) register\n", tmp, IOE16_REG_GPMR_LSB);
-//         tmp = 0x0000;
-
-//         tmp = IOE16_I2C_ReadDeviceRegister(IOE16_REG_GPSR_MSB);
-//         tmp = (uint32_t)(tmp << 8);
-//         tmp |= (uint32_t)IOE16_I2C_ReadDeviceRegister(IOE16_REG_GPSR_LSB);
-//         DBG_printf("Read 0x%04x from IOE16_REG_GPSR:     (0x%02x) register\n", tmp, IOE16_REG_GPSR_LSB);
-//         tmp = 0x0000;
-
-//         tmp = IOE16_I2C_ReadDeviceRegister(IOE16_REG_GPDR_MSB);
-//         tmp = (uint32_t)(tmp << 8);
-//         tmp |= (uint32_t)IOE16_I2C_ReadDeviceRegister(IOE16_REG_GPDR_LSB);
-//         DBG_printf("Read 0x%04x from IOE16_REG_GPDR:     (0x%02x) register\n", tmp, IOE16_REG_GPDR_LSB);
-//         tmp = 0x0000;
-//
-//         tmp = IOE16_I2C_ReadDeviceRegister(IOE16_REG_GPPIR_MSB);
-//         tmp = (uint32_t)(tmp << 8);
-//         tmp |= (uint32_t)IOE16_I2C_ReadDeviceRegister(IOE16_REG_GPPIR_LSB);
-//         DBG_printf("Read 0x%04x from IOE16_REG_GPPIR:    (0x%02x) register\n", tmp, IOE16_REG_GPPIR_LSB);
-//         tmp = 0x0000;
-
+         EXTI_ClearITPendingBit( EXTI_Line8 );
       }
-//      EXTI_ClearITPendingBit( EXTI_Line8 );
    }
    QK_ISR_EXIT();                           /* inform QK about exiting an ISR */
 }
-
 
 #ifndef USE_TIMEOUT_USER_CALLBACK 
 /**

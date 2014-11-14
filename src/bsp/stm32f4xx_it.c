@@ -168,37 +168,6 @@ void EXTI9_5_IRQHandler(void)
 {
    /* Issue the callback function which does the actual work. */
    TSC_EventCallback();
-
-//   //   printf("ei\n");
-//   if(EXTI_GetITStatus( EXTI_Line8 ) != RESET) {
-//      printf("EXTI ISR\n");
-//
-//      __IO uint16_t tmpsr = IOE16_GetITStatus();
-//      if((tmpsr & IOE16_TS_IT) != 0 ) {
-//
-//         tmpsr = IOE16_GetITStatus();
-////         IOE16_GITCmd(ENABLE);
-//         printf("TS ISR! 0x%04x\n", tmpsr);
-//         for ( uint8_t i=0; i<0xFF; i++) {
-//            tmpsr--;
-//         }
-//         IOE16_I2C_ReadDeviceRegister(IOE16_REG_SYS_CTRL);
-//         for ( uint8_t i=0; i<0xFF; i++) {
-//            tmpsr--;
-//         }
-//         EXTI_ClearITPendingBit(EXTI_Line8);
-//         for ( uint8_t i=0; i<0xFF; i++) {
-//            tmpsr--;
-//         }
-//         IOE16_I2C_ReadDeviceRegister(IOE16_REG_SYS_CTRL);
-//         for ( uint8_t i=0; i<0xFF; i++) {
-//            tmpsr--;
-//         }
-//      }
-////      uint16_t tmp = IOE16_GetITStatus();
-////      printf("TS ISR! 0x%04x\n", tmp);
-////      EXTI_ClearITPendingBit( EXTI_Line8 );
-//   }
 }
 
 /******************************************************************************/

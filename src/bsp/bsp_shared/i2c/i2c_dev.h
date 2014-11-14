@@ -30,153 +30,6 @@ extern "C" {
 /* Exported defines ----------------------------------------------------------*/
 
 #define EEPROM_PAGE_SIZE   16 /**< Size of the page in bytes on the EEPROM */
-//
-///** @defgroup STM324x9I_EVAL_IOE_Exported_Constants
-//  * @{
-//  */
-//
-///**
-//  * @brief  The 7 bits IO Expanders addresses and chip IDs
-//  */
-//#define IOE16_ADDR                 0x84
-//#define STMPE1600_ID               0x1600
-//
-///*------------------------------------------------------------------------------
-//    Functional and Interrupt Management
-//------------------------------------------------------------------------------*/
-//
-///**
-//  * @brief  Interrupt enable
-//  */
-//#define IOE16_IT_EN                0x04
-//
-//
-//
-///*------------------------------------------------------------------------------
-//    STMPE1600 device register definition
-//------------------------------------------------------------------------------*/
-///**
-//  * @brief  Identification registers
-//  */
-//#define IOE16_REG_CHP_ID_LSB       0x00
-//#define IOE16_REG_CHP_ID_MSB       0x01
-//#define IOE16_REG_ID_VER           0x02
-//
-///**
-//  * @brief  System Control Register
-//  */
-//#define IOE16_REG_SYS_CTRL         0x03
-//
-///**
-//  * @brief  Interrupt Control register
-//  */
-//#define IOE16_REG_IEGPIOR_LSB      0x08
-//#define IOE16_REG_IEGPIOR_MSB      0x09
-//#define IOE16_REG_ISGPIOR_LSB      0x0A
-//#define IOE16_REG_ISGPIOR_MSB      0x0B
-//
-//
-///**
-//  * @brief  GPIO Registers
-//  */
-//
-//#define IOE16_REG_GPMR_LSB         0x10
-//#define IOE16_REG_GPMR_MSB         0x11
-//#define IOE16_REG_GPSR_LSB         0x12
-//#define IOE16_REG_GPSR_MSB         0x13
-//#define IOE16_REG_GPDR_LSB         0x14
-//#define IOE16_REG_GPDR_MSB         0x15
-//#define IOE16_REG_GPPIR_LSB        0x16
-//#define IOE16_REG_GPPIR_MSB        0x17
-//
-//
-///*------------------------------------------------------------------------------
-//    Functions parameters defines
-//------------------------------------------------------------------------------*/
-//
-///**
-//  * @brief JOYSTICK Pins definition
-//  */
-//#define JOY_IO16_SEL               IO16_Pin_14
-//#define JOY_IO16_DOWN              IO16_Pin_13
-//#define JOY_IO16_LEFT              IO16_Pin_12
-//#define JOY_IO16_RIGHT             IO16_Pin_11
-//#define JOY_IO16_UP                IO16_Pin_10
-//#define JOY_IO16_NONE              JOY_IO16_PINS
-//#define JOY_IO16_PINS              (IO16_Pin_10 | IO16_Pin_11 | IO16_Pin_12 | IO16_Pin_13 | IO16_Pin_14)
-//
-///**
-//  * @brief  IO Pins
-//  */
-//#define IO16_Pin_0                 0x0001
-//#define IO16_Pin_1                 0x0002
-//#define IO16_Pin_2                 0x0004
-//#define IO16_Pin_3                 0x0008
-//#define IO16_Pin_4                 0x0010
-//#define IO16_Pin_5                 0x0020
-//#define IO16_Pin_6                 0x0040
-//#define IO16_Pin_7                 0x0080
-//
-//#define IO16_Pin_8                 0x0100
-//#define IO16_Pin_9                 0x0200
-//#define IO16_Pin_10                0x0400
-//#define IO16_Pin_11                0x0800
-//#define IO16_Pin_12                0x1000
-//#define IO16_Pin_13                0x2000
-//#define IO16_Pin_14                0x4000
-//#define IO16_Pin_15                0x8000
-//
-//#define IO16_Pin_ALL_LSB           0x00FF
-//#define IO16_Pin_ALL_MSB           0xFF00
-//
-///**
-//  * @brief  IO Pin directions
-//  */
-//#define Direction_IN               0x00
-//#define Direction_OUT              0x01
-//
-///**
-//  * @brief  Interrupt Line output parameters
-//  */
-//#define IOE16_Polarity_Low         0x00
-//#define IOE16_Polarity_High        0x01
-//
-//
-///**
-//  * @brief IO Interrupts
-//  */
-//#define IO16_IT_0                  0x0001
-//#define IO16_IT_1                  0x0002
-//#define IO16_IT_2                  0x0004
-//#define IO16_IT_3                  0x0008
-//#define IO16_IT_4                  0x0010
-//#define IO16_IT_5                  0x0020
-//#define IO16_IT_6                  0x0040
-//#define IO16_IT_7                  0x0080
-//
-//#define IO16_IT_8                  0x0100
-//#define IO16_IT_9                  0x0200
-//#define IO16_IT_10                 0x0400
-//#define IO16_IT_11                 0x0800
-//#define IO16_IT_12                 0x1000
-//#define IO16_IT_13                 0x2000
-//#define IO16_IT_14                 0x4000
-//#define IO16_IT_15                 0x8000
-//
-//#define ALL_IT_LSB                 0x00FF
-//#define ALL_IT_MSB                 0xFF00
-//#define IOE16_JOY_IT               (IO16_IT_10 | IO16_IT_11 | IO16_IT_12 | IO16_IT_13 | IO16_IT_14)
-//#define IOE16_TS_IT                IO16_IT_4
-//
-///**
-//  * @brief  Edge detection value
-//  */
-//#define EDGE_FALLING               0x01
-//#define EDGE_RISING                0x02
-//
-///**
-//  * @}
-//  */
 
 /* Exported types ------------------------------------------------------------*/
 
@@ -189,6 +42,7 @@ typedef enum I2CBus1_Devices {
    SN_ROM,
    EUI_ROM,
    IO_EXP,
+   TS_CNTRL,
    /* Insert more I2CBus1 device enumerations here... */
    MAX_I2C1_DEV     /**< Maximum number of available I2C devices on I2CBus1 */
 } I2CBus1_Dev_t;
@@ -226,7 +80,8 @@ typedef struct I2CBus1_DeviceSettings
    (DEV) == EEPROM ||                                                         \
    (DEV) == SN_ROM ||                                                         \
    (DEV) == EUI_ROM ||                                                        \
-   (DEV) == IO_EXP                                                            \
+   (DEV) == IO_EXP ||                                                         \
+   (DEV) == TS_CNTRL                                                          \
 )
 
 /* Exported constants --------------------------------------------------------*/

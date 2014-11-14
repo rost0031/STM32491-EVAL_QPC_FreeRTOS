@@ -36,12 +36,12 @@ DBG_DEFINE_THIS_MODULE( DBG_MODL_GENERAL ); /* For debug system to ID this modul
 /* Private defines -----------------------------------------------------------*/
 /* Private macros ------------------------------------------------------------*/
 /* Private variables and Local objects ---------------------------------------*/
-static QEvt const    *l_CommStackMgrQueueSto[100];  /**< Storage for CommStackMgr event Queue */
-static QEvt const    *l_LWIPMgrQueueSto[100];       /**< Storage for LWIPMgr event Queue */
-static QEvt const    *l_SerialMgrQueueSto[200];     /**< Storage for SerialMgr event Queue */
-static QEvt const    *l_I2CBusMgrQueueSto[100][MAX_I2C_BUS];    /**< Storage for I2CBusMgr event Queue */
-static QEvt const    *l_I2C1DevMgrQueueSto[100];    /**< Storage for I2C1DevMgr event Queue */
-static QEvt const    *l_DbgMgrQueueSto[200];        /**< Storage for DbgMgr event Queue */
+static QEvt const    *l_CommStackMgrQueueSto[30];  /**< Storage for CommStackMgr event Queue */
+static QEvt const    *l_LWIPMgrQueueSto[300];       /**< Storage for LWIPMgr event Queue */
+static QEvt const    *l_SerialMgrQueueSto[300];     /**< Storage for SerialMgr event Queue */
+static QEvt const    *l_I2CBusMgrQueueSto[30][MAX_I2C_BUS];    /**< Storage for I2CBusMgr event Queue */
+static QEvt const    *l_I2C1DevMgrQueueSto[30];    /**< Storage for I2C1DevMgr event Queue */
+static QEvt const    *l_DbgMgrQueueSto[30];        /**< Storage for DbgMgr event Queue */
 static QEvt const    *l_GuiMgrQueueSto[30];         /**< Storage for GuiMgr event Queue */
 static QSubscrList   l_subscrSto[MAX_PUB_SIG];      /**< Storage for subscribe/publish event Queue */
 

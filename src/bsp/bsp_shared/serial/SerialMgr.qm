@@ -18,7 +18,7 @@
    <attribute name="deferredEvtQueue" type="QEQueue" visibility="0x01" properties="0x00">
     <documentation>/**&lt; Native QF queue for deferred request events. */</documentation>
    </attribute>
-   <attribute name="deferredEvtQSto[100]" type="QTimeEvt const *" visibility="0x01" properties="0x00">
+   <attribute name="deferredEvtQSto[200]" type="QTimeEvt const *" visibility="0x01" properties="0x00">
     <documentation>/**&lt; Storage for deferred event queue. */</documentation>
    </attribute>
    <attribute name="isSerialDbgEnabled" type="bool" visibility="0x01" properties="0x00">
