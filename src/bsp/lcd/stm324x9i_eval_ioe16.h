@@ -138,7 +138,7 @@ typedef enum
 /* I2C clock speed configuration (in Hz), used by LCD, Audio Codec, IOE8
    and IOE16 drivers */
 #ifndef I2C_SPEED
- #define I2C_SPEED                        100000
+// #define I2C_SPEED                        100000
 #endif /* I2C_SPEED */
 
 /**

@@ -1920,6 +1920,16 @@ DBG_printf(&quot;Init returned status %d\n&quot;, status);
         <action box="0,-2,23,2"/>
        </tran_glyph>
       </tran>
+      <tran trig="TSC_CLR_INT" target="../../0/12">
+       <action>me-&gt;iDev = IO_EXP; // Set which device is being accessed
+me-&gt;addrStart = IOE16_REG_GPMR_LSB;
+me-&gt;addrSize  = I2C_getI2C1MemAddrSize(me-&gt;iDev);
+me-&gt;bytesTotal = 1;
+me-&gt;i2cDevOp = I2C_OP_REG_READ;</action>
+       <tran_glyph conn="6,72,3,3,43">
+        <action box="0,-2,23,2"/>
+       </tran_glyph>
+      </tran>
       <state_glyph node="6,7,21,220">
        <entry box="1,2,5,2"/>
        <exit box="1,4,6,2"/>

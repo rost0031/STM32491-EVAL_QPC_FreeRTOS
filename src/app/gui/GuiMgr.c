@@ -222,6 +222,17 @@ static QState GuiMgr_Active(GuiMgr * const me, QEvt const * const e) {
             status_ = Q_HANDLED();
             break;
         }
+        /* ${AOs::GuiMgr::SM::Active::GUI_TSC_INTERRUPT} */
+        case GUI_TSC_INTERRUPT_SIG: {
+            DBG_printf("Got GUI_TSC_INTERRUPT\n");
+            status_ = Q_HANDLED();
+            break;
+        }
+        /* ${AOs::GuiMgr::SM::Active::GUI_LCD_POS_UPDATE_TIMER} */
+        case GUI_LCD_POS_UPDATE_TIMER_SIG: {
+            status_ = Q_HANDLED();
+            break;
+        }
         default: {
             status_ = Q_SUPER(&QHsm_top);
             break;

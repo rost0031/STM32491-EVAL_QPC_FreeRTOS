@@ -110,6 +110,7 @@ enum I2C1DevMgrSignals {
    EEPROM_POST_WRITE_TIMER_SIG,
    IOEXP_REG_READ_SIG,
    IOEXP_REG_WRITE_SIG,
+   TSC_CLR_INT_SIG,
    TSC_POS_READ_SIG,
    I2C1_DEV_MAX_SIG
 };
@@ -129,6 +130,8 @@ enum DbgMgrSignals {
  */
 enum GuiMgrSignals {
    GUI_TEST_SIG = DBG_MAX_SIG, /** This signal must start at the previous category max signal */
+   GUI_TSC_INTERRUPT_SIG,
+   GUI_LCD_POS_UPDATE_TIMER_SIG,
    GUI_MAX_SIG
 };
 

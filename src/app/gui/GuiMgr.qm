@@ -57,6 +57,17 @@ l_hDlg = GUI_CreateDialogBox(
 );
 
 WM_Exec();                 /* update the screen and invoke WM callbacks */</entry>
+     <tran trig="GUI_TSC_INTERRUPT">
+      <action>DBG_printf(&quot;Got GUI_TSC_INTERRUPT\n&quot;);</action>
+      <tran_glyph conn="3,84,3,-1,20">
+       <action box="0,-2,17,2"/>
+      </tran_glyph>
+     </tran>
+     <tran trig="GUI_LCD_POS_UPDATE_TIMER">
+      <tran_glyph conn="3,80,3,-1,20">
+       <action box="0,-2,24,2"/>
+      </tran_glyph>
+     </tran>
      <state_glyph node="3,3,101,85">
       <entry box="1,2,6,2"/>
      </state_glyph>

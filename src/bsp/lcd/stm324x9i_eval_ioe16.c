@@ -50,6 +50,7 @@
 #include "dbg_cntrl.h"
 #include "I2C1DevMgr.h"
 #include "I2CBusMgr.h"
+#include "GuiMgr.h"
 
 DBG_DEFINE_THIS_MODULE( DBG_MODL_GUI ); /* For debug system to ID this module */
 
@@ -992,12 +993,18 @@ void TSC_EventCallback( void ) {
 
          /* Publish event to start an GPMR register read.  If this doesn't
           * happen, you get no more interrupts from the IO expander. */
-         static I2CDevRegReadReqEvt i2cReqEvt9;
-         i2cReqEvt9.super.sig = IOEXP_REG_READ_SIG;
-         i2cReqEvt9.super.refCtr_ = 0;
-         i2cReqEvt9.super.poolId_ = 0;
-         i2cReqEvt9.regAddr = IOE16_REG_GPMR_LSB;
-         QACTIVE_POST(AO_I2C1DevMgr, (QEvt *)&i2cReqEvt9, AO_GuiMgr);
+//         static I2CDevRegReadReqEvt i2cReqEvt9;
+//         i2cReqEvt9.super.sig = IOEXP_REG_READ_SIG;
+//         i2cReqEvt9.super.refCtr_ = 0;
+//         i2cReqEvt9.super.poolId_ = 0;
+//         i2cReqEvt9.regAddr = IOE16_REG_GPMR_LSB;
+//         QACTIVE_POST(AO_I2C1DevMgr, (QEvt *)&i2cReqEvt9, AO_GuiMgr);
+
+         static QEvt const qEvt = { TSC_CLR_INT_SIG, 0, 0 };
+         QACTIVE_POST(AO_I2C1DevMgr, &qEvt, AO_GuiMgr);
+
+         static QEvt const qEvt1 = { GUI_TSC_INTERRUPT_SIG, 0, 0 };
+         QACTIVE_POST(AO_GuiMgr, &qEvt1, AO_GuiMgr);
 
          EXTI_ClearITPendingBit( EXTI_Line8 );
       }

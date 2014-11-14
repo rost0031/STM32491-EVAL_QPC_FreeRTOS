@@ -2436,6 +2436,16 @@ static QState I2C1DevMgr_Idle(I2C1DevMgr * const me, QEvt const * const e) {
             status_ = Q_TRAN(&I2C1DevMgr_GenerateStartTSC);
             break;
         }
+        /* ${AOs::I2C1DevMgr::SM::Active::Idle::TSC_CLR_INT} */
+        case TSC_CLR_INT_SIG: {
+            me->iDev = IO_EXP; // Set which device is being accessed
+            me->addrStart = IOE16_REG_GPMR_LSB;
+            me->addrSize  = I2C_getI2C1MemAddrSize(me->iDev);
+            me->bytesTotal = 1;
+            me->i2cDevOp = I2C_OP_REG_READ;
+            status_ = Q_TRAN(&I2C1DevMgr_CheckingBusIOE);
+            break;
+        }
         default: {
             status_ = Q_SUPER(&I2C1DevMgr_Active);
             break;
