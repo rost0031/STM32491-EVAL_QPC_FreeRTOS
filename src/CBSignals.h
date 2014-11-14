@@ -132,6 +132,7 @@ enum GuiMgrSignals {
    GUI_TEST_SIG = DBG_MAX_SIG, /** This signal must start at the previous category max signal */
    GUI_TSC_INTERRUPT_SIG,
    GUI_LCD_POS_UPDATE_TIMER_SIG,
+   GUI_LCD_POS_DATA_SIG,
    GUI_MAX_SIG
 };
 

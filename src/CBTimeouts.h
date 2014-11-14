@@ -47,13 +47,13 @@
  * These are the timeouts used by all the state machines in the coupler board.
  *@{*/
 
-   /** \name Serial Timeouts
+   /** \name Serial Timeouts and Times.
     * These are the timeouts used by the low level SerialMgr AO.
     *@{*/
    #define LL_MAX_TIMEOUT_SERIAL_DMA_BUSY_SEC                                 1.0
    /*@} Serial Timeout Maximums*/
 
-   /** \name I2C Bus timeouts and times
+   /** \name I2C Bus Timeouts and Times.
     * These are the timeouts used by the low level I2CBusMgr AO.
     *@{*/
    #define LL_MAX_TOUT_SEC_I2C_BASIC_OP                                       0.2
@@ -66,11 +66,11 @@
    #define LL_MAX_TOUT_SEC_I2C_WRITE_OP         ( LL_MAX_TOUT_SEC_I2C_BASIC_OP * 4 )
    /*@} I2C Timeouts */
 
-   /** \name I2C1Dev timeouts and times
+   /** \name I2C1Dev Timeouts and Times.
     * These are the timeouts used by the higher level I2C1DevMgr AO.
     * These should be based on the LL I2CBusMgr timeouts.
     *@{*/
-   #define HL_MAX_TOUT_SEC_I2C_DEV_OP                                        0.3
+   #define HL_MAX_TOUT_SEC_I2C_DEV_OP                                         0.3
    #define HL_MAX_TOUT_SEC_I2C_DEV_REQ                                        10.0
    #define HL_MAX_TOUT_SEC_I2C_BUS_CHECK        ( LL_MAX_TOUT_SEC_I2C_BUS_RECOVERY * 1.3 )
    #define HL_MAX_TOUT_SEC_I2C_EV5              ( HL_MAX_TOUT_SEC_I2C_DEV_OP * 1.3 )
@@ -79,13 +79,19 @@
    #define HL_MAX_TOUT_SEC_I2C_READ             ( HL_MAX_TOUT_SEC_I2C_DEV_OP * 1.3 )
    #define HL_MAX_TOUT_SEC_I2C_WRITE            ( HL_MAX_TOUT_SEC_I2C_DEV_OP * 1.3 )
    #define HL_MAX_TIME_MS_I2C_POST_WRITE                                      5.0 // 5ms post write wait on the I2C EEPROM.
-   /*@} I2C1Dev Timeouts */
+   /*@} I2C1Dev Timeouts and Times. */
 
-   /** \name ETH Timeouts
+   /** \name ETH Timeouts and Times.
     * These are the timeouts used by the low level LWIPMgr AO.
     *@{*/
-   #define LL_MAX_TIMEOUT_TCP_SEND_SEC                                     3.0
+   #define LL_MAX_TIMEOUT_TCP_SEND_SEC                                        3.0
    /*@} ETH Timeout Maximums*/
+
+   /** \name GUI Timeouts and Times.
+    * These are the timeouts used by the GuiMgr AO.
+    *@{*/
+   #define LL_MAX_TIME_SEC_LCD_UPDATE                                         0.1
+   /*@} GUI Timeouts and Times.*/
 
 /*@} Coupler Board Timeout Maximums*/
 

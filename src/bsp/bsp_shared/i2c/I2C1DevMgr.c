@@ -47,6 +47,7 @@
 #include "i2c.h"                                  /* For I2C bus declarations */
 #include "i2c_dev.h"                           /* For I2C device declarations */
 #include "I2CBusMgr.h"
+#include "GuiMgr.h"
 #include "stm324x9i_eval_ioe16.h"
 
 /* Compile-time called macros ------------------------------------------------*/
@@ -846,7 +847,7 @@ static QState I2C1DevMgr_PostWriteWait(I2C1DevMgr * const me, QEvt const * const
         }
         /* ${AOs::I2C1DevMgr::SM::Active::Busy::PostWriteWait::EEPROM_POST_WRITE_TIMER} */
         case EEPROM_POST_WRITE_TIMER_SIG: {
-            DBG_printf("Write to EEPROM finished with error: 0x%08x\n", me->errorCode);
+            LOG_printf("Write to EEPROM finished with error: 0x%08x\n", me->errorCode);
             status_ = Q_TRAN(&I2C1DevMgr_Idle);
             break;
         }
@@ -1483,7 +1484,7 @@ static QState I2C1DevMgr_EnableAckIOE(I2C1DevMgr * const me, QEvt const * const 
         case I2C_BUS_DONE_SIG: {
             /* ${AOs::I2C1DevMgr::SM::Active::Busy::EnableAckIOE::I2C_BUS_DONE::[NoErr?]} */
             if (ERR_NONE == ((I2CStatusEvt const *)e)->errorCode) {
-                LOG_printf("Got I2C_BUS_DONE with no error\n");
+                DBG_printf("Got I2C_BUS_DONE with no error\n");
                 status_ = Q_TRAN(&I2C1DevMgr_Idle);
             }
             /* ${AOs::I2C1DevMgr::SM::Active::Busy::EnableAckIOE::I2C_BUS_DONE::[else]} */
@@ -1594,7 +1595,7 @@ static QState I2C1DevMgr_GenerateStopWIOE(I2C1DevMgr * const me, QEvt const * co
             /* ${AOs::I2C1DevMgr::SM::Active::Busy::GenerateStopWIOE::I2C_BUS_DONE::[NoErr?]} */
             if (ERR_NONE == ((I2CStatusEvt const *)e)->errorCode) {
                 DBG_printf("Got I2C_BUS_DONE with no error\n");
-                LOG_printf(
+                DBG_printf(
                     "Wrote 0x%02x to address 0x%02x on I2CBus%d device %d\n",
                     me->dataBuf[0],
                     me->addrStart,
@@ -2272,7 +2273,7 @@ static QState I2C1DevMgr_ReadMemDMATSC(I2C1DevMgr * const me, QEvt const * const
         case I2C_BUS_DONE_SIG: {
             /* ${AOs::I2C1DevMgr::SM::Active::Busy::ReadMemDMATSC::I2C_BUS_DONE::[NoErr?]} */
             if (ERR_NONE == ((I2CBusDataEvt const *)e)->errorCode) {
-                LOG_printf("Got I2C_BUS_DONE with no error\n");
+                DBG_printf("Got I2C_BUS_DONE with no error\n");
                 char tmp[120];
                 memset(tmp, 0, sizeof(tmp));
                 uint16_t tmpLen = 0;
@@ -2288,7 +2289,20 @@ static QState I2C1DevMgr_ReadMemDMATSC(I2C1DevMgr * const me, QEvt const * const
                 if ( ERR_NONE != err ) {
                     WRN_printf("Got an error converting hex array to string.  Error: 0x%08x\n", err);
                 }
-                LOG_printf("Read %s\n", tmp);
+                DBG_printf("Read LCD POS array: %s\n", tmp);
+
+                /* Change and re-post the I2CBusDataEvt directly to GuiMgr since it's the only
+                 * AO who cares about this data. */
+                I2CBusDataEvt* i2cBusDataEvt = Q_NEW( I2CBusDataEvt, GUI_LCD_POS_DATA_SIG );
+                i2cBusDataEvt->dataLen = ((I2CBusDataEvt const *)e)->dataLen;
+                i2cBusDataEvt->i2cBus = ((I2CBusDataEvt const *)e)->i2cBus;
+                i2cBusDataEvt->devAddr = ((I2CBusDataEvt const *)e)->devAddr;
+                i2cBusDataEvt->errorCode = ((I2CBusDataEvt const *)e)->errorCode;
+                MEMCPY( i2cBusDataEvt->dataBuf,
+                      ((I2CBusDataEvt const *)e)->dataBuf,
+                      i2cBusDataEvt->dataLen
+                );
+                QACTIVE_POST(AO_GuiMgr, (QEvt *)i2cBusDataEvt, me);
                 status_ = Q_TRAN(&I2C1DevMgr_Idle);
             }
             /* ${AOs::I2C1DevMgr::SM::Active::Busy::ReadMemDMATSC::I2C_BUS_DONE::[else]} */

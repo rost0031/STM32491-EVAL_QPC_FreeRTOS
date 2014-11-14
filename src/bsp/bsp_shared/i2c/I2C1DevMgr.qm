@@ -496,7 +496,7 @@ if ( ERR_NONE != err ) {
     WRN_printf(&quot;Got an error converting hex array to string.  Error: 0x%08x\n&quot;, err);
 }
 LOG_printf(&quot;Read %s\n&quot;, tmp);</action>
-         <choice_glyph conn="111,44,5,1,9,10,-93">
+         <choice_glyph conn="111,44,5,1,9,11,-93">
           <action box="1,-2,10,2"/>
          </choice_glyph>
         </choice>
@@ -542,7 +542,7 @@ ERR_printf(
     &quot;Got I2C_BUS_DONE with error: 0x%08x\n&quot;,
     me-&gt;errorCode
 );</action>
-         <choice_glyph conn="158,22,4,1,8,-17,25,-114">
+         <choice_glyph conn="158,22,4,1,8,-17,22,-114">
           <action box="-6,6,7,2"/>
          </choice_glyph>
         </choice>
@@ -586,7 +586,7 @@ QTimeEvt_rearm(
 );</entry>
        <exit>QTimeEvt_disarm(&amp;me-&gt;i2cWriteTimerEvt);</exit>
        <tran trig="EEPROM_POST_WRITE_TIMER" target="../../../1">
-        <action>DBG_printf(&quot;Write to EEPROM finished with error: 0x%08x\n&quot;, me-&gt;errorCode);</action>
+        <action>LOG_printf(&quot;Write to EEPROM finished with error: 0x%08x\n&quot;, me-&gt;errorCode);</action>
         <tran_glyph conn="145,47,3,1,26,9,-144">
          <action box="0,-2,24,2"/>
         </tran_glyph>
@@ -1123,7 +1123,7 @@ ERR_printf(
         </choice>
         <choice target="../../../../1">
          <guard brief="NoErr?">ERR_NONE == ((I2CStatusEvt const *)e)-&gt;errorCode</guard>
-         <action>LOG_printf(&quot;Got I2C_BUS_DONE with no error\n&quot;);</action>
+         <action>DBG_printf(&quot;Got I2C_BUS_DONE with no error\n&quot;);</action>
          <choice_glyph conn="157,96,5,1,9,10,-139">
           <action box="1,-2,10,2"/>
          </choice_glyph>
@@ -1214,7 +1214,7 @@ ERR_printf(
         <choice target="../../../../1">
          <guard brief="NoErr?">ERR_NONE == ((I2CStatusEvt const *)e)-&gt;errorCode</guard>
          <action>DBG_printf(&quot;Got I2C_BUS_DONE with no error\n&quot;);
-LOG_printf(
+DBG_printf(
     &quot;Wrote 0x%02x to address 0x%02x on I2CBus%d device %d\n&quot;, 
     me-&gt;dataBuf[0],
     me-&gt;addrStart,
@@ -1772,7 +1772,7 @@ ERR_printf(
         </choice>
         <choice target="../../../../1">
          <guard brief="NoErr?">ERR_NONE == ((I2CBusDataEvt const *)e)-&gt;errorCode</guard>
-         <action>LOG_printf(&quot;Got I2C_BUS_DONE with no error\n&quot;);
+         <action>DBG_printf(&quot;Got I2C_BUS_DONE with no error\n&quot;);
 char tmp[120];
 memset(tmp, 0, sizeof(tmp));
 uint16_t tmpLen = 0;
@@ -1788,7 +1788,20 @@ CBErrorCode err = CON_hexToStr(
 if ( ERR_NONE != err ) {
     WRN_printf(&quot;Got an error converting hex array to string.  Error: 0x%08x\n&quot;, err);
 }
-LOG_printf(&quot;Read %s\n&quot;, tmp);</action>
+DBG_printf(&quot;Read LCD POS array: %s\n&quot;, tmp);
+
+/* Change and re-post the I2CBusDataEvt directly to GuiMgr since it's the only
+ * AO who cares about this data. */
+I2CBusDataEvt* i2cBusDataEvt = Q_NEW( I2CBusDataEvt, GUI_LCD_POS_DATA_SIG );
+i2cBusDataEvt-&gt;dataLen = ((I2CBusDataEvt const *)e)-&gt;dataLen;
+i2cBusDataEvt-&gt;i2cBus = ((I2CBusDataEvt const *)e)-&gt;i2cBus;
+i2cBusDataEvt-&gt;devAddr = ((I2CBusDataEvt const *)e)-&gt;devAddr;
+i2cBusDataEvt-&gt;errorCode = ((I2CBusDataEvt const *)e)-&gt;errorCode;
+MEMCPY( i2cBusDataEvt-&gt;dataBuf,
+      ((I2CBusDataEvt const *)e)-&gt;dataBuf,
+      i2cBusDataEvt-&gt;dataLen
+);
+QACTIVE_POST(AO_GuiMgr, (QEvt *)i2cBusDataEvt, me);</action>
          <choice_glyph conn="88,184,5,1,8,10,-69">
           <action box="1,-2,10,2"/>
          </choice_glyph>
@@ -2004,6 +2017,7 @@ dbg_slow_printf(&quot;Constructor\n&quot;);</code>
 #include &quot;i2c.h&quot;                                  /* For I2C bus declarations */
 #include &quot;i2c_dev.h&quot;                           /* For I2C device declarations */
 #include &quot;I2CBusMgr.h&quot;
+#include &quot;GuiMgr.h&quot;
 #include &quot;stm324x9i_eval_ioe16.h&quot;
 
 /* Compile-time called macros ------------------------------------------------*/
