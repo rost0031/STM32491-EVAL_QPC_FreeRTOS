@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?><?xml-stylesheet type='text/xsl' href='_UpgradeReport_Files/UpgradeReport.xslt'?><UpgradeLog>
+<Properties><Property Name="Solution" Value="testsuite">
+</Property><Property Name="Solution File" Value="C:\E\Dev\FreeRTOS\WorkingCopy\FreeRTOS-Plus\Source\CyaSSL\testsuite\testsuite.sln">
+</Property><Property Name="Date" Value="16 August 2014">
+</Property><Property Name="Time" Value="16:36">
+</Property></Properties><Event ErrorLevel="0" Project="" Source="testsuite.sln" Description="File successfully backed up as C:\E\Dev\FreeRTOS\WorkingCopy\FreeRTOS-Plus\Source\CyaSSL\testsuite\testsuite.sln.old">
+</Event><Event ErrorLevel="0" Project="testsuite" Source="testsuite.vcproj" Description="Converting project file 'C:\E\Dev\FreeRTOS\WorkingCopy\FreeRTOS-Plus\Source\CyaSSL\testsuite\testsuite.vcproj'.">
+</Event><Event ErrorLevel="1" Project="testsuite" Source="testsuite.vcproj" Description="VCWebServiceProxyGeneratorTool is no longer supported. The tool has been removed from your project settings.">
+</Event><Event ErrorLevel="0" Project="testsuite" Source="testsuite.vcproj" Description="Done converting to new project file 'C:\E\Dev\FreeRTOS\WorkingCopy\FreeRTOS-Plus\Source\CyaSSL\testsuite\testsuite.vcxproj'.">
+</Event><Event ErrorLevel="3" Project="testsuite" Source="testsuite.vcproj" Description="Converted">
+</Event><Event ErrorLevel="0" Project="" Source="testsuite.sln" Description="Solution converted successfully">
+</Event><Event ErrorLevel="3" Project="" Source="testsuite.sln" Description="Converted">
+</Event></UpgradeLog>

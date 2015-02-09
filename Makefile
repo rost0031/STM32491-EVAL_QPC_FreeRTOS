@@ -150,8 +150,14 @@ NOR_DIR                 = $(BSP_DIR)/nor
 SDRAM_DIR               = $(BSP_DIR)/sdram
 
 # QPC directories
-QPC_DIR                 = $(SYS_DIR)/qpc_shared
-QP_PORT_DIR             = $(QPC_DIR)/ports/arm-cm/qk/gnu
+QPC_DIR                 = $(SYS_DIR)/qpc_5.3.1
+QP_PORT_DIR             = $(QPC_DIR)/ports/freertos/gnu
+QP_FR_CONF_DIR          = $(QPC_DIR)/ports/freertos/conf
+
+# FreeRTOS directories
+FR_DIR                  = $(SYS_DIR)/FreeRTOSV8.1.2/FreeRTOS/Source
+FR_PORT_DIR             = $(FR_DIR)/portable/GCC/ARM_CM4F
+FR_INC_DIR              = $(FR_DIR)/include
 
 # STM32 Drivers
 STM32F4XX_STD_PERIPH_DIR= $(BSP_DIR)/bsp_shared/STM32F4xx_StdPeriph_Driver
@@ -265,6 +271,7 @@ INCLUDES  				= -I$(SRC_DIR) \
 						  -I$(APP_COMM_DIR) \
 						  -I$(APP_GUI_DIR) \
 						  -I$(APP_DBG_DIR) \
+						  \
 						  $(APP_MENU_INCLUDES) \
 						  \
 						  -I$(QPC_DIR)/include \
@@ -300,7 +307,11 @@ INCLUDES  				= -I$(SRC_DIR) \
 						  -I$(KTREE_DIR) \
 						  -I$(FONTS_DIR) \
 						  -I$(DBG_CNTRL_DIR) \
-						  -I$(STEMWIN_INC_DIR)
+						  -I$(STEMWIN_INC_DIR) \
+						  \
+						  -I$(FR_INC_DIR) \
+						  -I$(QP_FR_CONF_DIR) \
+						  -I$(FR_PORT_DIR)
 
 #-----------------------------------------------------------------------------
 # defines

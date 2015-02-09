@@ -55,30 +55,37 @@
 /* Exported types ------------------------------------------------------------*/
 
 /*****************************************************************************
-* NOTE00:
-* The QF_AWARE_ISR_CMSIS_PRI constant from the QF port specifies the highest
-* ISR priority that is disabled by the QF framework. The value is suitable
-* for the NVIC_SetPriority() CMSIS function.
+* NOTE1:
+* The configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY constant from the
+* FreeRTOS configuration file specifies the highest ISR priority that
+* is disabled by the QF framework. The value is suitable for the
+* NVIC_SetPriority() CMSIS function.
 *
-* Only ISRs prioritized at or below the QF_AWARE_ISR_CMSIS_PRI level (i.e.,
+* Only ISRs prioritized at or below the
+* configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY level (i.e.,
 * with the numerical values of priorities equal or higher than
-* QF_AWARE_ISR_CMSIS_PRI) are allowed to call the QK_ISR_ENTRY/QK_ISR_ENTRY
-* macros or any other QF/QK  services. These ISRs are "QF-aware".
+* configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY) are allowed to call any
+* QP/FreeRTOS services. These ISRs are "kernel-aware".
 *
-* Conversely, any ISRs prioritized above the QF_AWARE_ISR_CMSIS_PRI priority
-* level (i.e., with the numerical values of priorities less than
-* QF_AWARE_ISR_CMSIS_PRI) are never disabled and are not aware of the kernel.
-* Such "QF-unaware" ISRs cannot call any QF/QK services. In particular they
-* can NOT call the macros QK_ISR_ENTRY/QK_ISR_ENTRY. The only mechanism
-* by which a "QF-unaware" ISR can communicate with the QF framework is by
-* triggering a "QF-aware" ISR, which can post/publish events.
+* Conversely, any ISRs prioritized above the
+* configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY priority level (i.e., with
+* the numerical values of priorities less than
+* configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY) are never disabled and are
+* not aware of the kernel. Such "kernel-unaware" ISRs cannot call any
+* QP/FreeRTOS services. The only mechanism by which a "kernel-unaware" ISR
+* can communicate with the QF framework is by triggering a "kernel-aware"
+* ISR, which can post/publish events.
 *
-* NOTE01:
-* The User LED is used to visualize the idle loop activity. The brightness
+* For more information, see article "Running the RTOS on a ARM Cortex-M Core"
+* http://www.freertos.org/RTOS-Cortex-M3-M4.html
+*
+* NOTE2:
+* The green LED is used to visualize the idle loop activity. The brightness
 * of the LED is proportional to the frequency of invcations of the idle loop.
 * Please note that the LED is toggled with interrupts locked, so no interrupt
-* execution time contributes to the brightness of the User LED.
+* execution time contributes to the brightness of the green LED.
 */
+
 
 /*!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! CAUTION !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 * Assign a priority to EVERY ISR explicitly by calling NVIC_SetPriority().
@@ -92,10 +99,10 @@ enum KernelUnawareISRs {                                        /* see NOTE00 */
    MAX_KERNEL_UNAWARE_CMSIS_PRI                          /* keep always last */
 };
 /* "kernel-unaware" interrupts can't overlap "kernel-aware" interrupts */
-Q_ASSERT_COMPILE(MAX_KERNEL_UNAWARE_CMSIS_PRI <= QF_AWARE_ISR_CMSIS_PRI);
+Q_ASSERT_COMPILE(MAX_KERNEL_UNAWARE_CMSIS_PRI <= configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY);
 
 typedef enum KernelAwareISRs {   /* ISR priorities starting from the highest urgency */
-	SYSTICK_PRIO = QF_AWARE_ISR_CMSIS_PRI,                         /* see NOTE00 */
+	SYSTICK_PRIO = configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY, /* see NOTE01 */
 	DMA2_Stream7_PRIO,
 	DMA1_Stream6_PRIO,
 	DMA1_Stream0_PRIO,
@@ -110,7 +117,7 @@ typedef enum KernelAwareISRs {   /* ISR priorities starting from the highest urg
 } ISR_Priority;
 
 /* "kernel-aware" interrupts should not overlap the PendSV priority */
-Q_ASSERT_COMPILE(MAX_KERNEL_AWARE_CMSIS_PRI <= (0xFF >>(8-__NVIC_PRIO_BITS)));
+Q_ASSERT_COMPILE(MAX_KERNEL_AWARE_CMSIS_PRI <= (0xFF >>( 8 - __NVIC_PRIO_BITS)));
 
 /**
  * @} end addtogroup groupBSP
