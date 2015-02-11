@@ -495,10 +495,20 @@ void SDRAM_TestDestructive( void )
 /******************************************************************************/
 inline void SDRAM_CallbackExample( void )
 {
-   QK_ISR_ENTRY();                         /* inform QK about entering an ISR */
+   QF_CRIT_STAT_TYPE intStat;
+   BaseType_t lHigherPriorityTaskWoken = pdFALSE;
+
+   QF_ISR_ENTRY(intStat);                        /* inform QF about ISR entry */
+   /* Code goes below this comment */
 
 
-   QK_ISR_EXIT();                           /* inform QK about exiting an ISR */
+   /* Code goes above this comment */
+   QF_ISR_EXIT(intStat, lHigherPriorityTaskWoken);/* inform QF about ISR exit */
+
+   /* yield only when needed... */
+   if (lHigherPriorityTaskWoken != pdFALSE) {
+      vTaskMissedYield();
+   }
 }
 
 /**

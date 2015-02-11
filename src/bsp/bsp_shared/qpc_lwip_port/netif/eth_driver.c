@@ -538,7 +538,10 @@ void low_level_init(struct netif *netif)
 /******************************************************************************/
 inline void ETH_EventCallback( void )
 {
-    QK_ISR_ENTRY();                      /* inform QK about entering an ISR */
+   QF_CRIT_STAT_TYPE intStat;
+   BaseType_t lHigherPriorityTaskWoken = pdFALSE;
+
+   QF_ISR_ENTRY(intStat);                        /* inform QF about ISR entry */
 
     if ( ETH_GetDMAFlagStatus(ETH_DMA_FLAG_R) == SET) {
       ETH_DMAClearITPendingBit(ETH_DMA_IT_NIS | ETH_DMA_IT_R);/* clear the interrupt sources */
@@ -572,7 +575,12 @@ inline void ETH_EventCallback( void )
     }
 #endif
 
-    QK_ISR_EXIT();                        /* inform QK about exiting an ISR */
+   QF_ISR_EXIT(intStat, lHigherPriorityTaskWoken);/* inform QF about ISR exit */
+
+   /* yield only when needed... */
+   if (lHigherPriorityTaskWoken != pdFALSE) {
+      vTaskMissedYield();
+   }
 }
 
 

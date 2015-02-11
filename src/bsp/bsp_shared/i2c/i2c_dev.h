@@ -41,8 +41,6 @@ typedef enum I2CBus1_Devices {
    EEPROM  = 0,                         /**< EEPROM attached to I2C */
    SN_ROM,
    EUI_ROM,
-   IO_EXP,
-   TS_CNTRL,
    /* Insert more I2CBus1 device enumerations here... */
    MAX_I2C1_DEV     /**< Maximum number of available I2C devices on I2CBus1 */
 } I2CBus1_Dev_t;
@@ -79,9 +77,7 @@ typedef struct I2CBus1_DeviceSettings
 (                                                                             \
    (DEV) == EEPROM ||                                                         \
    (DEV) == SN_ROM ||                                                         \
-   (DEV) == EUI_ROM ||                                                        \
-   (DEV) == IO_EXP ||                                                         \
-   (DEV) == TS_CNTRL                                                          \
+   (DEV) == EUI_ROM                                                           \
 )
 
 /* Exported constants --------------------------------------------------------*/

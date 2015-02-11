@@ -20,8 +20,6 @@
 #include "Shared.h"
 #include "stm32f4xx_dma.h"                           /* For STM32 DMA support */
 #include "stm32f4xx_i2c.h"                           /* For STM32 DMA support */
-#include "stm324x9i_eval_ioe16.h"
-#include "stm324x9i_eval_lcd.h"
 
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */
@@ -77,32 +75,6 @@ I2CBus1_DevSettings_t s_I2CBus1_Dev[MAX_I2C1_DEV] =
             0x98,                      /**< i2c_mem_min_addr */
             0x9F,                      /**< i2c_mem_max_addr */
             EEPROM_PAGE_SIZE / 2,      /**< i2c_mem_page_size */
-      },
-      {
-            /* "External" device settings */
-            IO_EXP,                    /**< i2c_dev */
-            1,                         /**< i2c_dev_addr_size */
-            IOE16_ADDR,                /**< i2c_dev_addr */
-
-            /* Internal device settings */
-            1,                         /**< i2c_mem_addr_size */
-            0x00,                      /**< i2c_mem_addr */
-            0x00,                      /**< i2c_mem_min_addr */
-            0x24,                      /**< i2c_mem_max_addr */
-            1,                         /**< i2c_mem_page_size */
-      },
-      {
-            /* "External" device settings */
-            TS_CNTRL,                  /**< i2c_dev */
-            1,                         /**< i2c_dev_addr_size */
-            LCD_ADDR,                  /**< i2c_dev_addr */
-
-            /* Internal device settings */
-            1,                         /**< i2c_mem_addr_size */
-            0x00,                      /**< i2c_mem_addr */
-            0x81,                      /**< i2c_mem_min_addr */
-            0x8A,                      /**< i2c_mem_max_addr */
-            0x08,                      /**< i2c_mem_page_size */
       },
 };
 

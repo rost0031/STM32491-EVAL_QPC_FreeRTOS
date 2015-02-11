@@ -432,7 +432,10 @@ void I2C_StartDMAWrite( I2C_Bus_t iBus, uint16_t wWriteLen )
 /******************************************************************************/
 inline void I2C1_DMAReadCallback( void )
 {
-   QK_ISR_ENTRY();                         /* inform QK about entering an ISR */
+   QF_CRIT_STAT_TYPE intStat;
+   BaseType_t lHigherPriorityTaskWoken = pdFALSE;
+
+   QF_ISR_ENTRY(intStat);                        /* inform QF about ISR entry */
 
    /* Test on DMA Stream Transfer Complete interrupt */
    if ( RESET != DMA_GetITStatus(DMA1_Stream0, DMA_IT_TCIF0) ) {
@@ -487,13 +490,21 @@ I2C1_DMAReadCallback_cleanup:
       DMA_ClearITPendingBit( DMA1_Stream0, DMA_IT_TCIF0 );
    }
 
-   QK_ISR_EXIT();                           /* inform QK about exiting an ISR */
+   QF_ISR_EXIT(intStat, lHigherPriorityTaskWoken);/* inform QF about ISR exit */
+
+   /* yield only when needed... */
+   if (lHigherPriorityTaskWoken != pdFALSE) {
+      vTaskMissedYield();
+   }
 }
 
 /******************************************************************************/
 inline void I2C1_DMAWriteCallback( void )
 {
-   QK_ISR_ENTRY();                         /* inform QK about entering an ISR */
+   QF_CRIT_STAT_TYPE intStat;
+   BaseType_t lHigherPriorityTaskWoken = pdFALSE;
+
+   QF_ISR_ENTRY(intStat);                        /* inform QF about ISR entry */
 
    /* Test on DMA Stream Transfer Complete interrupt */
    if ( RESET != DMA_GetITStatus(DMA1_Stream6, DMA_IT_TCIF6) ) {
@@ -534,21 +545,37 @@ I2C1_DMAWriteCallback_cleanup:
       DMA_ClearITPendingBit( DMA1_Stream6, DMA_IT_TCIF6 );
    }
 
-   QK_ISR_EXIT();                           /* inform QK about exiting an ISR */
+   QF_ISR_EXIT(intStat, lHigherPriorityTaskWoken);/* inform QF about ISR exit */
+
+   /* yield only when needed... */
+   if (lHigherPriorityTaskWoken != pdFALSE) {
+      vTaskMissedYield();
+   }
 }
 
 /******************************************************************************/
 inline void I2C1_EventCallback( void )
 {
-   QK_ISR_ENTRY();                         /* inform QK about entering an ISR */
+   QF_CRIT_STAT_TYPE intStat;
+   BaseType_t lHigherPriorityTaskWoken = pdFALSE;
 
-   QK_ISR_EXIT();                           /* inform QK about exiting an ISR */
+   QF_ISR_ENTRY(intStat);                        /* inform QF about ISR entry */
+
+   QF_ISR_EXIT(intStat, lHigherPriorityTaskWoken);/* inform QF about ISR exit */
+
+   /* yield only when needed... */
+   if (lHigherPriorityTaskWoken != pdFALSE) {
+      vTaskMissedYield();
+   }
 }
 
 /******************************************************************************/
 inline void I2C1_ErrorEventCallback( void )
 {
-   QK_ISR_ENTRY();                         /* inform QK about entering an ISR */
+   QF_CRIT_STAT_TYPE intStat;
+   BaseType_t lHigherPriorityTaskWoken = pdFALSE;
+
+   QF_ISR_ENTRY(intStat);                        /* inform QF about ISR entry */
 
    /* Read SR1 register to get I2C error */
    __IO uint16_t regVal = I2C_ReadRegister(I2C1, I2C_Register_SR1) & 0xFF00;
@@ -559,7 +586,13 @@ inline void I2C1_ErrorEventCallback( void )
       ERR_printf("I2C Error: 0x%04x.  Resetting error bits\n", regVal);
       I2C_BusInit( I2CBus1 );
    }
-   QK_ISR_EXIT();                           /* inform QK about exiting an ISR */
+
+   QF_ISR_EXIT(intStat, lHigherPriorityTaskWoken);/* inform QF about ISR exit */
+
+   /* yield only when needed... */
+   if (lHigherPriorityTaskWoken != pdFALSE) {
+      vTaskMissedYield();
+   }
 }
 
 /**

@@ -140,9 +140,6 @@ SERIAL_DIR              = $(BSP_DIR)/bsp_shared/serial
 # I2C Driver and AO
 I2C_DIR                 = $(BSP_DIR)/bsp_shared/i2c
 
-# LCD and TSC drivers
-LCD_DIR                 = $(BSP_DIR)/lcd
-
 # NOR Driver and AO
 NOR_DIR                 = $(BSP_DIR)/nor
 
@@ -175,9 +172,6 @@ LWIP_SRC_DIR            = ../../
 
 # Application Comm directory
 APP_COMM_DIR            = $(APP_DIR)/comm
-
-# Application Comm directory
-APP_GUI_DIR             = $(APP_DIR)/gui
 
 # Application Debug directory
 APP_DBG_DIR             = $(APP_DIR)/debug
@@ -225,19 +219,10 @@ DBG_CNTRL_DIR			= $(SYS_DIR)/sys_shared/dbg_cntrl
 # K-ary tree directory
 KTREE_DIR               = $(SYS_DIR)/ktree
 
-# STemWin directories
-STEMWIN_DIR             = $(SYS_DIR)/STemWinLibrary522
-STEMWIN_INC_DIR         = $(STEMWIN_DIR)/inc
-STEMWIN_LIB_DIR         = $(STEMWIN_DIR)/Lib
-STEMWIN_OS_DIR          = $(STEMWIN_DIR)/OS
-
-# Fonts directory
-FONTS_DIR               = $(SYS_DIR)/fonts
 	
 # Source virtual directories
 VPATH 					= $(APP_DIR) \
 						  $(APP_COMM_DIR) \
-						  $(APP_GUI_DIR) \
 						  $(APP_DBG_DIR) \
 						  $(APP_MENU_DIRS) \
 						  \
@@ -246,7 +231,6 @@ VPATH 					= $(APP_DIR) \
 						  $(ETH_DRV_DIR)/src \
 						  $(SERIAL_DIR) \
 						  $(I2C_DIR) \
-						  $(LCD_DIR) \
 						  $(NOR_DIR) \
 						  $(SDRAM_DIR) \
 						  \
@@ -257,11 +241,9 @@ VPATH 					= $(APP_DIR) \
 						  $(BSP_DIR)/bsp_shared/runtime \
 						  \
 						  $(STM32F4XX_STD_PERIPH_DIR)/src \
-						  $(STEMWIN_OS_DIR) \
 						  \
 						  $(CON_OUT_DIR) \
 						  $(KTREE_DIR) \
-						  $(FONTS_DIR) \
 						  $(DBG_CNTRL_DIR)
 
 # include directories
@@ -269,7 +251,6 @@ INCLUDES  				= -I$(SRC_DIR) \
 						  -I$(APP_DIR) \
 						  \
 						  -I$(APP_COMM_DIR) \
-						  -I$(APP_GUI_DIR) \
 						  -I$(APP_DBG_DIR) \
 						  \
 						  $(APP_MENU_INCLUDES) \
@@ -285,7 +266,6 @@ INCLUDES  				= -I$(SRC_DIR) \
 						  -I$(BSP_DIR)/bsp_shared/runtime \
 						  -I$(SERIAL_DIR) \
 						  -I$(I2C_DIR) \
-						  -I$(LCD_DIR) \
 						  -I$(NOR_DIR) \
 						  -I$(SDRAM_DIR) \
 						  \
@@ -305,9 +285,7 @@ INCLUDES  				= -I$(SRC_DIR) \
 						  \
 						  -I$(CON_OUT_DIR) \
 						  -I$(KTREE_DIR) \
-						  -I$(FONTS_DIR) \
 						  -I$(DBG_CNTRL_DIR) \
-						  -I$(STEMWIN_INC_DIR) \
 						  \
 						  -I$(FR_INC_DIR) \
 						  -I$(QP_FR_CONF_DIR) \
@@ -364,8 +342,6 @@ C_SRCS                = \
 						time.c \
 						i2c.c \
 						i2c_dev.c \
-						stm324x9i_eval_ioe16.c \
-						stm324x9i_eval_lcd.c \
 						nor.c \
 						sdram.c \
 						dbg_cntrl.c \
@@ -376,21 +352,15 @@ C_SRCS                = \
 						SerialMgr.c \
 						CommStackMgr.c \
 						DbgMgr.c \
-						GuiMgr.c \
-						GUIConf.c \
-						LCDConf.c \
-						GUI_X.c \
 						\
 			            misc.c  \
 			      		stm32f4xx_crc.c \
 			      		stm32f4xx_dma.c \
-			      		stm32f4xx_dma2d.c \
 			      		stm32f4xx_exti.c \
 			      		stm32f4xx_flash.c \
 			      		stm32f4xx_fmc.c \
 			      		stm32f4xx_i2c.c \
 						stm32f4xx_gpio.c \
-			      		stm32f4xx_ltdc.c \
 			      		stm32f4xx_pwr.c \
 			      		stm32f4xx_rcc.c \
 			      		stm32f4xx_rtc.c \
@@ -413,10 +383,12 @@ C_SRCS                = \
 #			      		stm32f4xx_dac.c \
 #			      		stm32f4xx_dbgmcu.c \
 #			      		stm32f4xx_dcmi.c \
+#			      		stm32f4xx_dma2d.c \
 #			      		stm32f4xx_hash.c \
 #			      		stm32f4xx_hash_md5.c \
 #			      		stm32f4xx_hash_sha1.c \
 #			      		stm32f4xx_iwdg.c \
+#			      		stm32f4xx_ltdc.c \
 #			      		stm32f4xx_rng.c \
 #			      		stm32f4xx_sai.c \
 #			      		stm32f4xx_sdio.c \
@@ -435,11 +407,11 @@ LDFLAGS  				:= -T$(LDSCRIPT)
 #
 
 # Common options for all configurations. 
-#LIBS    	= -lqp_$(ARM_CORE)_cs -llwip_$(ARM_CORE)_cs -lSTemWin522_CM3_GCC
-LIBS    	= -lqp_$(ARM_CORE)_cs -llwip_$(ARM_CORE)_cs -lSTemWin522_CM4_GCC
+#LIBS    	= -lqp_$(ARM_CORE)_cs -llwip_$(ARM_CORE)_cs
+LIBS    	= -lqp_$(ARM_CORE)_cs -llwip_$(ARM_CORE)_cs 
 
 #LIBS    	= -lqp_$(ARM_CORE)_cs -llwip_$(ARM_CORE)_cs
-LIB_PATHS   = -L$(QP_PORT_DIR)/$(BIN_DIR) -L$(LWIP_DIR)/$(BIN_DIR) -L$(STEMWIN_LIB_DIR)
+LIB_PATHS   = -L$(QP_PORT_DIR)/$(BIN_DIR) -L$(LWIP_DIR)/$(BIN_DIR)
 #LIB_PATHS   = -L$(QP_PORT_DIR)/$(BIN_DIR) -L$(LWIP_DIR)/$(BIN_DIR)
 
 # Specific options depending on the build configuration
@@ -661,4 +633,3 @@ show:
 	@echo MCU = $(MCU)
 	@echo MFLAGS = $(MFLAGS)
 	@echo CFLAGS = $(CFLAGS)
-	@echo STEMWIN_LIB_DIR = $(STEMWIN_LIB_DIR)

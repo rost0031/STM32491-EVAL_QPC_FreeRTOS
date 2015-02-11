@@ -60,6 +60,16 @@ extern "C" {
     #include "qs_dummy.h" /* QS/C dummy (inactive) interface */
 #endif
 
+/* device driver signal offset at the top of the signal range */
+#if (Q_SIGNAL_SIZE == 1)
+    #define DEV_DRIVER_SIG  (QSignal)(0xFFU - 8U)
+#elif (Q_SIGNAL_SIZE == 2)
+    #define DEV_DRIVER_SIG  (QSignal)(0xFFFFU - 32U)
+#elif (Q_SIGNAL_SIZE == 4)
+    #define DEV_DRIVER_SIG  (QSignal)(0xFFFFFFFFU - 256U)
+#else
+    #error "Q_SIGNAL_SIZE not defined or incorrect"
+#endif
 
 /****************************************************************************/
 #ifndef QP_API_VERSION

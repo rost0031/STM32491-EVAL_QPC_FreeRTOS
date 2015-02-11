@@ -26,7 +26,7 @@
 #include "serial.h"
 #include "nor.h"                               /* M29WV128G NOR Flash support */
 #include "sdram.h"                          /* MT48LC2M3B2B5-7E SDRAM support */
-#include "stm324x9i_eval_ioe16.h"
+#include "projdefs.h"                          /* FreeRTOS base types support */
 
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */
@@ -105,13 +105,14 @@ void BSP_init( void )
    dbg_slow_printf("NOR ID: DevCode2 : 0x%04x\n", pNOR_ID.Device_Code2);
    dbg_slow_printf("NOR ID: DevCode3 : 0x%04x\n", pNOR_ID.Device_Code3);
 
-   /* 6. Initialize the SDRAM  - this is already init in low_level startup code */
-//   SDRAM_Init();
+   /* 6. Initialize the SDRAM  - this is already init in low_level startup code
+   SDRAM_Init();
+    */
 
    /* 7. Initialize the touchscreen */
-   dbg_slow_printf("Starting initializing touch screen\n");
-   BSP_TSC_Init();
-   dbg_slow_printf("Finished initializing touch screen\n");
+//   dbg_slow_printf("Starting initializing touch screen\n");
+//   BSP_TSC_Init();
+//   dbg_slow_printf("Finished initializing touch screen\n");
 }
 
 /******************************************************************************/
@@ -133,86 +134,6 @@ void BSP_Delay(__IO uint32_t nCount)
 {
    while(nCount--) {
    }
-}
-
-/******************************************************************************/
-uint32_t BSP_TSC_Init(void)
-{
-   dbg_slow_printf("Enter\n");
-   uint32_t ret = 1;
-
-   TS_Pressed = 0;
-
-   if (IOE16_Config() == IOE16_OK) {
-      dbg_slow_printf("IOE16 initialized\n");
-      /* Enable Interrupt */
-      IOE16_ITConfig(IOE16_TS_IT);
-
-      IOE16_I2C_ReadDeviceRegister(IOE16_REG_GPMR_LSB);
-
-      IOE16_GITCmd(ENABLE);
-
-//      /* Read all the registers on the damn thing */
-//      __IO uint16_t tmp = 0x0000;
-//
-//      /* Read the device ID  */
-//      tmp = IOE16_I2C_ReadDeviceRegister(IOE16_REG_CHP_ID_MSB);
-//      tmp = (uint32_t)(tmp << 8);
-//      tmp |= (uint32_t)IOE16_I2C_ReadDeviceRegister(IOE16_REG_CHP_ID_LSB);
-//      dbg_slow_printf("Read 0x%04x from IOE16_REG_CHP_ID (0x%02x) register\n", tmp, IOE16_REG_CHP_ID_LSB);
-//      tmp = 0x0000;
-//
-//      tmp = (uint16_t)IOE16_I2C_ReadDeviceRegister(IOE16_REG_ID_VER);
-//      dbg_slow_printf("Read 0x%04x from IOE16_REG_ID (0x%02x) register\n", tmp, IOE16_REG_ID_VER);
-//      tmp = 0x0000;
-//
-//      tmp = (uint16_t)IOE16_I2C_ReadDeviceRegister(IOE16_REG_SYS_CTRL);
-//      dbg_slow_printf("Read 0x%04x from IOE16_REG_SYS_CTRL (0x%02x) register\n", tmp, IOE16_REG_SYS_CTRL);
-//      tmp = 0x0000;
-//
-//      /* Read the interrupt control register */
-//      tmp = IOE16_I2C_ReadDeviceRegister(IOE16_REG_IEGPIOR_MSB);
-//      tmp = (uint32_t)(tmp << 8);
-//      tmp |= (uint32_t)IOE16_I2C_ReadDeviceRegister(IOE16_REG_IEGPIOR_LSB);
-//      dbg_slow_printf("Read 0x%04x from IOE16_REG_IEGPIOR (0x%02x) register\n", tmp, IOE16_REG_IEGPIOR_LSB);
-//      tmp = 0x0000;
-//
-//      tmp = IOE16_I2C_ReadDeviceRegister(IOE16_REG_ISGPIOR_MSB);
-//      tmp = (uint32_t)(tmp << 8);
-//      tmp |= (uint32_t)IOE16_I2C_ReadDeviceRegister(IOE16_REG_ISGPIOR_LSB);
-//      dbg_slow_printf("Read 0x%04x from IOE16_REG_ISGPIOR (0x%02x) register\n", tmp, IOE16_REG_ISGPIOR_LSB);
-//      tmp = 0x0000;
-//
-//      /* Read GPMR register */
-//      tmp = IOE16_I2C_ReadDeviceRegister(IOE16_REG_GPMR_MSB);
-//      tmp = (uint32_t)(tmp << 8);
-//      tmp |= (uint32_t)IOE16_I2C_ReadDeviceRegister(IOE16_REG_GPMR_LSB);
-//      dbg_slow_printf("Read 0x%04x from IOE16_REG_GPMR (0x%02x) register\n", tmp, IOE16_REG_GPMR_LSB);
-//      tmp = 0x0000;
-//
-//      tmp = IOE16_I2C_ReadDeviceRegister(IOE16_REG_GPSR_MSB);
-//      tmp = (uint32_t)(tmp << 8);
-//      tmp |= (uint32_t)IOE16_I2C_ReadDeviceRegister(IOE16_REG_GPSR_LSB);
-//      dbg_slow_printf("Read 0x%04x from IOE16_REG_GPSR (0x%02x) register\n", tmp, IOE16_REG_GPSR_LSB);
-//      tmp = 0x0000;
-//
-//      tmp = IOE16_I2C_ReadDeviceRegister(IOE16_REG_GPDR_MSB);
-//      tmp = (uint32_t)(tmp << 8);
-//      tmp |= (uint32_t)IOE16_I2C_ReadDeviceRegister(IOE16_REG_GPDR_LSB);
-//      dbg_slow_printf("Read 0x%04x from IOE16_REG_GPDR (0x%02x) register\n", tmp, IOE16_REG_GPDR_LSB);
-//      tmp = 0x0000;
-//
-//      tmp = IOE16_I2C_ReadDeviceRegister(IOE16_REG_GPPIR_MSB);
-//      tmp = (uint32_t)(tmp << 8);
-//      tmp |= (uint32_t)IOE16_I2C_ReadDeviceRegister(IOE16_REG_GPPIR_LSB);
-//      dbg_slow_printf("Read 0x%04x from IOE16_REG_GPPIR (0x%02x) register\n", tmp, IOE16_REG_GPPIR_LSB);
-//      tmp = 0x0000;
-
-      ret = 0;
-//      IOE16_GetITStatus();
-   }
-dbg_slow_printf("Exit\n");
-   return ret;
 }
 
 /* Externally referenced functions and callbacks -----------------------------*/
@@ -481,29 +402,109 @@ QSTimeCtr QS_onGetTime(void) {            /* invoked with interrupts locked */
  */
 void QS_onFlush(void) {
    uint16_t b;
+   QF_INT_DISABLE();
    while ((b = QS_getByte()) != QS_EOD) {      /* while not End-Of-Data... */
+      QF_INT_ENABLE();
       while ((USART1->SR & USART_FLAG_TXE) == 0) { /* while TXE not empty */
       }
       USART1->DR = (b & 0xFF);                /* put into the DR register */
+      QF_INT_DISABLE();
    }
+   QF_INT_ENABLE();
 }
 #endif                                                             /* Q_SPY */
 /*--------------------------------------------------------------------------*/
 
+///******************************************************************************/
+//inline void BSP_SysTickCallback( void )
+//{
+//   QF_CRIT_STAT_TYPE intStat;
+//   BaseType_t lHigherPriorityTaskWoken = pdFALSE;
+//
+//   QF_ISR_ENTRY(intStat);                        /* inform QF about ISR entry */
+//
+//#ifdef Q_SPY
+//   uint32_t dummy = SysTick->CTRL;           /* clear NVIC_ST_CTRL_COUNT flag */
+//   QS_tickTime_ += QS_tickPeriod_;          /* account for the clock rollover */
+//#endif
+//
+////   QF_TICK(&l_SysTick_Handler);              /* process all armed time events */
+//
+//   QF_ISR_EXIT(intStat, lHigherPriorityTaskWoken);/* inform QF about ISR exit */
+//
+//   /* yield only when needed... */
+//   if (lHigherPriorityTaskWoken != pdFALSE) {
+//      vTaskMissedYield();
+//   }
+//}
+
 /******************************************************************************/
-inline void BSP_SysTickCallback( void )
+void vApplicationTickHook(void)
 {
-   QK_ISR_ENTRY();                          /* inform QK-nano about ISR entry */
+   QF_CRIT_STAT_TYPE intStat;
+   BaseType_t lHigherPriorityTaskWoken = pdFALSE;
+
+   QF_ISR_ENTRY(intStat);                        /* inform QF about ISR entry */
+
 #ifdef Q_SPY
-   uint32_t dummy = SysTick->CTRL;           /* clear NVIC_ST_CTRL_COUNT flag */
-   QS_tickTime_ += QS_tickPeriod_;          /* account for the clock rollover */
+   {
+      uint32_t dummy = SysTick->CTRL; /* clear SysTick_CTRL_COUNTFLAG */
+      QS_tickTime_ += QS_tickPeriod_; /* account for the clock rollover */
+   }
 #endif
 
-   QF_TICK(&l_SysTick_Handler);              /* process all armed time events */
+   QF_TICK_X(0U, &l_SysTick_Handler);  /* process all armed time events */
 
-   QK_ISR_EXIT();                            /* inform QK-nano about ISR exit */
+   QF_ISR_EXIT(intStat, lHigherPriorityTaskWoken); /* <=== ISR exit */
+
+   /* yield only when needed... */
+   if (lHigherPriorityTaskWoken != pdFALSE) {
+      vTaskMissedYield();
+   }
 }
 
+/******************************************************************************/
+/**
+ * @brief  FreeRTOS callback that is called whenever the system is idle.
+ *
+ * This function is a callback for FreeRTOS that replaces the QK_onIdle() used
+ * by QK kernel. It is called whenever QPC/FreeRTOS runs out of things to do and
+ * is idle.  It is used by QSPY (if compiled in) to send data out to prevent
+ * interfering with the system as much as possible.
+ *
+ * This function can also be used to visualize idle activity.
+ *
+ * @param   None
+ * @return  None
+ */
+void vApplicationIdleHook( void )
+{
+#ifdef Q_SPY
+
+   if ((USART1->SR & USART_FLAG_TXE) != 0) {              /* is TXE empty? */
+      uint16_t b;
+
+      QF_INT_DISABLE();
+      b = QS_getByte();
+      QF_INT_ENABLE();
+
+      if (b != QS_EOD) {                              /* not End-Of-Data? */
+         USART1->DR = (b & 0xFF);             /* put into the DR register */
+      }
+   }
+
+#elif defined NDEBUG
+   __WFI();                                          /* wait for interrupt */
+#endif
+}
+
+/******************************************************************************/
+void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName) {
+   (void)xTask;
+   (void)pcTaskName;
+   printf("ERROR: Stack overflow in stack %s\n", pcTaskName);
+   Q_ERROR();
+}
 /**
  * @} end addtogroup groupBSP
  */

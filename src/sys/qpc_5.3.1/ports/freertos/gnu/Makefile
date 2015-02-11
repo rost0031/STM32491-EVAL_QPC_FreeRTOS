@@ -112,13 +112,17 @@ QS_OBJS    					=
 FR_TOP_DIR                  = ../../../../FreeRTOSV8.1.2/FreeRTOS
 FR_SRC_DIR                  = $(FR_TOP_DIR)/Source
 FR_INC_DIR                  = $(FR_SRC_DIR)/include
+FR_MEM_DIR                  = $(FR_SRC_DIR)/portable/MemMang
 FR_PORT_DIR                 = $(FR_SRC_DIR)/portable/GCC/ARM_CM4F
 CCINC                       = -I$(QP_PRTDIR) -I$(QP_INCDIR) -I$(QF_SRCDIR) -I$(FR_INC_DIR) -I$(FR_PORT_DIR) -I$(FR_PORT_CONF_DIR)
+VPATH                       = $(FR_SRC_DIR) $(FR_PORT_DIR) $(FR_MEM_DIR) $(QP_PRTDIR) $(QF_SRCDIR) $(QEP_SRCDIR) 
 
 #-----------------------------------------------------------------------------
 # FreeRTOS port src and objects 
 #
-FR_PORT_CSRC                =  port.c
+FR_PORT_CSRC                =  port.c \
+                               heap_1.c
+                               
 FR_PORT_OBJS                =  $(patsubst %.c, $(BINDIR)/%.o, $(FR_PORT_CSRC))
 
 #-----------------------------------------------------------------------------
@@ -133,8 +137,6 @@ FR_CSRC                     =  croutine.c \
 							   
 FR_OBJS 					=  $(patsubst %.c, $(BINDIR)/%.o, $(FR_CSRC))
 
-
-VPATH += $(FR_SRC_DIR) $(FR_PORT_DIR) $(QP_PRTDIR)
 
 #-----------------------------------------------------------------------------
 # build options for various configurations
@@ -169,6 +171,8 @@ QS_CSRC   					= qs.c \
 QS_OBJS                     = $(patsubst %.c, $(BINDIR)/%.o, $(QS_CSRC))
 
 ASMFLAGS                    = -g -c $(AFLAGS)
+VPATH                      += $(QS_SRCDIR)
+
 else                     # default Debug configuration .......................
 
 BINDIR                     := dbg
@@ -239,7 +243,7 @@ QF_OBJS 					=  $(patsubst %.c, $(BINDIR)/%.o, $(QF_CSRC))
 #-----------------------------------------------------------------------------
 # All src and objects 
 #
-ALL_OBJ = $(QEP_OBSJ) $(QF_OBJS) $(QS_OBJS) $(FR_PORT_OBJS) $(FR_OBJS)
+ALL_OBJ = $(QEP_OBJS) $(QF_OBJS) $(QS_OBJS) $(FR_PORT_OBJS) $(FR_OBJS)
 ALL_SRC = $(QEP_CSRC) $(QF_CSRC) $(QS_CSRC) $(FR_PORT_CSRC) $(FR_CSRC)
 
 .default: all
@@ -247,11 +251,11 @@ ALL_SRC = $(QEP_CSRC) $(QF_CSRC) $(QS_CSRC) $(FR_PORT_CSRC) $(FR_CSRC)
 #-----------------------------------------------------------------------------
 # Build Targets
 #
-all: $(BINDIR)/libqp_$(ARM_CORE)_cs.a $(BINDIR)
+all: $(BINDIR)/libqp_$(ARM_CORE)_cs.a $(ALL_OBJ)
 	
 	
-$(BINDIR)/libqp_$(ARM_CORE)_cs.a: $(BINDIR) $(QEP_OBSJ) $(QF_OBJS) $(QS_OBJS) $(FR_PORT_OBJS) $(FR_OBJS)
-	-$(RM) $(BINDIR)/libqp.a
+$(BINDIR)/libqp_$(ARM_CORE)_cs.a: $(BINDIR) $(ALL_OBJ)
+	-$(RM) $(BINDIR)/*.a
 	$(AR) $(LIBFLAGS) $(BINDIR)/libqp_$(ARM_CORE)_cs.a $(ALL_OBJ)
 
 $(BINDIR)/%.o: %.c
@@ -285,3 +289,7 @@ show:
 	@echo MCU = $(MCU)
 	@echo MFLAGS = $(MFLAGS)
 	@echo CFLAGS = $(CFLAGS)
+	@echo FR_PORT_OBJS = $(FR_PORT_OBJS)
+	@echo ALL_OBJ = $(ALL_OBJ)
+	@echo VPATH = $(VPATH)
+	

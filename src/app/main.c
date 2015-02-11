@@ -17,7 +17,6 @@
 #include "DbgMgr.h"                                 /* for starting DbgMgr AO */
 #include "I2CBusMgr.h"                           /* for starting I2CBusMgr AO */
 #include "I2C1DevMgr.h"                         /* for starting I2C1DevMgr AO */
-#include "GuiMgr.h"                                 /* for starting GuiMgr AO */
 
 #include "project_includes.h"           /* Includes common to entire project. */
 #include "Shared.h"
@@ -34,6 +33,8 @@ DBG_DEFINE_THIS_MODULE( DBG_MODL_GENERAL ); /* For debug system to ID this modul
 
 /* Private typedefs ----------------------------------------------------------*/
 /* Private defines -----------------------------------------------------------*/
+#define THREAD_STACK_SIZE  1024U
+
 /* Private macros ------------------------------------------------------------*/
 /* Private variables and Local objects ---------------------------------------*/
 static QEvt const    *l_CommStackMgrQueueSto[30];  /**< Storage for CommStackMgr event Queue */
@@ -42,7 +43,6 @@ static QEvt const    *l_SerialMgrQueueSto[300];     /**< Storage for SerialMgr e
 static QEvt const    *l_I2CBusMgrQueueSto[30][MAX_I2C_BUS];    /**< Storage for I2CBusMgr event Queue */
 static QEvt const    *l_I2C1DevMgrQueueSto[30];    /**< Storage for I2C1DevMgr event Queue */
 static QEvt const    *l_DbgMgrQueueSto[30];        /**< Storage for DbgMgr event Queue */
-static QEvt const    *l_GuiMgrQueueSto[30];         /**< Storage for GuiMgr event Queue */
 static QSubscrList   l_subscrSto[MAX_PUB_SIG];      /**< Storage for subscribe/publish event Queue */
 
 /**
@@ -105,7 +105,6 @@ int main(void)
     DBG_ENABLE_DEBUG_FOR_MODULE(DBG_MODL_SDRAM);
     DBG_ENABLE_DEBUG_FOR_MODULE(DBG_MODL_DBG);
     DBG_ENABLE_DEBUG_FOR_MODULE(DBG_MODL_COMM);
-    DBG_ENABLE_DEBUG_FOR_MODULE(DBG_MODL_GUI);
 
     /* initialize the Board Support Package */
     BSP_init();
@@ -126,7 +125,6 @@ int main(void)
 
     I2C1DevMgr_ctor();
     CommStackMgr_ctor();
-    GuiMgr_ctor();
     DbgMgr_ctor();                           /* This AO should start up last */
 
     dbg_slow_printf("Initializing QF\n");
@@ -143,7 +141,6 @@ int main(void)
     QS_OBJ_DICTIONARY(l_I2C1DevMgrQueueSto);
     QS_OBJ_DICTIONARY(l_CommStackMgrQueueSto);
     QS_OBJ_DICTIONARY(l_DbgMgrQueueSto);
-    QS_OBJ_DICTIONARY(l_GuiMgrQueueSto);
 
     QF_psInit(l_subscrSto, Q_DIM(l_subscrSto));     /* init publish-subscribe */
 
@@ -159,21 +156,21 @@ int main(void)
     QACTIVE_START(AO_SerialMgr,
           SERIAL_MGR_PRIORITY,                                    /* priority */
           l_SerialMgrQueueSto, Q_DIM(l_SerialMgrQueueSto),       /* evt queue */
-          (void *)0, 0U,                               /* no per-thread stack */
+          (void *)0, THREAD_STACK_SIZE,              /* per-thread stack size */
           (QEvt *)0                                /* no initialization event */
     );
 
     QACTIVE_START(AO_LWIPMgr,
           ETH_PRIORITY,                                           /* priority */
           l_LWIPMgrQueueSto, Q_DIM(l_LWIPMgrQueueSto),           /* evt queue */
-          (void *)0, 0U,                               /* no per-thread stack */
+          (void *)0, THREAD_STACK_SIZE,              /* per-thread stack size */
           (QEvt *)0                                /* no initialization event */
     );
 
     QACTIVE_START(AO_DbgMgr,
           DBG_MGR_PRIORITY,                                       /* priority */
           l_DbgMgrQueueSto, Q_DIM(l_DbgMgrQueueSto),             /* evt queue */
-          (void *)0, 0U,                               /* no per-thread stack */
+          (void *)0, THREAD_STACK_SIZE,              /* per-thread stack size */
           (QEvt *)0                                /* no initialization event */
     );
 
@@ -186,7 +183,7 @@ int main(void)
     QACTIVE_START(AO_I2CBusMgr[i],
           I2CBUS1MGR_PRIORITY + i,                                /* priority */
           l_I2CBusMgrQueueSto[i], Q_DIM(l_I2CBusMgrQueueSto[i]), /* evt queue */
-          (void *)0, 0U,                               /* no per-thread stack */
+          (void *)0, THREAD_STACK_SIZE,              /* per-thread stack size */
           (QEvt *)0                                /* no initialization event */
     );
     }
@@ -194,21 +191,14 @@ int main(void)
     QACTIVE_START(AO_I2C1DevMgr,
           I2C1DEVMGR_PRIORITY,                                    /* priority */
           l_I2C1DevMgrQueueSto, Q_DIM(l_I2C1DevMgrQueueSto),     /* evt queue */
-          (void *)0, 0U,                               /* no per-thread stack */
+          (void *)0, THREAD_STACK_SIZE,              /* per-thread stack size */
           (QEvt *)0                                /* no initialization event */
     );
 
     QACTIVE_START(AO_CommStackMgr,
           COMM_MGR_PRIORITY,                                      /* priority */
           l_CommStackMgrQueueSto, Q_DIM(l_CommStackMgrQueueSto), /* evt queue */
-          (void *)0, 0U,                               /* no per-thread stack */
-          (QEvt *)0                                /* no initialization event */
-    );
-
-    QACTIVE_START(AO_GuiMgr,
-          GUI_MGR_PRIORITY,                                       /* priority */
-          l_GuiMgrQueueSto, Q_DIM(l_GuiMgrQueueSto),             /* evt queue */
-          (void *)0, 0U,                               /* no per-thread stack */
+          (void *)0, THREAD_STACK_SIZE,              /* per-thread stack size */
           (QEvt *)0                                /* no initialization event */
     );
 

@@ -16,7 +16,6 @@
 #include "qp_port.h"                                        /* for QP support */
 #include "project_includes.h"
 #include "I2C1DevMgr.h"
-#include "stm324x9i_eval_ioe16.h"
 
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */
@@ -43,18 +42,6 @@ char *const menuSysTest_runI2CEUI64ReadTest_SelectKey = "UIR";
 treeNode_t menuItem_runI2CEEPROMWriteTest;
 char *const menuSysTest_runI2CEEPROMWriteTest_Txt = "Run I2C EEPROM Write test.";
 char *const menuSysTest_runI2CEEPROMWriteTest_SelectKey = "EEW";
-
-treeNode_t menuItem_runI2CIOExpRegReadTest;
-char *const menuSysTest_runI2CIOExpRegReadTest_Txt = "Run I2C IO Expander Register Read test.";
-char *const menuSysTest_runI2CIOExpRegReadTest_SelectKey = "IRR";
-
-treeNode_t menuItem_runI2CIOExpRegWriteTest;
-char *const menuSysTest_runI2CIOExpRegWriteTest_Txt = "Run I2C IO Expander Register Write test.";
-char *const menuSysTest_runI2CIOExpRegWriteTest_SelectKey = "IRW";
-
-treeNode_t menuItem_runI2CTscPosReadTest;
-char *const menuSysTest_runI2CTscPosReadTest_Txt = "Run I2C Touch Screen Pos Read test.";
-char *const menuSysTest_runI2CTscPosReadTest_SelectKey = "TPR";
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
@@ -136,148 +123,6 @@ void MENU_i2cEEPROMWriteTestAction(
 
    QF_PUBLISH((QEvent *)i2cEERPOMWriteReqEvt, AO_DbgMgr);
 }
-
-/******************************************************************************/
-void MENU_i2cIOExpRegReadTestAction(
-      const char* dataBuf,
-      uint16_t dataLen,
-      MsgSrc dst
-)
-{
-   CB_UNUSED_ARG(dataBuf);
-   CB_UNUSED_ARG(dataLen);
-   uint16_t memAddr = IOE16_REG_CHP_ID_LSB;
-   MENU_printf(dst, "Running IO Expander Register Read test. Reading from register 0x%02x\n", memAddr);
-
-   /* Publish event to start an register read */
-   I2CDevRegReadReqEvt *i2cReqEvt = Q_NEW(I2CDevRegReadReqEvt, IOEXP_REG_READ_SIG);
-   i2cReqEvt->regAddr = IOE16_REG_CHP_ID_LSB;
-   QF_PUBLISH((QEvent *)i2cReqEvt, AO_DbgMgr);
-
-//   /* Publish event to start an register read */
-//   I2CDevRegReadReqEvt *i2cReqEvt = Q_NEW(I2CDevRegReadReqEvt, IOEXP_REG_READ_SIG);
-//   i2cReqEvt->regAddr = IOE16_REG_ISGPIOR_LSB;
-//   QF_PUBLISH((QEvent *)i2cReqEvt, AO_DbgMgr);
-
-//   __IO uint16_t tmpsr = IOE16_GetITStatus();
-//   DBG_printf("Read 0x%04x from IT reg on IOE\n", tmpsr);
-
-   /* Read all the registers on the damn thing */
-//   uint16_t tmp = 0x0000;
-//
-//   /* Read the device ID  */
-//   tmp = IOE16_I2C_ReadDeviceRegister(IOE16_REG_CHP_ID_MSB);
-//   tmp = (uint32_t)(tmp << 8);
-//   tmp |= (uint32_t)IOE16_I2C_ReadDeviceRegister(IOE16_REG_CHP_ID_LSB);
-//   DBG_printf("Read 0x%04x from IOE16_REG_CHP_ID:   (0x%02x) register\n", tmp, IOE16_REG_CHP_ID_LSB);
-//   tmp = 0x0000;
-//
-//   tmp = (uint16_t)IOE16_I2C_ReadDeviceRegister(IOE16_REG_ID_VER);
-//   DBG_printf("Read 0x%04x from IOE16_REG_ID:       (0x%02x) register\n", tmp, IOE16_REG_ID_VER);
-//   tmp = 0x0000;
-//
-//   tmp = IOE16_I2C_ReadDeviceRegister(IOE16_REG_SYS_CTRL);
-//   DBG_printf("Read 0x%04x from IOE16_REG_SYS_CTRL: (0x%02x) register\n", tmp, IOE16_REG_SYS_CTRL);
-//   tmp = 0x0000;
-//
-//   /* Read the interrupt control register */
-//   tmp = IOE16_I2C_ReadDeviceRegister(IOE16_REG_IEGPIOR_MSB);
-//   tmp = (uint32_t)(tmp << 8);
-//   tmp |= (uint32_t)IOE16_I2C_ReadDeviceRegister(IOE16_REG_IEGPIOR_LSB);
-//   DBG_printf("Read 0x%04x from IOE16_REG_IEGPIOR:  (0x%02x) register\n", tmp, IOE16_REG_IEGPIOR_LSB);
-//   tmp = 0x0000;
-//
-//   tmp = IOE16_I2C_ReadDeviceRegister(IOE16_REG_ISGPIOR_MSB);
-//   tmp = (uint32_t)(tmp << 8);
-//   tmp |= (uint32_t)IOE16_I2C_ReadDeviceRegister(IOE16_REG_ISGPIOR_LSB);
-//   DBG_printf("Read 0x%04x from IOE16_REG_ISGPIOR:  (0x%02x) register\n", tmp, IOE16_REG_ISGPIOR_LSB);
-//   tmp = 0x0000;
-//
-//   /* Read GPMR register */
-//   tmp = IOE16_I2C_ReadDeviceRegister(IOE16_REG_GPMR_MSB);
-//   tmp = (uint32_t)(tmp << 8);
-//   tmp |= (uint32_t)IOE16_I2C_ReadDeviceRegister(IOE16_REG_GPMR_LSB);
-//   DBG_printf("Read 0x%04x from IOE16_REG_GPMR:     (0x%02x) register\n", tmp, IOE16_REG_GPMR_LSB);
-//   tmp = 0x0000;
-//
-//   tmp = IOE16_I2C_ReadDeviceRegister(IOE16_REG_GPSR_MSB);
-//   tmp = (uint32_t)(tmp << 8);
-//   tmp |= (uint32_t)IOE16_I2C_ReadDeviceRegister(IOE16_REG_GPSR_LSB);
-//   DBG_printf("Read 0x%04x from IOE16_REG_GPSR:     (0x%02x) register\n", tmp, IOE16_REG_GPSR_LSB);
-//   tmp = 0x0000;
-//
-//   tmp = IOE16_I2C_ReadDeviceRegister(IOE16_REG_GPDR_MSB);
-//   tmp = (uint32_t)(tmp << 8);
-//   tmp |= (uint32_t)IOE16_I2C_ReadDeviceRegister(IOE16_REG_GPDR_LSB);
-//   DBG_printf("Read 0x%04x from IOE16_REG_GPDR:     (0x%02x) register\n", tmp, IOE16_REG_GPDR_LSB);
-//   tmp = 0x0000;
-//
-//   tmp = IOE16_I2C_ReadDeviceRegister(IOE16_REG_GPPIR_MSB);
-//   tmp = (uint32_t)(tmp << 8);
-//   tmp |= (uint32_t)IOE16_I2C_ReadDeviceRegister(IOE16_REG_GPPIR_LSB);
-//   DBG_printf("Read 0x%04x from IOE16_REG_GPPIR:    (0x%02x) register\n", tmp, IOE16_REG_GPPIR_LSB);
-//   tmp = 0x0000;
-
-}
-
-/******************************************************************************/
-void MENU_i2cIOExpRegWriteTestAction(
-      const char* dataBuf,
-      uint16_t dataLen,
-      MsgSrc dst
-)
-{
-   CB_UNUSED_ARG(dataBuf);
-   CB_UNUSED_ARG(dataLen);
-   uint16_t memAddr = IOE16_REG_SYS_CTRL;
-   uint8_t regValue = IOE16_IT_EN;
-   MENU_printf(dst, "Running IO Expander Register Write test. Writing 0x%02x to register 0x%02x\n", regValue, memAddr);
-
-   /* Publish event to start an register read */
-   I2CDevRegWriteReqEvt *i2cReqEvt = Q_NEW(I2CDevRegWriteReqEvt, IOEXP_REG_WRITE_SIG);
-   i2cReqEvt->regAddr = memAddr;
-   i2cReqEvt->regValue = regValue;
-   QF_PUBLISH((QEvent *)i2cReqEvt, AO_DbgMgr);
-}
-
-/******************************************************************************/
-void MENU_i2cTscPosReadTestAction(
-      const char* dataBuf,
-      uint16_t dataLen,
-      MsgSrc dst
-)
-{
-   CB_UNUSED_ARG(dataBuf);
-   CB_UNUSED_ARG(dataLen);
-   MENU_printf(dst, "Running I2C Touch Screen Read Position test...\n");
-
-   /* Do a blocking read just as a test first */
-   uint8_t buffer[11];
-   memset(buffer, 0, sizeof(buffer));
-   uint8_t bytes = LCD_GetPosition(buffer);
-
-   char tmp[70];
-   memset(tmp, 0, sizeof(tmp));
-   uint16_t tmpLen = 0;
-   CBErrorCode err = CON_hexToStr(
-         buffer,                              // data to convert
-         11,                                  // length of data to convert
-         tmp,                                 // where to write output
-         sizeof(tmp),                         // max size of output buffer
-         &tmpLen,                             // size of the resulting output
-         0,                                   // no columns
-         ' '                                  // separator
-   );
-   if ( ERR_NONE != err ) {
-      WRN_printf("Got an error converting hex array to string.  Error: 0x%08x\n", err);
-   }
-   MENU_printf(dst, "Blocking: Read %s\n", tmp);
-
-   /* Publish event to start an Serial Number read */
-   QEvt *qEvt = Q_NEW(QEvt, TSC_POS_READ_SIG);
-   QF_PUBLISH((QEvent *)qEvt, AO_DbgMgr);
-}
-
 
 /**
  * @}

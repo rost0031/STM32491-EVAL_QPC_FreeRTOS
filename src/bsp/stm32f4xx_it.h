@@ -143,18 +143,6 @@ void DMA2_Stream7_IRQHandler( void ) __attribute__((__interrupt__));
 void ETH_IRQHandler( void ) __attribute__((__interrupt__));
 
 /**
- * @brief   This ISR function handles the SysTick global interrupt request.
- *
- * This ISR function mostly just processes all the QPC events that are ready to
- * be executed.  If QSPY is compiled in, it also handles its timing and clock
- * rollover.  The SysTick interrupt is fired @def BSP_TICKS_PER_SEC / second.
- *
- * @param     None
- * @retval    None
- */
-void EXTI9_5_IRQHandler(void) __attribute__((__interrupt__));
-
-/**
  * @brief   This ISR function handles I2C1 bus event interrupt requests.
  * See i2c.c for implementation.
  * @param  None
@@ -194,7 +182,7 @@ void RTC_WKUP_IRQHandler( void ) __attribute__((__interrupt__));
  * @param     None
  * @retval    None
  */
-void SysTick_Handler( void ) __attribute__((__interrupt__));
+//void SysTick_Handler( void ) __attribute__((__interrupt__));
 
 /**
  * @brief   This ISR function handles TIM5 global interrupt requests.
@@ -209,28 +197,6 @@ void SysTick_Handler( void ) __attribute__((__interrupt__));
  * @retval    None
  */
 void TIM5_IRQHandler( void ) __attribute__((__interrupt__));
-
-/**
- * @brief  This function handles LTDC global interrupt request.
- *
- * This ISR should use the callback function which should be defined wherever
- * LTDC communication is handled.
- *
- * @param  None
- * @retval None
- */
-void LTDC_IRQHandler(void) __attribute__((__interrupt__));
-
-/**
- * @brief  This function handles DMA2D global interrupt request.
- *
- * This ISR should use the callback function which should be defined wherever
- * DMA2D is handled.
- *
- * @param  None
- * @retval None
- */
-void DMA2D_IRQHandler(void) __attribute__((__interrupt__));
 
 /**
  * @brief   ISR that handles incoming data on UART1 (debug serial) port.

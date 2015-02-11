@@ -58,7 +58,6 @@
 #include "qmpool.h"    /* this QP port uses the native QF memory pool */
 #include "qf.h"        /* QF platform-independent public interface */
 
-
 /* FreeRTOS "extras" for handling ISRs for FreeRTOS/ARM-Cortex-M */
 typedef struct {
     BaseType_t volatile isrNest;

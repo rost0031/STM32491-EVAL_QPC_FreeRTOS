@@ -31,8 +31,6 @@
 #include "i2c.h"                                /* For I2C callback functions */
 #include "serial.h"                          /* For Serial callback functions */
 #include "eth_driver.h"                    /* For Ethernet callback functions */
-#include "LCDConf.h"
-#include "stm324x9i_eval_ioe16.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -164,13 +162,6 @@ void ETH_IRQHandler( void )
 }
 
 /******************************************************************************/
-void EXTI9_5_IRQHandler(void)
-{
-   /* Issue the callback function which does the actual work. */
-   TSC_EventCallback();
-}
-
-/******************************************************************************/
 void I2C1_ER_IRQHandler( void )
 {
    /* Issue the callback function which does the actual work. */
@@ -195,12 +186,12 @@ void RTC_WKUP_IRQHandler( void )
    }
 }
 
-/******************************************************************************/
-void SysTick_Handler( void )
-{
-   /* Issue the callback function which does the actual work. */
-   BSP_SysTickCallback();
-}
+///******************************************************************************/
+//void SysTick_Handler( void )
+//{
+//   /* Issue the callback function which does the actual work. */
+//   BSP_SysTickCallback();
+//}
 
 /******************************************************************************/
 extern __IO unsigned long uwPeriodValue;     /**< external reference to period value used by TIME_getLSIFrequency() */
@@ -221,20 +212,6 @@ void TIM5_IRQHandler( void )
          uwPeriodValue = (uint16_t)(0xFFFF - tmpCC4[0] + tmpCC4[1] + 1);
       }
    }
-}
-
-/******************************************************************************/
-void LTDC_IRQHandler(void)
-{
-   /* Issue the callback function which does the actual work. */
-   LTDC_ISR_Handler();
-}
-
-/******************************************************************************/
-void DMA2D_IRQHandler(void)
-{
-   /* Issue the callback function which does the actual work. */
-   DMA2D_ISR_Handler();
 }
 
 /******************************************************************************/

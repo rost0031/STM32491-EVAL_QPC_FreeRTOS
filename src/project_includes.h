@@ -211,6 +211,7 @@
 #include "console_output.h"         /* For debug/console output declarations. */
 #include "time.h"                                   /* For time functionality */
 #include "dbg_cntrl.h"                     /* For module debugging capability */
+#include "projdefs.h"                          /* FreeRTOS base types support */
 
 /* Exported defines ----------------------------------------------------------*/
 /**
