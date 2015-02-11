@@ -328,10 +328,8 @@ inline void Serial_DMASendCallback( void )
 
    QF_ISR_EXIT(intStat, lHigherPriorityTaskWoken);/* inform QF about ISR exit */
 
-   /* yield only when needed... */
-   if (lHigherPriorityTaskWoken != pdFALSE) {
-      vTaskMissedYield();
-   }
+   /* the usual end of FreeRTOS ISR... */
+   portEND_SWITCHING_ISR(lHigherPriorityTaskWoken);
 }
 
 /******************************************************************************/
@@ -404,10 +402,8 @@ inline void Serial_UART1Callback(void)
 
    QF_ISR_EXIT(intStat, lHigherPriorityTaskWoken);/* inform QF about ISR exit */
 
-   /* yield only when needed... */
-   if (lHigherPriorityTaskWoken != pdFALSE) {
-      vTaskMissedYield();
-   }
+   /* the usual end of FreeRTOS ISR... */
+   portEND_SWITCHING_ISR(lHigherPriorityTaskWoken);
 }
 /**
  * @}

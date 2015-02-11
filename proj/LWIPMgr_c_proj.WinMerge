@@ -2,8 +2,8 @@
 
 <project>
    <paths>
-      <left>Z:\home\developer\workspace\STM324391_QP\src\bsp\bsp_shared\qpc_lwip_port\LWIPMgr_gen.c</left>
-      <right>Z:\home\developer\workspace\STM324391_QP\src\bsp\bsp_shared\qpc_lwip_port\LWIPMgr.c</right>
+      <left>Z:\home\developer\workspace\STM324391_QP_FreeRTOS_min\src\bsp\bsp_shared\qpc_lwip_port\LWIPMgr_gen.c</left>
+      <right>Z:\home\developer\workspace\STM324391_QP_FreeRTOS_min\src\bsp\bsp_shared\qpc_lwip_port\LWIPMgr.c</right>
       <filter>*.*</filter>
       <subfolders>0</subfolders>
       <left-readonly>0</left-readonly>

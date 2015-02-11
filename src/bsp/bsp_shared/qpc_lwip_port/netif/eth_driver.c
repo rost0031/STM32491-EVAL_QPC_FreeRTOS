@@ -577,10 +577,8 @@ inline void ETH_EventCallback( void )
 
    QF_ISR_EXIT(intStat, lHigherPriorityTaskWoken);/* inform QF about ISR exit */
 
-   /* yield only when needed... */
-   if (lHigherPriorityTaskWoken != pdFALSE) {
-      vTaskMissedYield();
-   }
+   /* the usual end of FreeRTOS ISR... */
+   portEND_SWITCHING_ISR(lHigherPriorityTaskWoken);
 }
 
 

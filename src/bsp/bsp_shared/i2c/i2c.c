@@ -492,10 +492,8 @@ I2C1_DMAReadCallback_cleanup:
 
    QF_ISR_EXIT(intStat, lHigherPriorityTaskWoken);/* inform QF about ISR exit */
 
-   /* yield only when needed... */
-   if (lHigherPriorityTaskWoken != pdFALSE) {
-      vTaskMissedYield();
-   }
+   /* the usual end of FreeRTOS ISR... */
+   portEND_SWITCHING_ISR(lHigherPriorityTaskWoken);
 }
 
 /******************************************************************************/
@@ -547,10 +545,8 @@ I2C1_DMAWriteCallback_cleanup:
 
    QF_ISR_EXIT(intStat, lHigherPriorityTaskWoken);/* inform QF about ISR exit */
 
-   /* yield only when needed... */
-   if (lHigherPriorityTaskWoken != pdFALSE) {
-      vTaskMissedYield();
-   }
+   /* the usual end of FreeRTOS ISR... */
+   portEND_SWITCHING_ISR(lHigherPriorityTaskWoken);
 }
 
 /******************************************************************************/
@@ -563,10 +559,8 @@ inline void I2C1_EventCallback( void )
 
    QF_ISR_EXIT(intStat, lHigherPriorityTaskWoken);/* inform QF about ISR exit */
 
-   /* yield only when needed... */
-   if (lHigherPriorityTaskWoken != pdFALSE) {
-      vTaskMissedYield();
-   }
+   /* the usual end of FreeRTOS ISR... */
+   portEND_SWITCHING_ISR(lHigherPriorityTaskWoken);
 }
 
 /******************************************************************************/
@@ -589,10 +583,8 @@ inline void I2C1_ErrorEventCallback( void )
 
    QF_ISR_EXIT(intStat, lHigherPriorityTaskWoken);/* inform QF about ISR exit */
 
-   /* yield only when needed... */
-   if (lHigherPriorityTaskWoken != pdFALSE) {
-      vTaskMissedYield();
-   }
+   /* the usual end of FreeRTOS ISR... */
+   portEND_SWITCHING_ISR(lHigherPriorityTaskWoken);
 }
 
 /**
