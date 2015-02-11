@@ -49,7 +49,48 @@ void CON_output(
    time_T time = TIME_getTime();
 
    /* 2. Construct a new msg event pointer and allocate storage in the QP event
-    * pool */
+    * pool.  Allocate with margin so we can fall back on regular slow printfs if
+    * there's a problem */
+//   LrgDataEvt *lrgDataEvt = NULL;
+//   Q_NEW_X(lrgDataEvt, LrgDataEvt, 10, DBG_LOG_SIG);
+//
+//   if ( NULL == lrgDataEvt ) {
+//      /* Unable to get a pointer so the event pool must be almost used up.  Fall
+//       * back to just slowly printing out to the console. */
+//
+//
+//      /* Pass the va args list to get output to a buffer */
+//      va_list args;
+//      va_start(args, fmt);
+//
+//      /* Print the actual user supplied data to the buffer and set the length */
+//      char data[MAX_MSG_LEN];
+//      vsnprintf(
+//            data,
+//            MAX_MSG_LEN,
+//            fmt,
+//            args
+//      );
+//      va_end(args);
+//
+//      /* Call the slow output function to get the data out. */
+//      CON_slow_output(
+//            dbgLvl,
+//            pFuncName,
+//            wLineNumber,
+//            "%s",
+//            data
+//      );
+//
+//      /* Get back since the rest of the function assumes an allocated evt ptr.*/
+//      return;
+//
+//   } else {
+//      lrgDataEvt->dataLen = 0;
+//      lrgDataEvt->src = src;
+//      lrgDataEvt->dst = dst;
+//   }
+
    LrgDataEvt *lrgDataEvt = Q_NEW(LrgDataEvt, DBG_LOG_SIG);
    lrgDataEvt->dataLen = 0;
    lrgDataEvt->src = src;

@@ -38,8 +38,8 @@ DBG_DEFINE_THIS_MODULE( DBG_MODL_GENERAL ); /* For debug system to ID this modul
 /* Private macros ------------------------------------------------------------*/
 /* Private variables and Local objects ---------------------------------------*/
 static QEvt const    *l_CommStackMgrQueueSto[30];  /**< Storage for CommStackMgr event Queue */
-static QEvt const    *l_LWIPMgrQueueSto[300];       /**< Storage for LWIPMgr event Queue */
-static QEvt const    *l_SerialMgrQueueSto[300];     /**< Storage for SerialMgr event Queue */
+static QEvt const    *l_LWIPMgrQueueSto[200];       /**< Storage for LWIPMgr event Queue */
+static QEvt const    *l_SerialMgrQueueSto[200];     /**< Storage for SerialMgr event Queue */
 static QEvt const    *l_I2CBusMgrQueueSto[30][MAX_I2C_BUS];    /**< Storage for I2CBusMgr event Queue */
 static QEvt const    *l_I2C1DevMgrQueueSto[30];    /**< Storage for I2C1DevMgr event Queue */
 static QEvt const    *l_DbgMgrQueueSto[30];        /**< Storage for DbgMgr event Queue */
@@ -80,7 +80,7 @@ static union LargeEvents {
     uint8_t e3[sizeof(LogDataEvt)];
     uint8_t e4[sizeof(LrgDataEvt)];
     uint8_t e5[sizeof(I2CEEPROMWriteReqEvt)];
-} l_lrgPoolSto[200];                    /* storage for the large event pool */
+} l_lrgPoolSto[300];                    /* storage for the large event pool */
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/

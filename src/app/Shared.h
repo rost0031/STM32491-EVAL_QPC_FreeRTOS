@@ -50,6 +50,7 @@ enum AO_Priorities {
    ETH_PRIORITY,       /**< Priority of LWIP AO which handles ethernet comms. */
    SERIAL_MGR_PRIORITY,                        /**< Priority of SerialMgr AO. */
 
+   DBG_MGR_PRIORITY,                             /**< Priority of MenuMgr AO. */
    I2CBUS1MGR_PRIORITY,                        /**< Priority of I2CBusMgr AO. */
    /* If more I2C busses are used, make sure that the priorities for them are
     * all together since there's a loop that iterates through them and will
@@ -62,7 +63,6 @@ enum AO_Priorities {
    GUI_MGR_PRIORITY,                              /**< Priority of GuiMgr AO. */
 
    /* Insert new priorities here ... */
-   DBG_MGR_PRIORITY,                             /**< Priority of MenuMgr AO. */
 };
 
 /* These need to be visible to LWIPMgr AO, which is part of a shared port. Most
