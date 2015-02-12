@@ -289,7 +289,7 @@ treeNode_t* MENU_parse(
       return( newNode );
    }
 
-   DBG_printf("BufferLen %d\n", bufferLen);
+   DBG_printf("BufferLen:%d, MsgSrc:%d\n", bufferLen, msgSrc);
 
    /* Parse the universal commands first */
    if ( 0 == strncmp((const char *)pBuffer, "?", 1 ) && 1 == bufferLen-1 ) {
@@ -310,7 +310,11 @@ treeNode_t* MENU_parse(
          LOG_printf("Already at the top of the menu\n");
       }
       MENU_printMenuExpandedAtCurrNode(newNode, msgSrc );
-   } else {
+   } else if ( 0 == strncmp((const char *)pBuffer, "test", 4 ) && 4 == (bufferLen -1 ) )  {
+      DBG_printf("Started Testing MENU_printf... msgSrc=%d\n",msgSrc );
+      MENU_printf(msgSrc, "***MENU TEST: msgSrc=%d***\n", msgSrc);
+      DBG_printf("Finished Testing MENU_printf... msgSrc=%d\n",msgSrc );
+   }else {
       newNode = MENU_parseCurrLevelMenuItems(node, pBuffer, bufferLen, msgSrc);
    }
    return( newNode );
@@ -319,6 +323,7 @@ treeNode_t* MENU_parse(
 /******************************************************************************/
 static void MENU_printHelp( MsgSrc msgSrc )
 {
+   DBG_printf("msgSrc:%d\n", msgSrc);
    MENU_printf(msgSrc, "******************************************************************************\n");
    MENU_printf(msgSrc, "*****                           Menu Help                                *****\n");
    MENU_printf(msgSrc, "***** Type the following commands:                                       *****\n");

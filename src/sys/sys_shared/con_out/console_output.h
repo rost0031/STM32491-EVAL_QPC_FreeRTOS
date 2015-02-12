@@ -31,6 +31,12 @@
 /* Exported constants --------------------------------------------------------*/
 /* Exported functions --------------------------------------------------------*/
 
+void MENU_printf(
+      MsgSrc dst,
+      char *fmt,
+      ...
+);
+
 /**
  * @brief Function that gets called by the XXX_printf() macros to output a
  * dbg/log/wrn/err to DMA serial console.

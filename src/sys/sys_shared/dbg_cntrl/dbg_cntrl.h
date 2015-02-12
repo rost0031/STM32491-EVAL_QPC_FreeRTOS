@@ -153,7 +153,9 @@ typedef enum DBG_LEVEL {
    WRN,     /**< Warnings. Always printed. */
    ERR,     /**< Critical errors.  Always printed. */
    CON,     /**< This is reserved for printing to the console as part of
-                 regular operation and nothing will be prepended */
+                 regular operation and nothing will be prepended.  Also, the
+                 DBG_LEVEL will be checked to issue a MENU signal instead of a
+                 LOG signal */
    ISR,     /**< Use this with isr_debug_slow_printf to get smaller printout */
 } DBG_LEVEL_T;
 
@@ -440,10 +442,11 @@ extern uint32_t  glbDbgConfig; /**< Allow global access to debug info */
  * @return None
  */
 #ifndef SLOW_PRINTF
-#define MENU_printf(dst, fmt, ...) \
-      do { CON_output(CON, NA_SRC_DST, dst, __func__, __LINE__, fmt, \
-            ##__VA_ARGS__); \
-      } while (0)
+//#define MENU_printf(dst, fmt, ...) \
+//      do {  DBG_printf("dst:%d\n", dst); \
+//            CON_output(CON, dst, dst, __func__, __LINE__, fmt, \
+//            ##__VA_ARGS__); \
+//      } while (0)
 #else
 #define MENU_printf(dst, fmt, ...) \
       do { CON_slow_output(CON, __func__, __LINE__, fmt, \

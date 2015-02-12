@@ -41,6 +41,7 @@
 
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE;                 /* For QSPY to know the name of this file */
+DBG_DEFINE_THIS_MODULE( DBG_MODL_SERIAL ); /* For debug system to ID this module */
 
 /* Private typedefs ----------------------------------------------------------*/
 
@@ -256,7 +257,7 @@ static QState SerialMgr_Idle(SerialMgr * const me, QEvt const * const e) {
         /* ${AOs::SerialMgr::SM::Active::Idle::DBG_MENU} */
         case DBG_MENU_SIG: {
             /* ${AOs::SerialMgr::SM::Active::Idle::DBG_MENU::[OutToSerial?]} */
-            if (SERIAL_CON == ((LrgDataEvt const *) e)->dst) {
+            if (SERIAL_CON == ((LrgDataEvt const *) e)->src) {
                 /* Set up the DMA buffer here.  This copies the data from the event to the UART's
                  * private buffer as well to avoid someone overwriting it */
                 Serial_DMAConfig(
@@ -268,12 +269,14 @@ static QState SerialMgr_Idle(SerialMgr * const me, QEvt const * const e) {
             }
             /* ${AOs::SerialMgr::SM::Active::Idle::DBG_MENU::[else]} */
             else {
+                printf("MENU REQ, src: %d\n", ((LrgDataEvt const *) e)->dst);
                 status_ = Q_HANDLED();
             }
             break;
         }
         /* ${AOs::SerialMgr::SM::Active::Idle::DBG_LOG} */
         case DBG_LOG_SIG: {
+            printf("LOG REQ\n");
             /* ${AOs::SerialMgr::SM::Active::Idle::DBG_LOG::[SerialDbgEnab~]} */
             if (true == me->isSerialDbgEnabled) {
                 /* Set up the DMA buffer here.  This copies the data from the event to the UART's

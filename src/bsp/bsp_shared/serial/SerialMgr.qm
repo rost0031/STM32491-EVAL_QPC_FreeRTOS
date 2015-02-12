@@ -103,7 +103,7 @@ Serial_DMAConfig(
       </tran>
       <tran trig="DBG_MENU">
        <choice target="../../../2">
-        <guard brief="OutToSerial?">SERIAL_CON == ((LrgDataEvt const *) e)-&gt;dst</guard>
+        <guard brief="OutToSerial?">SERIAL_CON == ((LrgDataEvt const *) e)-&gt;src</guard>
         <action>/* Set up the DMA buffer here.  This copies the data from the event to the UART's
  * private buffer as well to avoid someone overwriting it */
 Serial_DMAConfig(
@@ -117,6 +117,7 @@ Serial_DMAConfig(
        </choice>
        <choice>
         <guard>else</guard>
+        <action>printf(&quot;MENU REQ, src: %d\n&quot;, ((LrgDataEvt const *) e)-&gt;dst);</action>
         <choice_glyph conn="37,19,4,-1,4">
          <action box="0,1,6,2"/>
         </choice_glyph>
@@ -126,6 +127,7 @@ Serial_DMAConfig(
        </tran_glyph>
       </tran>
       <tran trig="DBG_LOG">
+       <action>printf(&quot;LOG REQ\n&quot;);</action>
        <choice target="../../../2">
         <guard brief="SerialDbgEnabled?">true == me-&gt;isSerialDbgEnabled</guard>
         <action>/* Set up the DMA buffer here.  This copies the data from the event to the UART's
@@ -136,7 +138,7 @@ Serial_DMAConfig(
     ((LrgDataEvt const *) e)-&gt;dataLen
 );</action>
         <choice_glyph conn="37,27,5,3,19">
-         <action box="1,-2,15,2"/>
+         <action box="1,-2,14,2"/>
         </choice_glyph>
        </choice>
        <choice>
@@ -261,6 +263,7 @@ QEQueue_init(
 
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE;                 /* For QSPY to know the name of this file */
+DBG_DEFINE_THIS_MODULE( DBG_MODL_SERIAL ); /* For debug system to ID this module */
 
 /* Private typedefs ----------------------------------------------------------*/
 $declare(AOs::SerialMgr)
