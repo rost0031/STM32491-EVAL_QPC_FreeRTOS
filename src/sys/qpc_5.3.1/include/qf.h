@@ -162,7 +162,7 @@ typedef struct {
     void (*start)(QActive * const me, uint_fast8_t prio,
                   QEvt const *qSto[], uint_fast16_t qLen,
                   void *stkSto, uint_fast16_t stkSize,
-                  QEvt const *ie);
+                  QEvt const *ie, const char* taskName);
 
 #ifdef Q_SPY
     /*! virtual function to asynchronously post (FIFO) an event to an AO */
@@ -185,7 +185,7 @@ typedef struct {
 void QActive_start_(QActive * const me, uint_fast8_t prio,
                     QEvt const *qSto[], uint_fast16_t qLen,
                     void *stkSto, uint_fast16_t stkSize,
-                    QEvt const *ie);
+                    QEvt const *ie, const char* taskName);
 
 /*! Polymorphically start an active object. */
 /**
@@ -204,10 +204,11 @@ void QActive_start_(QActive * const me, uint_fast8_t prio,
 * \arg[in]     \c stkSize_ stack size (in bytes)
 * \arg[in]     \c ie_      pointer to the optional initialization event
 *                          (might be NULL).
+* \arg[in]     \c taskName_  pointer to the task name
 */
-#define QACTIVE_START(me_, prio_, qSto_, qLen_, stkSto_, stkLen_, ie_) \
+#define QACTIVE_START(me_, prio_, qSto_, qLen_, stkSto_, stkLen_, ie_, taskName_) \
     ((*((QActiveVtbl const *)((me_)->super.vptr))->start)( \
-        (me_), (prio_), (qSto_), (qLen_), (stkSto_), (stkLen_), (ie_)))
+        (me_), (prio_), (qSto_), (qLen_), (stkSto_), (stkLen_), (ie_), (taskName_)))
 
 #ifdef Q_SPY
     /*! Implementation of the active object post (FIFO) operation */

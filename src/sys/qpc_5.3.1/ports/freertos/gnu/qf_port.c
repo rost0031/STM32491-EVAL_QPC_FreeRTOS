@@ -78,7 +78,7 @@ static void task_function(void *pvParameters) { /* FreeRTOS signature */
 void QActive_start_(QActive * const me, uint_fast8_t prio,
                     QEvt const *qSto[], uint_fast16_t qLen,
                     void *stkSto, uint_fast16_t stkSize,
-                    QEvt const *ie)
+                    QEvt const *ie, const char* taskName)
 {
     portBASE_TYPE err;
 
@@ -96,7 +96,7 @@ void QActive_start_(QActive * const me, uint_fast8_t prio,
 
     /* create the FreeRTOS.org task for the AO */
     err = xTaskCreate(&task_function,   /* the task function */
-              (const char *)"AO",       /* the name of the task */
+              (const char *)taskName,       /* the name of the task */
               (uint16_t)stkSize/sizeof(portSTACK_TYPE), /* stack size */
               (void *)me,               /* the 'pvParameters' parameter */
               (UBaseType_t)(prio + tskIDLE_PRIORITY),  /* FreeRTOS priority */

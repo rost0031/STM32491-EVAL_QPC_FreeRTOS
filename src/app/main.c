@@ -33,7 +33,7 @@ DBG_DEFINE_THIS_MODULE( DBG_MODL_GENERAL ); /* For debug system to ID this modul
 
 /* Private typedefs ----------------------------------------------------------*/
 /* Private defines -----------------------------------------------------------*/
-#define THREAD_STACK_SIZE  1024U
+#define THREAD_STACK_SIZE  2*1024U
 
 /* Private macros ------------------------------------------------------------*/
 /* Private variables and Local objects ---------------------------------------*/
@@ -157,21 +157,24 @@ int main(void)
           SERIAL_MGR_PRIORITY,                                    /* priority */
           l_SerialMgrQueueSto, Q_DIM(l_SerialMgrQueueSto),       /* evt queue */
           (void *)0, THREAD_STACK_SIZE,              /* per-thread stack size */
-          (QEvt *)0                                /* no initialization event */
+          (QEvt *)0,                               /* no initialization event */
+          "SerialMgr"                                     /* Name of the task */
     );
 
     QACTIVE_START(AO_LWIPMgr,
           ETH_PRIORITY,                                           /* priority */
           l_LWIPMgrQueueSto, Q_DIM(l_LWIPMgrQueueSto),           /* evt queue */
           (void *)0, THREAD_STACK_SIZE,              /* per-thread stack size */
-          (QEvt *)0                                /* no initialization event */
+          (QEvt *)0,                               /* no initialization event */
+          "LWIPMgr"                                       /* Name of the task */
     );
 
     QACTIVE_START(AO_DbgMgr,
           DBG_MGR_PRIORITY,                                       /* priority */
           l_DbgMgrQueueSto, Q_DIM(l_DbgMgrQueueSto),             /* evt queue */
           (void *)0, THREAD_STACK_SIZE,              /* per-thread stack size */
-          (QEvt *)0                                /* no initialization event */
+          (QEvt *)0,                               /* no initialization event */
+          "DbgMgr"                                        /* Name of the task */
     );
 
     /* Iterate though the available I2C busses on the system and start an
@@ -184,7 +187,8 @@ int main(void)
           I2CBUS1MGR_PRIORITY + i,                                /* priority */
           l_I2CBusMgrQueueSto[i], Q_DIM(l_I2CBusMgrQueueSto[i]), /* evt queue */
           (void *)0, THREAD_STACK_SIZE,              /* per-thread stack size */
-          (QEvt *)0                                /* no initialization event */
+          (QEvt *)0,                               /* no initialization event */
+          "I2CBusMgr"                                     /* Name of the task */
     );
     }
 
@@ -192,14 +196,16 @@ int main(void)
           I2C1DEVMGR_PRIORITY,                                    /* priority */
           l_I2C1DevMgrQueueSto, Q_DIM(l_I2C1DevMgrQueueSto),     /* evt queue */
           (void *)0, THREAD_STACK_SIZE,              /* per-thread stack size */
-          (QEvt *)0                                /* no initialization event */
+          (QEvt *)0,                               /* no initialization event */
+          "I2CDevMgr"                                     /* Name of the task */
     );
 
     QACTIVE_START(AO_CommStackMgr,
           COMM_MGR_PRIORITY,                                      /* priority */
           l_CommStackMgrQueueSto, Q_DIM(l_CommStackMgrQueueSto), /* evt queue */
           (void *)0, THREAD_STACK_SIZE,              /* per-thread stack size */
-          (QEvt *)0                                /* no initialization event */
+          (QEvt *)0,                               /* no initialization event */
+          "CommMgr"                                       /* Name of the task */
     );
 
     log_slow_printf("Starting QPC. All logging from here on out shouldn't show 'SLOW'!!!\n\n");
