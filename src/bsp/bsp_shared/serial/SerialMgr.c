@@ -256,27 +256,18 @@ static QState SerialMgr_Idle(SerialMgr * const me, QEvt const * const e) {
         }
         /* ${AOs::SerialMgr::SM::Active::Idle::DBG_MENU} */
         case DBG_MENU_SIG: {
-            /* ${AOs::SerialMgr::SM::Active::Idle::DBG_MENU::[OutToSerial?]} */
-            if (SERIAL_CON == ((LrgDataEvt const *) e)->src) {
-                /* Set up the DMA buffer here.  This copies the data from the event to the UART's
-                 * private buffer as well to avoid someone overwriting it */
-                Serial_DMAConfig(
-                    SERIAL_UART1,
-                    (char *)((LrgDataEvt const *) e)->dataBuf,
-                    ((LrgDataEvt const *) e)->dataLen
-                );
-                status_ = Q_TRAN(&SerialMgr_Busy);
-            }
-            /* ${AOs::SerialMgr::SM::Active::Idle::DBG_MENU::[else]} */
-            else {
-                printf("MENU REQ, src: %d\n", ((LrgDataEvt const *) e)->dst);
-                status_ = Q_HANDLED();
-            }
+            /* Set up the DMA buffer here.  This copies the data from the event to the UART's
+             * private buffer as well to avoid someone overwriting it */
+            Serial_DMAConfig(
+                SERIAL_UART1,
+                (char *)((LrgDataEvt const *) e)->dataBuf,
+                ((LrgDataEvt const *) e)->dataLen
+            );
+            status_ = Q_TRAN(&SerialMgr_Busy);
             break;
         }
         /* ${AOs::SerialMgr::SM::Active::Idle::DBG_LOG} */
         case DBG_LOG_SIG: {
-            printf("LOG REQ\n");
             /* ${AOs::SerialMgr::SM::Active::Idle::DBG_LOG::[SerialDbgEnab~]} */
             if (true == me->isSerialDbgEnabled) {
                 /* Set up the DMA buffer here.  This copies the data from the event to the UART's

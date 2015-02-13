@@ -64,7 +64,7 @@ treeNode_t* MENU_parse(
       treeNode_t *node,
       const char* pBuffer,
       uint16_t bufferLen,
-      MsgSrc msgSrc
+      volatile MsgSrc msgSrc
 );
 
 /**

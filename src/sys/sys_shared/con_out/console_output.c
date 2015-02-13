@@ -21,6 +21,7 @@
 #include "Shared.h"                                   /*  Common Declarations */
 #include "time.h"
 #include "SerialMgr.h"
+#include "LWIPMgr.h"
 
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */
@@ -34,7 +35,7 @@ DBG_DEFINE_THIS_MODULE( DBG_MODL_SERIAL ); /* For debug system to ID this module
 /* Private functions ---------------------------------------------------------*/
 
 void MENU_printf(
-      MsgSrc dst,
+      volatile MsgSrc dst,
       char *fmt,
       ...
 )
@@ -44,7 +45,7 @@ void MENU_printf(
    lrgDataEvt->src = dst;
    lrgDataEvt->dst = dst;
 
-   DBG_printf("src:%d,dst:%d\n",lrgDataEvt->src, lrgDataEvt->dst);
+//   DBG_printf("src:%d,dst:%d\n",lrgDataEvt->src, lrgDataEvt->dst);
 
    /* 4. Pass the va args list to get output to a buffer */
    va_list args;
@@ -60,14 +61,20 @@ void MENU_printf(
    va_end(args);
 
    /* 6. Publish the event*/
-   QF_PUBLISH((QEvent *)lrgDataEvt, 0);
+   if ( SERIAL_CON == dst ) {
+      QACTIVE_POST(AO_SerialMgr, (QEvt *)lrgDataEvt, AO_DbgMgr); // directly post the event to the correct AO
+   } else {
+      QACTIVE_POST(AO_LWIPMgr, (QEvt *)lrgDataEvt, AO_DbgMgr); // directly post the event to the correct AO
+   }
+
+//   QF_PUBLISH((QEvt *)lrgDataEvt, 0);
 }
 
 /******************************************************************************/
 void CON_output(
       DBG_LEVEL_T dbgLvl,
-      MsgSrc src,
-      MsgSrc dst,
+      volatile MsgSrc src,
+      volatile MsgSrc dst,
       const char *pFuncName,
       uint16_t wLineNumber,
       char *fmt,

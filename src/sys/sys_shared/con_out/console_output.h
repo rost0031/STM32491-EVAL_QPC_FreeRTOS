@@ -32,7 +32,7 @@
 /* Exported functions --------------------------------------------------------*/
 
 void MENU_printf(
-      MsgSrc dst,
+      volatile MsgSrc dst,
       char *fmt,
       ...
 );
@@ -113,8 +113,8 @@ void MENU_printf(
  */
 void CON_output(
       DBG_LEVEL_T dbgLvl,
-      MsgSrc src,
-      MsgSrc dst,
+      volatile MsgSrc src,
+      volatile MsgSrc dst,
       const char *pFuncName,
       uint16_t wLineNumber,
       char *fmt,

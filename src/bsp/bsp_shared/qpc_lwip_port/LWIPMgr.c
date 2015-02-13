@@ -677,47 +677,40 @@ static QState LWIPMgr_Idle(LWIPMgr * const me, QEvt const * const e) {
              * fact, avoid using ANY logging here since it could cause an
              * infinite loop. */
             /************************************************************/
-            /* ${AOs::LWIPMgr::SM::Active::Idle::DBG_MENU::[Dest==TCPlog?]} */
-            if (ETH_PORT_LOG == ((LrgDataEvt const *)e)->dst) {
-                /* ${AOs::LWIPMgr::SM::Active::Idle::DBG_MENU::[Dest==TCPlog?]::[ConnExists?]} */
-                if (NULL != LWIPMgr_es_log) {
-                    struct pbuf *p = pbuf_new(
-                        (u8_t *)((LrgDataEvt const *)e)->dataBuf,
-                        ((LrgDataEvt const *)e)->dataLen
-                    );
-                    /* ${AOs::LWIPMgr::SM::Active::Idle::DBG_MENU::[Dest==TCPlog?]::[ConnExists?]::[MemAvail?]} */
-                    if (p != (struct pbuf *)0) {
-                        LWIPMgr_es_log->p = p;                         // Attach pbuf to the socket state
-                        //dbg_slow_printf("c tcpSend, me->tpcb: %x, LWIPMgr_es_log->pcb: %x\n", (uint32_t) me->tpcb_log, (uint32_t) LWIPMgr_es_log->pcb);
-                        tcp_sent(LWIPMgr_es_log->pcb, LWIP_tcpSent);   // Set callback
-                        bool dataSent = LWIP_tcpSend(
-                            LWIPMgr_es_log->pcb,
-                            LWIPMgr_es_log
-                        );                                             // Queue data for sending
-                        pbuf_free(p);                                  // don't leak the pbuf!
-                        /* ${AOs::LWIPMgr::SM::Active::Idle::DBG_MENU::[Dest==TCPlog?]::[ConnExists?]::[MemAvail?]::[Datanotsent?]} */
-                        if (false == dataSent) {
-                            if (QEQueue_getNFree(&me->deferredEvtQueue) > 0) {
-                                /* defer the request - this event will be handled
-                                 * when the state machine goes back to Idle state */
-                                QActive_defer((QActive *)me, &me->deferredEvtQueue, e);
-                            } else {
-                                /* notify the request sender that the request was ignored.. */
-                                err_slow_printf("Unable to defer an ETH event");
-                            }
-                            status_ = Q_TRAN(&LWIPMgr_Sending);
+            /* ${AOs::LWIPMgr::SM::Active::Idle::DBG_MENU::[ConnExists?]} */
+            if (NULL != LWIPMgr_es_log) {
+                struct pbuf *p = pbuf_new(
+                    (u8_t *)((LrgDataEvt const *)e)->dataBuf,
+                    ((LrgDataEvt const *)e)->dataLen
+                );
+                /* ${AOs::LWIPMgr::SM::Active::Idle::DBG_MENU::[ConnExists?]::[MemAvail?]} */
+                if (p != (struct pbuf *)0) {
+                    LWIPMgr_es_log->p = p;                         // Attach pbuf to the socket state
+                    //dbg_slow_printf("c tcpSend, me->tpcb: %x, LWIPMgr_es_log->pcb: %x\n", (uint32_t) me->tpcb_log, (uint32_t) LWIPMgr_es_log->pcb);
+                    tcp_sent(LWIPMgr_es_log->pcb, LWIP_tcpSent);   // Set callback
+                    bool dataSent = LWIP_tcpSend(
+                        LWIPMgr_es_log->pcb,
+                        LWIPMgr_es_log
+                    );                                             // Queue data for sending
+                    pbuf_free(p);                                  // don't leak the pbuf!
+                    /* ${AOs::LWIPMgr::SM::Active::Idle::DBG_MENU::[ConnExists?]::[MemAvail?]::[Datanotsent?]} */
+                    if (false == dataSent) {
+                        if (QEQueue_getNFree(&me->deferredEvtQueue) > 0) {
+                            /* defer the request - this event will be handled
+                             * when the state machine goes back to Idle state */
+                            QActive_defer((QActive *)me, &me->deferredEvtQueue, e);
+                        } else {
+                            /* notify the request sender that the request was ignored.. */
+                            err_slow_printf("Unable to defer an ETH event");
                         }
-                        /* ${AOs::LWIPMgr::SM::Active::Idle::DBG_MENU::[Dest==TCPlog?]::[ConnExists?]::[MemAvail?]::[else]} */
-                        else {
-                            status_ = Q_HANDLED();
-                        }
+                        status_ = Q_TRAN(&LWIPMgr_Sending);
                     }
-                    /* ${AOs::LWIPMgr::SM::Active::Idle::DBG_MENU::[Dest==TCPlog?]::[ConnExists?]::[else]} */
+                    /* ${AOs::LWIPMgr::SM::Active::Idle::DBG_MENU::[ConnExists?]::[MemAvail?]::[else]} */
                     else {
                         status_ = Q_HANDLED();
                     }
                 }
-                /* ${AOs::LWIPMgr::SM::Active::Idle::DBG_MENU::[Dest==TCPlog?]::[else]} */
+                /* ${AOs::LWIPMgr::SM::Active::Idle::DBG_MENU::[ConnExists?]::[else]} */
                 else {
                     status_ = Q_HANDLED();
                 }

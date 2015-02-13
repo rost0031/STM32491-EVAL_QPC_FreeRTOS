@@ -433,29 +433,29 @@ else ifeq (spy, $(CONF))  # Spy configuration ................................
 
 BIN_DIR 	:= spy
 DEFINES		+= -DQ_SPY
-ASFLAGS 	= -g $(MFLAGS)
+ASFLAGS 	= $(MFLAGS)
 CFLAGS 		= $(MFLAGS) -std=gnu99 -Wall -ffunction-sections -fdata-sections \
-			  -Os -g -O $(INCLUDES) $(DEFINES)
+			  -Os -O $(INCLUDES) $(DEFINES)
 
 CPPFLAGS 	= $(MFLAGS) \
 			  -Wall -fno-rtti -fno-exceptions \
-			  -g -O $(INCLUDES) $(DEFINES)
+			  -O $(INCLUDES) $(DEFINES)
 
-LINKFLAGS 	= -nodefaultlibs -Xlinker --gc-sections -Wl,--strip-all -Wl,-Map,$(BIN_DIR)/$(PROJECT_NAME).map -mcpu=$(ARM_CORE) -mthumb -g3 -gdwarf-2
+LINKFLAGS 	= -nodefaultlibs -Xlinker --gc-sections -Wl,--strip-all -Wl,-Map,$(BIN_DIR)/$(PROJECT_NAME).map -mcpu=$(ARM_CORE) -mthumb
 
 else                     # default Debug configuration .......................
 
 BIN_DIR 	:= dbg
-ASFLAGS 	= -g $(MFLAGS)
+ASFLAGS 	= -g -ggdb $(MFLAGS)
 CFLAGS 		= $(MFLAGS) -std=gnu99 -Wall -ffunction-sections -fdata-sections \
-              -Wl,--gc-sections -Wl,--strip-all \
-			  -g -Os $(INCLUDES) $(DEFINES)
+              -Wl,--gc-sections \
+			  -g -ggdb -O0 $(INCLUDES) $(DEFINES)
 
 CPPFLAGS 	= $(MFLAGS) \
 			  -Wall -fno-rtti -fno-exceptions \
-			  -g -O $(INCLUDES) $(DEFINES)
+			  -g -ggdb -O0 $(INCLUDES) $(DEFINES)
 	
-LINKFLAGS 	= -nodefaultlibs -Xlinker --gc-sections -Wl,--strip-all -Wl,-Map,$(BIN_DIR)/$(PROJECT_NAME).map $(MFLAGS) -g3 -gdwarf-2 
+LINKFLAGS 	= -nodefaultlibs -Xlinker --gc-sections -Wl,-Map,$(BIN_DIR)/$(PROJECT_NAME).map $(MFLAGS) -g3 -ggdb
 
 endif
 

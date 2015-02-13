@@ -338,28 +338,26 @@ QActive_recall(
  * infinite loop. */
 /************************************************************/</action>
        <choice>
-        <guard brief="Dest == TCP log?">ETH_PORT_LOG == ((LrgDataEvt const *)e)-&gt;dst</guard>
+        <guard brief="else"/>
+        <choice_glyph conn="26,14,4,-1,4">
+         <action box="1,2,10,2"/>
+        </choice_glyph>
+       </choice>
+       <choice>
+        <guard brief="ConnExists?">NULL != LWIPMgr_es_log</guard>
+        <action>struct pbuf *p = pbuf_new(
+    (u8_t *)((LrgDataEvt const *)e)-&gt;dataBuf,
+    ((LrgDataEvt const *)e)-&gt;dataLen
+);</action>
         <choice>
-         <guard brief="else"/>
-         <choice_glyph conn="45,14,4,-1,4">
+         <guard>else</guard>
+         <choice_glyph conn="59,14,4,-1,4">
           <action box="0,2,10,2"/>
          </choice_glyph>
         </choice>
         <choice>
-         <guard brief="ConnExists?">NULL != LWIPMgr_es_log</guard>
-         <action>struct pbuf *p = pbuf_new(
-    (u8_t *)((LrgDataEvt const *)e)-&gt;dataBuf,
-    ((LrgDataEvt const *)e)-&gt;dataLen
-);</action>
-         <choice>
-          <guard>else</guard>
-          <choice_glyph conn="59,14,4,-1,4">
-           <action box="0,2,10,2"/>
-          </choice_glyph>
-         </choice>
-         <choice>
-          <guard brief="Mem Avail?">p != (struct pbuf *)0</guard>
-          <action>LWIPMgr_es_log-&gt;p = p;                         // Attach pbuf to the socket state
+         <guard brief="Mem Avail?">p != (struct pbuf *)0</guard>
+         <action>LWIPMgr_es_log-&gt;p = p;                         // Attach pbuf to the socket state
 //dbg_slow_printf(&quot;c tcpSend, me-&gt;tpcb: %x, LWIPMgr_es_log-&gt;pcb: %x\n&quot;, (uint32_t) me-&gt;tpcb_log, (uint32_t) LWIPMgr_es_log-&gt;pcb);
 tcp_sent(LWIPMgr_es_log-&gt;pcb, LWIP_tcpSent);   // Set callback
 bool dataSent = LWIP_tcpSend(
@@ -367,9 +365,9 @@ bool dataSent = LWIP_tcpSend(
     LWIPMgr_es_log
 );                                             // Queue data for sending
 pbuf_free(p);                                  // don't leak the pbuf!</action>
-          <choice target="../../../../../../7">
-           <guard brief="Data not sent?">false == dataSent</guard>
-           <action>if (QEQueue_getNFree(&amp;me-&gt;deferredEvtQueue) &gt; 0) {
+         <choice target="../../../../../7">
+          <guard brief="Data not sent?">false == dataSent</guard>
+          <action>if (QEQueue_getNFree(&amp;me-&gt;deferredEvtQueue) &gt; 0) {
     /* defer the request - this event will be handled
      * when the state machine goes back to Idle state */
     QActive_defer((QActive *)me, &amp;me-&gt;deferredEvtQueue, e);
@@ -377,32 +375,22 @@ pbuf_free(p);                                  // don't leak the pbuf!</action>
     /* notify the request sender that the request was ignored.. */
     err_slow_printf(&quot;Unable to defer an ETH event&quot;);
 }</action>
-           <choice_glyph conn="73,14,5,3,26">
-            <action box="1,-2,14,2"/>
-           </choice_glyph>
-          </choice>
-          <choice>
-           <guard>else</guard>
-           <choice_glyph conn="73,14,4,-1,4">
-            <action box="0,2,6,2"/>
-           </choice_glyph>
-          </choice>
-          <choice_glyph conn="59,14,5,-1,14">
-           <action box="1,-2,10,2"/>
+          <choice_glyph conn="73,14,5,3,26">
+           <action box="1,-2,14,2"/>
           </choice_glyph>
          </choice>
-         <choice_glyph conn="45,14,5,-1,14">
-          <action box="1,-2,12,2"/>
+         <choice>
+          <guard>else</guard>
+          <choice_glyph conn="73,14,4,-1,4">
+           <action box="0,2,6,2"/>
+          </choice_glyph>
+         </choice>
+         <choice_glyph conn="59,14,5,-1,14">
+          <action box="1,-2,10,2"/>
          </choice_glyph>
         </choice>
-        <choice_glyph conn="26,14,5,-1,19">
-         <action box="1,-2,13,2"/>
-        </choice_glyph>
-       </choice>
-       <choice>
-        <guard brief="else"/>
-        <choice_glyph conn="26,14,4,-1,4">
-         <action box="1,2,10,2"/>
+        <choice_glyph conn="26,14,5,-1,33">
+         <action box="1,0,12,2"/>
         </choice_glyph>
        </choice>
        <tran_glyph conn="7,14,3,-1,19">
