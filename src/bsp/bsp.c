@@ -27,6 +27,7 @@
 #include "nor.h"                               /* M29WV128G NOR Flash support */
 #include "sdram.h"                          /* MT48LC2M3B2B5-7E SDRAM support */
 #include "projdefs.h"                          /* FreeRTOS base types support */
+#include "task.h"
 
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */
@@ -172,7 +173,7 @@ void QF_onStartup( void )
    SysTick_Config(SystemCoreClock / BSP_TICKS_PER_SEC);
 
    /* assing all priority bits for preemption-prio. and none to sub-prio. */
-   NVIC_SetPriorityGrouping(0U);
+   NVIC_SetPriorityGrouping(NVIC_PriorityGroup_4);
 
    /* set priorities of ALL ISRs used in the system, see NOTE00
     *
@@ -499,10 +500,10 @@ void vApplicationIdleHook( void )
 }
 
 /******************************************************************************/
-void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName) {
-   (void)xTask;
-   (void)pcTaskName;
-   printf("ERROR: Stack overflow in stack %s\n", pcTaskName);
+void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName)
+{
+   printf("ERROR: Stack overflow in task: %s\n", pcTaskName);
+   printf("ERROR: Name may be garbled due to crash.  Task address was: 0x%08x\n", xTask);
    Q_ERROR();
 }
 /**
