@@ -31,6 +31,44 @@
 /* Exported constants --------------------------------------------------------*/
 /* Exported functions --------------------------------------------------------*/
 
+/**
+ * @brief Menu printf function to output menu items to serial or ethernet.
+ *
+ * This function is used to output menu printing out to either serial or
+ * ethernet log port, depending on the origin of the menu request. The output
+ * destination is specified with the @a dst variable. This function behaves just
+ * like a printf function.  It doesn't prepend anything.
+ *
+ * Usage Example:
+ *
+ * @code
+ * int i = 0;
+ * MENU_printf("Menu print test %d\n", i);
+ *
+ * will output:
+ * Menu print test 0
+ * @endcode
+ *
+ * @note 1: This function is always enabled.
+ * @note 2: Use just as a regular printf with all the same flags.
+ * @note 3: Don't use this for regular debugging since it will be difficult to
+ * track down where this is being called since it prepends no location or
+ * temporal data to help you.
+ * @note 4: don't manually set dst variable.  Instead, it should be set by the
+ * requester of the menu (serial port or ethernet port).
+ *
+ * @param [in] dst: MsgSrc var that determines where the output will go
+ *    @arg SERIAL_CON: output to serial port.
+ *    @arg ETH_LOG_PORT: output to the ethernet port.
+ *
+ * @param [in] *fmt: const char pointer to the data to be printed using the
+ * va_args type argument list.
+ *
+ * @param [in] ... : the variable list of arguments from above.  This allows
+ * the function to be called like any xprintf() type function.
+ *
+ * @return None
+ */
 void MENU_printf(
       volatile MsgSrc dst,
       char *fmt,

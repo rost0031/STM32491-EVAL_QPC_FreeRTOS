@@ -34,24 +34,24 @@ DBG_DEFINE_THIS_MODULE( DBG_MODL_SERIAL ); /* For debug system to ID this module
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
 
+/******************************************************************************/
 void MENU_printf(
       volatile MsgSrc dst,
       char *fmt,
       ...
 )
 {
+   /* 1. Allocate memory for the event and clear/set the appropriate fields. */
    LrgDataEvt *lrgDataEvt = Q_NEW(LrgDataEvt, DBG_MENU_SIG);
    lrgDataEvt->dataLen = 0;
    lrgDataEvt->src = dst;
    lrgDataEvt->dst = dst;
 
-//   DBG_printf("src:%d,dst:%d\n",lrgDataEvt->src, lrgDataEvt->dst);
-
-   /* 4. Pass the va args list to get output to a buffer */
+   /* 2. Pass the va args list to get output to a buffer */
    va_list args;
    va_start(args, fmt);
 
-   /* 5. Print the actual user supplied data to the buffer and set the length */
+   /* 3. Print the actual user supplied data to the buffer and set the length */
    lrgDataEvt->dataLen += vsnprintf(
          (char *)&lrgDataEvt->dataBuf[lrgDataEvt->dataLen],
          MAX_MSG_LEN - lrgDataEvt->dataLen, // Account for the part of the buffer that was already written.
@@ -60,14 +60,13 @@ void MENU_printf(
    );
    va_end(args);
 
-   /* 6. Publish the event*/
+   /* 4. Directly post the event to the appropriate AO based on it's intended
+    * destination.  */
    if ( SERIAL_CON == dst ) {
       QACTIVE_POST(AO_SerialMgr, (QEvt *)lrgDataEvt, AO_DbgMgr); // directly post the event to the correct AO
    } else {
       QACTIVE_POST(AO_LWIPMgr, (QEvt *)lrgDataEvt, AO_DbgMgr); // directly post the event to the correct AO
    }
-
-//   QF_PUBLISH((QEvt *)lrgDataEvt, 0);
 }
 
 /******************************************************************************/
@@ -88,14 +87,7 @@ void CON_output(
    /* 2. Construct a new msg event pointer and allocate storage in the QP event
     * pool.  Allocate with margin so we can fall back on regular slow printfs if
     * there's a problem */
-   LrgDataEvt *lrgDataEvt = NULL;
-   if ( CON == dbgLvl ) {
-      lrgDataEvt = Q_NEW(LrgDataEvt, DBG_MENU_SIG);
-      DBG_printf("d:%d s:%d\n", dst, src);
-   } else {
-      lrgDataEvt = Q_NEW(LrgDataEvt, DBG_LOG_SIG);
-   }
-
+   LrgDataEvt *lrgDataEvt = Q_NEW(LrgDataEvt, DBG_LOG_SIG);
    lrgDataEvt->dataLen = 0;
    lrgDataEvt->src = src;
    lrgDataEvt->dst = dst;
@@ -155,9 +147,7 @@ void CON_output(
                wLineNumber
          );
          break;
-      case CON: // This is used to print menu so don't prepend anything
-//         lrgDataEvt->super.sig = DBG_MENU_SIG;
-         break;
+      case CON: // This is not used so it should really never get here
       default:
          break;
    }
@@ -263,7 +253,7 @@ void CON_slow_output(
                wLineNumber
          );
          break;
-      case CON: // This is used to print menu so don't prepend anything
+      case CON: // This is not used so don't prepend anything
       default:
          break;
    }

@@ -325,12 +325,12 @@ extern uint32_t  glbDbgConfig; /**< Allow global access to debug info */
  */
 #ifndef SLOW_PRINTF
 #define LOG_printf(fmt, ...) \
-      do { if (DEBUG) CON_output(LOG, NA_SRC_DST, NA_SRC_DST, __func__, __LINE__, fmt, \
+      do { CON_output(LOG, NA_SRC_DST, NA_SRC_DST, __func__, __LINE__, fmt, \
             ##__VA_ARGS__); \
       } while (0)
 #else
 #define LOG_printf(fmt, ...) \
-      do { if (DEBUG) CON_slow_output(LOG, __func__, __LINE__, fmt, \
+      do { CON_slow_output(LOG, __func__, __LINE__, fmt, \
             ##__VA_ARGS__); \
       } while (0)
 #endif
@@ -363,12 +363,12 @@ extern uint32_t  glbDbgConfig; /**< Allow global access to debug info */
  */
 #ifndef SLOW_PRINTF
 #define WRN_printf(fmt, ...) \
-      do { if (DEBUG) CON_output(WRN, NA_SRC_DST, NA_SRC_DST, __func__, __LINE__, fmt, \
+      do { CON_output(WRN, NA_SRC_DST, NA_SRC_DST, __func__, __LINE__, fmt, \
             ##__VA_ARGS__); \
       } while (0)
 #else
 #define WRN_printf(fmt, ...) \
-      do { if (DEBUG) CON_slow_output(WRN, __func__, __LINE__, fmt, \
+      do { CON_slow_output(WRN, __func__, __LINE__, fmt, \
             ##__VA_ARGS__); \
       } while (0)
 #endif
@@ -401,12 +401,12 @@ extern uint32_t  glbDbgConfig; /**< Allow global access to debug info */
  */
 #ifndef SLOW_PRINTF
 #define ERR_printf(fmt, ...) \
-      do { if (DEBUG) CON_output(ERR, NA_SRC_DST, NA_SRC_DST, __func__, __LINE__, fmt, \
+      do { CON_output(ERR, NA_SRC_DST, NA_SRC_DST, __func__, __LINE__, fmt, \
             ##__VA_ARGS__); \
       } while (0)
 #else
 #define ERR_printf(fmt, ...) \
-      do { if (DEBUG) CON_slow_output(ERR, __func__, __LINE__, fmt, \
+      do { CON_slow_output(ERR, __func__, __LINE__, fmt, \
             ##__VA_ARGS__); \
       } while (0)
 #endif
@@ -537,7 +537,7 @@ extern uint32_t  glbDbgConfig; /**< Allow global access to debug info */
  * @return None
  */
 #define log_slow_printf(fmt, ...) \
-      do { if (DEBUG) CON_slow_output(LOG, __func__, __LINE__, fmt, \
+      do { CON_slow_output(LOG, __func__, __LINE__, fmt, \
             ##__VA_ARGS__); \
       } while (0)
 
