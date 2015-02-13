@@ -106,9 +106,9 @@ ASMFLAGS 				= -g -c $(AFLAGS)
 else                     # default Debug configuration .......................
 
 BINDIR   				= $(LWIP_DIR)/dbg
-CFLAGS  				= -g -c $(MFLAGS) -std=gnu99 -mthumb -Wall $(DEFINES) \
-                          -ffunction-sections -fdata-sections -Os
-ASMFLAGS 				= -g -c $(AFLAGS)
+CFLAGS  				= -g3 -ggdb -c $(MFLAGS) -std=gnu99 -mthumb -Wall $(DEFINES) \
+                          -ffunction-sections -fdata-sections -O1
+ASMFLAGS 				= -g3 -ggdb -c $(AFLAGS)
 
 endif
 

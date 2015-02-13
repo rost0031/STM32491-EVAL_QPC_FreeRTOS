@@ -181,8 +181,8 @@ QP_DEP                      = $(QP_INCDIR)\qassert.h
 # gcc options
 # -c    : compile only
 # -g    : source level debugging
-CCFLAGS                     = -g -c $(MFLAGS) -std=gnu99 -Wall -ffunction-sections -fdata-sections $(DEFINES) -Os
-ASMFLAGS                    = -g -c $(AFLAGS)
+CCFLAGS                     = -g3 -ggdb -c $(MFLAGS) -std=gnu99 -Wall -ffunction-sections -fdata-sections $(DEFINES) -O1
+ASMFLAGS                    = -g3 -ggdb -c $(AFLAGS)
 endif
 
 VPATH += $(QEP_SRCDIR) $(QF_SRCDIR) $(QS_SRCDIR) $(QP_PRTDIR)/src

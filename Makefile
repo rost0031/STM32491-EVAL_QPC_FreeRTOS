@@ -407,12 +407,8 @@ LDFLAGS  				:= -T$(LDSCRIPT)
 #
 
 # Common options for all configurations. 
-#LIBS    	= -lqp_$(ARM_CORE)_cs -llwip_$(ARM_CORE)_cs
 LIBS    	= -lqp_$(ARM_CORE)_cs -llwip_$(ARM_CORE)_cs 
-
-#LIBS    	= -lqp_$(ARM_CORE)_cs -llwip_$(ARM_CORE)_cs
 LIB_PATHS   = -L$(QP_PORT_DIR)/$(BIN_DIR) -L$(LWIP_DIR)/$(BIN_DIR)
-#LIB_PATHS   = -L$(QP_PORT_DIR)/$(BIN_DIR) -L$(LWIP_DIR)/$(BIN_DIR)
 
 # Specific options depending on the build configuration
 ifeq (rel, $(CONF))       # Release configuration ............................
@@ -427,7 +423,7 @@ CPPFLAGS    = $(MFLAGS) \
 			  -Wall -fno-rtti -fno-exceptions \
 			  -Os $(INCLUDES) $(DEFINES)
 
-LINKFLAGS   = -nodefaultlibs -Xlinker --gc-sections -Wl,--strip-all -Wl,-Map,$(BIN_DIR)/$(PROJECT_NAME).map -mcpu=$(ARM_CORE) -mthumb
+LINKFLAGS   = -nodefaultlibs -Xlinker --gc-sections -Wl,--strip-all -Wl,-Map,$(BIN_DIR)/$(PROJECT_NAME).map $(MFLAGS)
 
 else ifeq (spy, $(CONF))  # Spy configuration ................................
 
@@ -441,21 +437,21 @@ CPPFLAGS 	= $(MFLAGS) \
 			  -Wall -fno-rtti -fno-exceptions \
 			  -O $(INCLUDES) $(DEFINES)
 
-LINKFLAGS 	= -nodefaultlibs -Xlinker --gc-sections -Wl,--strip-all -Wl,-Map,$(BIN_DIR)/$(PROJECT_NAME).map -mcpu=$(ARM_CORE) -mthumb
+LINKFLAGS 	= -nodefaultlibs -Xlinker --gc-sections -Wl,--strip-all -Wl,-Map,$(BIN_DIR)/$(PROJECT_NAME).map $(MFLAGS)
 
 else                     # default Debug configuration .......................
 
 BIN_DIR 	:= dbg
-ASFLAGS 	= -g -ggdb $(MFLAGS)
+ASFLAGS 	= -g3 -ggdb $(MFLAGS)
 CFLAGS 		= $(MFLAGS) -std=gnu99 -Wall -ffunction-sections -fdata-sections \
               -Wl,--gc-sections \
 			  -g -ggdb -O0 $(INCLUDES) $(DEFINES)
 
 CPPFLAGS 	= $(MFLAGS) \
 			  -Wall -fno-rtti -fno-exceptions \
-			  -g -ggdb -O0 $(INCLUDES) $(DEFINES)
+			  -g3 -ggdb -O0 $(INCLUDES) $(DEFINES)
 	
-LINKFLAGS 	= -nodefaultlibs -Xlinker --gc-sections -Wl,-Map,$(BIN_DIR)/$(PROJECT_NAME).map $(MFLAGS) -g3 -ggdb
+LINKFLAGS 	= -nodefaultlibs -Xlinker --gc-sections -Wl,-Map,$(BIN_DIR)/$(PROJECT_NAME).map $(MFLAGS)
 
 endif
 
