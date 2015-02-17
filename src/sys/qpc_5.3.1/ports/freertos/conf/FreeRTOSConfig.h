@@ -148,7 +148,7 @@ See http://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html. */
 #define INCLUDE_vTaskCleanUpResources    0
 #define INCLUDE_vTaskSuspend             1
 #define INCLUDE_vTaskDelayUntil          0
-#define INCLUDE_vTaskDelay               0
+#define INCLUDE_vTaskDelay               1
 
 /* Definitions that map the FreeRTOS port interrupt handlers to their CMSIS
 standard names. */

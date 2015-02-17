@@ -173,6 +173,9 @@ LWIP_SRC_DIR            = ../../
 # Application Comm directory
 APP_COMM_DIR            = $(APP_DIR)/comm
 
+# Application Coupler directory
+APP_CPLR_DIR            = $(APP_DIR)/cplr
+
 # Application Debug directory
 APP_DBG_DIR             = $(APP_DIR)/debug
 
@@ -223,6 +226,7 @@ KTREE_DIR               = $(SYS_DIR)/ktree
 # Source virtual directories
 VPATH 					= $(APP_DIR) \
 						  $(APP_COMM_DIR) \
+						  $(APP_CPLR_DIR) \
 						  $(APP_DBG_DIR) \
 						  $(APP_MENU_DIRS) \
 						  \
@@ -251,6 +255,7 @@ INCLUDES  				= -I$(SRC_DIR) \
 						  -I$(APP_DIR) \
 						  \
 						  -I$(APP_COMM_DIR) \
+						  -I$(APP_CPLR_DIR) \
 						  -I$(APP_DBG_DIR) \
 						  \
 						  $(APP_MENU_INCLUDES) \
@@ -323,6 +328,7 @@ C_SRCS                = \
 						main.c \
 						no_heap.c \
 						comm.c \
+						cplr.c \
 						\
 						$(MENU_CSRCS) \
 						\

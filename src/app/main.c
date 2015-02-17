@@ -10,6 +10,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "qp_port.h"                                        /* for QP support */
+#include "FreeRTOS.h"                                 /* for FreeRTOS support */
 
 #include "LWIPMgr.h"                               /* for starting LWIPMgr AO */
 #include "CommStackMgr.h"                     /* for starting CommStackMgr AO */
@@ -17,6 +18,7 @@
 #include "DbgMgr.h"                                 /* for starting DbgMgr AO */
 #include "I2CBusMgr.h"                           /* for starting I2CBusMgr AO */
 #include "I2C1DevMgr.h"                         /* for starting I2C1DevMgr AO */
+#include "cplr.h"                               /* for starting the CPLR task */
 
 #include "project_includes.h"           /* Includes common to entire project. */
 #include "Shared.h"
@@ -105,6 +107,7 @@ int main(void)
     DBG_ENABLE_DEBUG_FOR_MODULE(DBG_MODL_SDRAM);
     DBG_ENABLE_DEBUG_FOR_MODULE(DBG_MODL_DBG);
     DBG_ENABLE_DEBUG_FOR_MODULE(DBG_MODL_COMM);
+    DBG_ENABLE_DEBUG_FOR_MODULE(DBG_MODL_CPLR);
 
     /* initialize the Board Support Package */
     BSP_init();
@@ -206,6 +209,16 @@ int main(void)
           (void *)0, THREAD_STACK_SIZE,              /* per-thread stack size */
           (QEvt *)0,                               /* no initialization event */
           "CommMgr"                                       /* Name of the task */
+    );
+
+
+    xTaskCreate(
+          CPLR_Task,
+          ( const char * ) "CPLRTask",                    /* Name of the task */
+          THREAD_STACK_SIZE,                         /* per-thread stack size */
+          NULL,
+          CPLR_PRIORITY,                                          /* priority */
+          ( xTaskHandle * ) NULL
     );
 
     log_slow_printf("Starting QPC. All logging from here on out shouldn't show 'SLOW'!!!\n\n");
