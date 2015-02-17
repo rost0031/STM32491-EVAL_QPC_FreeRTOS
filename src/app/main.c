@@ -11,6 +11,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "qp_port.h"                                        /* for QP support */
 #include "FreeRTOS.h"                                 /* for FreeRTOS support */
+#include "queue.h"                              /* for FreeRTOS queue support */
 
 #include "LWIPMgr.h"                               /* for starting LWIPMgr AO */
 #include "CommStackMgr.h"                     /* for starting CommStackMgr AO */
@@ -35,7 +36,7 @@ DBG_DEFINE_THIS_MODULE( DBG_MODL_GENERAL ); /* For debug system to ID this modul
 
 /* Private typedefs ----------------------------------------------------------*/
 /* Private defines -----------------------------------------------------------*/
-#define THREAD_STACK_SIZE  2*1024U
+#define THREAD_STACK_SIZE  1024U
 
 /* Private macros ------------------------------------------------------------*/
 /* Private variables and Local objects ---------------------------------------*/
@@ -56,7 +57,7 @@ static union SmallEvents {
     uint8_t e1[sizeof(QEvt)];
     uint8_t e2[sizeof(I2CStatusEvt)];
     uint8_t e3[sizeof(I2CEEPROMReadReqEvt)];
-} l_smlPoolSto[100];                     /* storage for the small event pool */
+} l_smlPoolSto[50];                     /* storage for the small event pool */
 
 /**
  * \union Medium Events.
@@ -69,7 +70,7 @@ static union MediumEvents {
     uint8_t e3[sizeof(I2CReadMemReqEvt)];
     uint8_t e4[sizeof(I2CDevRegWriteReqEvt)];
     uint8_t e5[sizeof(I2CDevRegReadReqEvt)];
-} l_medPoolSto[100];                    /* storage for the medium event pool */
+} l_medPoolSto[50];                    /* storage for the medium event pool */
 
 /**
  * \union Large Events.
@@ -82,7 +83,9 @@ static union LargeEvents {
     uint8_t e3[sizeof(LogDataEvt)];
     uint8_t e4[sizeof(LrgDataEvt)];
     uint8_t e5[sizeof(I2CEEPROMWriteReqEvt)];
-} l_lrgPoolSto[300];                    /* storage for the large event pool */
+} l_lrgPoolSto[100];                    /* storage for the large event pool */
+
+//xBlockingQueueParameters *pxQueueParameters1;
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
