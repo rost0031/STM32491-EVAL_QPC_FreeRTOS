@@ -97,7 +97,9 @@ int main(void)
        function, refer to system_stm32f4xx.c file
      */
 
-    /* Enable debugging for select modules */
+    /* Enable debugging for select modules - Note: this has no effect in rel
+     * builds since all DBG level logging is disabled and only LOG and up msgs
+     * will get printed. */
     DBG_ENABLE_DEBUG_FOR_MODULE(DBG_MODL_GENERAL);
     DBG_ENABLE_DEBUG_FOR_MODULE(DBG_MODL_SERIAL);
     DBG_ENABLE_DEBUG_FOR_MODULE(DBG_MODL_TIME);
