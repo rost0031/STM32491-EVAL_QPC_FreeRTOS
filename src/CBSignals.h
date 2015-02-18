@@ -126,14 +126,16 @@ enum DbgMgrSignals {
 };
 
 /**
- * @enum Signals used by DbgMgr
+ * @enum Signals used to communicate to CPLR task
  */
-enum GuiMgrSignals {
-   GUI_TEST_SIG = DBG_MAX_SIG, /** This signal must start at the previous category max signal */
-   GUI_TSC_INTERRUPT_SIG,
-   GUI_LCD_POS_UPDATE_TIMER_SIG,
-   GUI_LCD_POS_DATA_SIG,
-   GUI_MAX_SIG
+enum CplrSignals {
+   /* Signals that use the EthEvt type event tag - start */
+   CPLR_ETH_SYS_TEST_SIG = DBG_MAX_SIG, /** This signal must start at the previous category max signal */
+
+   /* ... insert signals here */
+   /* Signals that use the EthEvt type event tag - end */
+
+   CPLR_MAX_SIG
 };
 
 /* INSERT NEW SIGNAL CATEGORIES BEFORE HERE...POINT MAX_SHARED_SIG TO LAST SIGNAL */
@@ -144,7 +146,7 @@ enum GuiMgrSignals {
  * before it.
  */
 enum FinalSignal {
-   MAX_SHARED_SIG = GUI_MAX_SIG,  /**< Last published shared signal - should always be at the bottom of this list */
+   MAX_SHARED_SIG = CPLR_MAX_SIG,  /**< Last published shared signal - should always be at the bottom of this list */
 };
 
 /* Exported constants --------------------------------------------------------*/

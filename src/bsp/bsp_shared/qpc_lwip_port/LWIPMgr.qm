@@ -910,9 +910,22 @@ if (p == NULL) {
 
     } else if ( LWIPMgr_sysPort == tpcb-&gt;local_port ) {
         LOG_printf(
-            &quot;Received data on SYS port %d.  Currently unimplemented. Discarding.\n&quot;,
+            &quot;Received data on SYS port %d.\n&quot;,
             tpcb-&gt;local_port
         );
+        EthEvt *ethEvt = Q_NEW(EthEvt, CPLR_ETH_SYS_TEST_SIG);
+
+        /* Fill the msg payload with payload (the actual received msg)*/
+        ethEvt-&gt;msg_len = (p-&gt;tot_len)-1;
+        MEMCPY(
+              ethEvt-&gt;msg,
+              p-&gt;payload,
+              ethEvt-&gt;msg_len
+        );
+        ethEvt-&gt;msg_src = ETH_PORT_SYS;
+
+        /* Post directly to the &quot;raw&quot; queue for FreeRTOS task to read */
+        QEQueue_postFIFO(&amp;CPLR_evtQueue, (QEvt *)ethEvt);
     } else {
         LOG_printf(
             &quot;Received data on unknown port %d.  Discarding.\n&quot;,
@@ -947,10 +960,23 @@ if (p == NULL) {
             QF_PUBLISH( (QEvent *)menuEvt, AO_LWIPMgr );
 
         } else if ( LWIPMgr_sysPort == tpcb-&gt;local_port ) {
-            LOG_printf(
-                &quot;Received data on SYS port %d.  Currently unimplemented. Discarding.\n&quot;,
+            DBG_printf(
+                &quot;Received data on SYS port %d.\n&quot;,
                 tpcb-&gt;local_port
             );
+            EthEvt *ethEvt = Q_NEW(EthEvt, CPLR_ETH_SYS_TEST_SIG);
+
+            /* Fill the msg payload with payload (the actual received msg)*/
+            ethEvt-&gt;msg_len = (p-&gt;tot_len)-1;
+            MEMCPY(
+                  ethEvt-&gt;msg,
+                  p-&gt;payload,
+                  ethEvt-&gt;msg_len
+            );
+            ethEvt-&gt;msg_src = ETH_PORT_SYS;
+
+            /* Post directly to the &quot;raw&quot; queue for FreeRTOS task to read */
+            QEQueue_postFIFO(&amp;CPLR_evtQueue, (QEvt *)ethEvt);
         } else {
             LOG_printf(
                 &quot;Received data on unknown port %d.  Discarding.\n&quot;,
@@ -1097,6 +1123,7 @@ return ret_err;</code>
 #include &quot;lwip.h&quot;                                               /* lwIP stack */
 #include &quot;bsp_defs.h&quot;
 #include &quot;DbgMgr.h&quot;                                           /* For MenuEvt */
+#include &quot;cplr.h&quot;  /* for access to the raw queue used to talk to CPLR tastk */
 
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */

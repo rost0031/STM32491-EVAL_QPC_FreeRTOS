@@ -46,6 +46,7 @@
 #include "lwip.h"                                               /* lwIP stack */
 #include "bsp_defs.h"
 #include "DbgMgr.h"                                           /* For MenuEvt */
+#include "cplr.h"  /* for access to the raw queue used to talk to CPLR tastk */
 
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */
@@ -1078,9 +1079,22 @@ static err_t LWIP_tcpRecv(
 
         } else if ( LWIPMgr_sysPort == tpcb->local_port ) {
             LOG_printf(
-                "Received data on SYS port %d.  Currently unimplemented. Discarding.\n",
+                "Received data on SYS port %d.\n",
                 tpcb->local_port
             );
+            EthEvt *ethEvt = Q_NEW(EthEvt, CPLR_ETH_SYS_TEST_SIG);
+
+            /* Fill the msg payload with payload (the actual received msg)*/
+            ethEvt->msg_len = (p->tot_len)-1;
+            MEMCPY(
+                  ethEvt->msg,
+                  p->payload,
+                  ethEvt->msg_len
+            );
+            ethEvt->msg_src = ETH_PORT_SYS;
+
+            /* Post directly to the "raw" queue for FreeRTOS task to read */
+            QEQueue_postFIFO(&CPLR_evtQueue, (QEvt *)ethEvt);
         } else {
             LOG_printf(
                 "Received data on unknown port %d.  Discarding.\n",
@@ -1115,10 +1129,23 @@ static err_t LWIP_tcpRecv(
                 QF_PUBLISH( (QEvent *)menuEvt, AO_LWIPMgr );
 
             } else if ( LWIPMgr_sysPort == tpcb->local_port ) {
-                LOG_printf(
-                    "Received data on SYS port %d.  Currently unimplemented. Discarding.\n",
+                DBG_printf(
+                    "Received data on SYS port %d.\n",
                     tpcb->local_port
                 );
+                EthEvt *ethEvt = Q_NEW(EthEvt, CPLR_ETH_SYS_TEST_SIG);
+
+                /* Fill the msg payload with payload (the actual received msg)*/
+                ethEvt->msg_len = (p->tot_len)-1;
+                MEMCPY(
+                      ethEvt->msg,
+                      p->payload,
+                      ethEvt->msg_len
+                );
+                ethEvt->msg_src = ETH_PORT_SYS;
+
+                /* Post directly to the "raw" queue for FreeRTOS task to read */
+                QEQueue_postFIFO(&CPLR_evtQueue, (QEvt *)ethEvt);
             } else {
                 LOG_printf(
                     "Received data on unknown port %d.  Discarding.\n",

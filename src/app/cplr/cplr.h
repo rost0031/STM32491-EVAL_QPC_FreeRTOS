@@ -19,9 +19,13 @@
 #endif
 
 /* Includes ------------------------------------------------------------------*/
+#include "qequeue.h"                             /* For QE "raw" event queues */
+
 /* Exported defines ----------------------------------------------------------*/
 /* Exported macros -----------------------------------------------------------*/
 /* Exported types ------------------------------------------------------------*/
+ extern QEQueue CPLR_evtQueue; /**< Global raw queue to talk between FreeRTOS and QP */
+
 /* Exported constants --------------------------------------------------------*/
 /* Exported functions --------------------------------------------------------*/
 

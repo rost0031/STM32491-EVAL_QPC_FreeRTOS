@@ -11,7 +11,6 @@
 /* Includes ------------------------------------------------------------------*/
 #include "qp_port.h"                                        /* for QP support */
 #include "FreeRTOS.h"                                 /* for FreeRTOS support */
-#include "queue.h"                              /* for FreeRTOS queue support */
 
 #include "LWIPMgr.h"                               /* for starting LWIPMgr AO */
 #include "CommStackMgr.h"                     /* for starting CommStackMgr AO */
@@ -48,6 +47,7 @@ static QEvt const    *l_I2C1DevMgrQueueSto[30];    /**< Storage for I2C1DevMgr e
 static QEvt const    *l_DbgMgrQueueSto[30];        /**< Storage for DbgMgr event Queue */
 static QSubscrList   l_subscrSto[MAX_PUB_SIG];      /**< Storage for subscribe/publish event Queue */
 
+static QEvt const    *l_CPLRQueueSto[300]; /**< Storage for raw QE queue for communicating with CPLR task */
 /**
  * \union Small Events.
  * This union is a storage for small sized events.
@@ -157,6 +157,9 @@ int main(void)
     QF_poolInit(l_smlPoolSto, sizeof(l_smlPoolSto), sizeof(l_smlPoolSto[0]));
     QF_poolInit(l_medPoolSto, sizeof(l_medPoolSto), sizeof(l_medPoolSto[0]));
     QF_poolInit(l_lrgPoolSto, sizeof(l_lrgPoolSto), sizeof(l_lrgPoolSto[0]));
+
+    /* initialize the raw queue */
+    QEQueue_init(&CPLR_evtQueue, l_CPLRQueueSto, Q_DIM(l_CPLRQueueSto));
 
     /* Start Active objects */
     dbg_slow_printf("Starting Active Objects\n");
