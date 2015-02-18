@@ -47,7 +47,7 @@ static QEvt const    *l_I2C1DevMgrQueueSto[30];    /**< Storage for I2C1DevMgr e
 static QEvt const    *l_DbgMgrQueueSto[30];        /**< Storage for DbgMgr event Queue */
 static QSubscrList   l_subscrSto[MAX_PUB_SIG];      /**< Storage for subscribe/publish event Queue */
 
-static QEvt const    *l_CPLRQueueSto[300]; /**< Storage for raw QE queue for communicating with CPLR task */
+static QEvt const    *l_CPLRQueueSto[10]; /**< Storage for raw QE queue for communicating with CPLR task */
 /**
  * \union Small Events.
  * This union is a storage for small sized events.
@@ -84,8 +84,6 @@ static union LargeEvents {
     uint8_t e4[sizeof(LrgDataEvt)];
     uint8_t e5[sizeof(I2CEEPROMWriteReqEvt)];
 } l_lrgPoolSto[100];                    /* storage for the large event pool */
-
-//xBlockingQueueParameters *pxQueueParameters1;
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
@@ -218,7 +216,6 @@ int main(void)
           (QEvt *)0,                               /* no initialization event */
           "CommMgr"                                       /* Name of the task */
     );
-
 
     xTaskCreate(
           CPLR_Task,
