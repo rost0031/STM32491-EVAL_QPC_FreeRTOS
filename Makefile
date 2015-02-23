@@ -38,14 +38,14 @@ ifneq ($(IP),)
 endif
 
 ifeq ($(IP),)       # Slave IP address............................
-IPADDR0 = 169
-IPADDR1 = 254
-IPADDR2 = 2
+IPADDR0 = 172  
+IPADDR1 = 27
+IPADDR2 = 1
 IPADDR3 = 3
 MAC = 0x3b
 else
-IPADDR0 = 192
-IPADDR1 = 168
+IPADDR0 = 172
+IPADDR1 = 27
 IPADDR2 = 1
 IPADDR3 = $(IP)
 endif
@@ -69,8 +69,6 @@ DEFINES                  =
 #  and to compile options for different ARM cortex-m processors.
 #------------------------------------------------------------------------------
 MCU                     = cortex-m4-fpv4-sp-d16
-#MCU = cortex-m3
-
 
 # defaults
 ARM_CORE                = cortex-m3
