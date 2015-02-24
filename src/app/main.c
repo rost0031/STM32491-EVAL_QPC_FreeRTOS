@@ -118,6 +118,23 @@ int main(void)
     dbg_slow_printf("Initialized BSP\n");
     log_slow_printf("Starting Bootloader version %s built on %s\n", FW_VER, BUILD_DATE);
 
+    dbg_slow_printf("Read the MAC address from the special I2C EEPROM\n");
+    uint8_t macAddrBuffer[8];
+    memset(macAddrBuffer, 0, sizeof(macAddrBuffer));
+    I2C_readBufferBlocking(
+          macAddrBuffer,
+          I2CBus1,
+          0xB0,
+          0x98,
+          1,
+          8
+    );
+    dbg_slow_printf("Read:");
+    for (uint8_t i=0; i<8; i++) {
+       printf("%02x ", macAddrBuffer[i]);
+    }
+    printf("\n");
+
     /* Instantiate the Active objects by calling their "constructors"         */
     dbg_slow_printf("Initializing AO constructors\n");
     SerialMgr_ctor();

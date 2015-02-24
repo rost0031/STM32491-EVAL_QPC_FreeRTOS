@@ -20,6 +20,7 @@
 #include "project_includes.h"
 #include "Shared.h"
 #include "I2CBusMgr.h"                                 /* For I2C event types */
+#include "stm32f4xx.h"
 #include "stm32f4xx_dma.h"                           /* For STM32 DMA support */
 #include "stm32f4xx_i2c.h"                           /* For STM32 DMA support */
 
@@ -29,6 +30,15 @@ DBG_DEFINE_THIS_MODULE( DBG_MODL_I2C ); /* For debug system to ID this module */
 
 /* Private typedefs ----------------------------------------------------------*/
 /* Private defines -----------------------------------------------------------*/
+
+/* Maximum Timeout values for flags and events waiting loops. These timeouts are
+   not based on accurate values, they just guarantee that the application will
+   not remain stuck if the I2C communication is corrupted.
+   These are only used for blocking I2C operations which are only called before
+   any threads/objects are running and after (if they have crashed). */
+#define I2C_SHORT_TIMEOUT         ((uint32_t)0x1000)
+#define I2C_LONG_TIMEOUT         ((uint32_t)(30 * I2C_SHORT_TIMEOUT))
+
 /* Private macros ------------------------------------------------------------*/
 /* Private variables and Local objects ---------------------------------------*/
 
@@ -220,7 +230,7 @@ void I2C_BusInit( I2C_Bus_t iBus )
    I2C_DigitalFilterConfig( s_I2C_Bus[iBus].i2c_bus, 0x0F );
 
    /* I2C Peripheral Enable */
-//   I2C_Cmd( s_I2C_Bus[iBus].i2c_bus, ENABLE );
+   //   I2C_Cmd( s_I2C_Bus[iBus].i2c_bus, ENABLE );
 
 }
 
@@ -428,6 +438,141 @@ void I2C_StartDMAWrite( I2C_Bus_t iBus, uint16_t wWriteLen )
    DMA_Cmd( s_I2C_Bus[iBus].i2c_dma_tx_stream, ENABLE );
 }
 
+/******************************************************************************/
+CBErrorCode I2C_readBufferBlocking(
+      uint8_t* pBuffer,
+      I2C_Bus_t iBus,
+      uint8_t i2cDevAddr,
+      uint16_t i2cMemAddr,
+      uint8_t i2cMemAddrSize,
+      uint16_t bytesToRead
+)
+{
+   CBErrorCode status;
+
+   /*!< While the bus is busy */
+   uint32_t I2C_Timeout = I2C_LONG_TIMEOUT;
+   status = ERR_I2CBUS_BUSY;
+   while(RESET != I2C_GetFlagStatus(s_I2C_Bus[iBus].i2c_bus, I2C_FLAG_BUSY)) {
+      if((I2C_Timeout--) == 0) return I2C_TIMEOUT_UserCallback(iBus, status);
+   }
+
+   /*!< Send START condition */
+   I2C_GenerateSTART(s_I2C_Bus[iBus].i2c_bus, ENABLE);
+
+   /*!< Test on EV5 and clear it (cleared by reading SR1 then writing to DR) */
+   I2C_Timeout = I2C_LONG_TIMEOUT;
+   status = ERR_I2CBUS_EV5_TIMEOUT;
+   while(!I2C_CheckEvent(s_I2C_Bus[iBus].i2c_bus, I2C_EVENT_MASTER_MODE_SELECT)) {
+      if((I2C_Timeout--) == 0) return I2C_TIMEOUT_UserCallback(iBus, status);
+   }
+
+   /*!< Send EEPROM address for write */
+   I2C_Send7bitAddress(s_I2C_Bus[iBus].i2c_bus, i2cDevAddr, I2C_Direction_Transmitter);
+
+   /*!< Test on EV6 and clear it */
+   I2C_Timeout = I2C_LONG_TIMEOUT;
+   status = ERR_I2CBUS_EV6_TIMEOUT;
+   while(!I2C_CheckEvent(s_I2C_Bus[iBus].i2c_bus, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED)) {
+      if((I2C_Timeout--) == 0) return I2C_TIMEOUT_UserCallback(iBus, status);
+   }
+
+   /* Some devices have 16 bit addresses so we have to send MSB first and then
+    * LSB.  Otherwise, we can skip the MSB and just send the LSB */
+   if (2 == i2cMemAddrSize ) {
+      /*!< Send the EEPROM's internal address to read from: MSB of the address first */
+      I2C_SendData(s_I2C_Bus[iBus].i2c_bus, (uint8_t)((i2cMemAddr & 0xFF00) >> 8));
+
+      /*!< Test on EV8 and clear it */
+      I2C_Timeout = I2C_LONG_TIMEOUT;
+      status = ERR_I2CBUS_EV8_TIMEOUT;
+      while(!I2C_CheckEvent(s_I2C_Bus[iBus].i2c_bus, I2C_EVENT_MASTER_BYTE_TRANSMITTING)) {
+         if((I2C_Timeout--) == 0) return I2C_TIMEOUT_UserCallback(iBus, status);
+      }
+   }
+
+   /*!< Send the EEPROM's internal address to read from: LSB of the address */
+   I2C_SendData(s_I2C_Bus[iBus].i2c_bus, (uint8_t)(i2cMemAddr & 0x00FF));
+
+   /*!< Test on EV8 and clear it */
+   I2C_Timeout = I2C_LONG_TIMEOUT;
+   status = ERR_I2CBUS_EV8_TIMEOUT;
+   while(I2C_GetFlagStatus(s_I2C_Bus[iBus].i2c_bus, I2C_FLAG_BTF) == RESET) {
+      if((I2C_Timeout--) == 0) return I2C_TIMEOUT_UserCallback(iBus, status);
+   }
+
+   /*!< Send STRAT condition a second time */
+   I2C_GenerateSTART(s_I2C_Bus[iBus].i2c_bus, ENABLE);
+
+   /*!< Test on EV5 and clear it (cleared by reading SR1 then writing to DR) */
+   I2C_Timeout = I2C_LONG_TIMEOUT;
+   status = ERR_I2CBUS_EV5_TIMEOUT;
+   while(!I2C_CheckEvent(s_I2C_Bus[iBus].i2c_bus, I2C_EVENT_MASTER_MODE_SELECT)) {
+      if((I2C_Timeout--) == 0) return I2C_TIMEOUT_UserCallback(iBus, status);
+   }
+
+   /*!< Send EEPROM address for read */
+   I2C_Send7bitAddress(s_I2C_Bus[iBus].i2c_bus, (uint8_t)(i2cDevAddr & 0x00FF),  I2C_Direction_Receiver);
+
+   /* Wait on ADDR flag to be set (ADDR is still not cleared at this level */
+   I2C_Timeout = I2C_LONG_TIMEOUT;
+   status = ERR_I2CBUS_EV6_TIMEOUT;
+   while( !I2C_CheckEvent(s_I2C_Bus[iBus].i2c_bus, I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED) ) {
+      if((I2C_Timeout--) == 0) return I2C_TIMEOUT_UserCallback(iBus, status);
+   }
+
+   while ( bytesToRead > 1 ) {
+      I2C_Timeout = I2C_LONG_TIMEOUT;
+      while(I2C_GetFlagStatus(s_I2C_Bus[iBus].i2c_bus, I2C_FLAG_RXNE) == RESET) {
+         if((I2C_Timeout--) == 0) return I2C_TIMEOUT_UserCallback(iBus, status);
+      }
+
+      /* Read the byte received from the EEPROM */
+      *pBuffer = I2C_ReceiveData(s_I2C_Bus[iBus].i2c_bus);
+      pBuffer++;
+
+      /* Decrement the read bytes counter */
+      bytesToRead--;
+   }
+
+   /*!< Disable Acknowledgement */
+   I2C_AcknowledgeConfig(s_I2C_Bus[iBus].i2c_bus, DISABLE);
+
+   /* Clear ADDR register by reading SR1 then SR2 register (SR1 has already been read) */
+   (void)s_I2C_Bus[iBus].i2c_bus->SR2;
+
+   /*!< Send STOP Condition */
+   I2C_GenerateSTOP(s_I2C_Bus[iBus].i2c_bus, ENABLE);
+
+   /* Wait for the byte to be received */
+   I2C_Timeout = I2C_LONG_TIMEOUT;
+   while(I2C_GetFlagStatus(s_I2C_Bus[iBus].i2c_bus, I2C_FLAG_RXNE) == RESET) {
+      if((I2C_Timeout--) == 0) return I2C_TIMEOUT_UserCallback(iBus, status);
+   }
+
+   /*!< Read the byte received from the EEPROM */
+   *pBuffer = I2C_ReceiveData(s_I2C_Bus[iBus].i2c_bus);
+
+   /*!< Decrement the read bytes counter */
+   bytesToRead--;
+
+   /* Wait to make sure that STOP control bit has been cleared */
+   I2C_Timeout = I2C_LONG_TIMEOUT;
+   while(s_I2C_Bus[iBus].i2c_bus->CR1 & I2C_CR1_STOP) {
+      if((I2C_Timeout--) == 0) return I2C_TIMEOUT_UserCallback(iBus, status);
+   }
+
+   /*!< Re-Enable Acknowledgement to be ready for another reception */
+   I2C_AcknowledgeConfig(s_I2C_Bus[iBus].i2c_bus, ENABLE);
+
+   /* If all operations OK, return sEE_OK (0) */
+   return ERR_NONE;
+}
+
+
+/******************************************************************************/
+/***                      Callback functions for I2C                        ***/
+/******************************************************************************/
 
 /******************************************************************************/
 inline void I2C1_DMAReadCallback( void )
@@ -448,7 +593,7 @@ inline void I2C1_DMAReadCallback( void )
       I2C_AcknowledgeConfig( I2C1, DISABLE);        /* Disable Acknowledgment */
 
       /* Disable DMA so it doesn't keep outputting the buffer. */
-//      DMA_Cmd( DMA1_Stream0, DISABLE );
+      //      DMA_Cmd( DMA1_Stream0, DISABLE );
       I2C_GenerateSTOP(I2C1, ENABLE);                        /* Generate Stop */
 
       /* Wait for the byte to be received.
@@ -469,7 +614,7 @@ inline void I2C1_DMAReadCallback( void )
       I2C_AcknowledgeConfig(I2C1, ENABLE);        /* Re-enable Acknowledgment */
       /* End of STM32 I2C HW bug workaround */
 
-//      /* Disable DMA so it doesn't keep outputting the buffer. */
+      //      /* Disable DMA so it doesn't keep outputting the buffer. */
       DMA_Cmd( DMA1_Stream0, DISABLE );
 
       /* Don't transport the data with the event.  The appropriate I2CBusMgr AO
@@ -478,13 +623,13 @@ inline void I2C1_DMAReadCallback( void )
       static QEvt const qEvt = { I2C_BUS_DMA_DONE_SIG, 0U, 0U };
       QACTIVE_POST(AO_I2CBusMgr[I2CBus1], &qEvt, AO_I2CBusMgr[I2CBus1]);
 
-//      DBG_printf("%d loop iters\n", MAX_I2C_TIMEOUT - nI2CBusTimeout);
+      //      DBG_printf("%d loop iters\n", MAX_I2C_TIMEOUT - nI2CBusTimeout);
 
-/* Tag for a common exit from this handler.  DON'T call return.  Instead, use
- * goto I2C1_DMAReadCallback_cleanup;
- * This allows for always correctly clearing the interrupt status bits. Else
- * things will lock up. */
-I2C1_DMAReadCallback_cleanup:
+      /* Tag for a common exit from this handler.  DON'T call return.  Instead, use
+       * goto I2C1_DMAReadCallback_cleanup;
+       * This allows for always correctly clearing the interrupt status bits. Else
+       * things will lock up. */
+      I2C1_DMAReadCallback_cleanup:
 
       /* Clear DMA Stream Transfer Complete interrupt pending bit */
       DMA_ClearITPendingBit( DMA1_Stream0, DMA_IT_TCIF0 );
@@ -534,11 +679,11 @@ inline void I2C1_DMAWriteCallback( void )
 
       DBG_printf("%d loop iters\n", MAX_I2C_TIMEOUT - nI2CBusTimeout);
 
-/* Tag for a common exit from this handler.  DON'T call return.  Instead, use
- * goto I2C1_DMAWriteCallback_cleanup;
- * This allows for always correctly clearing the interrupt status bits. Else
- * things will lock up. */
-I2C1_DMAWriteCallback_cleanup:
+      /* Tag for a common exit from this handler.  DON'T call return.  Instead, use
+       * goto I2C1_DMAWriteCallback_cleanup;
+       * This allows for always correctly clearing the interrupt status bits. Else
+       * things will lock up. */
+      I2C1_DMAWriteCallback_cleanup:
       /* Clear DMA Stream Transfer Complete interrupt pending bit */
       DMA_ClearITPendingBit( DMA1_Stream6, DMA_IT_TCIF6 );
    }
@@ -587,6 +732,25 @@ inline void I2C1_ErrorEventCallback( void )
    portEND_SWITCHING_ISR(lHigherPriorityTaskWoken);
 }
 
+uint32_t I2C_TIMEOUT_UserCallbackRaw(
+      I2C_Bus_t iBus,
+      CBErrorCode error,
+      const char *func,
+      int line
+)
+{
+   /* Use application may try to recover the communication by resetting I2C
+    peripheral (calling the function I2C_SoftwareResetCmd()) then restart
+    the transmission/reception from a previously stored recover point.
+    For simplicity reasons, this example only shows a basic way for errors
+    managements which consists of stopping all the process and requiring system
+    reset. */
+   err_slow_printf("I2C%d bus error 0x%08x at %s():%d\n", iBus+1, error, func, line);
+   /* Block communication and all processes */
+   while (1)
+   {
+   }
+}
 /**
  * @}
  * end addtogroup groupI2C

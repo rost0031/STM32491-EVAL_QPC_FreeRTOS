@@ -55,21 +55,6 @@ typedef enum I2C_MemAccess {
 } I2C_MemAccess_t;
 
 /**
- * \enum I2C_Device_t
- * I2C Devices available on the system.
- */
-//typedef enum I2C_States {
-//   I2C_IDLE_ST  = 0,                         /**< I2C is idle */
-//   I2C_GEN_START_ST,
-//   I2C_MASTER_TX_MODE_SELECTED_ST,
-//   I2C_SENT_MSB_ADDR_ST,
-//   I2C_SENT_LSB_ADDR_ST,
-//   I2C_GEN_2ND_START_ST,
-//   /* Insert more I2C states here... */
-//   I2C_MAX_ST     /**< Maximum number of available I2C states */
-//} I2C_State_t;
-
-/**
  * \enum I2C_Bus_t
  * I2C Busses available on the system.
  */
@@ -153,6 +138,19 @@ typedef struct I2C_BusSettings
  *    0: Bus doesn't exist or isn't defined
  */
 #define IS_I2C_BUS(BUS) ((BUS) == I2CBus1)
+
+/**
+ * @brief   Macro as a wrapper for the I2C Timeout callback.
+ * This macro is a wrapper around the I2C_TIMEOUT_UserCallbackRaw() function.
+ * This wrapper grabs the function name and line where the callback was called
+ * from an passes it to the callback.
+ * @param [in] bus: I2C_Bus_t type that specifies what i2c bus the error occurred on.
+ * @param [in] error: CBErrorCode that specifies the error that occurred.
+ * @return None
+ */
+#define I2C_TIMEOUT_UserCallback( bus, error ) \
+      I2C_TIMEOUT_UserCallbackRaw(bus, error, __func__, __LINE__);
+
 
 /* Exported constants --------------------------------------------------------*/
 /* Exported variables --------------------------------------------------------*/
@@ -265,6 +263,45 @@ void I2C_StartDMARead( I2C_Bus_t iBus, uint16_t wReadLen );
 void I2C_StartDMAWrite( I2C_Bus_t iBus, uint16_t wWriteLen );
 
 /**
+ * @brief  Reads a block of data from a device on any I2C bus.
+ *
+ * This is a slow function that should not be called by any threads or objects.
+ * It's for use in case of crashes and before the entire system has come up.
+ *
+ * @param  pBuffer : pointer to the buffer that receives the data read from
+ *         the EEPROM.
+ * @param  ReadAddr : EEPROM's internal address to start reading from.
+ * @param  NumByteToRead : pointer to the variable holding number of bytes to
+ *         be read from the EEPROM.
+ *
+ *        @note The variable pointed by NumByteToRead is reset to 0 when all the
+ *              data are read from the EEPROM. Application should monitor this
+ *              variable in order know when the transfer is complete.
+ *
+ * @note When number of data to be read is higher than 1, this function just
+ *       configures the communication and enable the DMA channel to transfer data.
+ *       Meanwhile, the user application may perform other tasks.
+ *       When number of data to be read is 1, then the DMA is not used. The byte
+ *       is read in polling mode.
+ *
+ * @retval sEE_OK (0) if operation is correctly performed, else return value
+ *         different from sEE_OK (0) or the timeout user callback.
+ */
+CBErrorCode I2C_readBufferBlocking(
+      uint8_t* pBuffer,
+      I2C_Bus_t iBus,
+      uint8_t i2cDevAddr,
+      uint16_t i2cMemAddr,
+      uint8_t i2cMemAddrSize,
+      uint16_t bytesToRead
+);
+
+
+/******************************************************************************/
+/***                      Callback functions for I2C                        ***/
+/******************************************************************************/
+
+/**
  * @brief   I2C DMA read callback function
  *
  * This function should only be called from the ISR that handles the DMA ISR
@@ -330,6 +367,20 @@ void I2C1_ErrorEventCallback( void );
  * @return: None
  */
 void I2C1_EventCallback( void );
+
+/**
+  * @brief  I2C error handling callback for slow blocking I2C bus access
+  * functions.
+  * @param [in] iBus: I2C_Bus_t type specifying the I2C bus where the error occurred.
+  * @param [in] error: CBErrorCode type specifying the error that occurred.
+  * @return ??? TODO: update this to either an error code or None.
+  */
+uint32_t I2C_TIMEOUT_UserCallbackRaw(
+      I2C_Bus_t iBus,
+      CBErrorCode error,
+      const char *func,
+      int line
+);
 
 /**
  * @}
