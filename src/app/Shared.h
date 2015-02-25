@@ -40,7 +40,7 @@
 #endif
 /* Exported types ------------------------------------------------------------*/
 /**
- * \enum Active Object priorities.
+ * Active Object priorities.
  * These are the priorities of all the Active Objects in the system.  The
  * priorities are lowest at zero.
  * @note 1: Never use priority 0.
@@ -64,6 +64,21 @@ enum AO_Priorities {
 
    /* Insert new priorities here ... */
 };
+
+/**
+ * Specify access type.
+ * Some functions allow user to specify whether access is performed via event
+ * driven (QP) or via direct access to HW using slow, blocking function calls.
+ *
+ * @note: Once the threads/Active Objects (AOs) have been started (end of main),
+ * access should be limited to event driven interface.  In the event of a major
+ * crash, and before all the threads/AOs have been started, access should be
+ * the blocking kind.
+ */
+typedef enum AccessType {
+   ACCESS_BLOCKING = 0,
+   ACCESS_EVENT
+} AccessType_t;
 
 /* These need to be visible to LWIPMgr AO, which is part of a shared port. Most
  * event types should be defined within their respective AOs. */

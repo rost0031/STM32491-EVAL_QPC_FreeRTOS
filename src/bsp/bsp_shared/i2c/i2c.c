@@ -523,6 +523,7 @@ CBErrorCode I2C_readBufferBlocking(
 
    while ( bytesToRead > 1 ) {
       I2C_Timeout = I2C_LONG_TIMEOUT;
+      status = ERR_I2CBUS_RXNE_FLAG_TIMEOUT;
       while(I2C_GetFlagStatus(s_I2C_Bus[iBus].i2c_bus, I2C_FLAG_RXNE) == RESET) {
          if((I2C_Timeout--) == 0) return I2C_TIMEOUT_UserCallback(iBus, status);
       }
@@ -546,6 +547,7 @@ CBErrorCode I2C_readBufferBlocking(
 
    /* Wait for the byte to be received */
    I2C_Timeout = I2C_LONG_TIMEOUT;
+   status = ERR_I2CBUS_RXNE_FLAG_TIMEOUT;
    while(I2C_GetFlagStatus(s_I2C_Bus[iBus].i2c_bus, I2C_FLAG_RXNE) == RESET) {
       if((I2C_Timeout--) == 0) return I2C_TIMEOUT_UserCallback(iBus, status);
    }
@@ -558,6 +560,7 @@ CBErrorCode I2C_readBufferBlocking(
 
    /* Wait to make sure that STOP control bit has been cleared */
    I2C_Timeout = I2C_LONG_TIMEOUT;
+   status = ERR_I2CBUS_STOP_BIT_TIMEOUT;
    while(s_I2C_Bus[iBus].i2c_bus->CR1 & I2C_CR1_STOP) {
       if((I2C_Timeout--) == 0) return I2C_TIMEOUT_UserCallback(iBus, status);
    }
@@ -565,7 +568,7 @@ CBErrorCode I2C_readBufferBlocking(
    /*!< Re-Enable Acknowledgement to be ready for another reception */
    I2C_AcknowledgeConfig(s_I2C_Bus[iBus].i2c_bus, ENABLE);
 
-   /* If all operations OK, return sEE_OK (0) */
+   /* If all operations OK, return ERR_NONE (0) */
    return ERR_NONE;
 }
 
@@ -732,25 +735,41 @@ inline void I2C1_ErrorEventCallback( void )
    portEND_SWITCHING_ISR(lHigherPriorityTaskWoken);
 }
 
-uint32_t I2C_TIMEOUT_UserCallbackRaw(
+typedef struct {
+   int a;
+   int b;
+   char *c;
+} foo;
+
+typedef struct {
+   const char *name;
+   size_t off;
+} struct_desc ;
+
+//static const struct struct_desc foo_desc = {
+//      { "a", offsetof(struct foo, a) },
+//      { "b", offsetof(struct foo, b) },
+//      { "c", offsetof(struct foo, c) },
+//};
+
+/******************************************************************************/
+CBErrorCode I2C_TIMEOUT_UserCallbackRaw(
       I2C_Bus_t iBus,
       CBErrorCode error,
       const char *func,
       int line
 )
 {
-   /* Use application may try to recover the communication by resetting I2C
-    peripheral (calling the function I2C_SoftwareResetCmd()) then restart
-    the transmission/reception from a previously stored recover point.
-    For simplicity reasons, this example only shows a basic way for errors
-    managements which consists of stopping all the process and requiring system
-    reset. */
+
+   offsetof(foo, a);
+
+   /* Use the slow interface to print out the error and where it occured. */
    err_slow_printf("I2C%d bus error 0x%08x at %s():%d\n", iBus+1, error, func, line);
-   /* Block communication and all processes */
-   while (1)
-   {
-   }
+
+   /* Return the error code so the top level can handle it. */
+   return( error );
 }
+
 /**
  * @}
  * end addtogroup groupI2C

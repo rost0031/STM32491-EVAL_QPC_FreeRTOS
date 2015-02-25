@@ -28,6 +28,7 @@
 #include <stdio.h>
 #include "bsp_defs.h"
 #include "bsp.h"
+#include "db.h"                                       /* for settings support */
 
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */
@@ -134,6 +135,21 @@ int main(void)
        printf("%02x ", macAddrBuffer[i]);
     }
     printf("\n");
+
+    dbg_slow_printf("Second test: Read the MAC address from the special I2C EEPROM\n");
+    memset(macAddrBuffer, 0, sizeof(macAddrBuffer));
+    DB_getMacAddrBLK(
+          macAddrBuffer,
+          sizeof(macAddrBuffer),
+          ACCESS_BLOCKING
+    );
+
+    dbg_slow_printf("Read second time:");
+    for (uint8_t i=0; i<8; i++) {
+       printf("%02x ", macAddrBuffer[i]);
+    }
+    printf("\n");
+
 
     /* Instantiate the Active objects by calling their "constructors"         */
     dbg_slow_printf("Initializing AO constructors\n");

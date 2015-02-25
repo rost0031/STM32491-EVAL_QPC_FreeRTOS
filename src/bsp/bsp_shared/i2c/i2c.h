@@ -32,7 +32,6 @@ extern "C" {
 /* Exported types ------------------------------------------------------------*/
 
 /**
- * \enum I2C_Operation_t
  * I2C Operations available on the system.
  */
 typedef enum I2C_Operations {
@@ -45,7 +44,6 @@ typedef enum I2C_Operations {
 } I2C_Operation_t;
 
 /**
- * @brief I2C_MemAccess_t
  * I2C device internal memory access types
  */
 typedef enum I2C_MemAccess {
@@ -373,9 +371,9 @@ void I2C1_EventCallback( void );
   * functions.
   * @param [in] iBus: I2C_Bus_t type specifying the I2C bus where the error occurred.
   * @param [in] error: CBErrorCode type specifying the error that occurred.
-  * @return ??? TODO: update this to either an error code or None.
+  * @return error: CBErrorCode that occurred to cause this callback to be called.
   */
-uint32_t I2C_TIMEOUT_UserCallbackRaw(
+CBErrorCode I2C_TIMEOUT_UserCallbackRaw(
       I2C_Bus_t iBus,
       CBErrorCode error,
       const char *func,

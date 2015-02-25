@@ -217,6 +217,9 @@ CON_OUT_DIR				= $(SYS_DIR)/sys_shared/con_out
 # Debug control directory
 DBG_CNTRL_DIR			= $(SYS_DIR)/sys_shared/dbg_cntrl
 
+# Settings Database directory 
+DB_SETTINGS_DIR			= $(SYS_DIR)/sys_shared/settings
+
 # K-ary tree directory
 KTREE_DIR               = $(SYS_DIR)/ktree
 
@@ -246,7 +249,8 @@ VPATH 					= $(APP_DIR) \
 						  \
 						  $(CON_OUT_DIR) \
 						  $(KTREE_DIR) \
-						  $(DBG_CNTRL_DIR)
+						  $(DBG_CNTRL_DIR) \
+						  $(DB_SETTINGS_DIR)
 
 # include directories
 INCLUDES  				= -I$(SRC_DIR) \
@@ -289,6 +293,7 @@ INCLUDES  				= -I$(SRC_DIR) \
 						  -I$(CON_OUT_DIR) \
 						  -I$(KTREE_DIR) \
 						  -I$(DBG_CNTRL_DIR) \
+						  -I$(DB_SETTINGS_DIR) \
 						  \
 						  -I$(FR_INC_DIR) \
 						  -I$(QP_FR_CONF_DIR) \
@@ -349,6 +354,7 @@ C_SRCS                = \
 						nor.c \
 						sdram.c \
 						dbg_cntrl.c \
+						db.c \
 						\
 						LWIPMgr.c \
 						I2CBusMgr.c \

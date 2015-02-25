@@ -88,6 +88,8 @@ typedef enum CBErrors
    ERR_I2CBUS_EV8_TIMEOUT                                      = 0x0006000A,
    ERR_I2CBUS_EV8_NOT_REC                                      = 0x0006000B,
    ERR_I2CBUS_INVALID_PARAMS_FOR_BUS_CHECK_FREE                = 0x0006000C,
+   ERR_I2CBUS_RXNE_FLAG_TIMEOUT                                = 0x0006000D,
+   ERR_I2CBUS_STOP_BIT_TIMEOUT                                 = 0x0006000E,
 
    /* I2C1Dev error category                     0x00070000 - 0x0007FFFF */
    ERR_I2C1DEV_CHECK_BUS_TIMEOUT                               = 0x00070000,
