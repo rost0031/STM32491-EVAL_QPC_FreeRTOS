@@ -149,7 +149,6 @@ typedef struct I2C_BusSettings
 #define I2C_TIMEOUT_UserCallback( bus, error ) \
       I2C_TIMEOUT_UserCallbackRaw(bus, error, __func__, __LINE__);
 
-
 /* Exported constants --------------------------------------------------------*/
 /* Exported variables --------------------------------------------------------*/
 extern uint8_t i2c1RxBuffer[];          /**< Exported to I2CMgr I2C RX buffer */
@@ -261,39 +260,68 @@ void I2C_StartDMARead( I2C_Bus_t iBus, uint16_t wReadLen );
 void I2C_StartDMAWrite( I2C_Bus_t iBus, uint16_t wWriteLen );
 
 /**
- * @brief  Reads a block of data from a device on any I2C bus.
+ * @brief  Reads a block of data from a memory device on any I2C bus.
  *
- * This is a slow function that should not be called by any threads or objects.
- * It's for use in case of crashes and before the entire system has come up.
+ * @note:  This is a slow function that should not be called by any threads or
+ * objects. It's for use in case of crashes and before the entire system has
+ * come up.
  *
- * @param  pBuffer : pointer to the buffer that receives the data read from
- *         the EEPROM.
- * @param  ReadAddr : EEPROM's internal address to start reading from.
- * @param  NumByteToRead : pointer to the variable holding number of bytes to
- *         be read from the EEPROM.
+ * @param [in] iBus: I2C_Bus_t type specifying the I2C bus where device lives.
+ *    @arg I2CBus1
+ * @param [in] i2cDevAddr: address of the device on the I2C bus.
+ * @param [in] i2cMemAddr: internal memory address of the device on the I2C bus.
+ * @param [in] i2cMemAddrSize: size of the memory address i2cMemAddr.
+ *    @arg 1: a 1 byte address.
+ *    @arg 2: a 2 byte address.
+ *    No other sizes will be handled.
+ * @param [in|out] *pBuffer: uint8_t pointer to buffer where to store read data.
+ * @param [in] bytesToRead : uint8_t variable specifying how many bytes to read.
  *
- *        @note The variable pointed by NumByteToRead is reset to 0 when all the
- *              data are read from the EEPROM. Application should monitor this
- *              variable in order know when the transfer is complete.
- *
- * @note When number of data to be read is higher than 1, this function just
- *       configures the communication and enable the DMA channel to transfer data.
- *       Meanwhile, the user application may perform other tasks.
- *       When number of data to be read is 1, then the DMA is not used. The byte
- *       is read in polling mode.
- *
- * @retval sEE_OK (0) if operation is correctly performed, else return value
- *         different from sEE_OK (0) or the timeout user callback.
+ * @return CBErrorCode: status of the read operation
+ *    @arg ERR_NONE: if no errors occurred
  */
-CBErrorCode I2C_readBufferBlocking(
-      uint8_t* pBuffer,
+CBErrorCode I2C_readBufferBLK(
       I2C_Bus_t iBus,
       uint8_t i2cDevAddr,
       uint16_t i2cMemAddr,
       uint8_t i2cMemAddrSize,
+      uint8_t* pBuffer,
       uint16_t bytesToRead
 );
 
+/**
+ * @brief  Writes a block of data to a memory device on any I2C bus.
+ *
+ * @note:  This is a slow function that should not be called by any threads or
+ * objects. It's for use in case of crashes and before the entire system has
+ * come up.
+ *
+ * @note: This function also handles writing over page boundaries and assumes
+ * that like most memory devices, a page boundary exists that if written over,
+ * loops around and continues writing at the beginning of the page.
+ *
+ * @param [in] iBus: I2C_Bus_t type specifying the I2C bus where device lives.
+ *    @arg I2CBus1
+ * @param [in] i2cDevAddr: address of the device on the I2C bus.
+ * @param [in] i2cMemAddr: internal memory address of the device on the I2C bus.
+ * @param [in] i2cMemAddrSize: size of the memory address i2cMemAddr.
+ *    @arg 1: a 1 byte address.
+ *    @arg 2: a 2 byte address.
+ *    No other sizes will be handled.
+ * @param [in] *pBuffer: uint8_t pointer to buffer to the data to be written.
+ * @param [in] bytesToWrite: uint8_t variable specifying how many bytes to write
+ *
+ * @return CBErrorCode: status of the write operation
+ *    @arg ERR_NONE: if no errors occurred
+ */
+CBErrorCode I2C_writeBufferBLK( /* TODO: does this belong in i2c_dev? */
+      I2C_Bus_t iBus,
+      uint8_t i2cDevAddr,
+      uint16_t i2cMemAddr,
+      uint8_t i2cMemAddrSize,
+      uint8_t* pBuffer,
+      uint16_t bytesToWrite
+);
 
 /******************************************************************************/
 /***                      Callback functions for I2C                        ***/
@@ -365,20 +393,6 @@ void I2C1_ErrorEventCallback( void );
  * @return: None
  */
 void I2C1_EventCallback( void );
-
-/**
-  * @brief  I2C error handling callback for slow blocking I2C bus access
-  * functions.
-  * @param [in] iBus: I2C_Bus_t type specifying the I2C bus where the error occurred.
-  * @param [in] error: CBErrorCode type specifying the error that occurred.
-  * @return error: CBErrorCode that occurred to cause this callback to be called.
-  */
-CBErrorCode I2C_TIMEOUT_UserCallbackRaw(
-      I2C_Bus_t iBus,
-      CBErrorCode error,
-      const char *func,
-      int line
-);
 
 /**
  * @}

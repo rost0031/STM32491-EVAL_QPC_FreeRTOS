@@ -183,6 +183,72 @@ uint16_t I2C_getI2C1MaxMemAddr( I2CBus1_Dev_t iDev );
 uint8_t I2C_getI2C1PageSize( I2CBus1_Dev_t iDev );
 
 /**
+ * @brief   Calculate how to properly write large data over page boundaries in EEPROM.
+ *
+ * @param [out] *pageSize: uint8_t pointer to the looked up size of the page of
+ *              EEPROM.
+ * @param [out] *writeSizeFirstPage: uint8_t pointer to how many bytes to write
+ *              on the first page of the EEPROM.
+ * @param [out] *writeSizeLastPage: uint8_t pointer to how many bytes to write
+ *              on the last page of the EEPROM.
+ * @param [out] *writeTotalPages: uint8_t pointer to how many total pages will
+ *              be written to the EEPROM.
+ * @param [in] i2cMemAddr: internal memory address of the device on the I2C bus.
+ *    @arg 1: a 1 byte address.
+ *    @arg 2: a 2 byte address.
+ *    No other sizes will be handled.
+ * @param [in] bytesToWrite: uint8_t variable specifying how many bytes to write
+ *
+ * @return CBErrorCode: status of the write operation
+ *    @arg ERR_NONE: if no errors occurred
+ */
+CBErrorCode I2C_calcEepromPageWriteSizes(
+      uint8_t *pageSize,
+      uint8_t *writeSizeFirstPage,
+      uint8_t *writeSizeLastPage,
+      uint8_t *writeTotalPages,
+      uint16_t i2cMemAddr,
+      uint16_t bytesToWrite
+);
+
+/******************************************************************************/
+/* Blocking Functions - Don't call unless before threads/AOs started or after */
+/* they crashed                                                               */
+/******************************************************************************/
+
+/**
+ * @brief   Blocking function to read data from EEPROM.
+ *
+ * @param [out] *pBuffer: uint8_t pointer to the buffer to store read data.
+ * @param [in]  offset: offset from beginning of EEPROM memory to read from.
+ * @param [in] bytesToRead: uint8_t variable specifying how many bytes to read
+ *
+ * @return CBErrorCode: status of the read operation
+ *    @arg ERR_NONE: if no errors occurred
+ */
+CBErrorCode I2C_readEepromBLK(
+      uint8_t* pBuffer,
+      uint16_t offset,
+      uint16_t bytesToRead
+);
+
+/**
+ * @brief   Blocking function to write data to EEPROM.
+ *
+ * @param [out] *pBuffer: uint8_t pointer to the buffer of data to write.
+ * @param [in]  offset: offset from beginning of EEPROM memory to write from.
+ * @param [in] bytesToWrite: uint8_t variable specifying how many bytes to write
+ *
+ * @return CBErrorCode: status of the write operation
+ *    @arg ERR_NONE: if no errors occurred
+ */
+CBErrorCode I2C_writeEepromBLK(
+      uint8_t* pBuffer,
+      uint16_t offset,
+      uint16_t bytesToWrite
+);
+
+/**
  * @}
  * end addtogroup groupI2C
  */

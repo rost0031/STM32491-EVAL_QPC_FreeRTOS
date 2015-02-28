@@ -152,6 +152,92 @@ uint8_t I2C_getI2C1PageSize( I2CBus1_Dev_t iDev )
 
    return( s_I2CBus1_Dev[iDev].i2c_mem_page_size );
 }
+
+/******************************************************************************/
+CBErrorCode I2C_calcEepromPageWriteSizes(
+      uint8_t *pageSize,
+      uint8_t *writeSizeFirstPage,
+      uint8_t *writeSizeLastPage,
+      uint8_t *writeTotalPages,
+      uint16_t i2cMemAddr,
+      uint16_t bytesToWrite
+)
+{
+   /* Check if we are going to write over the end of the eeprom */
+   if (i2cMemAddr + bytesToWrite > I2C_getI2C1MaxMemAddr( EEPROM )) {
+      return ( ERR_I2C1DEV_MEM_OUT_BOUNDS );
+   }
+
+   /* Check if the address and length of write to see if it's more than a page
+    * and if the start is page aligned. */
+   *pageSize = I2C_getI2C1PageSize( EEPROM );
+
+   /* Calculate space available in the first page */
+   uint8_t pageSpace = (((i2cMemAddr/(*pageSize)) + 1) * (*pageSize)) - i2cMemAddr;
+
+   /* Calculate how many bytes to write in the first page */
+   *writeSizeFirstPage = MIN(pageSpace, bytesToWrite);
+
+   /* Calculate how many bytes to write on the last page*/
+   *writeSizeLastPage = (bytesToWrite - *writeSizeFirstPage) % *pageSize;
+
+   /* Calculate how many pages we are going to be writing (full and partial) */
+   *writeTotalPages = 0;
+   if (bytesToWrite > *writeSizeFirstPage) {
+      *writeTotalPages = ((bytesToWrite - *writeSizeFirstPage)/(*pageSize)) + 2;
+   } else {
+      *writeTotalPages = 1;
+   }
+   return( ERR_NONE );
+}
+
+/******************************************************************************/
+/* Blocking Functions - Don't call unless before threads/AOs started or after
+ * they crashed
+/******************************************************************************/
+
+/******************************************************************************/
+CBErrorCode I2C_readEepromBLK(
+      uint8_t* pBuffer,
+      uint16_t offset,
+      uint16_t bytesToRead
+)
+{
+   I2C_Bus_t iBus = I2CBus1;
+
+   CBErrorCode status = I2C_readBufferBLK(
+         iBus,                                  // I2C_Bus_t iBus,
+         I2C_getI2C1DevAddr( EEPROM ),          // uint8_t i2cDevAddr,
+         I2C_getI2C1MemAddr( EEPROM ) + offset, // uint16_t i2cMemAddr,
+         I2C_getI2C1MemAddrSize( EEPROM ),      // uint8_t i2cMemAddrSize,
+         pBuffer,                               // uint8_t* pBuffer,
+         bytesToRead                            // uint16_t bytesToRead
+   );
+
+   return status;
+}
+
+/******************************************************************************/
+CBErrorCode I2C_writeEepromBLK(
+      uint8_t* pBuffer,
+      uint16_t offset,
+      uint16_t bytesToWrite
+)
+{
+   I2C_Bus_t iBus = I2CBus1;
+
+   CBErrorCode status = I2C_writeBufferBLK(
+         iBus,                                  // I2C_Bus_t iBus,
+         I2C_getI2C1DevAddr( EEPROM ),          // uint8_t i2cDevAddr,
+         I2C_getI2C1MemAddr( EEPROM ) + offset, // uint16_t i2cMemAddr,
+         I2C_getI2C1MemAddrSize( EEPROM ),      // uint8_t i2cMemAddrSize,
+         pBuffer,                               // uint8_t* pBuffer,
+         bytesToWrite                           // uint16_t bytesToWrite
+   );
+
+   return status;
+
+}
 /**
  * @}
  * end addtogroup groupI2C

@@ -43,20 +43,33 @@
  * All the different settings that can exist in the settings database
  */
 typedef enum DB_Elements {
-   DB_VERSION  = 0, /**< Keeps track of DB version to allow upgrades and additions */
-   DB_MAC_ADDR, /**< Mac address stored in the special UID section of the RO EEPROM */
-   DB_IP_ADDR, /**< IP address stored in main EEPROM */
-   DB_SN, /**< Serial number stored in the special SN section of RO EEPROM */
+   DB_MAGIC_WORD = 0,      /**< Magic word that specifies if a DB exists or
+                                needs to be init to a default. */
+   DB_VERSION,             /**< Keeps track of DB version to allow upgrades and
+                                additions */
+   DB_MAC_ADDR,            /**< Mac address stored in the special UID section of
+                                the RO EEPROM */
+   DB_IP_ADDR,             /**< IP address stored in main EEPROM */
+   DB_SN,                  /**< Serial number stored in the special SN section
+                                of RO EEPROM */
 
    /* Add more elements here.  If adding elements after code is released, bump
     * the DB_VERSION up. */
 
-   DB_MAX_ELEM /**< Max number of elements that can be stored.  ALWAYS LAST */
-} DB_Element_t;
+   DB_MAX_ELEM   /**< Max number of elements that can be stored.  ALWAYS LAST */
+} DB_Elem_t;
 
 /* Exported constants --------------------------------------------------------*/
 /* Exported functions --------------------------------------------------------*/
 
+/**
+ *
+ */
+CBErrorCode DB_isValid( void );
+/**
+ *
+ */
+CBErrorCode DB_initToDefault( void );
 /**
  *
  */

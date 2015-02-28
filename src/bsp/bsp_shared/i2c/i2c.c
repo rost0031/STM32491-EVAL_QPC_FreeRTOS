@@ -126,6 +126,54 @@ I2C_BusSettings_t s_I2C_Bus[MAX_I2C_BUS] =
 };
 
 /* Private function prototypes -----------------------------------------------*/
+/**
+ * @brief  I2C function to setup up both read and write operations.
+ *
+ * This function sets up the I2C bus for blocking reads and writes to a memory
+ * device on the I2C bus.  Since both operations share this code, it has been
+ * broken out into a separate static function.
+ *
+ * @param [in] iBus: I2C_Bus_t type specifying the I2C bus where the error occurred.
+ *    @arg I2CBus1
+ * @param [in] i2cDevAddr: address of the device on the I2C bus.
+ * @param [in] i2cMemAddr: internal memory address of the device on the I2C bus.
+ * @param [in] i2cMemAddrSize: size of the memory address i2cMemAddr.
+ *    @arg 1: a 1 byte address.
+ *    @arg 2: a 2 byte address.
+ *    No other sizes will be handled.
+ * @return error: CBErrorCode that occurred during the I2C bus calls.
+ */
+static CBErrorCode I2C_setupMemRW(
+      I2C_Bus_t iBus,
+      uint8_t i2cDevAddr,
+      uint16_t i2cMemAddr,
+      uint8_t i2cMemAddrSize
+);
+
+static CBErrorCode I2C_writePageBLK(
+      I2C_Bus_t iBus,
+      uint8_t i2cDevAddr,
+      uint16_t i2cMemAddr,
+      uint8_t i2cMemAddrSize,
+      uint8_t* pBuffer,
+      uint16_t bytesToWrite
+);
+
+/**
+ * @brief  I2C error handling callback for slow blocking I2C bus access
+ * functions.
+ * @param [in] iBus: I2C_Bus_t type specifying the I2C bus where the error occurred.
+ *    @arg I2CBus1
+ * @param [in] error: CBErrorCode type specifying the error that occurred.
+ * @return error: CBErrorCode that occurred to cause this callback to be called.
+ */
+static CBErrorCode I2C_TIMEOUT_UserCallbackRaw(
+      I2C_Bus_t iBus,
+      CBErrorCode error,
+      const char *func,
+      int line
+);
+
 /* Private functions ---------------------------------------------------------*/
 
 /******************************************************************************/
@@ -439,93 +487,51 @@ void I2C_StartDMAWrite( I2C_Bus_t iBus, uint16_t wWriteLen )
 }
 
 /******************************************************************************/
-CBErrorCode I2C_readBufferBlocking(
-      uint8_t* pBuffer,
+CBErrorCode I2C_readBufferBLK(
       I2C_Bus_t iBus,
       uint8_t i2cDevAddr,
       uint16_t i2cMemAddr,
       uint8_t i2cMemAddrSize,
+      uint8_t* pBuffer,
       uint16_t bytesToRead
 )
 {
-   CBErrorCode status;
-
-   /*!< While the bus is busy */
-   uint32_t I2C_Timeout = I2C_LONG_TIMEOUT;
-   status = ERR_I2CBUS_BUSY;
-   while(RESET != I2C_GetFlagStatus(s_I2C_Bus[iBus].i2c_bus, I2C_FLAG_BUSY)) {
-      if((I2C_Timeout--) == 0) return I2C_TIMEOUT_UserCallback(iBus, status);
-   }
-
-   /*!< Send START condition */
-   I2C_GenerateSTART(s_I2C_Bus[iBus].i2c_bus, ENABLE);
-
-   /*!< Test on EV5 and clear it (cleared by reading SR1 then writing to DR) */
-   I2C_Timeout = I2C_LONG_TIMEOUT;
-   status = ERR_I2CBUS_EV5_TIMEOUT;
-   while(!I2C_CheckEvent(s_I2C_Bus[iBus].i2c_bus, I2C_EVENT_MASTER_MODE_SELECT)) {
-      if((I2C_Timeout--) == 0) return I2C_TIMEOUT_UserCallback(iBus, status);
-   }
-
-   /*!< Send EEPROM address for write */
-   I2C_Send7bitAddress(s_I2C_Bus[iBus].i2c_bus, i2cDevAddr, I2C_Direction_Transmitter);
-
-   /*!< Test on EV6 and clear it */
-   I2C_Timeout = I2C_LONG_TIMEOUT;
-   status = ERR_I2CBUS_EV6_TIMEOUT;
-   while(!I2C_CheckEvent(s_I2C_Bus[iBus].i2c_bus, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED)) {
-      if((I2C_Timeout--) == 0) return I2C_TIMEOUT_UserCallback(iBus, status);
-   }
-
-   /* Some devices have 16 bit addresses so we have to send MSB first and then
-    * LSB.  Otherwise, we can skip the MSB and just send the LSB */
-   if (2 == i2cMemAddrSize ) {
-      /*!< Send the EEPROM's internal address to read from: MSB of the address first */
-      I2C_SendData(s_I2C_Bus[iBus].i2c_bus, (uint8_t)((i2cMemAddr & 0xFF00) >> 8));
-
-      /*!< Test on EV8 and clear it */
-      I2C_Timeout = I2C_LONG_TIMEOUT;
-      status = ERR_I2CBUS_EV8_TIMEOUT;
-      while(!I2C_CheckEvent(s_I2C_Bus[iBus].i2c_bus, I2C_EVENT_MASTER_BYTE_TRANSMITTING)) {
-         if((I2C_Timeout--) == 0) return I2C_TIMEOUT_UserCallback(iBus, status);
-      }
-   }
-
-   /*!< Send the EEPROM's internal address to read from: LSB of the address */
-   I2C_SendData(s_I2C_Bus[iBus].i2c_bus, (uint8_t)(i2cMemAddr & 0x00FF));
-
-   /*!< Test on EV8 and clear it */
-   I2C_Timeout = I2C_LONG_TIMEOUT;
-   status = ERR_I2CBUS_EV8_TIMEOUT;
-   while(I2C_GetFlagStatus(s_I2C_Bus[iBus].i2c_bus, I2C_FLAG_BTF) == RESET) {
-      if((I2C_Timeout--) == 0) return I2C_TIMEOUT_UserCallback(iBus, status);
+   /* Call the common setup for reads and writes for memory devices on I2C */
+   CBErrorCode status = I2C_setupMemRW(
+         iBus,
+         i2cDevAddr,
+         i2cMemAddr,
+         i2cMemAddrSize
+   );
+   if ( ERR_NONE != status ) {
+      return I2C_TIMEOUT_UserCallback(iBus, status);
    }
 
    /*!< Send STRAT condition a second time */
    I2C_GenerateSTART(s_I2C_Bus[iBus].i2c_bus, ENABLE);
 
    /*!< Test on EV5 and clear it (cleared by reading SR1 then writing to DR) */
-   I2C_Timeout = I2C_LONG_TIMEOUT;
+   uint32_t nI2CBusTimeout = I2C_LONG_TIMEOUT;
    status = ERR_I2CBUS_EV5_TIMEOUT;
    while(!I2C_CheckEvent(s_I2C_Bus[iBus].i2c_bus, I2C_EVENT_MASTER_MODE_SELECT)) {
-      if((I2C_Timeout--) == 0) return I2C_TIMEOUT_UserCallback(iBus, status);
+      if((nI2CBusTimeout--) == 0) return I2C_TIMEOUT_UserCallback(iBus, status);
    }
 
    /*!< Send EEPROM address for read */
    I2C_Send7bitAddress(s_I2C_Bus[iBus].i2c_bus, (uint8_t)(i2cDevAddr & 0x00FF),  I2C_Direction_Receiver);
 
    /* Wait on ADDR flag to be set (ADDR is still not cleared at this level */
-   I2C_Timeout = I2C_LONG_TIMEOUT;
+   nI2CBusTimeout = I2C_LONG_TIMEOUT;
    status = ERR_I2CBUS_EV6_TIMEOUT;
    while( !I2C_CheckEvent(s_I2C_Bus[iBus].i2c_bus, I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED) ) {
-      if((I2C_Timeout--) == 0) return I2C_TIMEOUT_UserCallback(iBus, status);
+      if((nI2CBusTimeout--) == 0) return I2C_TIMEOUT_UserCallback(iBus, status);
    }
 
    while ( bytesToRead > 1 ) {
-      I2C_Timeout = I2C_LONG_TIMEOUT;
+      nI2CBusTimeout = I2C_LONG_TIMEOUT;
       status = ERR_I2CBUS_RXNE_FLAG_TIMEOUT;
       while(I2C_GetFlagStatus(s_I2C_Bus[iBus].i2c_bus, I2C_FLAG_RXNE) == RESET) {
-         if((I2C_Timeout--) == 0) return I2C_TIMEOUT_UserCallback(iBus, status);
+         if((nI2CBusTimeout--) == 0) return I2C_TIMEOUT_UserCallback(iBus, status);
       }
 
       /* Read the byte received from the EEPROM */
@@ -546,10 +552,10 @@ CBErrorCode I2C_readBufferBlocking(
    I2C_GenerateSTOP(s_I2C_Bus[iBus].i2c_bus, ENABLE);
 
    /* Wait for the byte to be received */
-   I2C_Timeout = I2C_LONG_TIMEOUT;
+   nI2CBusTimeout = I2C_LONG_TIMEOUT;
    status = ERR_I2CBUS_RXNE_FLAG_TIMEOUT;
    while(I2C_GetFlagStatus(s_I2C_Bus[iBus].i2c_bus, I2C_FLAG_RXNE) == RESET) {
-      if((I2C_Timeout--) == 0) return I2C_TIMEOUT_UserCallback(iBus, status);
+      if((nI2CBusTimeout--) == 0) return I2C_TIMEOUT_UserCallback(iBus, status);
    }
 
    /*!< Read the byte received from the EEPROM */
@@ -559,19 +565,214 @@ CBErrorCode I2C_readBufferBlocking(
    bytesToRead--;
 
    /* Wait to make sure that STOP control bit has been cleared */
-   I2C_Timeout = I2C_LONG_TIMEOUT;
+   nI2CBusTimeout = I2C_LONG_TIMEOUT;
    status = ERR_I2CBUS_STOP_BIT_TIMEOUT;
    while(s_I2C_Bus[iBus].i2c_bus->CR1 & I2C_CR1_STOP) {
-      if((I2C_Timeout--) == 0) return I2C_TIMEOUT_UserCallback(iBus, status);
+      if((nI2CBusTimeout--) == 0) return I2C_TIMEOUT_UserCallback(iBus, status);
    }
 
    /*!< Re-Enable Acknowledgement to be ready for another reception */
    I2C_AcknowledgeConfig(s_I2C_Bus[iBus].i2c_bus, ENABLE);
 
-   /* If all operations OK, return ERR_NONE (0) */
-   return ERR_NONE;
+   status = ERR_NONE;  /* Just for consistency, set the status and return it. */
+   return( status );
 }
 
+/******************************************************************************/
+CBErrorCode I2C_writeBufferBLK( /* TODO: does this belong in i2c_dev? */
+      I2C_Bus_t iBus,
+      uint8_t i2cDevAddr,
+      uint16_t i2cMemAddr,
+      uint8_t i2cMemAddrSize,
+      uint8_t* pBuffer,
+      uint16_t bytesToWrite
+)
+{
+   /* Figure out how to lay out the data over the page boundaries */
+   uint8_t pageSize = 0;
+   uint8_t writeSizeFirstPage = 0;
+   uint8_t writeSizeLastPage = 0;
+   uint8_t writeTotalPages = 0;
+   CBErrorCode status = I2C_calcEepromPageWriteSizes(
+         &pageSize,
+         &writeSizeFirstPage,
+         &writeSizeLastPage,
+         &writeTotalPages,
+         i2cMemAddr,
+         bytesToWrite
+   );
+
+   if ( ERR_NONE != status ) {
+      return I2C_TIMEOUT_UserCallback(iBus, status);
+   }
+
+   uint16_t writeSizeCurr = 0;            /* To keep track of how many bytes to
+                                             write each iteration */
+   uint16_t i2cMemAddrCurr = i2cMemAddr;  /* For updating the write address for
+                                             each iteration */
+
+   uint8_t bufferIndex = 0;               /* To keep track of where in the
+                                             buffer we are for each iteration */
+
+   for ( uint8_t page = 0; page < writeTotalPages; page++ ) {
+      /* Figure out if we are writing first, last, or any of the middle pages
+       * and set the current write size accordingly. */
+      if ( page == 0 ) {                                        /* First page */
+         writeSizeCurr = writeSizeFirstPage;
+      } else if (page == (writeTotalPages-1)) {                  /* Last page */
+         writeSizeCurr = writeSizeLastPage;
+      } else {                                            /* Some middle page */
+         writeSizeCurr = pageSize;
+      }
+
+      /* Do the write for this loop iteration */
+      status = I2C_writePageBLK(
+            iBus,
+            i2cDevAddr,
+            i2cMemAddrCurr,
+            i2cMemAddrSize,
+            &pBuffer[bufferIndex],
+            writeSizeCurr
+      );
+
+      if ( ERR_NONE != status ) {
+         return I2C_TIMEOUT_UserCallback(iBus, status);
+      }
+
+      /* Update the address and the pointer in the buffer for next iteration */
+      i2cMemAddrCurr += writeSizeCurr;
+      bufferIndex += writeSizeCurr;
+   }
+
+   return( status );
+}
+
+/******************************************************************************/
+static CBErrorCode I2C_writePageBLK(
+      I2C_Bus_t iBus,
+      uint8_t i2cDevAddr,
+      uint16_t i2cMemAddr,
+      uint8_t i2cMemAddrSize,
+      uint8_t* pBuffer,
+      uint16_t bytesToWrite
+)
+{
+   /* Call the common setup for reads and writes for memory devices on I2C */
+   CBErrorCode status = I2C_setupMemRW(
+         iBus,
+         i2cDevAddr,
+         i2cMemAddr,
+         i2cMemAddrSize
+   );
+   if ( ERR_NONE != status ) {
+      return I2C_TIMEOUT_UserCallback(iBus, status);
+   }
+
+   while( bytesToWrite ) {
+
+      /* Write a byte */
+      I2C_SendData(s_I2C_Bus[iBus].i2c_bus, *pBuffer);
+
+      uint32_t nI2CBusTimeout = I2C_LONG_TIMEOUT;
+      status = ERR_I2CBUS_WRITE_BYTE_TIMEOUT;
+      while(!I2C_CheckEvent(s_I2C_Bus[iBus].i2c_bus, I2C_EVENT_MASTER_BYTE_TRANSMITTING)) {
+         if((nI2CBusTimeout--) == 0) return I2C_TIMEOUT_UserCallback(iBus, status);
+      }
+      ++pBuffer;                 /* Increment after the write was successful. */
+      --bytesToWrite;           /* Decrement how many bytes are left to write */
+   }
+
+   /* Wait to make sure that STOP control bit has been cleared */
+   uint32_t nI2CBusTimeout = I2C_LONG_TIMEOUT;
+   status = ERR_I2CBUS_WRITE_BYTE_TIMEOUT;
+   while(!I2C_GetFlagStatus(s_I2C_Bus[iBus].i2c_bus, I2C_FLAG_BTF)) {
+      if((nI2CBusTimeout--) == 0) return I2C_TIMEOUT_UserCallback(iBus, status);
+   }
+
+   /*!< Send STOP Condition */
+   I2C_GenerateSTOP(s_I2C_Bus[iBus].i2c_bus, ENABLE);
+
+   /* Wait to make sure that STOP control bit has been cleared */
+   nI2CBusTimeout = I2C_LONG_TIMEOUT;
+   status = ERR_I2CBUS_STOP_BIT_TIMEOUT;
+   while(s_I2C_Bus[iBus].i2c_bus->CR1 & I2C_CR1_STOP) {
+      if((nI2CBusTimeout--) == 0) return I2C_TIMEOUT_UserCallback(iBus, status);
+   }
+
+   /* Now need to wait 5ms for a write out time (see ATMLH224 documentation) */
+
+   /* This is a blocking delay function and is exactly why this function or any
+    * that call it SHOULD NOT be called when threads/AOs are running. */
+   BSP_Delay( (SystemCoreClock / BSP_TICKS_PER_SEC) * 5 );
+
+   status = ERR_NONE;  /* Just for consistency, set the status and return it. */
+   return( status );
+}
+
+/******************************************************************************/
+static CBErrorCode I2C_setupMemRW(
+      I2C_Bus_t iBus,
+      uint8_t i2cDevAddr,
+      uint16_t i2cMemAddr,
+      uint8_t i2cMemAddrSize
+)
+{
+   CBErrorCode status;
+
+   /*!< While the bus is busy */
+   uint32_t nI2CBusTimeout = I2C_LONG_TIMEOUT;
+   status = ERR_I2CBUS_BUSY;
+   while(RESET != I2C_GetFlagStatus(s_I2C_Bus[iBus].i2c_bus, I2C_FLAG_BUSY)) {
+      if((nI2CBusTimeout--) == 0) return I2C_TIMEOUT_UserCallback(iBus, status);
+   }
+
+   /*!< Send START condition */
+   I2C_GenerateSTART(s_I2C_Bus[iBus].i2c_bus, ENABLE);
+
+   /*!< Test on EV5 and clear it (cleared by reading SR1 then writing to DR) */
+   nI2CBusTimeout = I2C_LONG_TIMEOUT;
+   status = ERR_I2CBUS_EV5_TIMEOUT;
+   while(!I2C_CheckEvent(s_I2C_Bus[iBus].i2c_bus, I2C_EVENT_MASTER_MODE_SELECT)) {
+      if((nI2CBusTimeout--) == 0) return I2C_TIMEOUT_UserCallback(iBus, status);
+   }
+
+   /*!< Send EEPROM address for write */
+   I2C_Send7bitAddress(s_I2C_Bus[iBus].i2c_bus, i2cDevAddr, I2C_Direction_Transmitter);
+
+   /*!< Test on EV6 and clear it */
+   nI2CBusTimeout = I2C_LONG_TIMEOUT;
+   status = ERR_I2CBUS_EV6_TIMEOUT;
+   while(!I2C_CheckEvent(s_I2C_Bus[iBus].i2c_bus, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED)) {
+      if((nI2CBusTimeout--) == 0) return I2C_TIMEOUT_UserCallback(iBus, status);
+   }
+
+   /* Some devices have 16 bit addresses so we have to send MSB first and then
+    * LSB.  Otherwise, we can skip the MSB and just send the LSB */
+   if (2 == i2cMemAddrSize ) {
+      /*!< Send the EEPROM's internal address to write to: MSB of the address first */
+      I2C_SendData(s_I2C_Bus[iBus].i2c_bus, (uint8_t)((i2cMemAddr & 0xFF00) >> 8));
+
+      /*!< Test on EV8 and clear it */
+      nI2CBusTimeout = I2C_LONG_TIMEOUT;
+      status = ERR_I2CBUS_EV8_TIMEOUT;
+      while(!I2C_CheckEvent(s_I2C_Bus[iBus].i2c_bus, I2C_EVENT_MASTER_BYTE_TRANSMITTING)) {
+         if((nI2CBusTimeout--) == 0) return I2C_TIMEOUT_UserCallback(iBus, status);
+      }
+   }
+
+   /*!< Send the EEPROM's internal address to write to: LSB of the address */
+   I2C_SendData(s_I2C_Bus[iBus].i2c_bus, (uint8_t)(i2cMemAddr & 0x00FF));
+
+   /*!< Test on EV8 and clear it */
+   nI2CBusTimeout = I2C_LONG_TIMEOUT;
+   status = ERR_I2CBUS_EV8_TIMEOUT;
+   while(I2C_GetFlagStatus(s_I2C_Bus[iBus].i2c_bus, I2C_FLAG_BTF) == RESET) {
+      if((nI2CBusTimeout--) == 0) return I2C_TIMEOUT_UserCallback(iBus, status);
+   }
+
+   status = ERR_NONE;  /* Just for consistency, set the status and return it. */
+   return( status );
+}
 
 /******************************************************************************/
 /***                      Callback functions for I2C                        ***/
@@ -735,37 +936,18 @@ inline void I2C1_ErrorEventCallback( void )
    portEND_SWITCHING_ISR(lHigherPriorityTaskWoken);
 }
 
-typedef struct {
-   int a;
-   int b;
-   char *c;
-} foo;
-
-typedef struct {
-   const char *name;
-   size_t off;
-} struct_desc ;
-
-//static const struct struct_desc foo_desc = {
-//      { "a", offsetof(struct foo, a) },
-//      { "b", offsetof(struct foo, b) },
-//      { "c", offsetof(struct foo, c) },
-//};
-
 /******************************************************************************/
-CBErrorCode I2C_TIMEOUT_UserCallbackRaw(
+static CBErrorCode I2C_TIMEOUT_UserCallbackRaw(
       I2C_Bus_t iBus,
       CBErrorCode error,
       const char *func,
       int line
 )
 {
-
-   offsetof(foo, a);
-
-   /* Use the slow interface to print out the error and where it occured. */
-   err_slow_printf("I2C%d bus error 0x%08x at %s():%d\n", iBus+1, error, func, line);
-
+   if ( ERR_NONE != error ) {
+      /* Use the slow interface to print out the error and where it occured. */
+      err_slow_printf("I2C%d bus error 0x%08x at %s():%d\n", iBus+1, error, func, line);
+   }
    /* Return the error code so the top level can handle it. */
    return( error );
 }

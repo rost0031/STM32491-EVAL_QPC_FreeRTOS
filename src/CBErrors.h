@@ -90,6 +90,7 @@ typedef enum CBErrors
    ERR_I2CBUS_INVALID_PARAMS_FOR_BUS_CHECK_FREE                = 0x0006000C,
    ERR_I2CBUS_RXNE_FLAG_TIMEOUT                                = 0x0006000D,
    ERR_I2CBUS_STOP_BIT_TIMEOUT                                 = 0x0006000E,
+   ERR_I2CBUS_WRITE_BYTE_TIMEOUT                               = 0x0006000F,
 
    /* I2C1Dev error category                     0x00070000 - 0x0007FFFF */
    ERR_I2C1DEV_CHECK_BUS_TIMEOUT                               = 0x00070000,
@@ -102,6 +103,11 @@ typedef enum CBErrors
    ERR_I2C1DEV_WRITE_REG_TIMEOUT                               = 0x00070007,
    ERR_I2C1DEV_ACK_DIS_TIMEOUT                                 = 0x00070008,
    ERR_I2C1DEV_ACK_EN_TIMEOUT                                  = 0x00070009,
+   ERR_I2C1DEV_MEM_OUT_BOUNDS                                  = 0x0007000A,
+
+   /* Settings Database error category           0x00080000 - 0x0008FFFF */
+   ERR_DB_NOT_INIT                                             = 0x00080000,
+   ERR_DB_VER_MISMATCH                                         = 0x00080001,
 
    /* Reserved errors                            0xFFFFFFFE - 0xFFFFFFFF */
    ERR_UNIMPLEMENTED                                           = 0xFFFFFFFE,

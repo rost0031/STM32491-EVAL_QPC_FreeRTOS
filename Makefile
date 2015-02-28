@@ -40,13 +40,13 @@ endif
 ifeq ($(IP),)       # Slave IP address............................
 IPADDR0 = 172  
 IPADDR1 = 27
-IPADDR2 = 1
+IPADDR2 = 0
 IPADDR3 = 3
 MAC = 0x3b
 else
 IPADDR0 = 172
 IPADDR1 = 27
-IPADDR2 = 1
+IPADDR2 = 0
 IPADDR3 = $(IP)
 endif
 

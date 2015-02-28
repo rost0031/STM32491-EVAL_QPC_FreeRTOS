@@ -122,13 +122,13 @@ int main(void)
     dbg_slow_printf("Read the MAC address from the special I2C EEPROM\n");
     uint8_t macAddrBuffer[8];
     memset(macAddrBuffer, 0, sizeof(macAddrBuffer));
-    I2C_readBufferBlocking(
-          macAddrBuffer,
+    I2C_readBufferBLK(
           I2CBus1,
           0xB0,
           0x98,
           1,
-          8
+          macAddrBuffer,
+          sizeof(macAddrBuffer)
     );
     dbg_slow_printf("Read:");
     for (uint8_t i=0; i<8; i++) {
@@ -149,6 +149,65 @@ int main(void)
        printf("%02x ", macAddrBuffer[i]);
     }
     printf("\n");
+
+    dbg_slow_printf("Checking DB validity...\n");
+    CBErrorCode dbStatus = DB_isValid();
+    if ( ERR_NONE != dbStatus ) {
+       wrn_slow_printf("DB validity check returned: 0x%08x\n", dbStatus);
+       wrn_slow_printf("Attempting to write default DB to EEPROM...\n");
+       dbStatus = DB_initToDefault();
+       if ( ERR_NONE != dbStatus ) {
+          err_slow_printf("Unable to write default DB to EEPROM\n");
+       } else {
+          log_slow_printf("Wrote default DB to EEPROM. Attempting to validate...\n");
+          dbStatus = DB_isValid();
+          if ( ERR_NONE != dbStatus ) {
+             err_slow_printf("DB validity check returned: 0x%08x\n", dbStatus);
+             err_slow_printf("Unable to fix DB in EEPROM\n");
+          } else {
+             log_slow_printf("A default DB has been successfully written to EEPROM\n");
+          }
+
+       }
+    }
+
+//    log_slow_printf("               aligned : nFirst : nLast : nTotPgs\n");
+//    for (uint8_t i=0; i < 34; i++ ) {
+
+    /* Look up Device and Memory addresses and their sizes */
+    uint16_t i2cDevAddr = I2C_getI2C1DevAddr( EEPROM );
+    uint8_t i2cMemAddrSize = I2C_getI2C1MemAddrSize( EEPROM );
+    uint16_t i2cMemAddr = I2C_getI2C1MemAddr( EEPROM );
+
+    uint8_t tmp[50];
+    for (uint8_t i=0; i<50; i++) {
+       tmp[i] = i;
+    }
+
+    I2C_writeBufferBLK( /* TODO: does this belong in i2c_dev? */
+          I2CBus1,                //I2C_Bus_t iBus,
+          i2cDevAddr,             // i2cDevAddr,
+          i2cMemAddr,             // uint16_t i2cMemAddr,
+          i2cMemAddrSize,         // uint8_t i2cMemAddrSize,
+          tmp,                    // uint8_t *pBuffer
+          sizeof(tmp)             // uint16_t bytesToWrite
+    );
+//    }
+    uint8_t tmp1[50];
+    memset(tmp1, 0, sizeof(tmp1));
+    I2C_readBufferBLK(
+          I2CBus1,
+          i2cDevAddr,
+          i2cMemAddr,
+          i2cMemAddrSize,
+          tmp1,
+          sizeof(tmp1)
+    );
+    dbg_slow_printf("Read back: ");
+    for (uint8_t i=0;i<50;i++) {
+       printf("0x%02x ", tmp1[i]);
+    }printf("\n");
+
 
 
     /* Instantiate the Active objects by calling their "constructors"         */
