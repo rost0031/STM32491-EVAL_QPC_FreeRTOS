@@ -203,10 +203,8 @@ CBErrorCode I2C_readEepromBLK(
       uint16_t bytesToRead
 )
 {
-   I2C_Bus_t iBus = I2CBus1;
-
    CBErrorCode status = I2C_readBufferBLK(
-         iBus,                                  // I2C_Bus_t iBus,
+         I2CBus1,                               // I2C_Bus_t iBus,
          I2C_getI2C1DevAddr( EEPROM ),          // uint8_t i2cDevAddr,
          I2C_getI2C1MemAddr( EEPROM ) + offset, // uint16_t i2cMemAddr,
          I2C_getI2C1MemAddrSize( EEPROM ),      // uint8_t i2cMemAddrSize,
@@ -224,10 +222,8 @@ CBErrorCode I2C_writeEepromBLK(
       uint16_t bytesToWrite
 )
 {
-   I2C_Bus_t iBus = I2CBus1;
-
    CBErrorCode status = I2C_writeBufferBLK(
-         iBus,                                  // I2C_Bus_t iBus,
+         I2CBus1,                               // I2C_Bus_t iBus,
          I2C_getI2C1DevAddr( EEPROM ),          // uint8_t i2cDevAddr,
          I2C_getI2C1MemAddr( EEPROM ) + offset, // uint16_t i2cMemAddr,
          I2C_getI2C1MemAddrSize( EEPROM ),      // uint8_t i2cMemAddrSize,
