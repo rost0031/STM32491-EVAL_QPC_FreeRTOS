@@ -164,7 +164,10 @@ CBErrorCode DB_initToDefault( void )
          settingsDB[DB_MAGIC_WORD].size
    );
    if ( ERR_NONE != status ) {
-      err_slow_printf("Unable to write Magic Word to EEPROM. Error: 0x%08x\n", status);
+      err_slow_printf(
+            "Unable to write Magic Word to EEPROM. Error: 0x%08x\n",
+            status
+      );
       return status;
    }
 
@@ -174,7 +177,10 @@ CBErrorCode DB_initToDefault( void )
          settingsDB[DB_VERSION].size
    );
    if ( ERR_NONE != status ) {
-      err_slow_printf("Unable to write DB Version to EEPROM. Error: 0x%08x\n", status);
+      err_slow_printf(
+            "Unable to write DB Version to EEPROM. Error: 0x%08x\n",
+            status
+      );
       return status;
    }
 
@@ -184,7 +190,10 @@ CBErrorCode DB_initToDefault( void )
          settingsDB[DB_IP_ADDR].size
    );
    if ( ERR_NONE != status ) {
-      err_slow_printf("Unable to write IP Address to EEPROM. Error: 0x%08x\n", status);
+      err_slow_printf(
+            "Unable to write IP Address to EEPROM. Error: 0x%08x\n",
+            status
+      );
       return status;
    }
 

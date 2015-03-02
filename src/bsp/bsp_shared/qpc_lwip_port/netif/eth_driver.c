@@ -538,18 +538,13 @@ void low_level_init(struct netif *netif)
 /******************************************************************************/
 inline void ETH_EventCallback( void )
 {
-   QF_CRIT_STAT_TYPE intStat;
-   BaseType_t lHigherPriorityTaskWoken = pdFALSE;
-
-   QF_ISR_ENTRY(intStat);                        /* inform QF about ISR entry */
-
-    if ( ETH_GetDMAFlagStatus(ETH_DMA_FLAG_R) == SET) {
+   if ( ETH_GetDMAFlagStatus(ETH_DMA_FLAG_R) == SET) {
       ETH_DMAClearITPendingBit(ETH_DMA_IT_NIS | ETH_DMA_IT_R);/* clear the interrupt sources */
       static QEvent const evt_eth_rx = { LWIP_RX_READY_SIG, 0 };
-        QACTIVE_POST(l_active, &evt_eth_rx, &l_Ethernet_IRQHandler);
+      QACTIVE_POST(l_active, &evt_eth_rx, &l_Ethernet_IRQHandler);
 
-        ETH_DMAITConfig(ETH_DMA_IT_R, DISABLE);       /* disable further RX */
-    }
+      ETH_DMAITConfig(ETH_DMA_IT_R, DISABLE);       /* disable further RX */
+   }
 
     if ( ETH_GetDMAFlagStatus(ETH_DMA_FLAG_T) == SET) {
       ETH_DMAClearITPendingBit(ETH_DMA_IT_NIS | ETH_DMA_IT_T);/* clear the interrupt sources */
@@ -567,18 +562,12 @@ inline void ETH_EventCallback( void )
       ETH->DMARPDR = 0;
     }
 
-
 #if LINK_STATS
     if ( ETH_GetDMAFlagStatus(ETH_DMA_FLAG_RO) == SET) {
         static QEvent const evt_eth_er = { LWIP_RX_OVERRUN_SIG, 0 };
         QACTIVE_POST(l_active, &evt_eth_er, &l_Ethernet_IRQHandler);
     }
 #endif
-
-   QF_ISR_EXIT(intStat, lHigherPriorityTaskWoken);/* inform QF about ISR exit */
-
-   /* the usual end of FreeRTOS ISR... */
-   portEND_SWITCHING_ISR(lHigherPriorityTaskWoken);
 }
 
 

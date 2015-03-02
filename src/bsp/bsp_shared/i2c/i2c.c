@@ -781,11 +781,6 @@ static CBErrorCode I2C_setupMemRW(
 /******************************************************************************/
 inline void I2C1_DMAReadCallback( void )
 {
-   QF_CRIT_STAT_TYPE intStat;
-   BaseType_t lHigherPriorityTaskWoken = pdFALSE;
-
-   QF_ISR_ENTRY(intStat);                        /* inform QF about ISR entry */
-
    /* Test on DMA Stream Transfer Complete interrupt */
    if ( RESET != DMA_GetITStatus(DMA1_Stream0, DMA_IT_TCIF0) ) {
       /* Start of STM32 I2C HW bug workaround:
@@ -838,21 +833,11 @@ inline void I2C1_DMAReadCallback( void )
       /* Clear DMA Stream Transfer Complete interrupt pending bit */
       DMA_ClearITPendingBit( DMA1_Stream0, DMA_IT_TCIF0 );
    }
-
-   QF_ISR_EXIT(intStat, lHigherPriorityTaskWoken);/* inform QF about ISR exit */
-
-   /* the usual end of FreeRTOS ISR... */
-   portEND_SWITCHING_ISR(lHigherPriorityTaskWoken);
 }
 
 /******************************************************************************/
 inline void I2C1_DMAWriteCallback( void )
 {
-   QF_CRIT_STAT_TYPE intStat;
-   BaseType_t lHigherPriorityTaskWoken = pdFALSE;
-
-   QF_ISR_ENTRY(intStat);                        /* inform QF about ISR entry */
-
    /* Test on DMA Stream Transfer Complete interrupt */
    if ( RESET != DMA_GetITStatus(DMA1_Stream6, DMA_IT_TCIF6) ) {
 
@@ -891,11 +876,6 @@ inline void I2C1_DMAWriteCallback( void )
       /* Clear DMA Stream Transfer Complete interrupt pending bit */
       DMA_ClearITPendingBit( DMA1_Stream6, DMA_IT_TCIF6 );
    }
-
-   QF_ISR_EXIT(intStat, lHigherPriorityTaskWoken);/* inform QF about ISR exit */
-
-   /* the usual end of FreeRTOS ISR... */
-   portEND_SWITCHING_ISR(lHigherPriorityTaskWoken);
 }
 
 /******************************************************************************/
@@ -915,11 +895,6 @@ inline void I2C1_EventCallback( void )
 /******************************************************************************/
 inline void I2C1_ErrorEventCallback( void )
 {
-   QF_CRIT_STAT_TYPE intStat;
-   BaseType_t lHigherPriorityTaskWoken = pdFALSE;
-
-   QF_ISR_ENTRY(intStat);                        /* inform QF about ISR entry */
-
    /* Read SR1 register to get I2C error */
    __IO uint16_t regVal = I2C_ReadRegister(I2C1, I2C_Register_SR1) & 0xFF00;
    if (regVal != 0x0000) {
@@ -929,11 +904,6 @@ inline void I2C1_ErrorEventCallback( void )
       ERR_printf("I2C Error: 0x%04x.  Resetting error bits\n", regVal);
       I2C_BusInit( I2CBus1 );
    }
-
-   QF_ISR_EXIT(intStat, lHigherPriorityTaskWoken);/* inform QF about ISR exit */
-
-   /* the usual end of FreeRTOS ISR... */
-   portEND_SWITCHING_ISR(lHigherPriorityTaskWoken);
 }
 
 /******************************************************************************/

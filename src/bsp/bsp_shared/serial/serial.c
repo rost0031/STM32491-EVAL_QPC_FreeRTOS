@@ -306,13 +306,12 @@ uint32_t Serial_send_raw_msg(
 }
 
 /******************************************************************************/
+/***                      Callback functions for Serial/UART                ***/
+/******************************************************************************/
+
+/******************************************************************************/
 inline void Serial_DMASendCallback( void )
 {
-   QF_CRIT_STAT_TYPE intStat;
-   BaseType_t lHigherPriorityTaskWoken = pdFALSE;
-
-   QF_ISR_ENTRY(intStat);                        /* inform QF about ISR entry */
-
    /* Test on DMA Stream Transfer Complete interrupt */
    if ( RESET != DMA_GetITStatus(DMA2_Stream7, DMA_IT_TCIF7) ) {
       /* Disable DMA so it doesn't keep outputting the buffer. */
@@ -325,21 +324,11 @@ inline void Serial_DMASendCallback( void )
       /* Clear DMA Stream Transfer Complete interrupt pending bit */
       DMA_ClearITPendingBit(DMA2_Stream7, DMA_IT_TCIF7);
    }
-
-   QF_ISR_EXIT(intStat, lHigherPriorityTaskWoken);/* inform QF about ISR exit */
-
-   /* the usual end of FreeRTOS ISR... */
-   portEND_SWITCHING_ISR(lHigherPriorityTaskWoken);
 }
 
 /******************************************************************************/
 inline void Serial_UART1Callback(void)
 {
-   QF_CRIT_STAT_TYPE intStat;
-   BaseType_t lHigherPriorityTaskWoken = pdFALSE;
-
-   QF_ISR_ENTRY(intStat);                        /* inform QF about ISR entry */
-
    while (USART_GetITStatus(USART1, USART_IT_RXNE) != RESET) {
       uint8_t data = (uint8_t)USART_ReceiveData(USART1);
 
@@ -396,14 +385,7 @@ inline void Serial_UART1Callback(void)
             a_UARTSettings[SERIAL_UART1].bufferRX[ a_UARTSettings[SERIAL_UART1].indexRX++ ] = data;
          }
       }
-
-
    }
-
-   QF_ISR_EXIT(intStat, lHigherPriorityTaskWoken);/* inform QF about ISR exit */
-
-   /* the usual end of FreeRTOS ISR... */
-   portEND_SWITCHING_ISR(lHigherPriorityTaskWoken);
 }
 /**
  * @}
