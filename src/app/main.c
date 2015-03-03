@@ -171,6 +171,21 @@ int main(void)
        }
     }
 
+    /* Read the stored IP address from DB */
+
+    uint8_t ipAddrBuffer[4];
+    memset(ipAddrBuffer, 0, sizeof(ipAddrBuffer));
+    CBErrorCode status = DB_getElemBLK(DB_IP_ADDR,ipAddrBuffer, sizeof(ipAddrBuffer), ACCESS_BLOCKING);
+
+    log_slow_printf("IP addr from DB: ");
+    for ( uint8_t i = 0; i < sizeof(ipAddrBuffer); i++ ) {
+       printf("%d", ipAddrBuffer[i]);
+       if(i < sizeof(ipAddrBuffer)-1) {
+          printf(":");
+       }
+    }
+    printf("\n");
+
 //    log_slow_printf("               aligned : nFirst : nLast : nTotPgs\n");
 //    for (uint8_t i=0; i < 34; i++ ) {
 

@@ -217,6 +217,38 @@ CBErrorCode I2C_calcEepromPageWriteSizes(
 /******************************************************************************/
 
 /**
+ * @brief   Blocking function to read data from UI64 RO section of the EEPROM.
+ *
+ * @param [out] *pBuffer: uint8_t pointer to the buffer to store read data.
+ * @param [in]  offset: offset from beginning of EEPROM memory to read from.
+ * @param [in] bytesToRead: uint8_t variable specifying how many bytes to read
+ *
+ * @return CBErrorCode: status of the read operation
+ *    @arg ERR_NONE: if no errors occurred
+ */
+CBErrorCode I2C_readUi64RomBLK(
+      uint8_t* pBuffer,
+      uint16_t offset,
+      uint16_t bytesToRead
+);
+
+/**
+ * @brief   Blocking function to read data from UI64 RO section of the EEPROM.
+ *
+ * @param [out] *pBuffer: uint8_t pointer to the buffer to store read data.
+ * @param [in]  offset: offset from beginning of EEPROM memory to read from.
+ * @param [in] bytesToRead: uint8_t variable specifying how many bytes to read
+ *
+ * @return CBErrorCode: status of the read operation
+ *    @arg ERR_NONE: if no errors occurred
+ */
+CBErrorCode I2C_readSnRomBLK(
+      uint8_t* pBuffer,
+      uint16_t offset,
+      uint16_t bytesToRead
+);
+
+/**
  * @brief   Blocking function to read data from EEPROM.
  *
  * @param [out] *pBuffer: uint8_t pointer to the buffer to store read data.

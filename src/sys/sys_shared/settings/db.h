@@ -73,7 +73,23 @@ CBErrorCode DB_initToDefault( void );
 /**
  *
  */
+CBErrorCode DB_getElemBLK(
+      DB_Elem_t elem,
+      uint8_t* pBuffer,
+      size_t bufSize,
+      AccessType_t accType
+);
+
 CBErrorCode DB_getMacAddrBLK(
+      uint8_t* pBuffer,
+      size_t bufSize,
+      AccessType_t accType
+);
+
+/**
+ *
+ */
+CBErrorCode DB_getIpAddrBLK(
       uint8_t* pBuffer,
       size_t bufSize,
       AccessType_t accType

@@ -197,6 +197,44 @@ CBErrorCode I2C_calcEepromPageWriteSizes(
 /******************************************************************************/
 
 /******************************************************************************/
+CBErrorCode I2C_readUi64RomBLK(
+      uint8_t* pBuffer,
+      uint16_t offset,
+      uint16_t bytesToRead
+)
+{
+   CBErrorCode status = I2C_readBufferBLK(
+         I2CBus1,                               // I2C_Bus_t iBus,
+         I2C_getI2C1DevAddr( EUI_ROM ),         // uint8_t i2cDevAddr,
+         I2C_getI2C1MemAddr( EUI_ROM ) + offset,// uint16_t i2cMemAddr,
+         I2C_getI2C1MemAddrSize( EUI_ROM ),     // uint8_t i2cMemAddrSize,
+         pBuffer,                               // uint8_t* pBuffer,
+         bytesToRead                            // uint16_t bytesToRead
+   );
+
+   return status;
+}
+
+/******************************************************************************/
+CBErrorCode I2C_readSnRomBLK(
+      uint8_t* pBuffer,
+      uint16_t offset,
+      uint16_t bytesToRead
+)
+{
+   CBErrorCode status = I2C_readBufferBLK(
+         I2CBus1,                               // I2C_Bus_t iBus,
+         I2C_getI2C1DevAddr( SN_ROM ),          // uint8_t i2cDevAddr,
+         I2C_getI2C1MemAddr( SN_ROM ) + offset, // uint16_t i2cMemAddr,
+         I2C_getI2C1MemAddrSize( SN_ROM ),      // uint8_t i2cMemAddrSize,
+         pBuffer,                               // uint8_t* pBuffer,
+         bytesToRead                            // uint16_t bytesToRead
+   );
+
+   return status;
+}
+
+/******************************************************************************/
 CBErrorCode I2C_readEepromBLK(
       uint8_t* pBuffer,
       uint16_t offset,

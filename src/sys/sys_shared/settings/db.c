@@ -98,7 +98,7 @@ static const SettingsDB_t DB_defaultEeepromSettings = {
 };
 
 /* Private function prototypes -----------------------------------------------*/
-static size_t DB_getElemSize( DB_Elem_t elem );
+//static size_t DB_getElemSize( DB_Elem_t elem );
 
 /* Private functions ---------------------------------------------------------*/
 
@@ -199,6 +199,79 @@ CBErrorCode DB_initToDefault( void )
 
    return status;
 }
+
+/******************************************************************************/
+CBErrorCode DB_getElemBLK(
+      DB_Elem_t elem,
+      uint8_t* pBuffer,
+      size_t bufSize,
+      AccessType_t accType
+)
+{
+   CBErrorCode status = ERR_NONE; /* keep track of success/failure of operations. */
+
+   /* 1. Sanity checks of buffer sizes and memory allocations. */
+   if ( bufSize < settingsDB[elem].size ) {
+      status = ERR_MEM_BUFFER_LEN;
+      goto DB_getElemBLK_ERR_HANDLE;
+   }
+
+   if ( NULL == pBuffer ) {
+      status = ERR_MEM_NULL_VALUE;
+      goto DB_getElemBLK_ERR_HANDLE;
+   }
+
+   /* 2. Find where the element lives */
+   DB_ElemLoc_t loc = settingsDB[elem].loc;
+
+   /* 3. Call the location dependent functions to retrieve the data from DB */
+   switch( loc ) {
+      case DB_EEPROM:
+         status = I2C_readEepromBLK(
+               pBuffer,
+               settingsDB[elem].offset,
+               settingsDB[elem].size
+         );
+         break;
+
+      case DB_SN_ROM:
+         status = I2C_readSnRomBLK(
+               pBuffer,
+               settingsDB[elem].offset,
+               settingsDB[elem].size
+         );
+         break;
+      case DB_UI_ROM:
+         status = I2C_readUi64RomBLK(
+               pBuffer,
+               settingsDB[elem].offset,
+               settingsDB[elem].size
+         );
+         break;
+      case DB_GPIO:
+         status = ERR_UNIMPLEMENTED;
+         goto DB_getElemBLK_ERR_HANDLE;
+         break;
+      case DB_FLASH:
+         status = ERR_UNIMPLEMENTED;
+         goto DB_getElemBLK_ERR_HANDLE;
+         break;
+         /* Add more locations here. Anything that fails will go to the default
+          * case and get logged as an error. */
+      default:
+         status = ERR_DB_ELEM_NOT_FOUND;
+         goto DB_getElemBLK_ERR_HANDLE;
+         break;
+   }
+
+DB_getElemBLK_ERR_HANDLE:         /* Handle any error that may have occurred. */
+   if ( ERR_NONE != status ) {
+      err_slow_printf("Error 0x%08x getting element %d from DB\n", elem, status);
+   }
+
+   return( status );
+}
+
 /******************************************************************************/
 CBErrorCode DB_getMacAddrBLK(
       uint8_t* pBuffer,
@@ -207,59 +280,89 @@ CBErrorCode DB_getMacAddrBLK(
 )
 {
 
-   /* 1. Check the buffer size and if it's allocated */
-   /* Only check buffer size if using blocking access */
-   if ( ACCESS_BLOCKING == accType ) {
-      if ( NULL == pBuffer ) {
-         return( ERR_MEM_NULL_VALUE );
-      }
+//   /* 1. Check the buffer size and if it's allocated */
+//   /* Only check buffer size if using blocking access */
+//   if ( ACCESS_BLOCKING == accType ) {
+//      if ( NULL == pBuffer ) {
+//         return( ERR_MEM_NULL_VALUE );
+//      }
+//
+//      if ( DB_getElemSize( DB_MAC_ADDR ) > bufSize ) {
+//         return( ERR_MEM_BUFFER_LEN );
+//      }
+//   }
+//
+//   /* 2. Look up mappings for devices, memory addresses, etc. */
+//   I2C_Bus_t i2cBus = I2CBus1;
+//   /* For now, only I2CBus1 exists */
+//   if ( !IS_I2C1_DEVICE( EUI_ROM ) ) {
+//      if (ACCESS_BLOCKING == accType ) {
+//         err_slow_printf("I2C Device %d doesn't exist on I2CBus1\n");
+//      } else {
+//         ERR_printf("I2C Device %d doesn't exist on I2CBus1\n");
+//      }
+//      return( ERR_UNIMPLEMENTED );
+//   }
+//
+//   /* Look up Device and Memory addresses and their sizes */
+//   uint16_t i2cDevAddr = I2C_getI2C1DevAddr( EUI_ROM );
+//   uint16_t i2cMemAddr = I2C_getI2C1MemAddr( EUI_ROM );
+//   uint8_t i2cMemAddrSize = I2C_getI2C1MemAddrSize( EUI_ROM );
+//
+//   /* 3. Call the actual I2C blocking read function */
+//   I2C_readBufferBLK(
+//         i2cBus,
+//         i2cDevAddr,
+//         i2cMemAddr + 2, /* Only need 6 of the 8 bytes */
+//         i2cMemAddrSize,
+//         pBuffer,
+//         DB_getElemSize( DB_MAC_ADDR )
+//   );
 
-      if ( DB_getElemSize( DB_MAC_ADDR ) > bufSize ) {
-         return( ERR_MEM_BUFFER_LEN );
-      }
+   if ( bufSize < settingsDB[DB_MAC_ADDR].size ) {
+      err_slow_printf("Buffer size too small for MAC addr\n");
+      return( ERR_MEM_BUFFER_LEN );
    }
 
-   /* 2. Look up mappings for devices, memory addresses, etc. */
-   I2C_Bus_t i2cBus = I2CBus1;
-   /* For now, only I2CBus1 exists */
-   if ( !IS_I2C1_DEVICE( EUI_ROM ) ) {
-      if (ACCESS_BLOCKING == accType ) {
-         err_slow_printf("I2C Device %d doesn't exist on I2CBus1\n");
-      } else {
-         ERR_printf("I2C Device %d doesn't exist on I2CBus1\n");
-      }
-      return( ERR_UNIMPLEMENTED );
-   }
-
-   /* Look up Device and Memory addresses and their sizes */
-   uint16_t i2cDevAddr = I2C_getI2C1DevAddr( EUI_ROM );
-   uint16_t i2cMemAddr = I2C_getI2C1MemAddr( EUI_ROM );
-   uint8_t i2cMemAddrSize = I2C_getI2C1MemAddrSize( EUI_ROM );
-
-   /* 3. Call the actual I2C blocking read function */
-   I2C_readBufferBLK(
-         i2cBus,
-         i2cDevAddr,
-         i2cMemAddr + 2, /* Only need 6 of the 8 bytes */
-         i2cMemAddrSize,
+   CBErrorCode status = I2C_readUi64RomBLK(
          pBuffer,
-         DB_getElemSize( DB_MAC_ADDR )
+         settingsDB[DB_MAC_ADDR].offset,
+         settingsDB[DB_MAC_ADDR].size
    );
 
-
-   return (ERR_NONE);
+   return( status );
 }
 
 /******************************************************************************/
-static size_t DB_getElemSize( DB_Elem_t elem )
+CBErrorCode DB_getIpAddrBLK(
+      uint8_t* pBuffer,
+      size_t bufSize,
+      AccessType_t accType
+)
 {
-   /* Make sure that the element actually exists */
-   if ( DB_MAX_ELEM <= elem ) {
-      return 0;
-   }
 
-   return( settingsDB[elem].size );
+   if ( bufSize < settingsDB[DB_IP_ADDR].size ) {
+      err_slow_printf("Buffer size too small for IP addr\n");
+      return( ERR_MEM_BUFFER_LEN );
+   }
+   CBErrorCode status = I2C_readEepromBLK(
+         pBuffer,
+         settingsDB[DB_IP_ADDR].offset,
+         settingsDB[DB_IP_ADDR].size
+   );
+   return( status );
 }
+
+///******************************************************************************/
+//static size_t DB_getElemSize( DB_Elem_t elem )
+//{
+//   /* Make sure that the element actually exists */
+//   if ( DB_MAX_ELEM <= elem ) {
+//      return 0;
+//   }
+//
+//   return( settingsDB[elem].size );
+//}
 
 /**
  * @}
