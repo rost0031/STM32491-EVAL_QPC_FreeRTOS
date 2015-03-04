@@ -217,6 +217,9 @@ void CON_slow_output(
 /**
  * @brief   Convert a uint8_t hex array to a string array.
  *
+ * @note: passed in buffer for string output should be at least 5x the size of
+ * the original data.
+ *
  * @param [in] hexData: const char* pointer to the buffer that contains the hex
  * data to convert.
  * @param [in] hexDataLen: uint16_t length of data in the hexData buffer.

@@ -98,8 +98,6 @@ static const SettingsDB_t DB_defaultEeepromSettings = {
 };
 
 /* Private function prototypes -----------------------------------------------*/
-//static size_t DB_getElemSize( DB_Elem_t elem );
-
 /* Private functions ---------------------------------------------------------*/
 
 /******************************************************************************/
@@ -155,49 +153,69 @@ CBErrorCode DB_isValid( void )
 }
 
 /******************************************************************************/
-CBErrorCode DB_initToDefault( void )
+CBErrorCode DB_initToDefault( AccessType_t accessType )
 {
-   /* Write the default DB to EEPROM. */
-   CBErrorCode status = I2C_writeEepromBLK(
-         (uint8_t *)&DB_defaultEeepromSettings.dbMagicWord,
-         settingsDB[DB_MAGIC_WORD].offset,
-         settingsDB[DB_MAGIC_WORD].size
-   );
-   if ( ERR_NONE != status ) {
-      err_slow_printf(
-            "Unable to write Magic Word to EEPROM. Error: 0x%08x\n",
-            status
-      );
-      return status;
-   }
+   CBErrorCode status = ERR_NONE;            /* keep track of success/failure */
 
-   status = I2C_writeEepromBLK(
-         (uint8_t *)&DB_defaultEeepromSettings.dbVersion,
-         settingsDB[DB_VERSION].offset,
-         settingsDB[DB_VERSION].size
-   );
-   if ( ERR_NONE != status ) {
-      err_slow_printf(
-            "Unable to write DB Version to EEPROM. Error: 0x%08x\n",
-            status
-      );
-      return status;
-   }
+   switch( accessType ) {
+      case ACCESS_BARE_METAL:
+         status = DB_setElemBLK(
+               DB_MAGIC_WORD,
+               (uint8_t *)&DB_defaultEeepromSettings.dbMagicWord,
+               sizeof(DB_defaultEeepromSettings.dbMagicWord),
+               accessType
+         );
+         if ( ERR_NONE != status ) {
+            goto DB_initToDefault_ERR_HANDLE;
+         }
 
-   status = I2C_writeEepromBLK(
-         (uint8_t *)&DB_defaultEeepromSettings.ipAddr,
-         settingsDB[DB_IP_ADDR].offset,
-         settingsDB[DB_IP_ADDR].size
-   );
-   if ( ERR_NONE != status ) {
-      err_slow_printf(
-            "Unable to write IP Address to EEPROM. Error: 0x%08x\n",
-            status
-      );
-      return status;
-   }
+         status = DB_setElemBLK(
+               DB_VERSION,
+               (uint8_t *)&DB_defaultEeepromSettings.dbVersion,
+               sizeof(DB_defaultEeepromSettings.dbVersion),
+               accessType
+         );
+         if ( ERR_NONE != status ) {
+            goto DB_initToDefault_ERR_HANDLE;
+         }
 
-   return status;
+         status = DB_setElemBLK(
+               DB_IP_ADDR,
+               (uint8_t *)&DB_defaultEeepromSettings.ipAddr,
+               sizeof(DB_defaultEeepromSettings.ipAddr),
+               accessType
+         );
+         if ( ERR_NONE != status ) {
+            goto DB_initToDefault_ERR_HANDLE;
+         }
+
+         break;                              /* end of case ACCESS_BARE_METAL */
+
+      case ACCESS_QPC:
+         status = ERR_UNIMPLEMENTED;
+         goto DB_initToDefault_ERR_HANDLE; /* Stop and jump to error handling */
+         break;                                     /* end of case ACCESS_QPC */
+
+      case  ACCESS_FREERTOS:
+         status = ERR_UNIMPLEMENTED;
+         goto DB_initToDefault_ERR_HANDLE; /* Stop and jump to error handling */
+         break;                                /* end of case ACCESS_FREERTOS */
+
+      default:
+         status = ERR_UNIMPLEMENTED;
+         goto DB_initToDefault_ERR_HANDLE; /* Stop and jump to error handling */
+         break;                                        /* end of default case */
+
+   }                                               /* End of switch statement */
+
+DB_initToDefault_ERR_HANDLE:      /* Handle any error that may have occurred. */
+   ERR_COND_OUTPUT(
+         status,
+         accessType,
+         "Error 0x%08x initializing the DB to default\n",
+         status
+   );
+   return( status );
 }
 
 /******************************************************************************/
@@ -205,20 +223,20 @@ CBErrorCode DB_getElemBLK(
       DB_Elem_t elem,
       uint8_t* pBuffer,
       size_t bufSize,
-      AccessType_t accType
+      AccessType_t accessType
 )
 {
-   CBErrorCode status = ERR_NONE; /* keep track of success/failure of operations. */
+   CBErrorCode status = ERR_NONE;            /* keep track of success/failure */
 
    /* 1. Sanity checks of buffer sizes and memory allocations. */
    if ( bufSize < settingsDB[elem].size ) {
       status = ERR_MEM_BUFFER_LEN;
-      goto DB_getElemBLK_ERR_HANDLE;
+      goto DB_getElemBLK_ERR_HANDLE;       /* Stop and jump to error handling */
    }
 
    if ( NULL == pBuffer ) {
       status = ERR_MEM_NULL_VALUE;
-      goto DB_getElemBLK_ERR_HANDLE;
+      goto DB_getElemBLK_ERR_HANDLE;       /* Stop and jump to error handling */
    }
 
    /* 2. Find where the element lives */
@@ -233,7 +251,6 @@ CBErrorCode DB_getElemBLK(
                settingsDB[elem].size
          );
          break;
-
       case DB_SN_ROM:
          status = I2C_readSnRomBLK(
                pBuffer,
@@ -250,10 +267,69 @@ CBErrorCode DB_getElemBLK(
          break;
       case DB_GPIO:
          status = ERR_UNIMPLEMENTED;
-         goto DB_getElemBLK_ERR_HANDLE;
+         goto DB_getElemBLK_ERR_HANDLE;    /* Stop and jump to error handling */
          break;
       case DB_FLASH:
          status = ERR_UNIMPLEMENTED;
+         goto DB_getElemBLK_ERR_HANDLE;    /* Stop and jump to error handling */
+         break;
+         /* Add more locations here. Anything that fails will go to the default
+          * case and get logged as an error. */
+      default:
+         status = ERR_DB_ELEM_NOT_FOUND;
+         goto DB_getElemBLK_ERR_HANDLE;    /* Stop and jump to error handling */
+         break;
+   }
+
+DB_getElemBLK_ERR_HANDLE:         /* Handle any error that may have occurred. */
+   ERR_COND_OUTPUT(
+         status,
+         accessType,
+         "Error 0x%08x getting element %d from DB\n",
+         elem,
+         status
+   );
+   return( status );
+}
+
+/******************************************************************************/
+CBErrorCode DB_setElemBLK(
+      DB_Elem_t elem,
+      uint8_t* pBuffer,
+      size_t bufSize,
+      AccessType_t accessType
+)
+{
+   CBErrorCode status = ERR_NONE; /* keep track of success/failure of operations. */
+
+   /* 1. Sanity checks of buffer sizes and memory allocations. */
+   if ( bufSize > settingsDB[elem].size ) {
+      status = ERR_MEM_BUFFER_LEN;
+      goto DB_getElemBLK_ERR_HANDLE;
+   }
+
+   if ( NULL == pBuffer ) {
+      status = ERR_MEM_NULL_VALUE;
+      goto DB_getElemBLK_ERR_HANDLE;
+   }
+
+   /* 2. Find where the element lives */
+   DB_ElemLoc_t loc = settingsDB[elem].loc;
+
+   /* 3. Call the location dependent functions to write the data to DB */
+   switch( loc ) {
+      case DB_EEPROM:
+         status = I2C_writeEepromBLK(
+               pBuffer,
+               settingsDB[elem].offset,
+               settingsDB[elem].size
+         );
+         break;
+      case DB_SN_ROM:                           /* Fall through intentionally */
+      case DB_UI_ROM:                           /* Fall through intentionally */
+      case DB_GPIO:                             /* Fall through intentionally */
+      case DB_FLASH:                            /* Fall through intentionally */
+         status = ERR_DB_ELEM_IS_READ_ONLY;
          goto DB_getElemBLK_ERR_HANDLE;
          break;
          /* Add more locations here. Anything that fails will go to the default
@@ -265,104 +341,15 @@ CBErrorCode DB_getElemBLK(
    }
 
 DB_getElemBLK_ERR_HANDLE:         /* Handle any error that may have occurred. */
-   if ( ERR_NONE != status ) {
-      err_slow_printf("Error 0x%08x getting element %d from DB\n", elem, status);
-   }
-
-   return( status );
-}
-
-/******************************************************************************/
-CBErrorCode DB_getMacAddrBLK(
-      uint8_t* pBuffer,
-      size_t bufSize,
-      AccessType_t accType
-)
-{
-
-//   /* 1. Check the buffer size and if it's allocated */
-//   /* Only check buffer size if using blocking access */
-//   if ( ACCESS_BLOCKING == accType ) {
-//      if ( NULL == pBuffer ) {
-//         return( ERR_MEM_NULL_VALUE );
-//      }
-//
-//      if ( DB_getElemSize( DB_MAC_ADDR ) > bufSize ) {
-//         return( ERR_MEM_BUFFER_LEN );
-//      }
-//   }
-//
-//   /* 2. Look up mappings for devices, memory addresses, etc. */
-//   I2C_Bus_t i2cBus = I2CBus1;
-//   /* For now, only I2CBus1 exists */
-//   if ( !IS_I2C1_DEVICE( EUI_ROM ) ) {
-//      if (ACCESS_BLOCKING == accType ) {
-//         err_slow_printf("I2C Device %d doesn't exist on I2CBus1\n");
-//      } else {
-//         ERR_printf("I2C Device %d doesn't exist on I2CBus1\n");
-//      }
-//      return( ERR_UNIMPLEMENTED );
-//   }
-//
-//   /* Look up Device and Memory addresses and their sizes */
-//   uint16_t i2cDevAddr = I2C_getI2C1DevAddr( EUI_ROM );
-//   uint16_t i2cMemAddr = I2C_getI2C1MemAddr( EUI_ROM );
-//   uint8_t i2cMemAddrSize = I2C_getI2C1MemAddrSize( EUI_ROM );
-//
-//   /* 3. Call the actual I2C blocking read function */
-//   I2C_readBufferBLK(
-//         i2cBus,
-//         i2cDevAddr,
-//         i2cMemAddr + 2, /* Only need 6 of the 8 bytes */
-//         i2cMemAddrSize,
-//         pBuffer,
-//         DB_getElemSize( DB_MAC_ADDR )
-//   );
-
-   if ( bufSize < settingsDB[DB_MAC_ADDR].size ) {
-      err_slow_printf("Buffer size too small for MAC addr\n");
-      return( ERR_MEM_BUFFER_LEN );
-   }
-
-   CBErrorCode status = I2C_readUi64RomBLK(
-         pBuffer,
-         settingsDB[DB_MAC_ADDR].offset,
-         settingsDB[DB_MAC_ADDR].size
-   );
-
-   return( status );
-}
-
-/******************************************************************************/
-CBErrorCode DB_getIpAddrBLK(
-      uint8_t* pBuffer,
-      size_t bufSize,
-      AccessType_t accType
-)
-{
-
-   if ( bufSize < settingsDB[DB_IP_ADDR].size ) {
-      err_slow_printf("Buffer size too small for IP addr\n");
-      return( ERR_MEM_BUFFER_LEN );
-   }
-   CBErrorCode status = I2C_readEepromBLK(
-         pBuffer,
-         settingsDB[DB_IP_ADDR].offset,
-         settingsDB[DB_IP_ADDR].size
+   ERR_COND_OUTPUT(
+         status,
+         accessType,
+         "Error 0x%08x setting element %d to DB\n",
+         elem,
+         status
    );
    return( status );
 }
-
-///******************************************************************************/
-//static size_t DB_getElemSize( DB_Elem_t elem )
-//{
-//   /* Make sure that the element actually exists */
-//   if ( DB_MAX_ELEM <= elem ) {
-//      return 0;
-//   }
-//
-//   return( settingsDB[elem].size );
-//}
 
 /**
  * @}

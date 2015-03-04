@@ -242,6 +242,45 @@ extern uint32_t  glbDbgConfig; /**< Allow global access to debug info */
 #define DBG_DISABLE_DEBUG_FOR_ALL_MODULES( ) \
       glbDbgConfig = 0x00000000;
 
+/**
+ * @brief   Conditional error output
+ *
+ * @description
+ * Macro that can be used to conditionally print an error.  If the passed in
+ * status is not ERR_NONE (no error), the macro will use the passed in
+ * accessType to figure out how to (slow and blocking or fast and
+ * non-blocking/non-invasively) to output the passed in string.
+ *
+ * @param [in] status: status to parse and print if not ERR_NONE.
+ *    @arg ERR_NONE: nothing will be output if this is passed in
+ *    else: passed in string will be printed.
+ * @param [in] accessType: AccessType_t enum representing how the caller wants
+ *                         to output the error msg if needed.
+ *    @arg ACCESS_BARE_METAL: slow blocking output.
+ *    @arg ACCESS_QPC: fast, non-blocking
+ *    @arg ACCESS_FREERTOS: fast, non-blocking
+ * @param [in] fmt: printf like argument string with any % modifiers that print can handle.
+ * @param [in] ...: printf like variable argument list.
+ *
+ * @note 1: This macro should be treated just like a conditional printf
+ * @note 2: This macro DOES NOT perform a return.  This is left up to the user
+ * since doing a return inside of a macro is bad practice for debugging.
+ */
+#define ERR_COND_OUTPUT(status, accessType, fmt, ...) {                       \
+      if ((status) != ERR_NONE) {                                             \
+         switch( accessType ) {                                               \
+            case ACCESS_FREERTOS:                                             \
+            case ACCESS_QPC:                                                  \
+               ERR_printf(fmt, ##__VA_ARGS__);                                \
+               break;                                                         \
+            case ACCESS_BARE_METAL:                                           \
+            default:                                                          \
+               err_slow_printf(fmt, ##__VA_ARGS__);                           \
+               break;                                                         \
+         }                                                                    \
+      }                                                                       \
+   }
+
 /** @addtogroup groupDbgFast
  * @{
  */
@@ -653,7 +692,7 @@ extern uint32_t  glbDbgConfig; /**< Allow global access to debug info */
 #endif
 
 /**
- * @} end group groupDbgFast
+ * @} end group groupDbgSlow
  */
 #endif                                                        /* DBG_CNTRL_H_ */
 /******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/

@@ -89,7 +89,7 @@ enum AO_Priorities {
 };
 
 /**
- * Specify access type.
+ * @brief   Specify access type.
  * Some functions allow user to specify whether access is performed via event
  * driven (QP) or via direct access to HW using slow, blocking function calls.
  *
@@ -99,8 +99,15 @@ enum AO_Priorities {
  * the blocking kind.
  */
 typedef enum AccessType {
-   ACCESS_BLOCKING = 0,
-   ACCESS_EVENT
+   ACCESS_BARE_METAL = 0,  /**< Blocking access where no RTOS services are
+                                running. All returns are done via passed in
+                                buffer */
+   ACCESS_QPC,             /**< Non-blocking access performed from QPC Active
+                                Objects. All returns are done via events that
+                                requesting AO should know how to handle */
+   ACCESS_FREERTOS         /**< Non-blocking access performed from a FreeRTOS
+                                thread.  All returns are done via a QEQueue that
+                                the requesting thread should wait on */
 } AccessType_t;
 
 /* These need to be visible to LWIPMgr AO, which is part of a shared port. Most

@@ -109,6 +109,7 @@ typedef enum CBErrors
    ERR_DB_NOT_INIT                                             = 0x00080000,
    ERR_DB_VER_MISMATCH                                         = 0x00080001,
    ERR_DB_ELEM_NOT_FOUND                                       = 0x00080002,
+   ERR_DB_ELEM_IS_READ_ONLY                                    = 0x00080003,
 
    /* Reserved errors                            0xFFFFFFFE - 0xFFFFFFFF */
    ERR_UNIMPLEMENTED                                           = 0xFFFFFFFE,
