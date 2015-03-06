@@ -31,7 +31,7 @@ extern "C" {
 /* Exported types ------------------------------------------------------------*/
 /* Exported macros -----------------------------------------------------------*/
 /**
- * @brief   Macro to determine if an I2C1 device is defined in the system
+ * @brief   Macro to determine if an I2C device is defined in the system
  * @param [in] DEV:  I2C_Dev_t type I2C device specifier.
  * @retval
  *    1: Device exists and is valid
@@ -66,7 +66,7 @@ uint8_t I2C_getDevAddrSize( I2C_Dev_t iDev );
  *    @arg EEPROM: get the EEPROM device address
  *    @arg SN_ROM: get the SN_ROM device address
  *    @arg UIE_ROM: get the UIE_ROM device address
- * @return: uint16_t device address on the I2C1 Bus.
+ * @return: uint16_t device address on the I2C Bus.
  */
 uint16_t I2C_getDevAddr( I2C_Dev_t iDev );
 
@@ -89,7 +89,7 @@ uint8_t I2C_getMemAddrSize( I2C_Dev_t iDev );
  *    @arg EEPROM: get the EEPROM device address
  *    @arg SN_ROM: get the SN_ROM device address
  *    @arg UIE_ROM: get the UIE_ROM device address
- * @return: uint16_t memory address on the I2C1 Device.
+ * @return: uint16_t memory address on the I2C Device.
  */
 uint16_t I2C_getMemAddr( I2C_Dev_t iDev );
 
@@ -109,7 +109,7 @@ uint16_t I2C_getMemAddr( I2C_Dev_t iDev );
  * @param [in]  addr: uint16_t last accessed memory address.
  * @return: None
  */
-void I2C_setI2C1MemAddr( I2C_Dev_t iDev, uint16_t addr );
+void I2C_setI2CMemAddr( I2C_Dev_t iDev, uint16_t addr );
 
 /**
  * @brief   Get the first accessible internal memory address for the specified
@@ -119,7 +119,7 @@ void I2C_setI2C1MemAddr( I2C_Dev_t iDev, uint16_t addr );
  *    @arg EEPROM: get the EEPROM device address
  *    @arg SN_ROM: get the SN_ROM device address
  *    @arg UIE_ROM: get the UIE_ROM device address
- * @return: uint16_t first memory address on the I2C1 device.
+ * @return: uint16_t first memory address on the I2C device.
  */
 uint16_t I2C_getMinMemAddr( I2C_Dev_t iDev );
 
@@ -131,20 +131,42 @@ uint16_t I2C_getMinMemAddr( I2C_Dev_t iDev );
  *    @arg EEPROM: get the EEPROM device address
  *    @arg SN_ROM: get the SN_ROM device address
  *    @arg UIE_ROM: get the UIE_ROM device address
- * @return: uint16_t last memory address on the I2C1 device.
+ * @return: uint16_t last memory address on the I2C device.
  */
 uint16_t I2C_getMaxMemAddr( I2C_Dev_t iDev );
 
 /**
- * @brief   Get the page size for memory for the specified I2CBus1 device.
+ * @brief   Get the page size for memory for the specified I2C device.
  *
  * @param [in]  iDev: I2C_Dev_t identifier to choose device
  *    @arg EEPROM: get the EEPROM device address
  *    @arg SN_ROM: get the SN_ROM device address
  *    @arg UIE_ROM: get the UIE_ROM device address
- * @return: uint16_t memory page size on the I2C1 device.
+ * @return: uint16_t memory page size on the I2C device.
  */
 uint8_t I2C_getPageSize( I2C_Dev_t iDev );
+
+/**
+ * @brief   Get the I2C bus of specified I2C device.
+ *
+ * @param [in]  iDev: I2C_Dev_t identifier to choose device
+ *    @arg EEPROM: get the EEPROM device address
+ *    @arg SN_ROM: get the SN_ROM device address
+ *    @arg UIE_ROM: get the UIE_ROM device address
+ * @return: uint16_t memory page size on the I2C device.
+ */
+I2C_Bus_t I2C_getBus( I2C_Dev_t iDev );
+
+/**
+ * @brief   Get the string representation of the I2C device.
+ *
+ * @param [in]  iDev: I2C_Dev_t identifier to choose device
+ *    @arg EEPROM: get the EEPROM device address
+ *    @arg SN_ROM: get the SN_ROM device address
+ *    @arg UIE_ROM: get the UIE_ROM device address
+ * @return: string representation of the I2C device.
+ */
+char* I2C_devToStr( I2C_Dev_t iDev );
 
 /**
  * @brief   Calculate how to properly write large data over page boundaries in EEPROM.

@@ -122,7 +122,7 @@ uint16_t I2C_getMemAddr( I2C_Dev_t iDev )
 }
 
 /******************************************************************************/
-void I2C_setI2C1MemAddr( I2C_Dev_t iDev, uint16_t addr )
+void I2C_setI2CMemAddr( I2C_Dev_t iDev, uint16_t addr )
 {
    /* Check inputs */
    assert_param( IS_I2C_DEVICE( iDev ) );
@@ -155,6 +155,29 @@ uint8_t I2C_getPageSize( I2C_Dev_t iDev )
    assert_param( IS_I2C_DEVICE( iDev ) );
 
    return( s_I2C_Dev[iDev].i2c_mem_page_size );
+}
+
+/******************************************************************************/
+I2C_Bus_t I2C_getBus( I2C_Dev_t iDev )
+{
+   /* Check inputs */
+   assert_param( IS_I2C_DEVICE( iDev ) );
+
+   return( s_I2C_Dev[iDev].i2c_bus );
+}
+
+/******************************************************************************/
+char* I2C_devToStr( I2C_Dev_t iDev )
+{
+   /* Check inputs */
+   assert_param( IS_I2C_DEVICE( iDev ) );
+
+   switch ( iDev ) {
+      case EEPROM: return("EEPROM"); break;
+      case SN_ROM: return("SN_ROM"); break;
+      case EUI_ROM: return("EUI_ROM"); break;
+      default: return(""); break;
+   }
 }
 
 /******************************************************************************/

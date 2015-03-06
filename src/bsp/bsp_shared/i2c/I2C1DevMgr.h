@@ -56,7 +56,7 @@
 /**
  * @brief Event struct type for specifying a raw memory read request.
  */
-/*${Events::I2CEEPROMReadReqEvt} ...........................................*/
+/*${Events::I2CReadReqEvt} .................................................*/
 typedef struct {
 /* protected: */
     QEvt super;
@@ -69,12 +69,15 @@ typedef struct {
 
     /**< Specifies whether the request came from FreeRTOS thread or another AO */
     AccessType_t accessType;
-} I2CEEPROMReadReqEvt;
+
+    /**< Which I2C device to read */
+    I2C_Dev_t i2cDev;
+} I2CReadReqEvt;
 
 /**
  * @brief Event struct type for specifying a memory write request.
  */
-/*${Events::I2CEEPROMWriteReqEvt} ..........................................*/
+/*${Events::I2CWriteReqEvt} ................................................*/
 typedef struct {
 /* protected: */
     QEvt super;
@@ -90,34 +93,49 @@ typedef struct {
 
     /**< Specifies whether the request came from FreeRTOS thread or another AO */
     AccessType_t accessType;
-} I2CEEPROMWriteReqEvt;
+
+    /**< Which I2C device to read */
+    I2C_Dev_t i2cDev;
+} I2CWriteReqEvt;
 
 /**
- * @brief Event struct type for specifying a register write request.
+ * @brief Event struct type for specifying a memory write request.
  */
-/*${Events::I2CDevRegWriteReqEvt} ..........................................*/
+/*${Events::I2CReadDoneEvt} ................................................*/
 typedef struct {
 /* protected: */
     QEvt super;
 
-    /**< Internal register address of the I2C device*/
-    uint8_t regAddr;
+    /**< Specify how many bytes to read */
+    uint16_t bytes;
 
-    /**< Value to write to register. */
-    uint8_t regValue;
-} I2CDevRegWriteReqEvt;
+    /**< Buffer that holds the data. */
+    uint8_t dataBuf[MAX_I2C_READ_LEN];
+
+    /**< Status of the operation */
+    CBErrorCode status;
+
+    /**< Which I2C device was accessed */
+    I2C_Dev_t i2cDev;
+} I2CReadDoneEvt;
 
 /**
- * @brief Event struct type for specifying a register read request.
+ * @brief Event struct type for specifying a memory write request.
  */
-/*${Events::I2CDevRegReadReqEvt} ...........................................*/
+/*${Events::I2CWriteDoneEvt} ...............................................*/
 typedef struct {
 /* protected: */
     QEvt super;
 
-    /**< Internal register address of the I2C device*/
-    uint8_t regAddr;
-} I2CDevRegReadReqEvt;
+    /**< Specify how many bytes to read */
+    uint16_t bytes;
+
+    /**< Status of the operation */
+    CBErrorCode status;
+
+    /**< Which I2C device was accessed */
+    I2C_Dev_t i2cDev;
+} I2CWriteDoneEvt;
 
 
 /* Exported constants --------------------------------------------------------*/

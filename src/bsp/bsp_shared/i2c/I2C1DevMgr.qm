@@ -2,7 +2,7 @@
 <model version="3.1.3">
  <framework name="qpc"/>
  <package name="Events" stereotype="0x01">
-  <class name="I2CEEPROMReadReqEvt" superclass="qpc::QEvt">
+  <class name="I2CReadReqEvt" superclass="qpc::QEvt">
    <documentation>/**
  * @brief Event struct type for specifying a raw memory read request.
  */</documentation>
@@ -15,8 +15,11 @@
    <attribute name="accessType" type="AccessType_t" visibility="0x01" properties="0x00">
     <documentation>/**&lt; Specifies whether the request came from FreeRTOS thread or another AO */</documentation>
    </attribute>
+   <attribute name="i2cDev" type="I2C_Dev_t" visibility="0x01" properties="0x00">
+    <documentation>/**&lt; Which I2C device to read */</documentation>
+   </attribute>
   </class>
-  <class name="I2CEEPROMWriteReqEvt" superclass="qpc::QEvt">
+  <class name="I2CWriteReqEvt" superclass="qpc::QEvt">
    <documentation>/**
  * @brief Event struct type for specifying a memory write request.
  */</documentation>
@@ -32,24 +35,8 @@
    <attribute name="accessType" type="AccessType_t" visibility="0x01" properties="0x00">
     <documentation>/**&lt; Specifies whether the request came from FreeRTOS thread or another AO */</documentation>
    </attribute>
-  </class>
-  <class name="I2CDevRegWriteReqEvt" superclass="qpc::QEvt">
-   <documentation>/**
- * @brief Event struct type for specifying a register write request.
- */</documentation>
-   <attribute name="regAddr" type="uint8_t" visibility="0x01" properties="0x00">
-    <documentation>/**&lt; Internal register address of the I2C device*/</documentation>
-   </attribute>
-   <attribute name="regValue" type="uint8_t" visibility="0x01" properties="0x00">
-    <documentation>/**&lt; Value to write to register. */</documentation>
-   </attribute>
-  </class>
-  <class name="I2CDevRegReadReqEvt" superclass="qpc::QEvt">
-   <documentation>/**
- * @brief Event struct type for specifying a register read request.
- */</documentation>
-   <attribute name="regAddr" type="uint8_t" visibility="0x01" properties="0x00">
-    <documentation>/**&lt; Internal register address of the I2C device*/</documentation>
+   <attribute name="i2cDev" type="I2C_Dev_t" visibility="0x01" properties="0x00">
+    <documentation>/**&lt; Which I2C device to read */</documentation>
    </attribute>
   </class>
   <class name="I2CReadDoneEvt" superclass="qpc::QEvt">
@@ -61,6 +48,20 @@
    </attribute>
    <attribute name="dataBuf[MAX_I2C_READ_LEN]" type="uint8_t" visibility="0x01" properties="0x00">
     <documentation>/**&lt; Buffer that holds the data. */</documentation>
+   </attribute>
+   <attribute name="status" type="CBErrorCode" visibility="0x01" properties="0x00">
+    <documentation>/**&lt; Status of the operation */</documentation>
+   </attribute>
+   <attribute name="i2cDev" type="I2C_Dev_t" visibility="0x01" properties="0x00">
+    <documentation>/**&lt; Which I2C device was accessed */</documentation>
+   </attribute>
+  </class>
+  <class name="I2CWriteDoneEvt" superclass="qpc::QEvt">
+   <documentation>/**
+ * @brief Event struct type for specifying a memory write request.
+ */</documentation>
+   <attribute name="bytes" type="uint16_t" visibility="0x01" properties="0x00">
+    <documentation>/**&lt; Specify how many bytes to read */</documentation>
    </attribute>
    <attribute name="status" type="CBErrorCode" visibility="0x01" properties="0x00">
     <documentation>/**&lt; Status of the operation */</documentation>
@@ -152,10 +153,10 @@ QS_FUN_DICTIONARY(&amp;I2C1DevMgr_initial);
 QS_FUN_DICTIONARY(&amp;I2C1DevMgr_Active);
 QS_FUN_DICTIONARY(&amp;I2C1DevMgr_Idle);
 
-QActive_subscribe((QActive *)me, EEPROM_SN_READ_SIG);
-QActive_subscribe((QActive *)me, EEPROM_EUI64_READ_SIG);
-QActive_subscribe((QActive *)me, EEPROM_RAW_MEM_WRITE_SIG);
-QActive_subscribe((QActive *)me, EEPROM_RAW_MEM_READ_SIG);
+QActive_subscribe((QActive *)me, I2C1_DEV_SN_READ_SIG);
+QActive_subscribe((QActive *)me, I2C1_DEV_EUI64_READ_SIG);
+QActive_subscribe((QActive *)me, I2C1_DEV_RAW_MEM_WRITE_SIG);
+QActive_subscribe((QActive *)me, I2C1_DEV_RAW_MEM_READ_SIG);
 
 me-&gt;accessType = ACCESS_QPC; /* Init to safe value */</action>
      <initial_glyph conn="1,2,4,3,9,5">
@@ -212,13 +213,25 @@ QTimeEvt_rearm(
 );</entry>
       <exit>QTimeEvt_disarm( &amp;me-&gt;i2cTimerEvt ); /* Disarm timer on exit */
 
-/* Figure out what operation was being done and send the appropriate done event */
-if ( I2C_OP_MEM_READ == me-&gt;i2cDevOp ) {
-    I2CEEPROMReadReqEvt *i2cEERPOMReadReqEvt = Q_NEW(I2CEEPROMReadReqEvt, EEPROM_RAW_MEM_READ_SIG);
-} else if ( I2C_OP_MEM_WRITE == me-&gt;i2cDevOp ) {
-    
-} else {
-    WRN_printf(&quot;Unimplemented I2C operation: %d, not sending a response\n&quot;, me-&gt;i2cDevOp);
+/* If an error occurred, figure out what operation was being 
+   done and send the appropriate done event */
+if ( ERR_NONE != me-&gt;errorCode ) {
+    ERR_printf(&quot;Exiting busy state with error code: 0x%08x\n&quot;, me-&gt;errorCode);
+    if ( I2C_OP_MEM_READ == me-&gt;i2cDevOp ) {
+        I2CReadDoneEvt *i2cReadDoneEvt = Q_NEW(I2CReadDoneEvt, I2C1_DEV_READ_DONE_SIG);
+        i2cReadDoneEvt-&gt;status = me-&gt;errorCode;
+        i2cReadDoneEvt-&gt;bytes = 0;
+        i2cReadDoneEvt-&gt;i2cDev = me-&gt;iDev;
+        QF_PUBLISH((QEvt *)i2cReadDoneEvt, AO_I2C1DevMgr);
+    } else if ( I2C_OP_MEM_WRITE == me-&gt;i2cDevOp ) {
+        I2CWriteDoneEvt *i2cWriteDoneEvt = Q_NEW(I2CWriteDoneEvt, I2C1_DEV_WRITE_DONE_SIG);
+        i2cWriteDoneEvt-&gt;status = me-&gt;errorCode;
+        i2cWriteDoneEvt-&gt;bytes = 0;
+        i2cWriteDoneEvt-&gt;i2cDev = me-&gt;iDev;
+        QF_PUBLISH((QEvt *)i2cWriteDoneEvt, AO_I2C1DevMgr);
+    } else {
+        WRN_printf(&quot;Unimplemented I2C operation: %d, not sending a response\n&quot;, me-&gt;i2cDevOp);
+    }
 }</exit>
       <tran trig="I2C1_DEV_TIMEOUT" target="../../1">
        <action>ERR_printf(&quot;I2C1Dev timeout occurred with error: 0x%08x\n&quot;, me-&gt;errorCode);</action>
@@ -226,7 +239,7 @@ if ( I2C_OP_MEM_READ == me-&gt;i2cDevOp ) {
         <action box="-17,-2,16,2"/>
        </tran_glyph>
       </tran>
-      <tran trig="EEPROM_RAW_MEM_READ, EEPROM_SN_READ, EEPROM_EUI64_READ, EEPROM_RAW_MEM_WRITE">
+      <tran trig="I2C1_DEV_RAW_MEM_READ, I2C1_DEV_SN_READ, I2C1_DEV_EUI64_READ, I2C1_DEV_RAW_MEM_WRITE">
        <action>if (QEQueue_getNFree(&amp;me-&gt;deferredEvtQueue) &gt; 0) {
    /* defer the request - this event will be handled
     * when the state machine goes back to Idle state */
@@ -263,20 +276,16 @@ QACTIVE_POST(AO_I2CBusMgr[me-&gt;iBus], &amp;qEvt, me);
 DBG_printf(&quot;ActivePosted I2C_BUS_START_BIT\n&quot;);</entry>
        <exit>QTimeEvt_disarm(&amp;me-&gt;i2cOpTimerEvt);</exit>
        <tran trig="I2C_BUS_DONE">
+        <action>/* Remember the result of each event coming back from I2CBusMgr AO */
+me-&gt;errorCode = ((I2CStatusEvt const *)e)-&gt;errorCode;</action>
         <choice target="../../../../1">
          <guard>else</guard>
-         <action>me-&gt;errorCode = ((I2CStatusEvt const *)e)-&gt;errorCode;
-ERR_printf(
-    &quot;Got I2C_BUS_DONE with error: 0x%08x\n&quot;,
-    me-&gt;errorCode
-);</action>
          <choice_glyph conn="85,22,4,1,5,-58">
           <action box="0,2,10,2"/>
          </choice_glyph>
         </choice>
         <choice target="../../../4">
          <guard brief="NoErr?">ERR_NONE == ((I2CStatusEvt const *)e)-&gt;errorCode</guard>
-         <action>DBG_printf(&quot;Got I2C_BUS_DONE with no error\n&quot;);</action>
          <choice_glyph conn="85,22,5,3,5,1,3">
           <action box="1,-2,10,2"/>
          </choice_glyph>
@@ -309,20 +318,16 @@ i2cAddrEvt-&gt;i2cDirection = I2C_Direction_Transmitter;
 QACTIVE_POST(AO_I2CBusMgr[me-&gt;iBus], (QEvt *)i2cAddrEvt, me);</entry>
        <exit>QTimeEvt_disarm(&amp;me-&gt;i2cOpTimerEvt);</exit>
        <tran trig="I2C_BUS_DONE">
+        <action>/* Remember the result of each event coming back from I2CBusMgr AO */
+me-&gt;errorCode = ((I2CStatusEvt const *)e)-&gt;errorCode;</action>
         <choice target="../../../../1">
          <guard>else</guard>
-         <action>me-&gt;errorCode = ((I2CStatusEvt const *)e)-&gt;errorCode;
-ERR_printf(
-    &quot;Got I2C_BUS_DONE with error: 0x%08x\n&quot;,
-    me-&gt;errorCode
-);</action>
          <choice_glyph conn="107,22,4,1,6,-80">
           <action box="0,2,10,2"/>
          </choice_glyph>
         </choice>
         <choice target="../../../5">
          <guard brief="NoErr?">ERR_NONE == ((I2CStatusEvt const *)e)-&gt;errorCode</guard>
-         <action>DBG_printf(&quot;Got I2C_BUS_DONE with no error\n&quot;);</action>
          <choice_glyph conn="107,22,5,3,5,1,3">
           <action box="1,-2,10,2"/>
          </choice_glyph>
@@ -355,20 +360,16 @@ i2cAddrEvt-&gt;i2cDirection = I2C_Direction_Transmitter;
 QACTIVE_POST(AO_I2CBusMgr[me-&gt;iBus], (QEvt *)i2cAddrEvt, me);</entry>
        <exit>QTimeEvt_disarm(&amp;me-&gt;i2cOpTimerEvt);</exit>
        <tran trig="I2C_BUS_DONE">
+        <action>/* Remember the result of each event coming back from I2CBusMgr AO */
+me-&gt;errorCode = ((I2CStatusEvt const *)e)-&gt;errorCode;</action>
         <choice target="../../../../1">
          <guard>else</guard>
-         <action>me-&gt;errorCode = ((I2CStatusEvt const *)e)-&gt;errorCode;
-ERR_printf(
-    &quot;Got I2C_BUS_DONE with error: 0x%08x\n&quot;,
-    me-&gt;errorCode
-);</action>
          <choice_glyph conn="129,22,4,1,7,-102">
           <action box="0,2,10,2"/>
          </choice_glyph>
         </choice>
         <choice>
          <guard brief="NoErr?">ERR_NONE == ((I2CStatusEvt const *)e)-&gt;errorCode</guard>
-         <action>DBG_printf(&quot;Got I2C_BUS_DONE with no error\n&quot;);</action>
          <choice target="../../../../6">
           <guard brief="Read?">I2C_OP_MEM_READ == me-&gt;i2cDevOp || I2C_OP_REG_READ == me-&gt;i2cDevOp</guard>
           <choice_glyph conn="137,22,4,0,10,-86,2">
@@ -409,20 +410,16 @@ static QEvt const qEvt = { I2C_BUS_START_BIT_SIG, 0U, 0U };
 QACTIVE_POST(AO_I2CBusMgr[me-&gt;iBus], &amp;qEvt, me);</entry>
        <exit>QTimeEvt_disarm(&amp;me-&gt;i2cOpTimerEvt);</exit>
        <tran trig="I2C_BUS_DONE">
+        <action>/* Remember the result of each event coming back from I2CBusMgr AO */
+me-&gt;errorCode = ((I2CStatusEvt const *)e)-&gt;errorCode;</action>
         <choice target="../../../../1">
          <guard>else</guard>
-         <action>me-&gt;errorCode = ((I2CStatusEvt const *)e)-&gt;errorCode;
-ERR_printf(
-    &quot;Got I2C_BUS_DONE with error: 0x%08x\n&quot;,
-    me-&gt;errorCode
-);</action>
          <choice_glyph conn="63,44,4,1,5,-36">
           <action box="0,2,10,2"/>
          </choice_glyph>
         </choice>
         <choice target="../../../7">
          <guard brief="NoErr?">ERR_NONE == ((I2CStatusEvt const *)e)-&gt;errorCode</guard>
-         <action>DBG_printf(&quot;Got I2C_BUS_DONE with no error\n&quot;);</action>
          <choice_glyph conn="63,44,5,3,8,1,2">
           <action box="1,-2,10,2"/>
          </choice_glyph>
@@ -455,20 +452,16 @@ i2cAddrEvt-&gt;i2cDirection = I2C_Direction_Receiver;
 QACTIVE_POST(AO_I2CBusMgr[me-&gt;iBus], (QEvt *)i2cAddrEvt, me);</entry>
        <exit>QTimeEvt_disarm(&amp;me-&gt;i2cOpTimerEvt);</exit>
        <tran trig="I2C_BUS_DONE">
+        <action>/* Remember the result of each event coming back from I2CBusMgr AO */
+me-&gt;errorCode = ((I2CStatusEvt const *)e)-&gt;errorCode;</action>
         <choice target="../../../../1">
          <guard>else</guard>
-         <action>me-&gt;errorCode = ((I2CStatusEvt const *)e)-&gt;errorCode;
-ERR_printf(
-    &quot;Got I2C_BUS_DONE with error: 0x%08x\n&quot;,
-    me-&gt;errorCode
-);</action>
          <choice_glyph conn="87,44,4,1,6,-60">
           <action box="0,2,10,2"/>
          </choice_glyph>
         </choice>
         <choice target="../../../8">
          <guard brief="NoErr?">ERR_NONE == ((I2CStatusEvt const *)e)-&gt;errorCode</guard>
-         <action>DBG_printf(&quot;Got I2C_BUS_DONE with no error\n&quot;);</action>
          <choice_glyph conn="87,44,5,3,8,1,2">
           <action box="1,-2,10,2"/>
          </choice_glyph>
@@ -502,36 +495,30 @@ i2cReadMemEvt-&gt;bytes            = me-&gt;bytesTotal; //TODO: remember to fix 
 QACTIVE_POST(AO_I2CBusMgr[me-&gt;iBus], (QEvt *)i2cReadMemEvt, me);</entry>
        <exit>QTimeEvt_disarm(&amp;me-&gt;i2cOpTimerEvt);</exit>
        <tran trig="I2C_BUS_DONE">
+        <action>/* Remember the result of each event coming back from I2CBusMgr AO */
+me-&gt;errorCode = ((I2CStatusEvt const *)e)-&gt;errorCode;</action>
         <choice target="../../../../1">
          <guard>else</guard>
-         <action>me-&gt;errorCode = ((I2CStatusEvt const *)e)-&gt;errorCode;
-ERR_printf(
-    &quot;Got I2C_BUS_DONE with error: 0x%08x\n&quot;,
-    me-&gt;errorCode
-);</action>
          <choice_glyph conn="111,44,4,1,7,-84">
           <action box="0,2,10,2"/>
          </choice_glyph>
         </choice>
         <choice target="../../../../1">
          <guard brief="NoErr?">ERR_NONE == ((I2CBusDataEvt const *)e)-&gt;errorCode</guard>
-         <action>LOG_printf(&quot;Got I2C_BUS_DONE with no error\n&quot;);
-char tmp[120];
-memset(tmp, 0, sizeof(tmp));
-uint16_t tmpLen = 0;
-CBErrorCode err = CON_hexToStr(
-    (const uint8_t *)((I2CBusDataEvt const *)e)-&gt;dataBuf, // data to convert
-    ((I2CBusDataEvt const *)e)-&gt;dataLen, // length of data to convert
-    tmp,                                 // where to write output
-    sizeof(tmp),                         // max size of output buffer
-    &amp;tmpLen,                             // size of the resulting output
-    0,                                   // no columns
-    ' '                                  // separator
+         <action>/* Set this so the state machine remembers the result */
+me-&gt;errorCode = ERR_NONE;
+LOG_printf(&quot;Got I2C_BUS_DONE with no error\n&quot;);
+
+I2CReadDoneEvt *i2cReadDoneEvt = Q_NEW(I2CReadDoneEvt, I2C1_DEV_READ_DONE_SIG);
+i2cReadDoneEvt-&gt;status = me-&gt;errorCode;
+i2cReadDoneEvt-&gt;i2cDev = me-&gt;iDev;
+i2cReadDoneEvt-&gt;bytes  = ((I2CBusDataEvt const *)e)-&gt;dataLen;
+MEMCPY(
+    i2cReadDoneEvt-&gt;dataBuf,
+    ((I2CBusDataEvt const *)e)-&gt;dataBuf,
+    i2cReadDoneEvt-&gt;bytes
 );
-if ( ERR_NONE != err ) {
-    WRN_printf(&quot;Got an error converting hex array to string.  Error: 0x%08x\n&quot;, err);
-}
-LOG_printf(&quot;Read %s\n&quot;, tmp);</action>
+QF_PUBLISH((QEvt *)i2cReadDoneEvt, AO_I2C1DevMgr);</action>
          <choice_glyph conn="111,44,5,1,9,11,-93">
           <action box="1,-2,10,2"/>
          </choice_glyph>
@@ -571,36 +558,19 @@ DBG_printf(&quot;QACTPosting I2C_BUS_WRITE_MEM_SIG with %d bytes\n&quot;, i2cWri
 QACTIVE_POST(AO_I2CBusMgr[me-&gt;iBus], (QEvt *)i2cWriteMemReqEvt, me);</entry>
        <exit>QTimeEvt_disarm(&amp;me-&gt;i2cOpTimerEvt);</exit>
        <tran trig="I2C_BUS_DONE">
+        <action>/* Remember the result of each event coming back from I2CBusMgr AO */
+me-&gt;errorCode = ((I2CStatusEvt const *)e)-&gt;errorCode;</action>
         <choice target="../../../../1">
          <guard>else</guard>
-         <action>me-&gt;errorCode = ((I2CStatusEvt const *)e)-&gt;errorCode;
-ERR_printf(
-    &quot;Got I2C_BUS_DONE with error: 0x%08x\n&quot;,
-    me-&gt;errorCode
-);</action>
          <choice_glyph conn="158,22,4,1,8,-17,22,-114">
           <action box="-6,6,7,2"/>
          </choice_glyph>
         </choice>
         <choice target="../../../10">
          <guard brief="NoErr?">ERR_NONE == ((I2CBusDataEvt const *)e)-&gt;errorCode</guard>
-         <action>LOG_printf(&quot;Got I2C_BUS_DONE with no error\n&quot;);
-char tmp[120];
-memset(tmp, 0, sizeof(tmp));
-uint16_t tmpLen = 0;
-CBErrorCode err = CON_hexToStr(
-    (const uint8_t *)((I2CBusDataEvt const *)e)-&gt;dataBuf, // data to convert
-    ((I2CBusDataEvt const *)e)-&gt;dataLen, // length of data to convert
-    tmp,                                 // where to write output
-    sizeof(tmp),                         // max size of output buffer
-    &amp;tmpLen,                             // size of the resulting output
-    0,                                   // no columns
-    ' '                                  // separator
-);
-if ( ERR_NONE != err ) {
-    WRN_printf(&quot;Got an error converting hex array to string.  Error: 0x%08x\n&quot;, err);
-}
-LOG_printf(&quot;Read %s\n&quot;, tmp);</action>
+         <action>/* Set this so the state machine remembers the result */
+me-&gt;errorCode = ERR_NONE;
+LOG_printf(&quot;Got I2C_BUS_DONE with no error\n&quot;);</action>
          <choice_glyph conn="158,22,5,1,13,19,-2">
           <action box="1,-2,10,2"/>
          </choice_glyph>
@@ -617,11 +587,11 @@ LOG_printf(&quot;Read %s\n&quot;, tmp);</action>
       <state name="PostWriteWait">
        <entry>/* Set timer */
 QTimeEvt_rearm(
-    &amp;me-&gt;i2cOpTimerEvt,
+    &amp;me-&gt;i2cWriteTimerEvt,
     MS_TO_TICKS( HL_MAX_TIME_MS_I2C_POST_WRITE )
 );</entry>
        <exit>QTimeEvt_disarm(&amp;me-&gt;i2cWriteTimerEvt);</exit>
-       <tran trig="EEPROM_POST_WRITE_TIMER" target="../../../1">
+       <tran trig="I2C1_DEV_POST_WRITE_TIMER" target="../../../1">
         <action>LOG_printf(&quot;Write to EEPROM finished with error: 0x%08x\n&quot;, me-&gt;errorCode);</action>
         <tran_glyph conn="145,47,3,1,26,9,-144">
          <action box="0,-2,24,2"/>
@@ -653,20 +623,16 @@ QACTIVE_POST(AO_I2CBusMgr[me-&gt;iBus], (QEvt *)(i2cAddrEvt), me);
 DBG_printf(&quot;ActivePosted I2C_BUS_CHECK_FREE\n&quot;);</entry>
        <exit>QTimeEvt_disarm(&amp;me-&gt;i2cOpTimerEvt);</exit>
        <tran trig="I2C_BUS_DONE">
+        <action>/* Remember the result of each event coming back from I2CBusMgr AO */
+me-&gt;errorCode = ((I2CStatusEvt const *)e)-&gt;errorCode;</action>
         <choice target="../../../../1">
          <guard>else</guard>
-         <action>me-&gt;errorCode = ((I2CStatusEvt const *)e)-&gt;errorCode;
-ERR_printf(
-    &quot;Got I2C_BUS_DONE with error: 0x%08x\n&quot;,
-    me-&gt;errorCode
-);</action>
          <choice_glyph conn="63,22,4,1,4,-36">
           <action box="0,2,10,2"/>
          </choice_glyph>
         </choice>
         <choice target="../../../3">
-         <guard brief="NoErr?">ERR_NONE == ((I2CStatusEvt const *)e)-&gt;errorCode</guard>
-         <action>DBG_printf(&quot;Got I2C_BUS_DONE with no error\n&quot;);</action>
+         <guard brief="NoErr?">ERR_NONE == me-&gt;errorCode</guard>
          <choice_glyph conn="63,22,5,3,5,1,3">
           <action box="1,-2,10,2"/>
          </choice_glyph>
@@ -708,18 +674,18 @@ QActive_recall(
 
 DBG_printf(&quot;back in Idle\n&quot;);</entry>
       <exit>me-&gt;bytesCurr = 0; // Reset the current byte counter</exit>
-      <tran trig="EEPROM_RAW_MEM_READ" target="../../0/11">
-       <action>me-&gt;iDev = EEPROM; // Set which device is being accessed
-me-&gt;addrStart = ((I2CEEPROMReadReqEvt const *)e)-&gt;addr;
-me-&gt;addrSize  = I2C_getMemAddrSize(me-&gt;iDev);
-me-&gt;bytesTotal = ((I2CEEPROMReadReqEvt const *)e)-&gt;bytes;
-me-&gt;i2cDevOp = I2C_OP_MEM_READ;
-me-&gt;accessType = ((I2CEEPROMReadReqEvt const *)e)-&gt;accessType;</action>
+      <tran trig="I2C1_DEV_RAW_MEM_READ" target="../../0/11">
+       <action>me-&gt;iDev       = ((I2CReadReqEvt const *)e)-&gt;i2cDev;
+me-&gt;addrStart  = ((I2CReadReqEvt const *)e)-&gt;addr;
+me-&gt;bytesTotal = ((I2CReadReqEvt const *)e)-&gt;bytes;
+me-&gt;accessType = ((I2CReadReqEvt const *)e)-&gt;accessType;
+me-&gt;addrSize   = I2C_getMemAddrSize(me-&gt;iDev);
+me-&gt;i2cDevOp   = I2C_OP_MEM_READ;</action>
        <tran_glyph conn="6,15,3,3,43">
         <action box="0,-2,23,2"/>
        </tran_glyph>
       </tran>
-      <tran trig="EEPROM_SN_READ" target="../../0/11">
+      <tran trig="I2C1_DEV_SN_READ" target="../../0/11">
        <action>me-&gt;iDev = SN_ROM; // Set which device is being accessed
 me-&gt;addrStart = I2C_getMinMemAddr(me-&gt;iDev);
 me-&gt;addrSize  = I2C_getMemAddrSize(me-&gt;iDev);
@@ -729,7 +695,7 @@ me-&gt;i2cDevOp = I2C_OP_MEM_READ;</action>
         <action box="0,-2,17,2"/>
        </tran_glyph>
       </tran>
-      <tran trig="EEPROM_EUI64_READ" target="../../0/11">
+      <tran trig="I2C1_DEV_EUI64_READ" target="../../0/11">
        <action>me-&gt;iDev = EUI_ROM; // Set which device is being accessed
 me-&gt;addrStart = I2C_getMinMemAddr(me-&gt;iDev);
 me-&gt;addrSize  = I2C_getMemAddrSize(me-&gt;iDev);
@@ -739,18 +705,18 @@ me-&gt;i2cDevOp = I2C_OP_MEM_READ;</action>
         <action box="0,-2,17,2"/>
        </tran_glyph>
       </tran>
-      <tran trig="EEPROM_RAW_MEM_WRITE" target="../../0/11">
-       <action>me-&gt;iDev = EEPROM; // Set which device is being accessed
-me-&gt;addrStart = ((I2CEEPROMWriteReqEvt const *)e)-&gt;addr;
+      <tran trig="I2C1_DEV_RAW_MEM_WRITE" target="../../0/11">
+       <action>me-&gt;iDev = ((I2CWriteReqEvt const *)e)-&gt;i2cDev;
+me-&gt;addrStart = ((I2CWriteReqEvt const *)e)-&gt;addr;
 me-&gt;addrSize  = I2C_getMemAddrSize(me-&gt;iDev);
-me-&gt;bytesTotal = ((I2CEEPROMWriteReqEvt const *)e)-&gt;bytes;
+me-&gt;bytesTotal = ((I2CWriteReqEvt const *)e)-&gt;bytes;
 me-&gt;i2cDevOp = I2C_OP_MEM_WRITE;
 MEMCPY(
     me-&gt;dataBuf,
-    ((I2CEEPROMWriteReqEvt const *)e)-&gt;dataBuf,
+    ((I2CWriteReqEvt const *)e)-&gt;dataBuf,
     me-&gt;bytesTotal
 );
-me-&gt;accessType = ((I2CEEPROMWriteReqEvt const *)e)-&gt;accessType;</action>
+me-&gt;accessType = ((I2CWriteReqEvt const *)e)-&gt;accessType;</action>
        <tran_glyph conn="6,21,3,3,43">
         <action box="0,-2,22,2"/>
        </tran_glyph>
@@ -783,7 +749,7 @@ me-&gt;accessType = ((I2CEEPROMWriteReqEvt const *)e)-&gt;accessType;</action>
 QActive_ctor( &amp;me-&gt;super, (QStateHandler)&amp;I2C1DevMgr_initial );
 QTimeEvt_ctor( &amp;me-&gt;i2cTimerEvt, I2C1_DEV_TIMEOUT_SIG );
 QTimeEvt_ctor( &amp;me-&gt;i2cOpTimerEvt, I2C1_DEV_OP_TIMEOUT_SIG );
-QTimeEvt_ctor( &amp;me-&gt;i2cWriteTimerEvt, EEPROM_POST_WRITE_TIMER_SIG );
+QTimeEvt_ctor( &amp;me-&gt;i2cWriteTimerEvt, I2C1_DEV_POST_WRITE_TIMER_SIG );
 
 /* Initialize the deferred event queue and storage for it */
 QEQueue_init(

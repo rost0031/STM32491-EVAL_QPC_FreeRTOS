@@ -231,7 +231,9 @@ void CON_slow_output(
  * @param [in] outputNColumns: uint8_t number of columns to break up the
  * resulting string into with newlines. If set to zero, a single long row is
  * returned without any newlines.
- * @param [in] char that will be used to separate all the printed hex numbers.
+ * @param [in] sep: char that will be used to separate all the printed hex numbers.
+ * @param [in] bPrintX: bool that specifies whether to print 0x in front of each
+ * hex number.
  * @return CBErrorCode: ERR_NONE if OK.
  */
 CBErrorCode CON_hexToStr(
@@ -241,7 +243,8 @@ CBErrorCode CON_hexToStr(
       uint16_t strDataBufferSize,
       uint16_t* strDataLen,
       uint8_t outputNColumns,
-      const char sep
+      const char sep,
+      const bool bPrintX
 );
 
 /**

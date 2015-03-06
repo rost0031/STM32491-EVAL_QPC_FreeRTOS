@@ -206,7 +206,7 @@ void I2C1DevMgr_ctor(void) {
     QActive_ctor( &me->super, (QStateHandler)&I2C1DevMgr_initial );
     QTimeEvt_ctor( &me->i2cTimerEvt, I2C1_DEV_TIMEOUT_SIG );
     QTimeEvt_ctor( &me->i2cOpTimerEvt, I2C1_DEV_OP_TIMEOUT_SIG );
-    QTimeEvt_ctor( &me->i2cWriteTimerEvt, EEPROM_POST_WRITE_TIMER_SIG );
+    QTimeEvt_ctor( &me->i2cWriteTimerEvt, I2C1_DEV_POST_WRITE_TIMER_SIG );
 
     /* Initialize the deferred event queue and storage for it */
     QEQueue_init(
@@ -241,10 +241,10 @@ static QState I2C1DevMgr_initial(I2C1DevMgr * const me, QEvt const * const e) {
     QS_FUN_DICTIONARY(&I2C1DevMgr_Active);
     QS_FUN_DICTIONARY(&I2C1DevMgr_Idle);
 
-    QActive_subscribe((QActive *)me, EEPROM_SN_READ_SIG);
-    QActive_subscribe((QActive *)me, EEPROM_EUI64_READ_SIG);
-    QActive_subscribe((QActive *)me, EEPROM_RAW_MEM_WRITE_SIG);
-    QActive_subscribe((QActive *)me, EEPROM_RAW_MEM_READ_SIG);
+    QActive_subscribe((QActive *)me, I2C1_DEV_SN_READ_SIG);
+    QActive_subscribe((QActive *)me, I2C1_DEV_EUI64_READ_SIG);
+    QActive_subscribe((QActive *)me, I2C1_DEV_RAW_MEM_WRITE_SIG);
+    QActive_subscribe((QActive *)me, I2C1_DEV_RAW_MEM_READ_SIG);
 
     me->accessType = ACCESS_QPC; /* Init to safe value */
     return Q_TRAN(&I2C1DevMgr_Idle);
@@ -325,6 +325,27 @@ static QState I2C1DevMgr_Busy(I2C1DevMgr * const me, QEvt const * const e) {
         /* ${AOs::I2C1DevMgr::SM::Active::Busy} */
         case Q_EXIT_SIG: {
             QTimeEvt_disarm( &me->i2cTimerEvt ); /* Disarm timer on exit */
+
+            /* If an error occurred, figure out what operation was being
+               done and send the appropriate done event */
+            if ( ERR_NONE != me->errorCode ) {
+                ERR_printf("Exiting busy state with error code: 0x%08x\n", me->errorCode);
+                if ( I2C_OP_MEM_READ == me->i2cDevOp ) {
+                    I2CReadDoneEvt *i2cReadDoneEvt = Q_NEW(I2CReadDoneEvt, I2C1_DEV_READ_DONE_SIG);
+                    i2cReadDoneEvt->status = me->errorCode;
+                    i2cReadDoneEvt->bytes = 0;
+                    i2cReadDoneEvt->i2cDev = me->iDev;
+                    QF_PUBLISH((QEvt *)i2cReadDoneEvt, AO_I2C1DevMgr);
+                } else if ( I2C_OP_MEM_WRITE == me->i2cDevOp ) {
+                    I2CWriteDoneEvt *i2cWriteDoneEvt = Q_NEW(I2CWriteDoneEvt, I2C1_DEV_WRITE_DONE_SIG);
+                    i2cWriteDoneEvt->status = me->errorCode;
+                    i2cWriteDoneEvt->bytes = 0;
+                    i2cWriteDoneEvt->i2cDev = me->iDev;
+                    QF_PUBLISH((QEvt *)i2cWriteDoneEvt, AO_I2C1DevMgr);
+                } else {
+                    WRN_printf("Unimplemented I2C operation: %d, not sending a response\n", me->i2cDevOp);
+                }
+            }
             status_ = Q_HANDLED();
             break;
         }
@@ -334,11 +355,11 @@ static QState I2C1DevMgr_Busy(I2C1DevMgr * const me, QEvt const * const e) {
             status_ = Q_TRAN(&I2C1DevMgr_Idle);
             break;
         }
-        /* ${AOs::I2C1DevMgr::SM::Active::Busy::EEPROM_RAW_MEM_READ, EEPROM_SN_READ, EEPROM_EUI64_READ, EEPROM_RAW_MEM_WRITE} */
-        case EEPROM_RAW_MEM_READ_SIG: /* intentionally fall through */
-        case EEPROM_SN_READ_SIG: /* intentionally fall through */
-        case EEPROM_EUI64_READ_SIG: /* intentionally fall through */
-        case EEPROM_RAW_MEM_WRITE_SIG: {
+        /* ${AOs::I2C1DevMgr::SM::Active::Busy::I2C1_DEV_RAW_MEM_READ, I2C1_DEV_SN_READ, I2C1_DEV_EUI64_READ, I2C1_DEV_RAW_MEM_WRITE} */
+        case I2C1_DEV_RAW_MEM_READ_SIG: /* intentionally fall through */
+        case I2C1_DEV_SN_READ_SIG: /* intentionally fall through */
+        case I2C1_DEV_EUI64_READ_SIG: /* intentionally fall through */
+        case I2C1_DEV_RAW_MEM_WRITE_SIG: {
             if (QEQueue_getNFree(&me->deferredEvtQueue) > 0) {
                /* defer the request - this event will be handled
                 * when the state machine goes back to Idle state */
@@ -395,18 +416,14 @@ static QState I2C1DevMgr_GenerateStart(I2C1DevMgr * const me, QEvt const * const
         }
         /* ${AOs::I2C1DevMgr::SM::Active::Busy::GenerateStart::I2C_BUS_DONE} */
         case I2C_BUS_DONE_SIG: {
+            /* Remember the result of each event coming back from I2CBusMgr AO */
+            me->errorCode = ((I2CStatusEvt const *)e)->errorCode;
             /* ${AOs::I2C1DevMgr::SM::Active::Busy::GenerateStart::I2C_BUS_DONE::[NoErr?]} */
             if (ERR_NONE == ((I2CStatusEvt const *)e)->errorCode) {
-                DBG_printf("Got I2C_BUS_DONE with no error\n");
                 status_ = Q_TRAN(&I2C1DevMgr_Send7BitAddrTxMode);
             }
             /* ${AOs::I2C1DevMgr::SM::Active::Busy::GenerateStart::I2C_BUS_DONE::[else]} */
             else {
-                me->errorCode = ((I2CStatusEvt const *)e)->errorCode;
-                ERR_printf(
-                    "Got I2C_BUS_DONE with error: 0x%08x\n",
-                    me->errorCode
-                );
                 status_ = Q_TRAN(&I2C1DevMgr_Idle);
             }
             break;
@@ -451,18 +468,14 @@ static QState I2C1DevMgr_Send7BitAddrTxMode(I2C1DevMgr * const me, QEvt const * 
         }
         /* ${AOs::I2C1DevMgr::SM::Active::Busy::Send7BitAddrTxMode::I2C_BUS_DONE} */
         case I2C_BUS_DONE_SIG: {
+            /* Remember the result of each event coming back from I2CBusMgr AO */
+            me->errorCode = ((I2CStatusEvt const *)e)->errorCode;
             /* ${AOs::I2C1DevMgr::SM::Active::Busy::Send7BitAddrTxMode::I2C_BUS_DONE::[NoErr?]} */
             if (ERR_NONE == ((I2CStatusEvt const *)e)->errorCode) {
-                DBG_printf("Got I2C_BUS_DONE with no error\n");
                 status_ = Q_TRAN(&I2C1DevMgr_SendInternalAddr);
             }
             /* ${AOs::I2C1DevMgr::SM::Active::Busy::Send7BitAddrTxMode::I2C_BUS_DONE::[else]} */
             else {
-                me->errorCode = ((I2CStatusEvt const *)e)->errorCode;
-                ERR_printf(
-                    "Got I2C_BUS_DONE with error: 0x%08x\n",
-                    me->errorCode
-                );
                 status_ = Q_TRAN(&I2C1DevMgr_Idle);
             }
             break;
@@ -507,9 +520,10 @@ static QState I2C1DevMgr_SendInternalAddr(I2C1DevMgr * const me, QEvt const * co
         }
         /* ${AOs::I2C1DevMgr::SM::Active::Busy::SendInternalAddr::I2C_BUS_DONE} */
         case I2C_BUS_DONE_SIG: {
+            /* Remember the result of each event coming back from I2CBusMgr AO */
+            me->errorCode = ((I2CStatusEvt const *)e)->errorCode;
             /* ${AOs::I2C1DevMgr::SM::Active::Busy::SendInternalAddr::I2C_BUS_DONE::[NoErr?]} */
             if (ERR_NONE == ((I2CStatusEvt const *)e)->errorCode) {
-                DBG_printf("Got I2C_BUS_DONE with no error\n");
                 /* ${AOs::I2C1DevMgr::SM::Active::Busy::SendInternalAddr::I2C_BUS_DONE::[NoErr?]::[Read?]} */
                 if (I2C_OP_MEM_READ == me->i2cDevOp || I2C_OP_REG_READ == me->i2cDevOp) {
                     status_ = Q_TRAN(&I2C1DevMgr_GenerateStart1);
@@ -524,11 +538,6 @@ static QState I2C1DevMgr_SendInternalAddr(I2C1DevMgr * const me, QEvt const * co
             }
             /* ${AOs::I2C1DevMgr::SM::Active::Busy::SendInternalAddr::I2C_BUS_DONE::[else]} */
             else {
-                me->errorCode = ((I2CStatusEvt const *)e)->errorCode;
-                ERR_printf(
-                    "Got I2C_BUS_DONE with error: 0x%08x\n",
-                    me->errorCode
-                );
                 status_ = Q_TRAN(&I2C1DevMgr_Idle);
             }
             break;
@@ -569,18 +578,14 @@ static QState I2C1DevMgr_GenerateStart1(I2C1DevMgr * const me, QEvt const * cons
         }
         /* ${AOs::I2C1DevMgr::SM::Active::Busy::GenerateStart1::I2C_BUS_DONE} */
         case I2C_BUS_DONE_SIG: {
+            /* Remember the result of each event coming back from I2CBusMgr AO */
+            me->errorCode = ((I2CStatusEvt const *)e)->errorCode;
             /* ${AOs::I2C1DevMgr::SM::Active::Busy::GenerateStart1::I2C_BUS_DONE::[NoErr?]} */
             if (ERR_NONE == ((I2CStatusEvt const *)e)->errorCode) {
-                DBG_printf("Got I2C_BUS_DONE with no error\n");
                 status_ = Q_TRAN(&I2C1DevMgr_Send7BitAddrRxMode);
             }
             /* ${AOs::I2C1DevMgr::SM::Active::Busy::GenerateStart1::I2C_BUS_DONE::[else]} */
             else {
-                me->errorCode = ((I2CStatusEvt const *)e)->errorCode;
-                ERR_printf(
-                    "Got I2C_BUS_DONE with error: 0x%08x\n",
-                    me->errorCode
-                );
                 status_ = Q_TRAN(&I2C1DevMgr_Idle);
             }
             break;
@@ -625,18 +630,14 @@ static QState I2C1DevMgr_Send7BitAddrRxMode(I2C1DevMgr * const me, QEvt const * 
         }
         /* ${AOs::I2C1DevMgr::SM::Active::Busy::Send7BitAddrRxMode::I2C_BUS_DONE} */
         case I2C_BUS_DONE_SIG: {
+            /* Remember the result of each event coming back from I2CBusMgr AO */
+            me->errorCode = ((I2CStatusEvt const *)e)->errorCode;
             /* ${AOs::I2C1DevMgr::SM::Active::Busy::Send7BitAddrRxMode::I2C_BUS_DONE::[NoErr?]} */
             if (ERR_NONE == ((I2CStatusEvt const *)e)->errorCode) {
-                DBG_printf("Got I2C_BUS_DONE with no error\n");
                 status_ = Q_TRAN(&I2C1DevMgr_ReadMem);
             }
             /* ${AOs::I2C1DevMgr::SM::Active::Busy::Send7BitAddrRxMode::I2C_BUS_DONE::[else]} */
             else {
-                me->errorCode = ((I2CStatusEvt const *)e)->errorCode;
-                ERR_printf(
-                    "Got I2C_BUS_DONE with error: 0x%08x\n",
-                    me->errorCode
-                );
                 status_ = Q_TRAN(&I2C1DevMgr_Idle);
             }
             break;
@@ -682,34 +683,28 @@ static QState I2C1DevMgr_ReadMem(I2C1DevMgr * const me, QEvt const * const e) {
         }
         /* ${AOs::I2C1DevMgr::SM::Active::Busy::ReadMem::I2C_BUS_DONE} */
         case I2C_BUS_DONE_SIG: {
+            /* Remember the result of each event coming back from I2CBusMgr AO */
+            me->errorCode = ((I2CStatusEvt const *)e)->errorCode;
             /* ${AOs::I2C1DevMgr::SM::Active::Busy::ReadMem::I2C_BUS_DONE::[NoErr?]} */
             if (ERR_NONE == ((I2CBusDataEvt const *)e)->errorCode) {
+                /* Set this so the state machine remembers the result */
+                me->errorCode = ERR_NONE;
                 LOG_printf("Got I2C_BUS_DONE with no error\n");
-                char tmp[120];
-                memset(tmp, 0, sizeof(tmp));
-                uint16_t tmpLen = 0;
-                CBErrorCode err = CON_hexToStr(
-                    (const uint8_t *)((I2CBusDataEvt const *)e)->dataBuf, // data to convert
-                    ((I2CBusDataEvt const *)e)->dataLen, // length of data to convert
-                    tmp,                                 // where to write output
-                    sizeof(tmp),                         // max size of output buffer
-                    &tmpLen,                             // size of the resulting output
-                    0,                                   // no columns
-                    ' '                                  // separator
+
+                I2CReadDoneEvt *i2cReadDoneEvt = Q_NEW(I2CReadDoneEvt, I2C1_DEV_READ_DONE_SIG);
+                i2cReadDoneEvt->status = me->errorCode;
+                i2cReadDoneEvt->i2cDev = me->iDev;
+                i2cReadDoneEvt->bytes  = ((I2CBusDataEvt const *)e)->dataLen;
+                MEMCPY(
+                    i2cReadDoneEvt->dataBuf,
+                    ((I2CBusDataEvt const *)e)->dataBuf,
+                    i2cReadDoneEvt->bytes
                 );
-                if ( ERR_NONE != err ) {
-                    WRN_printf("Got an error converting hex array to string.  Error: 0x%08x\n", err);
-                }
-                LOG_printf("Read %s\n", tmp);
+                QF_PUBLISH((QEvt *)i2cReadDoneEvt, AO_I2C1DevMgr);
                 status_ = Q_TRAN(&I2C1DevMgr_Idle);
             }
             /* ${AOs::I2C1DevMgr::SM::Active::Busy::ReadMem::I2C_BUS_DONE::[else]} */
             else {
-                me->errorCode = ((I2CStatusEvt const *)e)->errorCode;
-                ERR_printf(
-                    "Got I2C_BUS_DONE with error: 0x%08x\n",
-                    me->errorCode
-                );
                 status_ = Q_TRAN(&I2C1DevMgr_Idle);
             }
             break;
@@ -761,34 +756,17 @@ static QState I2C1DevMgr_WriteMem(I2C1DevMgr * const me, QEvt const * const e) {
         }
         /* ${AOs::I2C1DevMgr::SM::Active::Busy::WriteMem::I2C_BUS_DONE} */
         case I2C_BUS_DONE_SIG: {
+            /* Remember the result of each event coming back from I2CBusMgr AO */
+            me->errorCode = ((I2CStatusEvt const *)e)->errorCode;
             /* ${AOs::I2C1DevMgr::SM::Active::Busy::WriteMem::I2C_BUS_DONE::[NoErr?]} */
             if (ERR_NONE == ((I2CBusDataEvt const *)e)->errorCode) {
+                /* Set this so the state machine remembers the result */
+                me->errorCode = ERR_NONE;
                 LOG_printf("Got I2C_BUS_DONE with no error\n");
-                char tmp[120];
-                memset(tmp, 0, sizeof(tmp));
-                uint16_t tmpLen = 0;
-                CBErrorCode err = CON_hexToStr(
-                    (const uint8_t *)((I2CBusDataEvt const *)e)->dataBuf, // data to convert
-                    ((I2CBusDataEvt const *)e)->dataLen, // length of data to convert
-                    tmp,                                 // where to write output
-                    sizeof(tmp),                         // max size of output buffer
-                    &tmpLen,                             // size of the resulting output
-                    0,                                   // no columns
-                    ' '                                  // separator
-                );
-                if ( ERR_NONE != err ) {
-                    WRN_printf("Got an error converting hex array to string.  Error: 0x%08x\n", err);
-                }
-                LOG_printf("Read %s\n", tmp);
                 status_ = Q_TRAN(&I2C1DevMgr_PostWriteWait);
             }
             /* ${AOs::I2C1DevMgr::SM::Active::Busy::WriteMem::I2C_BUS_DONE::[else]} */
             else {
-                me->errorCode = ((I2CStatusEvt const *)e)->errorCode;
-                ERR_printf(
-                    "Got I2C_BUS_DONE with error: 0x%08x\n",
-                    me->errorCode
-                );
                 status_ = Q_TRAN(&I2C1DevMgr_Idle);
             }
             break;
@@ -808,7 +786,7 @@ static QState I2C1DevMgr_PostWriteWait(I2C1DevMgr * const me, QEvt const * const
         case Q_ENTRY_SIG: {
             /* Set timer */
             QTimeEvt_rearm(
-                &me->i2cOpTimerEvt,
+                &me->i2cWriteTimerEvt,
                 MS_TO_TICKS( HL_MAX_TIME_MS_I2C_POST_WRITE )
             );
             status_ = Q_HANDLED();
@@ -820,8 +798,8 @@ static QState I2C1DevMgr_PostWriteWait(I2C1DevMgr * const me, QEvt const * const
             status_ = Q_HANDLED();
             break;
         }
-        /* ${AOs::I2C1DevMgr::SM::Active::Busy::PostWriteWait::EEPROM_POST_WRITE_TIMER} */
-        case EEPROM_POST_WRITE_TIMER_SIG: {
+        /* ${AOs::I2C1DevMgr::SM::Active::Busy::PostWriteWait::I2C1_DEV_POST_WRITE_TIMER} */
+        case I2C1_DEV_POST_WRITE_TIMER_SIG: {
             LOG_printf("Write to EEPROM finished with error: 0x%08x\n", me->errorCode);
             status_ = Q_TRAN(&I2C1DevMgr_Idle);
             break;
@@ -868,18 +846,14 @@ static QState I2C1DevMgr_CheckingBus(I2C1DevMgr * const me, QEvt const * const e
         }
         /* ${AOs::I2C1DevMgr::SM::Active::Busy::CheckingBus::I2C_BUS_DONE} */
         case I2C_BUS_DONE_SIG: {
+            /* Remember the result of each event coming back from I2CBusMgr AO */
+            me->errorCode = ((I2CStatusEvt const *)e)->errorCode;
             /* ${AOs::I2C1DevMgr::SM::Active::Busy::CheckingBus::I2C_BUS_DONE::[NoErr?]} */
-            if (ERR_NONE == ((I2CStatusEvt const *)e)->errorCode) {
-                DBG_printf("Got I2C_BUS_DONE with no error\n");
+            if (ERR_NONE == me->errorCode) {
                 status_ = Q_TRAN(&I2C1DevMgr_GenerateStart);
             }
             /* ${AOs::I2C1DevMgr::SM::Active::Busy::CheckingBus::I2C_BUS_DONE::[else]} */
             else {
-                me->errorCode = ((I2CStatusEvt const *)e)->errorCode;
-                ERR_printf(
-                    "Got I2C_BUS_DONE with error: 0x%08x\n",
-                    me->errorCode
-                );
                 status_ = Q_TRAN(&I2C1DevMgr_Idle);
             }
             break;
@@ -928,19 +902,19 @@ static QState I2C1DevMgr_Idle(I2C1DevMgr * const me, QEvt const * const e) {
             status_ = Q_HANDLED();
             break;
         }
-        /* ${AOs::I2C1DevMgr::SM::Active::Idle::EEPROM_RAW_MEM_READ} */
-        case EEPROM_RAW_MEM_READ_SIG: {
-            me->iDev = EEPROM; // Set which device is being accessed
-            me->addrStart = ((I2CEEPROMReadReqEvt const *)e)->addr;
-            me->addrSize  = I2C_getMemAddrSize(me->iDev);
-            me->bytesTotal = ((I2CEEPROMReadReqEvt const *)e)->bytes;
-            me->i2cDevOp = I2C_OP_MEM_READ;
-            me->accessType = ((I2CEEPROMReadReqEvt const *)e)->accessType;
+        /* ${AOs::I2C1DevMgr::SM::Active::Idle::I2C1_DEV_RAW_MEM_READ} */
+        case I2C1_DEV_RAW_MEM_READ_SIG: {
+            me->iDev       = ((I2CReadReqEvt const *)e)->i2cDev;
+            me->addrStart  = ((I2CReadReqEvt const *)e)->addr;
+            me->bytesTotal = ((I2CReadReqEvt const *)e)->bytes;
+            me->accessType = ((I2CReadReqEvt const *)e)->accessType;
+            me->addrSize   = I2C_getMemAddrSize(me->iDev);
+            me->i2cDevOp   = I2C_OP_MEM_READ;
             status_ = Q_TRAN(&I2C1DevMgr_CheckingBus);
             break;
         }
-        /* ${AOs::I2C1DevMgr::SM::Active::Idle::EEPROM_SN_READ} */
-        case EEPROM_SN_READ_SIG: {
+        /* ${AOs::I2C1DevMgr::SM::Active::Idle::I2C1_DEV_SN_READ} */
+        case I2C1_DEV_SN_READ_SIG: {
             me->iDev = SN_ROM; // Set which device is being accessed
             me->addrStart = I2C_getMinMemAddr(me->iDev);
             me->addrSize  = I2C_getMemAddrSize(me->iDev);
@@ -949,8 +923,8 @@ static QState I2C1DevMgr_Idle(I2C1DevMgr * const me, QEvt const * const e) {
             status_ = Q_TRAN(&I2C1DevMgr_CheckingBus);
             break;
         }
-        /* ${AOs::I2C1DevMgr::SM::Active::Idle::EEPROM_EUI64_READ} */
-        case EEPROM_EUI64_READ_SIG: {
+        /* ${AOs::I2C1DevMgr::SM::Active::Idle::I2C1_DEV_EUI64_READ} */
+        case I2C1_DEV_EUI64_READ_SIG: {
             me->iDev = EUI_ROM; // Set which device is being accessed
             me->addrStart = I2C_getMinMemAddr(me->iDev);
             me->addrSize  = I2C_getMemAddrSize(me->iDev);
@@ -959,19 +933,19 @@ static QState I2C1DevMgr_Idle(I2C1DevMgr * const me, QEvt const * const e) {
             status_ = Q_TRAN(&I2C1DevMgr_CheckingBus);
             break;
         }
-        /* ${AOs::I2C1DevMgr::SM::Active::Idle::EEPROM_RAW_MEM_WRITE} */
-        case EEPROM_RAW_MEM_WRITE_SIG: {
-            me->iDev = EEPROM; // Set which device is being accessed
-            me->addrStart = ((I2CEEPROMWriteReqEvt const *)e)->addr;
+        /* ${AOs::I2C1DevMgr::SM::Active::Idle::I2C1_DEV_RAW_MEM_WRITE} */
+        case I2C1_DEV_RAW_MEM_WRITE_SIG: {
+            me->iDev = ((I2CWriteReqEvt const *)e)->i2cDev;
+            me->addrStart = ((I2CWriteReqEvt const *)e)->addr;
             me->addrSize  = I2C_getMemAddrSize(me->iDev);
-            me->bytesTotal = ((I2CEEPROMWriteReqEvt const *)e)->bytes;
+            me->bytesTotal = ((I2CWriteReqEvt const *)e)->bytes;
             me->i2cDevOp = I2C_OP_MEM_WRITE;
             MEMCPY(
                 me->dataBuf,
-                ((I2CEEPROMWriteReqEvt const *)e)->dataBuf,
+                ((I2CWriteReqEvt const *)e)->dataBuf,
                 me->bytesTotal
             );
-            me->accessType = ((I2CEEPROMWriteReqEvt const *)e)->accessType;
+            me->accessType = ((I2CWriteReqEvt const *)e)->accessType;
             status_ = Q_TRAN(&I2C1DevMgr_CheckingBus);
             break;
         }

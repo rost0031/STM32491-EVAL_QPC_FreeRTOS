@@ -36,7 +36,7 @@ DBG_DEFINE_THIS_MODULE( DBG_MODL_GENERAL ); /* For debug system to ID this modul
 
 /* Private typedefs ----------------------------------------------------------*/
 /* Private defines -----------------------------------------------------------*/
-#define THREAD_STACK_SIZE  1024U
+#define THREAD_STACK_SIZE  1024U * 2
 
 /* Private macros ------------------------------------------------------------*/
 /* Private variables and Local objects ---------------------------------------*/
@@ -57,7 +57,7 @@ static union SmallEvents {
     void   *e0;                                       /* minimum event size */
     uint8_t e1[sizeof(QEvt)];
     uint8_t e2[sizeof(I2CStatusEvt)];
-    uint8_t e3[sizeof(I2CEEPROMReadReqEvt)];
+    uint8_t e3[sizeof(I2CReadReqEvt)];
 } l_smlPoolSto[50];                     /* storage for the small event pool */
 
 /**
@@ -69,8 +69,6 @@ static union MediumEvents {
     uint8_t e1[sizeof(MenuEvt)];
     uint8_t e2[sizeof(I2CAddrEvt)];
     uint8_t e3[sizeof(I2CReadMemReqEvt)];
-    uint8_t e4[sizeof(I2CDevRegWriteReqEvt)];
-    uint8_t e5[sizeof(I2CDevRegReadReqEvt)];
 } l_medPoolSto[50];                    /* storage for the medium event pool */
 
 /**
@@ -82,7 +80,7 @@ static union LargeEvents {
     uint8_t e1[sizeof(MsgEvt)];
     uint8_t e2[sizeof(EthEvt)];
     uint8_t e3[sizeof(LrgDataEvt)];
-    uint8_t e4[sizeof(I2CEEPROMWriteReqEvt)];
+    uint8_t e4[sizeof(I2CWriteReqEvt)];
 } l_lrgPoolSto[100];                    /* storage for the large event pool */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -243,7 +241,7 @@ int main(void)
     QACTIVE_START(AO_DbgMgr,
           DBG_MGR_PRIORITY,                                       /* priority */
           l_DbgMgrQueueSto, Q_DIM(l_DbgMgrQueueSto),             /* evt queue */
-          (void *)0, THREAD_STACK_SIZE,              /* per-thread stack size */
+          (void *)0, THREAD_STACK_SIZE,         /* per-thread stack size */
           (QEvt *)0,                               /* no initialization event */
           "DbgMgr"                                        /* Name of the task */
     );

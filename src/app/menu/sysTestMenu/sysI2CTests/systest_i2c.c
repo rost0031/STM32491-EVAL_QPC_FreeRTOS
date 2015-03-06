@@ -62,11 +62,11 @@ void MENU_i2cEEPROMReadTestAction(
     * is not subscribed to by default to avoid printing out every single I2C
     * read request sent to the I2C1DevMgr.  As soon as the signal handler for
     * this event gets triggerred in DbgMgr AO, it will unsubscribe from it. */
-   QActive_subscribe(AO_DbgMgr, EEPROM_READ_DONE_SIG);
+   QActive_subscribe(AO_DbgMgr, I2C1_DEV_READ_DONE_SIG);
 
    MENU_printf(dst, "Running an EEPROM read test. Reading %d bytes from 0x%02x\n", bytes, memAddr);
    /* Publish event to start an EEPROM read */
-   I2CEEPROMReadReqEvt *i2cEERPOMReadReqEvt = Q_NEW(I2CEEPROMReadReqEvt, EEPROM_RAW_MEM_READ_SIG);
+   I2CReadReqEvt *i2cEERPOMReadReqEvt = Q_NEW(I2CReadReqEvt, I2C1_DEV_RAW_MEM_READ_SIG);
    i2cEERPOMReadReqEvt->addr = memAddr;
    i2cEERPOMReadReqEvt->bytes  = bytes;
    i2cEERPOMReadReqEvt->accessType = ACCESS_QPC;
@@ -84,7 +84,7 @@ void MENU_i2cSNReadTestAction(
    CB_UNUSED_ARG(dataLen);
    MENU_printf(dst, "Running an Serial Number Read test...\n");
    /* Publish event to start an Serial Number read */
-   QEvt *qEvt = Q_NEW(QEvt, EEPROM_SN_READ_SIG);
+   QEvt *qEvt = Q_NEW(QEvt, I2C1_DEV_SN_READ_SIG);
    QF_PUBLISH((QEvent *)qEvt, AO_DbgMgr);
 }
 
@@ -99,7 +99,7 @@ void MENU_i2cEUI64ReadTestAction(
    CB_UNUSED_ARG(dataLen);
    MENU_printf(dst, "Running an UIE (64-bit) Read test...\n");
    /* Publish event to start an Serial Number read */
-   QEvt *qEvt = Q_NEW(QEvt, EEPROM_EUI64_READ_SIG);
+   QEvt *qEvt = Q_NEW(QEvt, I2C1_DEV_EUI64_READ_SIG);
    QF_PUBLISH((QEvent *)qEvt, AO_DbgMgr);
 }
 
@@ -121,7 +121,7 @@ void MENU_i2cEEPROMWriteTestAction(
    }
    MENU_printf(dst, "Running an EEPROM write test. Writing %d bytes to 0x%02x\n", bytes, memAddr);
    /* Publish event to start an EEPROM read */
-   I2CEEPROMWriteReqEvt *i2cEERPOMWriteReqEvt = Q_NEW(I2CEEPROMWriteReqEvt, EEPROM_RAW_MEM_WRITE_SIG);
+   I2CWriteReqEvt *i2cEERPOMWriteReqEvt = Q_NEW(I2CWriteReqEvt, I2C1_DEV_RAW_MEM_WRITE_SIG);
    i2cEERPOMWriteReqEvt->addr = memAddr;
    i2cEERPOMWriteReqEvt->bytes  = bytes;
    MEMCPY(

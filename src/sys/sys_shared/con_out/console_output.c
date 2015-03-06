@@ -283,7 +283,8 @@ CBErrorCode CON_hexToStr(
       uint16_t strDataBufferSize,
       uint16_t* strDataLen,
       uint8_t outputNColumns,
-      const char sep
+      const char sep,
+      const bool bPrintX
 )
 {
    CBErrorCode status = ERR_NONE;
@@ -301,13 +302,17 @@ CBErrorCode CON_hexToStr(
    if ( 0 == strDataBufferSize ) {
       ERR_printf("Passed in zero length data buffer for output\n");
       return( ERR_MEM_BUFFER_LEN );
-   } else if ( strDataBufferSize < 5 * hexDataLen ) {
+   } else if ( bPrintX == true && strDataBufferSize < 5 * hexDataLen ) {
       WRN_printf("Output buffer too small to contain all the data.\n");
       WRN_printf("Should be at least %d long\n", 5 * hexDataLen);
       WRN_printf("Continuing but the resulting data will be incomplete\n");
       status = ERR_MEM_BUFFER_LEN;
+   } else if ( bPrintX == false && strDataBufferSize < 3 * hexDataLen ) {
+      WRN_printf("Output buffer too small to contain all the data.\n");
+      WRN_printf("Should be at least %d long\n", 3 * hexDataLen);
+      WRN_printf("Continuing but the resulting data will be incomplete\n");
+      status = ERR_MEM_BUFFER_LEN;
    }
-
    /* Index used to keep track of how far into the buffer we've printed */
    *strDataLen = 0;
 
@@ -322,13 +327,24 @@ CBErrorCode CON_hexToStr(
                "\n"
          );
       }
-      *strDataLen += snprintf(
-            &strDataBuffer[*strDataLen],
-            strDataBufferSize - *strDataLen,
-            "0x%02x%c",
-            hexData[i],
-            sep
-      );
+      /* Print the actual number after checking if we need to print 0x in front*/
+      if ( true == bPrintX ) {
+         *strDataLen += snprintf(
+               &strDataBuffer[*strDataLen],
+               strDataBufferSize - *strDataLen,
+               "0x%02x%c",
+               hexData[i],
+               sep
+         );
+      } else {
+         *strDataLen += snprintf(
+               &strDataBuffer[*strDataLen],
+               strDataBufferSize - *strDataLen,
+               "%02x%c",
+               hexData[i],
+               sep
+         );
+      }
 
       if ( *strDataLen >= strDataBufferSize ) {
          return( ERR_MEM_BUFFER_LEN );
