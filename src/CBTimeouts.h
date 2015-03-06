@@ -66,7 +66,7 @@
    #define LL_MAX_TOUT_SEC_I2C_WRITE_OP         ( LL_MAX_TOUT_SEC_I2C_BASIC_OP * 4 )
    /*@} I2C Timeouts */
 
-   /** \name I2C1Dev Timeouts and Times.
+   /** \name I2C Dev Timeouts and Times.
     * These are the timeouts used by the higher level I2C1DevMgr AO.
     * These should be based on the LL I2CBusMgr timeouts.
     *@{*/
@@ -77,7 +77,7 @@
    #define HL_MAX_TOUT_SEC_I2C_EV6              ( HL_MAX_TOUT_SEC_I2C_DEV_OP * 1.3 )
    #define HL_MAX_TOUT_SEC_I2C_EV8              ( HL_MAX_TOUT_SEC_I2C_DEV_OP * 1.3 )
    #define HL_MAX_TOUT_SEC_I2C_READ             ( HL_MAX_TOUT_SEC_I2C_DEV_OP * 1.3 )
-   #define HL_MAX_TOUT_SEC_I2C_WRITE            ( HL_MAX_TOUT_SEC_I2C_DEV_OP * 1.3 )
+   #define HL_MAX_TOUT_SEC_I2C_WRITE            ( HL_MAX_TOUT_SEC_I2C_DEV_OP * 3 )
    #define HL_MAX_TIME_MS_I2C_POST_WRITE                                      5.0 // 5ms post write wait on the I2C EEPROM.
    /*@} I2C1Dev Timeouts and Times. */
 

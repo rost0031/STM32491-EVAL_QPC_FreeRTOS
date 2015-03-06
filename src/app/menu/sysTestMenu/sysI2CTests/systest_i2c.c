@@ -16,6 +16,7 @@
 #include "qp_port.h"                                        /* for QP support */
 #include "project_includes.h"
 #include "I2C1DevMgr.h"
+#include "DbgMgr.h"
 
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */
@@ -56,11 +57,19 @@ void MENU_i2cEEPROMReadTestAction(
    CB_UNUSED_ARG(dataLen);
    uint16_t memAddr = 0x00;
    uint8_t bytes = 16;
+
+   /* Subscribe to the signal of the event that is expected to be returned. This
+    * is not subscribed to by default to avoid printing out every single I2C
+    * read request sent to the I2C1DevMgr.  As soon as the signal handler for
+    * this event gets triggerred in DbgMgr AO, it will unsubscribe from it. */
+   QActive_subscribe(AO_DbgMgr, EEPROM_READ_DONE_SIG);
+
    MENU_printf(dst, "Running an EEPROM read test. Reading %d bytes from 0x%02x\n", bytes, memAddr);
    /* Publish event to start an EEPROM read */
    I2CEEPROMReadReqEvt *i2cEERPOMReadReqEvt = Q_NEW(I2CEEPROMReadReqEvt, EEPROM_RAW_MEM_READ_SIG);
    i2cEERPOMReadReqEvt->addr = memAddr;
    i2cEERPOMReadReqEvt->bytes  = bytes;
+   i2cEERPOMReadReqEvt->accessType = ACCESS_QPC;
    QF_PUBLISH((QEvent *)i2cEERPOMReadReqEvt, AO_DbgMgr);
 }
 
@@ -120,7 +129,7 @@ void MENU_i2cEEPROMWriteTestAction(
          tmp,
          bytes
    );
-
+   i2cEERPOMWriteReqEvt->accessType = ACCESS_QPC;
    QF_PUBLISH((QEvent *)i2cEERPOMWriteReqEvt, AO_DbgMgr);
 }
 

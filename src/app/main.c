@@ -81,9 +81,8 @@ static union LargeEvents {
     void   *e0;                                       /* minimum event size */
     uint8_t e1[sizeof(MsgEvt)];
     uint8_t e2[sizeof(EthEvt)];
-    uint8_t e3[sizeof(LogDataEvt)];
-    uint8_t e4[sizeof(LrgDataEvt)];
-    uint8_t e5[sizeof(I2CEEPROMWriteReqEvt)];
+    uint8_t e3[sizeof(LrgDataEvt)];
+    uint8_t e4[sizeof(I2CEEPROMWriteReqEvt)];
 } l_lrgPoolSto[100];                    /* storage for the large event pool */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -120,7 +119,7 @@ int main(void)
     log_slow_printf("Starting Bootloader version %s built on %s\n", FW_VER, BUILD_DATE);
 
     log_slow_printf("Checking settings DB validity...\n");
-    CBErrorCode status = DB_isValid();
+    CBErrorCode status = DB_isValid( ACCESS_BARE_METAL );
     if ( ERR_NONE != status ) {
        wrn_slow_printf("Settings DB validity check returned: 0x%08x\n", status);
        wrn_slow_printf("Attempting to write default DB to EEPROM...\n");
@@ -129,7 +128,7 @@ int main(void)
           err_slow_printf("Unable to write default DB to EEPROM. Error: 0x%08x\n", status);
        } else {
           log_slow_printf("Wrote default DB to EEPROM. Attempting to validate...\n");
-          status = DB_isValid();
+          status = DB_isValid( ACCESS_BARE_METAL );
           if ( ERR_NONE != status ) {
              err_slow_printf("DB validity check returned: 0x%08x\n", status);
              err_slow_printf("Unable to fix DB in EEPROM\n");
@@ -219,7 +218,7 @@ int main(void)
     QF_poolInit(l_medPoolSto, sizeof(l_medPoolSto), sizeof(l_medPoolSto[0]));
     QF_poolInit(l_lrgPoolSto, sizeof(l_lrgPoolSto), sizeof(l_lrgPoolSto[0]));
 
-    /* initialize the raw queue */
+    /* initialize the raw queues */
     QEQueue_init(&CPLR_evtQueue, l_CPLRQueueSto, Q_DIM(l_CPLRQueueSto));
 
     /* Start Active objects */

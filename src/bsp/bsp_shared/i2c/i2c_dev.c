@@ -13,6 +13,8 @@
  */
 
 /* Includes ------------------------------------------------------------------*/
+#include "i2c_defs.h"
+#include "i2c.h"
 #include "i2c_dev.h"
 #include "qp_port.h"                                        /* for QP support */
 #include "stm32f4xx_it.h"
@@ -30,16 +32,16 @@ DBG_DEFINE_THIS_MODULE( DBG_MODL_I2C ); /* For debug system to ID this module */
 /* Private macros ------------------------------------------------------------*/
 /* Private variables and Local objects ---------------------------------------*/
 
-
 /**
  * @brief An internal structure that holds settings for I2C devices on all I2C
  * busses.
  */
-I2CBus1_DevSettings_t s_I2CBus1_Dev[MAX_I2C1_DEV] =
+I2C_DevSettings_t s_I2C_Dev[MAX_I2C_DEV] =
 {
       {
             /* "External" device settings */
             EEPROM,                    /**< i2c_dev */
+            I2CBus1,                   /**< i2c_bus */
             1,                         /**< i2c_dev_addr_size */
             0xA0,                      /**< i2c_dev_addr */
 
@@ -53,6 +55,7 @@ I2CBus1_DevSettings_t s_I2CBus1_Dev[MAX_I2C1_DEV] =
       {
             /* "External" device settings */
             SN_ROM,                    /**< i2c_dev */
+            I2CBus1,                   /**< i2c_bus */
             1,                         /**< i2c_dev_addr_size */
             0xB0,                      /**< i2c_dev_addr */
 
@@ -66,6 +69,7 @@ I2CBus1_DevSettings_t s_I2CBus1_Dev[MAX_I2C1_DEV] =
       {
             /* "External" device settings */
             EUI_ROM,                   /**< i2c_dev */
+            I2CBus1,                   /**< i2c_bus */
             1,                         /**< i2c_dev_addr_size */
             0xB0,                      /**< i2c_dev_addr */
 
@@ -82,75 +86,75 @@ I2CBus1_DevSettings_t s_I2CBus1_Dev[MAX_I2C1_DEV] =
 /* Private functions ---------------------------------------------------------*/
 
 /******************************************************************************/
-uint8_t I2C_getI2C1DevAddrSize( I2CBus1_Dev_t iDev )
+uint8_t I2C_getDevAddrSize( I2C_Dev_t iDev )
 {
    /* Check inputs */
-   assert_param( IS_I2C1_DEVICE( iDev ) );
+   assert_param( IS_I2C_DEVICE( iDev ) );
 
-   return( s_I2CBus1_Dev[iDev].i2c_dev_addr_size );
+   return( s_I2C_Dev[iDev].i2c_dev_addr_size );
 }
 
 /******************************************************************************/
-uint16_t I2C_getI2C1DevAddr( I2CBus1_Dev_t iDev )
+uint16_t I2C_getDevAddr( I2C_Dev_t iDev )
 {
    /* Check inputs */
-   assert_param( IS_I2C1_DEVICE( iDev ) );
+   assert_param( IS_I2C_DEVICE( iDev ) );
 
-   return( s_I2CBus1_Dev[iDev].i2c_dev_addr );
+   return( s_I2C_Dev[iDev].i2c_dev_addr );
 }
 
 /******************************************************************************/
-uint8_t I2C_getI2C1MemAddrSize( I2CBus1_Dev_t iDev )
+uint8_t I2C_getMemAddrSize( I2C_Dev_t iDev )
 {
    /* Check inputs */
-   assert_param( IS_I2C1_DEVICE( iDev ) );
+   assert_param( IS_I2C_DEVICE( iDev ) );
 
-   return( s_I2CBus1_Dev[iDev].i2c_mem_addr_size );
+   return( s_I2C_Dev[iDev].i2c_mem_addr_size );
 }
 
 /******************************************************************************/
-uint16_t I2C_getI2C1MemAddr( I2CBus1_Dev_t iDev )
+uint16_t I2C_getMemAddr( I2C_Dev_t iDev )
 {
    /* Check inputs */
-   assert_param( IS_I2C1_DEVICE( iDev ) );
+   assert_param( IS_I2C_DEVICE( iDev ) );
 
-   return( s_I2CBus1_Dev[iDev].i2c_mem_addr );
+   return( s_I2C_Dev[iDev].i2c_mem_addr );
 }
 
 /******************************************************************************/
-void I2C_setI2C1MemAddr( I2CBus1_Dev_t iDev, uint16_t addr )
+void I2C_setI2C1MemAddr( I2C_Dev_t iDev, uint16_t addr )
 {
    /* Check inputs */
-   assert_param( IS_I2C1_DEVICE( iDev ) );
+   assert_param( IS_I2C_DEVICE( iDev ) );
 
-   s_I2CBus1_Dev[iDev].i2c_mem_addr = 0x00FF & addr;
+   s_I2C_Dev[iDev].i2c_mem_addr = 0x00FF & addr;
 }
 
 /******************************************************************************/
-uint16_t I2C_getI2C1MinMemAddr( I2CBus1_Dev_t iDev )
+uint16_t I2C_getMinMemAddr( I2C_Dev_t iDev )
 {
    /* Check inputs */
-   assert_param( IS_I2C1_DEVICE( iDev ) );
+   assert_param( IS_I2C_DEVICE( iDev ) );
 
-   return( s_I2CBus1_Dev[iDev].i2c_mem_min_addr );
+   return( s_I2C_Dev[iDev].i2c_mem_min_addr );
 }
 
 /******************************************************************************/
-uint16_t I2C_getI2C1MaxMemAddr( I2CBus1_Dev_t iDev )
+uint16_t I2C_getMaxMemAddr( I2C_Dev_t iDev )
 {
    /* Check inputs */
-   assert_param( IS_I2C1_DEVICE( iDev ) );
+   assert_param( IS_I2C_DEVICE( iDev ) );
 
-   return( s_I2CBus1_Dev[iDev].i2c_mem_max_addr );
+   return( s_I2C_Dev[iDev].i2c_mem_max_addr );
 }
 
 /******************************************************************************/
-uint8_t I2C_getI2C1PageSize( I2CBus1_Dev_t iDev )
+uint8_t I2C_getPageSize( I2C_Dev_t iDev )
 {
    /* Check inputs */
-   assert_param( IS_I2C1_DEVICE( iDev ) );
+   assert_param( IS_I2C_DEVICE( iDev ) );
 
-   return( s_I2CBus1_Dev[iDev].i2c_mem_page_size );
+   return( s_I2C_Dev[iDev].i2c_mem_page_size );
 }
 
 /******************************************************************************/
@@ -164,13 +168,13 @@ CBErrorCode I2C_calcEepromPageWriteSizes(
 )
 {
    /* Check if we are going to write over the end of the eeprom */
-   if (i2cMemAddr + bytesToWrite > I2C_getI2C1MaxMemAddr( EEPROM )) {
+   if (i2cMemAddr + bytesToWrite > I2C_getMaxMemAddr( EEPROM )) {
       return ( ERR_I2C1DEV_MEM_OUT_BOUNDS );
    }
 
    /* Check if the address and length of write to see if it's more than a page
     * and if the start is page aligned. */
-   *pageSize = I2C_getI2C1PageSize( EEPROM );
+   *pageSize = I2C_getPageSize( EEPROM );
 
    /* Calculate space available in the first page */
    uint8_t pageSpace = (((i2cMemAddr/(*pageSize)) + 1) * (*pageSize)) - i2cMemAddr;
@@ -192,8 +196,8 @@ CBErrorCode I2C_calcEepromPageWriteSizes(
 }
 
 /******************************************************************************/
-/* Blocking Functions - Don't call unless before threads/AOs started or after
- * they crashed
+/* Blocking Functions - Don't call unless before threads/AOs started or after */
+/* they crashed                                                               */
 /******************************************************************************/
 
 /******************************************************************************/
@@ -205,9 +209,9 @@ CBErrorCode I2C_readUi64RomBLK(
 {
    CBErrorCode status = I2C_readBufferBLK(
          I2CBus1,                               // I2C_Bus_t iBus,
-         I2C_getI2C1DevAddr( EUI_ROM ),         // uint8_t i2cDevAddr,
-         I2C_getI2C1MemAddr( EUI_ROM ) + offset,// uint16_t i2cMemAddr,
-         I2C_getI2C1MemAddrSize( EUI_ROM ),     // uint8_t i2cMemAddrSize,
+         I2C_getDevAddr( EUI_ROM ),         // uint8_t i2cDevAddr,
+         I2C_getMemAddr( EUI_ROM ) + offset,// uint16_t i2cMemAddr,
+         I2C_getMemAddrSize( EUI_ROM ),     // uint8_t i2cMemAddrSize,
          pBuffer,                               // uint8_t* pBuffer,
          bytesToRead                            // uint16_t bytesToRead
    );
@@ -224,9 +228,9 @@ CBErrorCode I2C_readSnRomBLK(
 {
    CBErrorCode status = I2C_readBufferBLK(
          I2CBus1,                               // I2C_Bus_t iBus,
-         I2C_getI2C1DevAddr( SN_ROM ),          // uint8_t i2cDevAddr,
-         I2C_getI2C1MemAddr( SN_ROM ) + offset, // uint16_t i2cMemAddr,
-         I2C_getI2C1MemAddrSize( SN_ROM ),      // uint8_t i2cMemAddrSize,
+         I2C_getDevAddr( SN_ROM ),          // uint8_t i2cDevAddr,
+         I2C_getMemAddr( SN_ROM ) + offset, // uint16_t i2cMemAddr,
+         I2C_getMemAddrSize( SN_ROM ),      // uint8_t i2cMemAddrSize,
          pBuffer,                               // uint8_t* pBuffer,
          bytesToRead                            // uint16_t bytesToRead
    );
@@ -243,9 +247,9 @@ CBErrorCode I2C_readEepromBLK(
 {
    CBErrorCode status = I2C_readBufferBLK(
          I2CBus1,                               // I2C_Bus_t iBus,
-         I2C_getI2C1DevAddr( EEPROM ),          // uint8_t i2cDevAddr,
-         I2C_getI2C1MemAddr( EEPROM ) + offset, // uint16_t i2cMemAddr,
-         I2C_getI2C1MemAddrSize( EEPROM ),      // uint8_t i2cMemAddrSize,
+         I2C_getDevAddr( EEPROM ),          // uint8_t i2cDevAddr,
+         I2C_getMemAddr( EEPROM ) + offset, // uint16_t i2cMemAddr,
+         I2C_getMemAddrSize( EEPROM ),      // uint8_t i2cMemAddrSize,
          pBuffer,                               // uint8_t* pBuffer,
          bytesToRead                            // uint16_t bytesToRead
    );
@@ -262,9 +266,9 @@ CBErrorCode I2C_writeEepromBLK(
 {
    CBErrorCode status = I2C_writeBufferBLK(
          I2CBus1,                               // I2C_Bus_t iBus,
-         I2C_getI2C1DevAddr( EEPROM ),          // uint8_t i2cDevAddr,
-         I2C_getI2C1MemAddr( EEPROM ) + offset, // uint16_t i2cMemAddr,
-         I2C_getI2C1MemAddrSize( EEPROM ),      // uint8_t i2cMemAddrSize,
+         I2C_getDevAddr( EEPROM ),          // uint8_t i2cDevAddr,
+         I2C_getMemAddr( EEPROM ) + offset, // uint16_t i2cMemAddr,
+         I2C_getMemAddrSize( EEPROM ),      // uint8_t i2cMemAddrSize,
          pBuffer,                               // uint8_t* pBuffer,
          bytesToWrite                           // uint16_t bytesToWrite
    );
@@ -278,3 +282,4 @@ CBErrorCode I2C_writeEepromBLK(
  */
 
 /******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/
+

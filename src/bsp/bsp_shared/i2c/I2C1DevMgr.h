@@ -66,6 +66,9 @@ typedef struct {
 
     /**< Specify how many bytes to read */
     uint16_t bytes;
+
+    /**< Specifies whether the request came from FreeRTOS thread or another AO */
+    AccessType_t accessType;
 } I2CEEPROMReadReqEvt;
 
 /**
@@ -84,6 +87,9 @@ typedef struct {
 
     /**< Buffer that holds the data. */
     uint8_t dataBuf[MAX_I2C_READ_LEN];
+
+    /**< Specifies whether the request came from FreeRTOS thread or another AO */
+    AccessType_t accessType;
 } I2CEEPROMWriteReqEvt;
 
 /**

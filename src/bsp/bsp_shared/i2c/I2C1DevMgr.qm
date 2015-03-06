@@ -12,6 +12,9 @@
    <attribute name="bytes" type="uint16_t" visibility="0x01" properties="0x00">
     <documentation>/**&lt; Specify how many bytes to read */</documentation>
    </attribute>
+   <attribute name="accessType" type="AccessType_t" visibility="0x01" properties="0x00">
+    <documentation>/**&lt; Specifies whether the request came from FreeRTOS thread or another AO */</documentation>
+   </attribute>
   </class>
   <class name="I2CEEPROMWriteReqEvt" superclass="qpc::QEvt">
    <documentation>/**
@@ -25,6 +28,9 @@
    </attribute>
    <attribute name="dataBuf[MAX_I2C_READ_LEN]" type="uint8_t" visibility="0x01" properties="0x00">
     <documentation>/**&lt; Buffer that holds the data. */</documentation>
+   </attribute>
+   <attribute name="accessType" type="AccessType_t" visibility="0x01" properties="0x00">
+    <documentation>/**&lt; Specifies whether the request came from FreeRTOS thread or another AO */</documentation>
    </attribute>
   </class>
   <class name="I2CDevRegWriteReqEvt" superclass="qpc::QEvt">
@@ -46,6 +52,23 @@
     <documentation>/**&lt; Internal register address of the I2C device*/</documentation>
    </attribute>
   </class>
+  <class name="I2CReadDoneEvt" superclass="qpc::QEvt">
+   <documentation>/**
+ * @brief Event struct type for specifying a memory write request.
+ */</documentation>
+   <attribute name="bytes" type="uint16_t" visibility="0x01" properties="0x00">
+    <documentation>/**&lt; Specify how many bytes to read */</documentation>
+   </attribute>
+   <attribute name="dataBuf[MAX_I2C_READ_LEN]" type="uint8_t" visibility="0x01" properties="0x00">
+    <documentation>/**&lt; Buffer that holds the data. */</documentation>
+   </attribute>
+   <attribute name="status" type="CBErrorCode" visibility="0x01" properties="0x00">
+    <documentation>/**&lt; Status of the operation */</documentation>
+   </attribute>
+   <attribute name="i2cDev" type="I2C_Dev_t" visibility="0x01" properties="0x00">
+    <documentation>/**&lt; Which I2C device was accessed */</documentation>
+   </attribute>
+  </class>
  </package>
  <package name="AOs" stereotype="0x02">
   <class name="I2C1DevMgr" superclass="qpc::QActive">
@@ -64,7 +87,7 @@
    <attribute name="deferredEvtQSto[100]" type="QTimeEvt const *" visibility="0x01" properties="0x00">
     <documentation>/**&lt; Storage for deferred event queue. */</documentation>
    </attribute>
-   <attribute name="iDev" type="I2CBus1_Dev_t" visibility="0x01" properties="0x00">
+   <attribute name="iDev" type="I2C_Dev_t" visibility="0x01" properties="0x00">
     <documentation>/**&lt; Specifies which I2CBus1 device is currently being handled by this AO.
  * This should be set when a new I2C_READ_START or I2C_WRITE_START events come
  * in.  Those events should contain the device for which they are meant for. */</documentation>
@@ -112,6 +135,11 @@
  * I2C sizes since reads can be large while the writes have to be broken into 
  * page sized chunks. */</documentation>
    </attribute>
+   <attribute name="accessType" type="AccessType_t" visibility="0x01" properties="0x00">
+    <documentation>/**&lt; Specifies whether the request came from FreeRTOS thread or another AO.  This
+     variable keeps track of whether the response needs to get added to the raw
+     queue used to communicate with the FreeRTOS thread. */</documentation>
+   </attribute>
    <statechart>
     <initial target="../1/1">
      <action>(void)e;        /* suppress the compiler warning about unused parameter */
@@ -128,9 +156,8 @@ QActive_subscribe((QActive *)me, EEPROM_SN_READ_SIG);
 QActive_subscribe((QActive *)me, EEPROM_EUI64_READ_SIG);
 QActive_subscribe((QActive *)me, EEPROM_RAW_MEM_WRITE_SIG);
 QActive_subscribe((QActive *)me, EEPROM_RAW_MEM_READ_SIG);
-QActive_subscribe((QActive *)me, IOEXP_REG_READ_SIG);
-QActive_subscribe((QActive *)me, IOEXP_REG_WRITE_SIG);
-QActive_subscribe((QActive *)me, TSC_POS_READ_SIG);</action>
+
+me-&gt;accessType = ACCESS_QPC; /* Init to safe value */</action>
      <initial_glyph conn="1,2,4,3,9,5">
       <action box="0,-2,6,2"/>
      </initial_glyph>
@@ -183,7 +210,16 @@ QTimeEvt_rearm(
     &amp;me-&gt;i2cTimerEvt,
     SEC_TO_TICKS( HL_MAX_TOUT_SEC_I2C_DEV_REQ )
 );</entry>
-      <exit>QTimeEvt_disarm( &amp;me-&gt;i2cTimerEvt ); /* Disarm timer on exit */</exit>
+      <exit>QTimeEvt_disarm( &amp;me-&gt;i2cTimerEvt ); /* Disarm timer on exit */
+
+/* Figure out what operation was being done and send the appropriate done event */
+if ( I2C_OP_MEM_READ == me-&gt;i2cDevOp ) {
+    I2CEEPROMReadReqEvt *i2cEERPOMReadReqEvt = Q_NEW(I2CEEPROMReadReqEvt, EEPROM_RAW_MEM_READ_SIG);
+} else if ( I2C_OP_MEM_WRITE == me-&gt;i2cDevOp ) {
+    
+} else {
+    WRN_printf(&quot;Unimplemented I2C operation: %d, not sending a response\n&quot;, me-&gt;i2cDevOp);
+}</exit>
       <tran trig="I2C1_DEV_TIMEOUT" target="../../1">
        <action>ERR_printf(&quot;I2C1Dev timeout occurred with error: 0x%08x\n&quot;, me-&gt;errorCode);</action>
        <tran_glyph conn="46,11,3,1,-19">
@@ -267,8 +303,8 @@ QTimeEvt_rearm(
 /* Allocate and directly post an event to the appropriate I2CBusMgr AO */
 I2CAddrEvt *i2cAddrEvt   = Q_NEW( I2CAddrEvt, I2C_BUS_SEND_7BIT_ADDR_SIG );
 i2cAddrEvt-&gt;i2cBus       = me-&gt;iBus;
-i2cAddrEvt-&gt;addr         = I2C_getI2C1DevAddr(me-&gt;iDev);
-i2cAddrEvt-&gt;addrSize     = I2C_getI2C1DevAddrSize(me-&gt;iDev);
+i2cAddrEvt-&gt;addr         = I2C_getDevAddr(me-&gt;iDev);
+i2cAddrEvt-&gt;addrSize     = I2C_getDevAddrSize(me-&gt;iDev);
 i2cAddrEvt-&gt;i2cDirection = I2C_Direction_Transmitter;
 QACTIVE_POST(AO_I2CBusMgr[me-&gt;iBus], (QEvt *)i2cAddrEvt, me);</entry>
        <exit>QTimeEvt_disarm(&amp;me-&gt;i2cOpTimerEvt);</exit>
@@ -314,7 +350,7 @@ QTimeEvt_rearm(
 I2CAddrEvt *i2cAddrEvt   = Q_NEW( I2CAddrEvt, I2C_BUS_SEND_DEV_ADDR_SIG );
 i2cAddrEvt-&gt;i2cBus       = me-&gt;iBus;
 i2cAddrEvt-&gt;addr         = me-&gt;addrStart;
-i2cAddrEvt-&gt;addrSize     = I2C_getI2C1MemAddrSize(me-&gt;iDev);
+i2cAddrEvt-&gt;addrSize     = I2C_getMemAddrSize(me-&gt;iDev);
 i2cAddrEvt-&gt;i2cDirection = I2C_Direction_Transmitter;
 QACTIVE_POST(AO_I2CBusMgr[me-&gt;iBus], (QEvt *)i2cAddrEvt, me);</entry>
        <exit>QTimeEvt_disarm(&amp;me-&gt;i2cOpTimerEvt);</exit>
@@ -413,8 +449,8 @@ QTimeEvt_rearm(
 /* Allocate and directly post an event to the appropriate I2CBusMgr AO */
 I2CAddrEvt *i2cAddrEvt   = Q_NEW( I2CAddrEvt, I2C_BUS_SEND_7BIT_ADDR_SIG );
 i2cAddrEvt-&gt;i2cBus       = me-&gt;iBus;
-i2cAddrEvt-&gt;addr         = I2C_getI2C1DevAddr(me-&gt;iDev);
-i2cAddrEvt-&gt;addrSize     = I2C_getI2C1DevAddrSize(me-&gt;iDev);
+i2cAddrEvt-&gt;addr         = I2C_getDevAddr(me-&gt;iDev);
+i2cAddrEvt-&gt;addrSize     = I2C_getDevAddrSize(me-&gt;iDev);
 i2cAddrEvt-&gt;i2cDirection = I2C_Direction_Receiver;
 QACTIVE_POST(AO_I2CBusMgr[me-&gt;iBus], (QEvt *)i2cAddrEvt, me);</entry>
        <exit>QTimeEvt_disarm(&amp;me-&gt;i2cOpTimerEvt);</exit>
@@ -460,7 +496,7 @@ QTimeEvt_rearm(
 I2CReadMemReqEvt *i2cReadMemEvt = Q_NEW( I2CReadMemReqEvt, I2C_BUS_READ_MEM_SIG );
 i2cReadMemEvt-&gt;i2cBus           = me-&gt;iBus;
 i2cReadMemEvt-&gt;addr             = me-&gt;addrStart;
-i2cReadMemEvt-&gt;addrSize         = I2C_getI2C1MemAddrSize(me-&gt;iDev);
+i2cReadMemEvt-&gt;addrSize         = I2C_getMemAddrSize(me-&gt;iDev);
 i2cReadMemEvt-&gt;memAccessType    = I2C_MEM_DMA;
 i2cReadMemEvt-&gt;bytes            = me-&gt;bytesTotal; //TODO: remember to fix this.  This should not exceed max page size.
 QACTIVE_POST(AO_I2CBusMgr[me-&gt;iBus], (QEvt *)i2cReadMemEvt, me);</entry>
@@ -523,7 +559,7 @@ QTimeEvt_rearm(
 I2CWriteMemReqEvt *i2cWriteMemReqEvt = Q_NEW( I2CWriteMemReqEvt, I2C_BUS_WRITE_MEM_SIG );
 i2cWriteMemReqEvt-&gt;i2cBus           = me-&gt;iBus;
 i2cWriteMemReqEvt-&gt;addr             = me-&gt;addrStart;
-i2cWriteMemReqEvt-&gt;addrSize         = I2C_getI2C1MemAddrSize(me-&gt;iDev);
+i2cWriteMemReqEvt-&gt;addrSize         = I2C_getMemAddrSize(me-&gt;iDev);
 i2cWriteMemReqEvt-&gt;memAccessType    = I2C_MEM_DMA;
 i2cWriteMemReqEvt-&gt;bytes            = me-&gt;bytesTotal; //TODO: remember to fix this.  This should not exceed max page size.
 MEMCPY(
@@ -610,8 +646,8 @@ QTimeEvt_rearm(
  * the I2C bus. */
 I2CAddrEvt *i2cAddrEvt = Q_NEW( I2CAddrEvt, I2C_BUS_CHECK_FREE_SIG );
 i2cAddrEvt-&gt;i2cBus     = me-&gt;iBus;
-i2cAddrEvt-&gt;addr       = I2C_getI2C1DevAddr(me-&gt;iDev);
-i2cAddrEvt-&gt;addrSize   = I2C_getI2C1DevAddrSize(me-&gt;iDev);
+i2cAddrEvt-&gt;addr       = I2C_getDevAddr(me-&gt;iDev);
+i2cAddrEvt-&gt;addrSize   = I2C_getDevAddrSize(me-&gt;iDev);
 QACTIVE_POST(AO_I2CBusMgr[me-&gt;iBus], (QEvt *)(i2cAddrEvt), me);
 
 DBG_printf(&quot;ActivePosted I2C_BUS_CHECK_FREE\n&quot;);</entry>
@@ -675,18 +711,19 @@ DBG_printf(&quot;back in Idle\n&quot;);</entry>
       <tran trig="EEPROM_RAW_MEM_READ" target="../../0/11">
        <action>me-&gt;iDev = EEPROM; // Set which device is being accessed
 me-&gt;addrStart = ((I2CEEPROMReadReqEvt const *)e)-&gt;addr;
-me-&gt;addrSize  = I2C_getI2C1MemAddrSize(me-&gt;iDev);
+me-&gt;addrSize  = I2C_getMemAddrSize(me-&gt;iDev);
 me-&gt;bytesTotal = ((I2CEEPROMReadReqEvt const *)e)-&gt;bytes;
-me-&gt;i2cDevOp = I2C_OP_MEM_READ;</action>
+me-&gt;i2cDevOp = I2C_OP_MEM_READ;
+me-&gt;accessType = ((I2CEEPROMReadReqEvt const *)e)-&gt;accessType;</action>
        <tran_glyph conn="6,15,3,3,43">
         <action box="0,-2,23,2"/>
        </tran_glyph>
       </tran>
       <tran trig="EEPROM_SN_READ" target="../../0/11">
        <action>me-&gt;iDev = SN_ROM; // Set which device is being accessed
-me-&gt;addrStart = I2C_getI2C1MinMemAddr(me-&gt;iDev);
-me-&gt;addrSize  = I2C_getI2C1MemAddrSize(me-&gt;iDev);
-me-&gt;bytesTotal = I2C_getI2C1PageSize(me-&gt;iDev);
+me-&gt;addrStart = I2C_getMinMemAddr(me-&gt;iDev);
+me-&gt;addrSize  = I2C_getMemAddrSize(me-&gt;iDev);
+me-&gt;bytesTotal = I2C_getPageSize(me-&gt;iDev);
 me-&gt;i2cDevOp = I2C_OP_MEM_READ;</action>
        <tran_glyph conn="6,17,3,3,43">
         <action box="0,-2,17,2"/>
@@ -694,9 +731,9 @@ me-&gt;i2cDevOp = I2C_OP_MEM_READ;</action>
       </tran>
       <tran trig="EEPROM_EUI64_READ" target="../../0/11">
        <action>me-&gt;iDev = EUI_ROM; // Set which device is being accessed
-me-&gt;addrStart = I2C_getI2C1MinMemAddr(me-&gt;iDev);
-me-&gt;addrSize  = I2C_getI2C1MemAddrSize(me-&gt;iDev);
-me-&gt;bytesTotal = I2C_getI2C1PageSize(me-&gt;iDev);
+me-&gt;addrStart = I2C_getMinMemAddr(me-&gt;iDev);
+me-&gt;addrSize  = I2C_getMemAddrSize(me-&gt;iDev);
+me-&gt;bytesTotal = I2C_getPageSize(me-&gt;iDev);
 me-&gt;i2cDevOp = I2C_OP_MEM_READ;</action>
        <tran_glyph conn="6,19,3,3,43">
         <action box="0,-2,17,2"/>
@@ -705,14 +742,15 @@ me-&gt;i2cDevOp = I2C_OP_MEM_READ;</action>
       <tran trig="EEPROM_RAW_MEM_WRITE" target="../../0/11">
        <action>me-&gt;iDev = EEPROM; // Set which device is being accessed
 me-&gt;addrStart = ((I2CEEPROMWriteReqEvt const *)e)-&gt;addr;
-me-&gt;addrSize  = I2C_getI2C1MemAddrSize(me-&gt;iDev);
+me-&gt;addrSize  = I2C_getMemAddrSize(me-&gt;iDev);
 me-&gt;bytesTotal = ((I2CEEPROMWriteReqEvt const *)e)-&gt;bytes;
 me-&gt;i2cDevOp = I2C_OP_MEM_WRITE;
 MEMCPY(
     me-&gt;dataBuf,
     ((I2CEEPROMWriteReqEvt const *)e)-&gt;dataBuf,
     me-&gt;bytesTotal
-);</action>
+);
+me-&gt;accessType = ((I2CEEPROMWriteReqEvt const *)e)-&gt;accessType;</action>
        <tran_glyph conn="6,21,3,3,43">
         <action box="0,-2,22,2"/>
        </tran_glyph>

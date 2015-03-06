@@ -16,8 +16,8 @@
 #include "project_includes.h"
 #include "dbg_out_cntrl.h"
 #include <stddef.h>
+#include "i2c_defs.h"                                /* for I2C functionality */
 #include "i2c_dev.h"                               /* for I2C device mappings */
-#include "i2c.h"                                     /* for I2C functionality */
 #include "db.h"
 #include "ipAndMac.h"                                  /* for default IP addr */
 
@@ -101,55 +101,61 @@ static const SettingsDB_t DB_defaultEeepromSettings = {
 /* Private functions ---------------------------------------------------------*/
 
 /******************************************************************************/
-CBErrorCode DB_isValid( void )
+CBErrorCode DB_isValid( AccessType_t accessType )
 {
-   I2C_Bus_t i2cBus = I2CBus1;
+   CBErrorCode status = ERR_NONE;            /* keep track of success/failure */
 
-   /* Look up Device and Memory addresses and their sizes */
-   uint16_t i2cDevAddr = I2C_getI2C1DevAddr( EEPROM );
-   uint8_t i2cMemAddrSize = I2C_getI2C1MemAddrSize( EEPROM );
-   uint16_t i2cMemAddr = I2C_getI2C1MemAddr( EEPROM );
-
-   /* 3. Call the actual I2C blocking read function */
    uint32_t db_magicWord = 0;
-   I2C_readBufferBLK(
-         i2cBus,
-         i2cDevAddr,
-         i2cMemAddr + settingsDB[DB_MAGIC_WORD].offset,
-         i2cMemAddrSize,
+   status = DB_getElemBLK(
+         DB_MAGIC_WORD,
          (uint8_t *)&db_magicWord,
-         settingsDB[DB_MAGIC_WORD].size
+         sizeof(db_magicWord),
+         ACCESS_BARE_METAL
    );
 
-   if ( db_magicWord != DB_MAGIC_WORD_DEF ) {
-      wrn_slow_printf(
-            "Magic word in DB (0x%08x) doesn't match expected (0x%08x)\n",
-            db_magicWord,
-            DB_MAGIC_WORD_DEF
-      );
-      return( ERR_DB_NOT_INIT);
+   if ( ERR_NONE != status ) {
+      goto DB_isValid_ERR_HANDLE;          /* Stop and jump to error handling */
+   } else {
+      if ( db_magicWord != DB_MAGIC_WORD_DEF ) {
+         wrn_slow_printf(
+               "Magic word in DB (0x%08x) doesn't match expected (0x%08x)\n",
+               db_magicWord,
+               DB_MAGIC_WORD_DEF
+         );
+         return( ERR_DB_NOT_INIT);
+      }
    }
 
    uint16_t db_version = 0;
-   I2C_readBufferBLK(
-         i2cBus,
-         i2cDevAddr,
-         i2cMemAddr + settingsDB[DB_VERSION].offset,
-         i2cMemAddrSize,
+   status = DB_getElemBLK(
+         DB_VERSION,
          (uint8_t *)&db_version,
-         settingsDB[DB_VERSION].size
+         sizeof(db_version),
+         ACCESS_BARE_METAL
    );
 
-   if ( db_version != DB_VERSION_DEF ) {
-      wrn_slow_printf(
-            "DB version in EEPROM (0x%04x) doesn't match expected (0x%04x)\n",
-            db_version,
-            DB_VERSION_DEF
-      );
-      return( ERR_DB_VER_MISMATCH);
+   if ( ERR_NONE != status ) {
+      goto DB_isValid_ERR_HANDLE;          /* Stop and jump to error handling */
+   } else {
+      if ( db_version != DB_VERSION_DEF ) {
+
+         wrn_slow_printf(
+               "DB version in EEPROM (0x%04x) doesn't match expected (0x%04x)\n",
+               db_version,
+               DB_VERSION_DEF
+         );
+         return( ERR_DB_VER_MISMATCH);
+      }
    }
 
-   return (ERR_NONE);
+DB_isValid_ERR_HANDLE:      /* Handle any error that may have occurred. */
+   ERR_COND_OUTPUT(
+         status,
+         accessType,
+         "Error 0x%08x validating the settings DB\n",
+         status
+   );
+   return( status );
 }
 
 /******************************************************************************/

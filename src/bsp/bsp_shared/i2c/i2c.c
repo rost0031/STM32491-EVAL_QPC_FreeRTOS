@@ -14,6 +14,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "i2c.h"
+#include "i2c_defs.h"
 #include "i2c_dev.h"
 #include "qp_port.h"                                        /* for QP support */
 #include "stm32f4xx_it.h"
@@ -150,6 +151,31 @@ static CBErrorCode I2C_setupMemRW(
       uint8_t i2cMemAddrSize
 );
 
+/**
+ * @brief  Writes a block of data from a memory device on any I2C bus.
+ *
+ * @note:  This is a slow function that should not be called by any threads or
+ * objects. It's for use in case of crashes and before the entire system has
+ * come up.
+ *
+ * @param [in] iBus: I2C_Bus_t type specifying the I2C bus where device lives.
+ *    @arg I2CBus1
+ * @param [in] i2cDevAddr: address of the device on the I2C bus.
+ * @param [in] i2cMemAddr: internal memory address of the device on the I2C bus.
+ * @param [in] i2cMemAddrSize: size of the memory address i2cMemAddr.
+ *    @arg 1: a 1 byte address.
+ *    @arg 2: a 2 byte address.
+ *    No other sizes will be handled.
+ * @param [in|out] *pBuffer: uint8_t pointer to buffer from where to write the
+ * data from to the I2C device.
+ * @param [in] bytesToWrite : uint8_t variable specifying how many bytes to
+ * write. Note that this should always be less than or equal to the page size of
+ * the target memory device since most memory devices will loop around to the
+ * front of the page if you go over the page boundary.
+ *
+ * @return CBErrorCode: status of the read operation
+ *    @arg ERR_NONE: if no errors occurred
+ */
 static CBErrorCode I2C_writePageBLK(
       I2C_Bus_t iBus,
       uint8_t i2cDevAddr,
@@ -579,7 +605,7 @@ CBErrorCode I2C_readBufferBLK(
 }
 
 /******************************************************************************/
-CBErrorCode I2C_writeBufferBLK( /* TODO: does this belong in i2c_dev? */
+CBErrorCode I2C_writeBufferBLK(
       I2C_Bus_t iBus,
       uint8_t i2cDevAddr,
       uint16_t i2cMemAddr,

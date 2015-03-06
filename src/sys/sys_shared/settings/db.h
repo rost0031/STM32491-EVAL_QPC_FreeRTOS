@@ -68,12 +68,17 @@ typedef enum DB_Elements {
  * This function checks for a magic number at the beginning of the EEPROM and
  * the version to see if they match what's expected.
  *
- * @param   None
+ * @param  [in] accessType: AccessType_t that specifies how the function is being
+ * accessed.
+ *    @arg ACCESS_BARE_METAL: blocking access that is slow.  Don't use once the
+ *                            RTOS is running.
+ *    @arg ACCESS_QPC:        non-blocking, event based access.
+ *    @arg ACCESS_FREERTOS:   non-blocking, but waits on queue to know the status.
  * @return CBErrorCode: status of the read operation
  *    @arg ERR_NONE: if no errors occurred
  *    other errors if found.
  */
-CBErrorCode DB_isValid( void );
+CBErrorCode DB_isValid( AccessType_t accessType );
 
 /**
  * @brief   Initialize the settings DB in EEPROM to a stored default.
