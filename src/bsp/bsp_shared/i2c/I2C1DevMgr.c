@@ -50,7 +50,7 @@
 
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */
-DBG_DEFINE_THIS_MODULE( DBG_MODL_I2C ); /* For debug system to ID this module */
+DBG_DEFINE_THIS_MODULE( DBG_MODL_I2C_DEV ); /* For debug system to ID this module */
 
 /* Private typedefs ----------------------------------------------------------*/
 
@@ -93,10 +93,6 @@ typedef struct {
     /**< Total number of bytes to be read or written with an operation */
     uint16_t bytesTotal;
 
-    /**< Number of bytes already read or written as part of the bytesTotal.
-     * This is for R/W operations that don't fit into a single bus request */
-    uint16_t bytesCurr;
-
     /**< Keep track of the starting internal memory address of a read or a
      write operation */
     uint16_t addrStart;
@@ -126,6 +122,27 @@ typedef struct {
          variable keeps track of whether the response needs to get added to the raw
          queue used to communicate with the FreeRTOS thread. */
     AccessType_t accessType;
+
+    /**< Keep track of how many bytes to write on the first page of the device */
+    uint8_t writeSizeFirstPage;
+
+    /**< Keep track of how many bytes to write on the last page of the device */
+    uint8_t writeSizeLastPage;
+
+    /**< Keep track of how many pages to write to the device */
+    uint8_t writeTotalPages;
+
+    /**< Keep track of current page to write to the device */
+    uint8_t writeCurrPage;
+
+    /**< To keep track of how many bytes to write each iteration to the device */
+    uint8_t writeSizeCurr;
+
+    /**< Keep track of the current address to write to */
+    uint16_t writeMemAddrCurr;
+
+    /**< Keep track of the index into the buffer of data when writing several pages */
+    uint8_t writeBufferIndex;
 } I2C1DevMgr;
 
 /* protected: */
@@ -670,7 +687,7 @@ static QState I2C1DevMgr_ReadMem(I2C1DevMgr * const me, QEvt const * const e) {
             i2cReadMemEvt->addr             = me->addrStart;
             i2cReadMemEvt->addrSize         = I2C_getMemAddrSize(me->iDev);
             i2cReadMemEvt->memAccessType    = I2C_MEM_DMA;
-            i2cReadMemEvt->bytes            = me->bytesTotal; //TODO: remember to fix this.  This should not exceed max page size.
+            i2cReadMemEvt->bytes            = me->bytesTotal;
             QACTIVE_POST(AO_I2CBusMgr[me->iBus], (QEvt *)i2cReadMemEvt, me);
             status_ = Q_HANDLED();
             break;
@@ -734,13 +751,13 @@ static QState I2C1DevMgr_WriteMem(I2C1DevMgr * const me, QEvt const * const e) {
             /* Allocate and directly post an event to the appropriate I2CBusMgr AO */
             I2CWriteMemReqEvt *i2cWriteMemReqEvt = Q_NEW( I2CWriteMemReqEvt, I2C_BUS_WRITE_MEM_SIG );
             i2cWriteMemReqEvt->i2cBus           = me->iBus;
-            i2cWriteMemReqEvt->addr             = me->addrStart;
+            i2cWriteMemReqEvt->addr             = me->writeMemAddrCurr;
             i2cWriteMemReqEvt->addrSize         = I2C_getMemAddrSize(me->iDev);
             i2cWriteMemReqEvt->memAccessType    = I2C_MEM_DMA;
-            i2cWriteMemReqEvt->bytes            = me->bytesTotal; //TODO: remember to fix this.  This should not exceed max page size.
+            i2cWriteMemReqEvt->bytes            = me->writeSizeCurr;
             MEMCPY(
                 i2cWriteMemReqEvt->dataBuf,
-                me->dataBuf,
+                &me->dataBuf[me->writeBufferIndex],
                 i2cWriteMemReqEvt->bytes
             );
             DBG_printf("QACTPosting I2C_BUS_WRITE_MEM_SIG with %d bytes\n", i2cWriteMemReqEvt->bytes );
@@ -758,8 +775,9 @@ static QState I2C1DevMgr_WriteMem(I2C1DevMgr * const me, QEvt const * const e) {
         case I2C_BUS_DONE_SIG: {
             /* Remember the result of each event coming back from I2CBusMgr AO */
             me->errorCode = ((I2CStatusEvt const *)e)->errorCode;
+            DBG_printf("Got I2C_BUS_DONE with error: 0x%08x\n", me->errorCode);
             /* ${AOs::I2C1DevMgr::SM::Active::Busy::WriteMem::I2C_BUS_DONE::[NoErr?]} */
-            if (ERR_NONE == ((I2CBusDataEvt const *)e)->errorCode) {
+            if (ERR_NONE == me->errorCode) {
                 /* Set this so the state machine remembers the result */
                 me->errorCode = ERR_NONE;
                 LOG_printf("Got I2C_BUS_DONE with no error\n");
@@ -767,6 +785,7 @@ static QState I2C1DevMgr_WriteMem(I2C1DevMgr * const me, QEvt const * const e) {
             }
             /* ${AOs::I2C1DevMgr::SM::Active::Busy::WriteMem::I2C_BUS_DONE::[else]} */
             else {
+                DBG_printf("Took this path despite error being 0x%08x\n", me->errorCode);
                 status_ = Q_TRAN(&I2C1DevMgr_Idle);
             }
             break;
@@ -801,7 +820,37 @@ static QState I2C1DevMgr_PostWriteWait(I2C1DevMgr * const me, QEvt const * const
         /* ${AOs::I2C1DevMgr::SM::Active::Busy::PostWriteWait::I2C1_DEV_POST_WRITE_TIMER} */
         case I2C1_DEV_POST_WRITE_TIMER_SIG: {
             LOG_printf("Write to EEPROM finished with error: 0x%08x\n", me->errorCode);
-            status_ = Q_TRAN(&I2C1DevMgr_Idle);
+
+            /* Update the counter and index */
+            me->writeMemAddrCurr += me->writeSizeCurr;
+            me->writeBufferIndex += me->writeSizeCurr;
+            me->writeCurrPage    += 1;
+            /* ${AOs::I2C1DevMgr::SM::Active::Busy::PostWriteWait::I2C1_DEV_POST_WRITE_TIMER::[MorePages?]} */
+            if (me->writeCurrPage < me->writeTotalPages) {
+                if ( me->writeCurrPage == me->writeTotalPages-1 ) {
+                    me->writeSizeCurr = me->writeSizeLastPage;
+                } else {
+                    me->writeSizeCurr = I2C_getPageSize( me->iDev );
+                }
+                status_ = Q_TRAN(&I2C1DevMgr_CheckingBus);
+            }
+            /* ${AOs::I2C1DevMgr::SM::Active::Busy::PostWriteWait::I2C1_DEV_POST_WRITE_TIMER::[else]} */
+            else {
+                LOG_printf(
+                    "Wrote %d pages to %s. Error: 0x%08x\n",
+                    me->writeTotalPages,
+                    I2C_devToStr(me->iDev),
+                    me->errorCode
+                );
+
+                /* Publish event for anyone who is listening */
+                I2CWriteDoneEvt *i2cWriteDoneEvt = Q_NEW(I2CWriteDoneEvt, I2C1_DEV_WRITE_DONE_SIG);
+                i2cWriteDoneEvt->status = me->errorCode;
+                i2cWriteDoneEvt->i2cDev = me->iDev;
+                i2cWriteDoneEvt->bytes  = me->bytesTotal;
+                QF_PUBLISH((QEvt *)i2cWriteDoneEvt, AO_I2C1DevMgr);
+                status_ = Q_TRAN(&I2C1DevMgr_Idle);
+            }
             break;
         }
         default: {
@@ -833,8 +882,6 @@ static QState I2C1DevMgr_CheckingBus(I2C1DevMgr * const me, QEvt const * const e
             i2cAddrEvt->addr       = I2C_getDevAddr(me->iDev);
             i2cAddrEvt->addrSize   = I2C_getDevAddrSize(me->iDev);
             QACTIVE_POST(AO_I2CBusMgr[me->iBus], (QEvt *)(i2cAddrEvt), me);
-
-            DBG_printf("ActivePosted I2C_BUS_CHECK_FREE\n");
             status_ = Q_HANDLED();
             break;
         }
@@ -896,12 +943,6 @@ static QState I2C1DevMgr_Idle(I2C1DevMgr * const me, QEvt const * const e) {
             status_ = Q_HANDLED();
             break;
         }
-        /* ${AOs::I2C1DevMgr::SM::Active::Idle} */
-        case Q_EXIT_SIG: {
-            me->bytesCurr = 0; // Reset the current byte counter
-            status_ = Q_HANDLED();
-            break;
-        }
         /* ${AOs::I2C1DevMgr::SM::Active::Idle::I2C1_DEV_RAW_MEM_READ} */
         case I2C1_DEV_RAW_MEM_READ_SIG: {
             me->iDev       = ((I2CReadReqEvt const *)e)->i2cDev;
@@ -935,18 +976,57 @@ static QState I2C1DevMgr_Idle(I2C1DevMgr * const me, QEvt const * const e) {
         }
         /* ${AOs::I2C1DevMgr::SM::Active::Idle::I2C1_DEV_RAW_MEM_WRITE} */
         case I2C1_DEV_RAW_MEM_WRITE_SIG: {
-            me->iDev = ((I2CWriteReqEvt const *)e)->i2cDev;
-            me->addrStart = ((I2CWriteReqEvt const *)e)->addr;
-            me->addrSize  = I2C_getMemAddrSize(me->iDev);
+            /* Store all the data from the event and look up a few things */
+            me->iDev       = ((I2CWriteReqEvt const *)e)->i2cDev;
+            me->addrStart  = ((I2CWriteReqEvt const *)e)->addr;
             me->bytesTotal = ((I2CWriteReqEvt const *)e)->bytes;
-            me->i2cDevOp = I2C_OP_MEM_WRITE;
+            me->addrSize   = I2C_getMemAddrSize(me->iDev);
+            me->i2cDevOp   = I2C_OP_MEM_WRITE;
+            me->accessType = ((I2CWriteReqEvt const *)e)->accessType;
             MEMCPY(
                 me->dataBuf,
                 ((I2CWriteReqEvt const *)e)->dataBuf,
                 me->bytesTotal
             );
-            me->accessType = ((I2CWriteReqEvt const *)e)->accessType;
-            status_ = Q_TRAN(&I2C1DevMgr_CheckingBus);
+
+            /* Figure out the write sizes of pages if number of bytes desired to be written is
+             bigger than the page size. */
+            me->errorCode = I2C_calcPageWriteSizes(
+                &(me->writeSizeFirstPage),
+                &(me->writeSizeLastPage),
+                &(me->writeTotalPages),
+                me->addrStart,
+                me->bytesTotal,
+                I2C_getPageSize( me->iDev )
+            );
+
+            DBG_printf(
+                "wsFP: %d, wsLP: %d, wsTP: %d, aS: 0x%02x, bT: %d\n",
+                me->writeSizeFirstPage,
+                me->writeSizeLastPage,
+                me->writeTotalPages,
+                me->addrStart,
+                me->bytesTotal
+            );
+            /* ${AOs::I2C1DevMgr::SM::Active::Idle::I2C1_DEV_RAW_MEM_WRITE::[NoErr?]} */
+            if (ERR_NONE == me->errorCode) {
+                /* This is the first iteration through the "loop" which writes several pages */
+                me->writeCurrPage    = 0;
+                me->writeSizeCurr    = me->writeSizeFirstPage;
+                me->writeBufferIndex = 0;
+                me->writeMemAddrCurr = me->addrStart;
+                status_ = Q_TRAN(&I2C1DevMgr_CheckingBus);
+            }
+            /* ${AOs::I2C1DevMgr::SM::Active::Idle::I2C1_DEV_RAW_MEM_WRITE::[else]} */
+            else {
+                ERR_printf("Unable to calculate page boundaries, aborting write. Error: 0x%08x\n", me->errorCode);
+                I2CWriteDoneEvt *i2cWriteDoneEvt = Q_NEW(I2CWriteDoneEvt, I2C1_DEV_WRITE_DONE_SIG);
+                i2cWriteDoneEvt->status = me->errorCode;
+                i2cWriteDoneEvt->bytes = 0;
+                i2cWriteDoneEvt->i2cDev = me->iDev;
+                QF_PUBLISH((QEvt *)i2cWriteDoneEvt, AO_I2C1DevMgr);
+                status_ = Q_TRAN(&I2C1DevMgr_Idle);
+            }
             break;
         }
         default: {

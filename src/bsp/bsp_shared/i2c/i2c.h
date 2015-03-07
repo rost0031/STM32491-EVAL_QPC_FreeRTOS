@@ -158,6 +158,15 @@ void I2C_StartDMARead( I2C_Bus_t iBus, uint16_t wReadLen );
 void I2C_StartDMAWrite( I2C_Bus_t iBus, uint16_t wWriteLen );
 
 /**
+ * @brief   Get the string representation of the I2C Bus.
+ *
+ * @param [in]  iBus: I2C_Bus_t identifier to choose bus
+ *    @arg I2CBus1: get the string representation of I2CBus1
+ * @return: string representation of the I2C bus.
+ */
+char* I2C_busToStr( I2C_Bus_t iBus );
+
+/**
  * @brief  Reads a block of data from a memory device on any I2C bus.
  *
  * @note:  This is a slow function that should not be called by any threads or
@@ -208,7 +217,8 @@ CBErrorCode I2C_readBufferBLK(
  *    No other sizes will be handled.
  * @param [in] *pBuffer: uint8_t pointer to buffer to the data to be written.
  * @param [in] bytesToWrite: uint8_t variable specifying how many bytes to write
- *
+ * @param [in] pageSize: uint16_t size of a single page in the device being
+ * written.
  * @return CBErrorCode: status of the write operation
  *    @arg ERR_NONE: if no errors occurred
  */
@@ -218,7 +228,8 @@ CBErrorCode I2C_writeBufferBLK( /* TODO: does this belong in i2c_dev? */
       uint16_t i2cMemAddr,
       uint8_t i2cMemAddrSize,
       uint8_t* pBuffer,
-      uint16_t bytesToWrite
+      uint16_t bytesToWrite,
+      uint16_t pageSize
 );
 
 /******************************************************************************/

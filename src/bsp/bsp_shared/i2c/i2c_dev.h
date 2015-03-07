@@ -171,8 +171,6 @@ char* I2C_devToStr( I2C_Dev_t iDev );
 /**
  * @brief   Calculate how to properly write large data over page boundaries in EEPROM.
  *
- * @param [out] *pageSize: uint8_t pointer to the looked up size of the page of
- *              EEPROM.
  * @param [out] *writeSizeFirstPage: uint8_t pointer to how many bytes to write
  *              on the first page of the EEPROM.
  * @param [out] *writeSizeLastPage: uint8_t pointer to how many bytes to write
@@ -184,17 +182,18 @@ char* I2C_devToStr( I2C_Dev_t iDev );
  *    @arg 2: a 2 byte address.
  *    No other sizes will be handled.
  * @param [in] bytesToWrite: uint8_t variable specifying how many bytes to write
- *
+ * @param [in] pageSize: uint16_t specifying the size of the page of the target
+ * device.
  * @return CBErrorCode: status of the write operation
  *    @arg ERR_NONE: if no errors occurred
  */
-CBErrorCode I2C_calcEepromPageWriteSizes(
-      uint8_t *pageSize,
+CBErrorCode I2C_calcPageWriteSizes(
       uint8_t *writeSizeFirstPage,
       uint8_t *writeSizeLastPage,
       uint8_t *writeTotalPages,
       uint16_t i2cMemAddr,
-      uint16_t bytesToWrite
+      uint16_t bytesToWrite,
+      uint16_t pageSize
 );
 
 /******************************************************************************/

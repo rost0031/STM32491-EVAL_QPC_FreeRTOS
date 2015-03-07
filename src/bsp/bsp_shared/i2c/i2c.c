@@ -513,6 +513,19 @@ void I2C_StartDMAWrite( I2C_Bus_t iBus, uint16_t wWriteLen )
 }
 
 /******************************************************************************/
+char* I2C_busToStr( I2C_Bus_t iBus )
+{
+   /* Check inputs */
+   assert_param( IS_I2C_BUS( iBus ) );
+
+   switch ( iBus ) {
+      case I2CBus1: return("I2CBus1"); break;
+      default: return(""); break;
+   }
+}
+
+
+/******************************************************************************/
 CBErrorCode I2C_readBufferBLK(
       I2C_Bus_t iBus,
       uint8_t i2cDevAddr,
@@ -611,21 +624,21 @@ CBErrorCode I2C_writeBufferBLK(
       uint16_t i2cMemAddr,
       uint8_t i2cMemAddrSize,
       uint8_t* pBuffer,
-      uint16_t bytesToWrite
+      uint16_t bytesToWrite,
+      uint16_t pageSize
 )
 {
    /* Figure out how to lay out the data over the page boundaries */
-   uint8_t pageSize = 0;
    uint8_t writeSizeFirstPage = 0;
    uint8_t writeSizeLastPage = 0;
    uint8_t writeTotalPages = 0;
-   CBErrorCode status = I2C_calcEepromPageWriteSizes(
-         &pageSize,
+   CBErrorCode status = I2C_calcPageWriteSizes(
          &writeSizeFirstPage,
          &writeSizeLastPage,
          &writeTotalPages,
          i2cMemAddr,
-         bytesToWrite
+         bytesToWrite,
+         pageSize
    );
 
    if ( ERR_NONE != status ) {

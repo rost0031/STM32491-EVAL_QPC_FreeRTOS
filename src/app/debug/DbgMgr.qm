@@ -96,16 +96,35 @@ CBErrorCode err = CON_hexToStr(
 
 MENU_printf(
     me-&gt;menuReqSrc,
-    &quot;Read %d bytes from device %s on I2CBus%d: %s\n&quot;, 
+    &quot;--- Test Done  --- Read %d bytes from device %s on %s: %s\n&quot;,
     ((I2CReadDoneEvt const *)e)-&gt;bytes,
     I2C_devToStr( ((I2CReadDoneEvt const *)e)-&gt;i2cDev ),
-    I2C_getBus( ((I2CReadDoneEvt const *)e)-&gt;i2cDev ),
+    I2C_busToStr(
+        I2C_getBus( ((I2CReadDoneEvt const *)e)-&gt;i2cDev )
+    ),
     tmp
 );
 
 
 </action>
       <tran_glyph conn="3,44,3,-1,21">
+       <action box="0,-2,21,2"/>
+      </tran_glyph>
+     </tran>
+     <tran trig="I2C1_DEV_WRITE_DONE">
+      <action>QActive_unsubscribe((QActive *)me, I2C1_DEV_WRITE_DONE_SIG);
+LOG_printf(&quot;Received I2C1_DEV_WRITE_DONE\n&quot;);
+
+MENU_printf(
+    me-&gt;menuReqSrc,
+    &quot;--- Test Done  --- Wrote %d bytes to %s on %s.\n&quot;,
+    ((I2CWriteDoneEvt const *)e)-&gt;bytes,
+    I2C_devToStr( ((I2CWriteDoneEvt const *)e)-&gt;i2cDev ),
+    I2C_busToStr(
+        I2C_getBus( ((I2CWriteDoneEvt const *)e)-&gt;i2cDev )
+    )
+);</action>
+      <tran_glyph conn="3,47,3,-1,21">
        <action box="0,-2,21,2"/>
       </tran_glyph>
      </tran>

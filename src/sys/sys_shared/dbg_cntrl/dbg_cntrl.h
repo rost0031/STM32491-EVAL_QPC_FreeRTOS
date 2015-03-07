@@ -173,12 +173,13 @@ typedef enum DBG_MODULES {
    DBG_MODL_TIME     = 0x00000004, /**< Time module debugging. */
    DBG_MODL_ETH      = 0x00000008, /**< Ethernet module debugging. */
    DBG_MODL_I2C      = 0x00000010, /**< I2C module debugging. */
-   DBG_MODL_NOR      = 0x00000020, /**< NOR Flash module debugging. */
-   DBG_MODL_SDRAM    = 0x00000040, /**< SDRAM module debugging. */
-   DBG_MODL_DBG      = 0x00000080, /**< MENU module debugging. */
-   DBG_MODL_COMM     = 0x00000100, /**< COMM module debugging. */
-   DBG_MODL_CPLR     = 0x00000200, /**< Coupler module debugging. */
-   DBG_MODL_DB       = 0x00000400, /**< Database module debugging. */
+   DBG_MODL_I2C_DEV  = 0x00000020, /**< I2C module debugging. */
+   DBG_MODL_NOR      = 0x00000040, /**< NOR Flash module debugging. */
+   DBG_MODL_SDRAM    = 0x00000080, /**< SDRAM module debugging. */
+   DBG_MODL_DBG      = 0x00000100, /**< MENU module debugging. */
+   DBG_MODL_COMM     = 0x00000200, /**< COMM module debugging. */
+   DBG_MODL_CPLR     = 0x00000400, /**< Coupler module debugging. */
+   DBG_MODL_DB       = 0x00000800, /**< Database module debugging. */
 } DBG_MODL_T;
 
 /* Exported variables --------------------------------------------------------*/

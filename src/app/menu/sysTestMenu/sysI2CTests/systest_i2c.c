@@ -61,16 +61,21 @@ void MENU_i2cEEPROMReadTestAction(
    /* Subscribe to the signal of the event that is expected to be returned. This
     * is not subscribed to by default to avoid printing out every single I2C
     * read request sent to the I2C1DevMgr.  As soon as the signal handler for
-    * this event gets triggerred in DbgMgr AO, it will unsubscribe from it. */
+    * this event gets triggered in DbgMgr AO, it will un-subscribe from it. */
    QActive_subscribe(AO_DbgMgr, I2C1_DEV_READ_DONE_SIG);
 
-   MENU_printf(dst, "Running an EEPROM read test. Reading %d bytes from 0x%02x\n", bytes, memAddr);
+   MENU_printf(
+         dst,
+         "--- Test Start --- Running an EEPROM read test. Reading %d bytes from 0x%02x\n",
+         bytes,
+         memAddr
+   );
    /* Publish event to start an EEPROM read */
-   I2CReadReqEvt *i2cEERPOMReadReqEvt = Q_NEW(I2CReadReqEvt, I2C1_DEV_RAW_MEM_READ_SIG);
-   i2cEERPOMReadReqEvt->addr = memAddr;
-   i2cEERPOMReadReqEvt->bytes  = bytes;
-   i2cEERPOMReadReqEvt->accessType = ACCESS_QPC;
-   QF_PUBLISH((QEvent *)i2cEERPOMReadReqEvt, AO_DbgMgr);
+   I2CReadReqEvt *i2cReadReqEvt = Q_NEW(I2CReadReqEvt, I2C1_DEV_RAW_MEM_READ_SIG);
+   i2cReadReqEvt->addr = memAddr;
+   i2cReadReqEvt->bytes  = bytes;
+   i2cReadReqEvt->accessType = ACCESS_QPC;
+   QF_PUBLISH((QEvent *)i2cReadReqEvt, AO_DbgMgr);
 }
 
 /******************************************************************************/
@@ -112,6 +117,13 @@ void MENU_i2cEEPROMWriteTestAction(
 {
    CB_UNUSED_ARG(dataBuf);
    CB_UNUSED_ARG(dataLen);
+
+   /* Subscribe to the signal of the event that is expected to be returned. This
+    * is not subscribed to by default to avoid printing out every single I2C
+    * read request sent to the I2C1DevMgr.  As soon as the signal handler for
+    * this event gets triggered in DbgMgr AO, it will un-subscribe from it. */
+   QActive_subscribe(AO_DbgMgr, I2C1_DEV_WRITE_DONE_SIG);
+
    uint16_t memAddr = 0x00;
    uint8_t bytes = 16;
    uint8_t tmp[bytes];
@@ -119,18 +131,24 @@ void MENU_i2cEEPROMWriteTestAction(
    for( uint8_t i=0; i< bytes; i++ ) {
       tmp[i] = i+5; // Write some numbers to the buffer.
    }
-   MENU_printf(dst, "Running an EEPROM write test. Writing %d bytes to 0x%02x\n", bytes, memAddr);
+   MENU_printf(
+         dst,
+         "--- Test Start --- Running an EEPROM write test. Writing %d bytes to 0x%02x\n",
+         bytes,
+         memAddr
+   );
    /* Publish event to start an EEPROM read */
-   I2CWriteReqEvt *i2cEERPOMWriteReqEvt = Q_NEW(I2CWriteReqEvt, I2C1_DEV_RAW_MEM_WRITE_SIG);
-   i2cEERPOMWriteReqEvt->addr = memAddr;
-   i2cEERPOMWriteReqEvt->bytes  = bytes;
+   I2CWriteReqEvt *i2cWriteReqEvt = Q_NEW(I2CWriteReqEvt, I2C1_DEV_RAW_MEM_WRITE_SIG);
+   i2cWriteReqEvt->addr = memAddr;
+   i2cWriteReqEvt->bytes  = bytes;
+   i2cWriteReqEvt->i2cDev = EEPROM;
    MEMCPY(
-         i2cEERPOMWriteReqEvt->dataBuf,
+         i2cWriteReqEvt->dataBuf,
          tmp,
          bytes
    );
-   i2cEERPOMWriteReqEvt->accessType = ACCESS_QPC;
-   QF_PUBLISH((QEvent *)i2cEERPOMWriteReqEvt, AO_DbgMgr);
+   i2cWriteReqEvt->accessType = ACCESS_QPC;
+   QF_PUBLISH((QEvent *)i2cWriteReqEvt, AO_DbgMgr);
 }
 
 /**

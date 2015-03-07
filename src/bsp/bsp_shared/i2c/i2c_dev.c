@@ -25,7 +25,7 @@
 
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */
-DBG_DEFINE_THIS_MODULE( DBG_MODL_I2C ); /* For debug system to ID this module */
+DBG_DEFINE_THIS_MODULE( DBG_MODL_I2C_DEV ); /* For debug system to ID this module */
 
 /* Private typedefs ----------------------------------------------------------*/
 /* Private defines -----------------------------------------------------------*/
@@ -181,13 +181,13 @@ char* I2C_devToStr( I2C_Dev_t iDev )
 }
 
 /******************************************************************************/
-CBErrorCode I2C_calcEepromPageWriteSizes(
-      uint8_t *pageSize,
+CBErrorCode I2C_calcPageWriteSizes(
       uint8_t *writeSizeFirstPage,
       uint8_t *writeSizeLastPage,
       uint8_t *writeTotalPages,
       uint16_t i2cMemAddr,
-      uint16_t bytesToWrite
+      uint16_t bytesToWrite,
+      uint16_t pageSize
 )
 {
    /* Check if we are going to write over the end of the eeprom */
@@ -195,23 +195,19 @@ CBErrorCode I2C_calcEepromPageWriteSizes(
       return ( ERR_I2C1DEV_MEM_OUT_BOUNDS );
    }
 
-   /* Check if the address and length of write to see if it's more than a page
-    * and if the start is page aligned. */
-   *pageSize = I2C_getPageSize( EEPROM );
-
    /* Calculate space available in the first page */
-   uint8_t pageSpace = (((i2cMemAddr/(*pageSize)) + 1) * (*pageSize)) - i2cMemAddr;
+   uint8_t pageSpace = (((i2cMemAddr/(pageSize)) + 1) * (pageSize)) - i2cMemAddr;
 
    /* Calculate how many bytes to write in the first page */
    *writeSizeFirstPage = MIN(pageSpace, bytesToWrite);
 
    /* Calculate how many bytes to write on the last page*/
-   *writeSizeLastPage = (bytesToWrite - *writeSizeFirstPage) % *pageSize;
+   *writeSizeLastPage = (bytesToWrite - *writeSizeFirstPage) % pageSize;
 
    /* Calculate how many pages we are going to be writing (full and partial) */
    *writeTotalPages = 0;
    if (bytesToWrite > *writeSizeFirstPage) {
-      *writeTotalPages = ((bytesToWrite - *writeSizeFirstPage)/(*pageSize)) + 2;
+      *writeTotalPages = ((bytesToWrite - *writeSizeFirstPage)/(pageSize)) + 2;
    } else {
       *writeTotalPages = 1;
    }
@@ -289,11 +285,12 @@ CBErrorCode I2C_writeEepromBLK(
 {
    CBErrorCode status = I2C_writeBufferBLK(
          I2CBus1,                               // I2C_Bus_t iBus,
-         I2C_getDevAddr( EEPROM ),          // uint8_t i2cDevAddr,
-         I2C_getMemAddr( EEPROM ) + offset, // uint16_t i2cMemAddr,
-         I2C_getMemAddrSize( EEPROM ),      // uint8_t i2cMemAddrSize,
+         I2C_getDevAddr( EEPROM ),              // uint8_t i2cDevAddr,
+         I2C_getMemAddr( EEPROM ) + offset,     // uint16_t i2cMemAddr,
+         I2C_getMemAddrSize( EEPROM ),          // uint8_t i2cMemAddrSize,
          pBuffer,                               // uint8_t* pBuffer,
-         bytesToWrite                           // uint16_t bytesToWrite
+         bytesToWrite,                          // uint16_t bytesToWrite
+         I2C_getPageSize( EEPROM )              // uint16_t pageSize
    );
 
    return status;

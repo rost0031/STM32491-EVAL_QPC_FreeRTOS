@@ -36,7 +36,7 @@ DBG_DEFINE_THIS_MODULE( DBG_MODL_GENERAL ); /* For debug system to ID this modul
 
 /* Private typedefs ----------------------------------------------------------*/
 /* Private defines -----------------------------------------------------------*/
-#define THREAD_STACK_SIZE  1024U * 2
+#define THREAD_STACK_SIZE  1024U * 4
 
 /* Private macros ------------------------------------------------------------*/
 /* Private variables and Local objects ---------------------------------------*/
@@ -104,6 +104,7 @@ int main(void)
     DBG_ENABLE_DEBUG_FOR_MODULE(DBG_MODL_TIME);
     DBG_ENABLE_DEBUG_FOR_MODULE(DBG_MODL_ETH);
     DBG_DISABLE_DEBUG_FOR_MODULE(DBG_MODL_I2C);
+    DBG_ENABLE_DEBUG_FOR_MODULE(DBG_MODL_I2C_DEV);
     DBG_ENABLE_DEBUG_FOR_MODULE(DBG_MODL_NOR);
     DBG_ENABLE_DEBUG_FOR_MODULE(DBG_MODL_SDRAM);
     DBG_ENABLE_DEBUG_FOR_MODULE(DBG_MODL_DBG);
