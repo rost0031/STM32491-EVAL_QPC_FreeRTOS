@@ -36,7 +36,7 @@ DBG_DEFINE_THIS_MODULE( DBG_MODL_GENERAL ); /* For debug system to ID this modul
 
 /* Private typedefs ----------------------------------------------------------*/
 /* Private defines -----------------------------------------------------------*/
-#define THREAD_STACK_SIZE  1024U * 4
+#define THREAD_STACK_SIZE  1024U * 2
 
 /* Private macros ------------------------------------------------------------*/
 /* Private variables and Local objects ---------------------------------------*/

@@ -170,8 +170,6 @@ QS_FUN_DICTIONARY(&amp;I2C1DevMgr_initial);
 QS_FUN_DICTIONARY(&amp;I2C1DevMgr_Active);
 QS_FUN_DICTIONARY(&amp;I2C1DevMgr_Idle);
 
-QActive_subscribe((QActive *)me, I2C1_DEV_SN_READ_SIG);
-QActive_subscribe((QActive *)me, I2C1_DEV_EUI64_READ_SIG);
 QActive_subscribe((QActive *)me, I2C1_DEV_RAW_MEM_WRITE_SIG);
 QActive_subscribe((QActive *)me, I2C1_DEV_RAW_MEM_READ_SIG);
 
@@ -256,7 +254,7 @@ if ( ERR_NONE != me-&gt;errorCode ) {
         <action box="-17,-2,16,2"/>
        </tran_glyph>
       </tran>
-      <tran trig="I2C1_DEV_RAW_MEM_READ, I2C1_DEV_SN_READ, I2C1_DEV_EUI64_READ, I2C1_DEV_RAW_MEM_WRITE">
+      <tran trig="I2C1_DEV_RAW_MEM_READ, I2C1_DEV_RAW_MEM_WRITE">
        <action>if (QEQueue_getNFree(&amp;me-&gt;deferredEvtQueue) &gt; 0) {
    /* defer the request - this event will be handled
     * when the state machine goes back to Idle state */
@@ -267,7 +265,7 @@ if ( ERR_NONE != me-&gt;errorCode ) {
    ERR_printf(&quot;Unable to defer I2C request\n&quot;);
 }</action>
        <tran_glyph conn="54,72,3,-1,43">
-        <action box="1,-8,22,8"/>
+        <action box="0,-4,23,4"/>
        </tran_glyph>
       </tran>
       <tran trig="I2C1_DEV_OP_TIMEOUT" target="../../1">
@@ -732,26 +730,6 @@ me-&gt;i2cDevOp   = I2C_OP_MEM_READ;</action>
         <action box="0,-2,23,2"/>
        </tran_glyph>
       </tran>
-      <tran trig="I2C1_DEV_SN_READ" target="../../0/11">
-       <action>me-&gt;iDev = SN_ROM; // Set which device is being accessed
-me-&gt;addrStart = I2C_getMinMemAddr(me-&gt;iDev);
-me-&gt;addrSize  = I2C_getMemAddrSize(me-&gt;iDev);
-me-&gt;bytesTotal = I2C_getPageSize(me-&gt;iDev);
-me-&gt;i2cDevOp = I2C_OP_MEM_READ;</action>
-       <tran_glyph conn="5,17,3,3,61">
-        <action box="0,-2,17,2"/>
-       </tran_glyph>
-      </tran>
-      <tran trig="I2C1_DEV_EUI64_READ" target="../../0/11">
-       <action>me-&gt;iDev = EUI_ROM; // Set which device is being accessed
-me-&gt;addrStart = I2C_getMinMemAddr(me-&gt;iDev);
-me-&gt;addrSize  = I2C_getMemAddrSize(me-&gt;iDev);
-me-&gt;bytesTotal = I2C_getPageSize(me-&gt;iDev);
-me-&gt;i2cDevOp = I2C_OP_MEM_READ;</action>
-       <tran_glyph conn="5,19,3,3,61">
-        <action box="0,-2,17,2"/>
-       </tran_glyph>
-      </tran>
       <tran trig="I2C1_DEV_RAW_MEM_WRITE">
        <action>/* Store all the data from the event and look up a few things */
 me-&gt;iDev       = ((I2CWriteReqEvt const *)e)-&gt;i2cDev;
@@ -792,7 +770,7 @@ me-&gt;writeCurrPage    = 0;
 me-&gt;writeSizeCurr    = me-&gt;writeSizeFirstPage;
 me-&gt;writeBufferIndex = 0;
 me-&gt;writeMemAddrCurr = me-&gt;addrStart;</action>
-        <choice_glyph conn="32,21,5,3,34">
+        <choice_glyph conn="32,18,5,3,32,0,2">
          <action box="1,0,10,2"/>
         </choice_glyph>
        </choice>
@@ -804,11 +782,11 @@ i2cWriteDoneEvt-&gt;status = me-&gt;errorCode;
 i2cWriteDoneEvt-&gt;bytes = 0;
 i2cWriteDoneEvt-&gt;i2cDev = me-&gt;iDev;
 QF_PUBLISH((QEvt *)i2cWriteDoneEvt, AO_I2C1DevMgr);</action>
-        <choice_glyph conn="32,21,4,1,4,-6">
+        <choice_glyph conn="32,18,4,1,7,-6">
          <action box="-5,2,6,2"/>
         </choice_glyph>
        </choice>
-       <tran_glyph conn="5,21,3,-1,27">
+       <tran_glyph conn="5,18,3,-1,27">
         <action box="0,-2,22,2"/>
        </tran_glyph>
       </tran>

@@ -17,6 +17,7 @@
 #include "project_includes.h"
 #include "I2C1DevMgr.h"
 #include "DbgMgr.h"
+#include "i2c_dev.h"
 
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */
@@ -70,12 +71,23 @@ void MENU_i2cEEPROMReadTestAction(
          bytes,
          memAddr
    );
-   /* Publish event to start an EEPROM read */
-   I2CReadReqEvt *i2cReadReqEvt = Q_NEW(I2CReadReqEvt, I2C1_DEV_RAW_MEM_READ_SIG);
-   i2cReadReqEvt->addr = memAddr;
-   i2cReadReqEvt->bytes  = bytes;
-   i2cReadReqEvt->accessType = ACCESS_QPC;
-   QF_PUBLISH((QEvent *)i2cReadReqEvt, AO_DbgMgr);
+
+   /* Do a read from the EEPROM on the I2C Bus */
+   CBErrorCode status = I2C_readDevMemEVT(
+      EEPROM,                                         // I2C_Dev_t iDev,
+      memAddr,                                        // uint16_t offset,
+      bytes,                                          // uint16_t bytesToRead,
+      ACCESS_QPC,                                     // AccessType_t accType,
+      AO_DbgMgr                                       // QActive* callingAO
+   );
+
+   /* Print error if exists */
+   ERR_COND_OUTPUT(
+         status,
+         ACCESS_QPC,
+         "Error 0x%08x running EEPROM READ test\n",
+         status
+   );
 }
 
 /******************************************************************************/
@@ -87,10 +99,37 @@ void MENU_i2cSNReadTestAction(
 {
    CB_UNUSED_ARG(dataBuf);
    CB_UNUSED_ARG(dataLen);
-   MENU_printf(dst, "Running an Serial Number Read test...\n");
-   /* Publish event to start an Serial Number read */
-   QEvt *qEvt = Q_NEW(QEvt, I2C1_DEV_SN_READ_SIG);
-   QF_PUBLISH((QEvent *)qEvt, AO_DbgMgr);
+   uint16_t memAddr = 0x00;
+   uint8_t bytes = 16;
+   /* Subscribe to the signal of the event that is expected to be returned. This
+    * is not subscribed to by default to avoid printing out every single I2C
+    * read request sent to the I2C1DevMgr.  As soon as the signal handler for
+    * this event gets triggered in DbgMgr AO, it will un-subscribe from it. */
+   QActive_subscribe(AO_DbgMgr, I2C1_DEV_READ_DONE_SIG);
+
+   MENU_printf(
+         dst,
+         "--- Test Start --- Running an SN_ROM read test. Reading %d bytes from 0x%02x\n",
+         bytes,
+         memAddr
+   );
+
+      /* Do a read from the EEPROM on the I2C Bus */
+   CBErrorCode status = I2C_readDevMemEVT(
+      SN_ROM,                                         // I2C_Dev_t iDev,
+      memAddr,                                        // uint16_t offset,
+      bytes,                                          // uint16_t bytesToRead,
+      ACCESS_QPC,                                     // AccessType_t accType,
+      AO_DbgMgr                                       // QActive* callingAO
+   );
+
+   /* Print error if exists */
+   ERR_COND_OUTPUT(
+         status,
+         ACCESS_QPC,
+         "Error 0x%08x running SN_ROM READ test\n",
+         status
+   );
 }
 
 /******************************************************************************/
@@ -102,10 +141,39 @@ void MENU_i2cEUI64ReadTestAction(
 {
    CB_UNUSED_ARG(dataBuf);
    CB_UNUSED_ARG(dataLen);
-   MENU_printf(dst, "Running an UIE (64-bit) Read test...\n");
-   /* Publish event to start an Serial Number read */
-   QEvt *qEvt = Q_NEW(QEvt, I2C1_DEV_EUI64_READ_SIG);
-   QF_PUBLISH((QEvent *)qEvt, AO_DbgMgr);
+
+   uint16_t memAddr = 0x00;
+   uint8_t bytes = 8;
+
+   /* Subscribe to the signal of the event that is expected to be returned. This
+    * is not subscribed to by default to avoid printing out every single I2C
+    * read request sent to the I2C1DevMgr.  As soon as the signal handler for
+    * this event gets triggered in DbgMgr AO, it will un-subscribe from it. */
+   QActive_subscribe(AO_DbgMgr, I2C1_DEV_READ_DONE_SIG);
+
+   MENU_printf(
+         dst,
+         "--- Test Start --- Running an EUI_ROM read test. Reading %d bytes from 0x%02x\n",
+         bytes,
+         memAddr
+   );
+
+   /* Do a read from the EEPROM on the I2C Bus */
+   CBErrorCode status = I2C_readDevMemEVT(
+         EUI_ROM,                                        // I2C_Dev_t iDev,
+         memAddr,                                        // uint16_t offset,
+         bytes,                                          // uint16_t bytesToRead,
+         ACCESS_QPC,                                     // AccessType_t accType,
+         AO_DbgMgr                                       // QActive* callingAO
+   );
+
+   /* Print error if exists */
+   ERR_COND_OUTPUT(
+         status,
+         ACCESS_QPC,
+         "Error 0x%08x running EUI_ROM READ test\n",
+         status
+   );
 }
 
 /******************************************************************************/
@@ -131,24 +199,46 @@ void MENU_i2cEEPROMWriteTestAction(
    for( uint8_t i=0; i< bytes; i++ ) {
       tmp[i] = i+5; // Write some numbers to the buffer.
    }
+
    MENU_printf(
          dst,
          "--- Test Start --- Running an EEPROM write test. Writing %d bytes to 0x%02x\n",
          bytes,
          memAddr
    );
-   /* Publish event to start an EEPROM read */
-   I2CWriteReqEvt *i2cWriteReqEvt = Q_NEW(I2CWriteReqEvt, I2C1_DEV_RAW_MEM_WRITE_SIG);
-   i2cWriteReqEvt->addr = memAddr;
-   i2cWriteReqEvt->bytes  = bytes;
-   i2cWriteReqEvt->i2cDev = EEPROM;
-   MEMCPY(
-         i2cWriteReqEvt->dataBuf,
-         tmp,
-         bytes
+
+   /* Do a write to the EEPROM on the I2C Bus */
+   CBErrorCode status = I2C_writeDevMemEVT(
+      EEPROM,                                      // I2C_Dev_t iDev,
+      memAddr,                                     // uint16_t offset,
+      bytes,                                       // uint16_t bytesToWrite,
+      ACCESS_QPC,                                  // AccessType_t accType,
+      AO_DbgMgr,                                   // QActive* callingAO
+      tmp                                          // uint8_t *pBuffer,
    );
-   i2cWriteReqEvt->accessType = ACCESS_QPC;
-   QF_PUBLISH((QEvent *)i2cWriteReqEvt, AO_DbgMgr);
+
+   /* Print error if exists */
+   ERR_COND_OUTPUT(
+         status,
+         ACCESS_QPC,
+         "Error 0x%08x running EUI_ROM READ test\n",
+         status
+   );
+
+
+
+//   /* Publish event to start an EEPROM read */
+//   I2CWriteReqEvt *i2cWriteReqEvt = Q_NEW(I2CWriteReqEvt, I2C1_DEV_RAW_MEM_WRITE_SIG);
+//   i2cWriteReqEvt->addr = memAddr;
+//   i2cWriteReqEvt->bytes  = bytes;
+//   i2cWriteReqEvt->i2cDev = EEPROM;
+//   MEMCPY(
+//         i2cWriteReqEvt->dataBuf,
+//         tmp,
+//         bytes
+//   );
+//   i2cWriteReqEvt->accessType = ACCESS_QPC;
+//   QF_PUBLISH((QEvent *)i2cWriteReqEvt, AO_DbgMgr);
 }
 
 /**

@@ -33,9 +33,18 @@ typedef enum {
    DB_EEPROM = 0,           /**< Setting is located in the main EEPROM memory */
    DB_SN_ROM,         /**< Setting is located in the RO SNR section of EEPROM */
    DB_UI_ROM,        /**< Setting is located in the RO UI64 section of EEPROM */
+
+   /* .. insert more I2C devices before GPIO so they are all together .. */
+
    DB_GPIO,                          /**< Setting is specified via a GPIO pin */
    DB_FLASH                  /**< Setting is located in the main FLASH memory */
 } DB_ElemLoc_t;
+
+/**< How many I2C devices there in the system where DB elements may be stored */
+static const uint8_t nI2CDevicesForDB = DB_UI_ROM + 1;
+
+
+
 
 /**
  * Description type of each DB element (location, etc).
@@ -90,6 +99,16 @@ static const SettingsDB_Desc_t settingsDB[DB_MAX_ELEM] = {
       { DB_SN,          DB_SN_ROM,  16                                        , 0                                        },
 };
 
+/**
+ * Array to lookup the I2C device for the DB elements which are stored on some
+ * I2C device
+ */
+static const I2C_Dev_t DB_I2C_devices[] = {
+      EEPROM,
+      SN_ROM,
+      EUI_ROM
+};
+
 /**< Default settings that belong in the main memory of the EEPROM */
 static const SettingsDB_t DB_defaultEeepromSettings = {
       .dbMagicWord = DB_MAGIC_WORD_DEF,
@@ -99,6 +118,19 @@ static const SettingsDB_t DB_defaultEeepromSettings = {
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
+
+/******************************************************************************/
+char* DB_elemToStr( DB_Elem_t elem )
+{
+   switch ( elem ) {
+      case DB_MAGIC_WORD:  return("DB_MAGIC_WORD");   break;
+      case DB_VERSION:     return("DB_VERSION");      break;
+      case DB_MAC_ADDR:    return("DB_MAC_ADDR");     break;
+      case DB_IP_ADDR:     return("DB_IP_ADDR");      break;
+      case DB_SN:          return("DB_SN");           break;
+      default:             return("");                break;
+   }
+}
 
 /******************************************************************************/
 CBErrorCode DB_isValid( AccessType_t accessType )
@@ -250,25 +282,16 @@ CBErrorCode DB_getElemBLK(
 
    /* 3. Call the location dependent functions to retrieve the data from DB */
    switch( loc ) {
-      case DB_EEPROM:
-         status = I2C_readEepromBLK(
-               pBuffer,
-               settingsDB[elem].offset,
-               settingsDB[elem].size
-         );
-         break;
-      case DB_SN_ROM:
-         status = I2C_readSnRomBLK(
-               pBuffer,
-               settingsDB[elem].offset,
-               settingsDB[elem].size
-         );
-         break;
+      case DB_EEPROM:                           /* Intentionally fall through */
+      case DB_SN_ROM:                           /* Intentionally fall through */
       case DB_UI_ROM:
-         status = I2C_readUi64RomBLK(
-               pBuffer,
-               settingsDB[elem].offset,
-               settingsDB[elem].size
+         status = I2C_readDevMemBLK(
+               DB_I2C_devices[loc],          // I2C_Dev_t iDev,
+               settingsDB[elem].offset,      // uint16_t offset,
+               settingsDB[elem].size,        // uint16_t bytesToRead,
+               accessType,                   // AccessType_t accType,
+               pBuffer,                      // uint8_t* pBuffer,
+               bufSize                       // uint8_t  bufSize
          );
          break;
       case DB_GPIO:
@@ -291,7 +314,8 @@ DB_getElemBLK_ERR_HANDLE:         /* Handle any error that may have occurred. */
    ERR_COND_OUTPUT(
          status,
          accessType,
-         "Error 0x%08x getting element %d from DB\n",
+         "Error 0x%08x getting element %s (%d) from DB\n",
+         DB_elemToStr( elem ),
          elem,
          status
    );
@@ -311,12 +335,12 @@ CBErrorCode DB_setElemBLK(
    /* 1. Sanity checks of buffer sizes and memory allocations. */
    if ( bufSize > settingsDB[elem].size ) {
       status = ERR_MEM_BUFFER_LEN;
-      goto DB_getElemBLK_ERR_HANDLE;
+      goto DB_getElemBLK_ERR_HANDLE;       /* Stop and jump to error handling */
    }
 
    if ( NULL == pBuffer ) {
       status = ERR_MEM_NULL_VALUE;
-      goto DB_getElemBLK_ERR_HANDLE;
+      goto DB_getElemBLK_ERR_HANDLE;       /* Stop and jump to error handling */
    }
 
    /* 2. Find where the element lives */
@@ -325,10 +349,18 @@ CBErrorCode DB_setElemBLK(
    /* 3. Call the location dependent functions to write the data to DB */
    switch( loc ) {
       case DB_EEPROM:
-         status = I2C_writeEepromBLK(
-               pBuffer,
-               settingsDB[elem].offset,
-               settingsDB[elem].size
+//         status = I2C_writeEepromBLK(
+//               pBuffer,
+//               settingsDB[elem].offset,
+//               settingsDB[elem].size
+//         );
+         status = I2C_writeDevMemBLK(
+               DB_I2C_devices[loc],                // I2C_Dev_t iDev,
+               settingsDB[elem].offset,            // uint16_t offset,
+               settingsDB[elem].size,              // uint16_t bytesToWrite,
+               accessType,                         // AccessType_t accType,
+               pBuffer,                            // uint8_t* pBuffer,
+               bufSize                             // uint8_t  bufSize
          );
          break;
       case DB_SN_ROM:                           /* Fall through intentionally */
@@ -350,7 +382,8 @@ DB_getElemBLK_ERR_HANDLE:         /* Handle any error that may have occurred. */
    ERR_COND_OUTPUT(
          status,
          accessType,
-         "Error 0x%08x setting element %d to DB\n",
+         "Error 0x%08x setting element %s (%d) to DB\n",
+         DB_elemToStr( elem ),
          elem,
          status
    );

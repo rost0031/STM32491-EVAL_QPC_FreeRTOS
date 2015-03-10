@@ -157,6 +157,7 @@ void I2C_StartDMARead( I2C_Bus_t iBus, uint16_t wReadLen );
  */
 void I2C_StartDMAWrite( I2C_Bus_t iBus, uint16_t wWriteLen );
 
+
 /**
  * @brief   Get the string representation of the I2C Bus.
  *
@@ -165,6 +166,29 @@ void I2C_StartDMAWrite( I2C_Bus_t iBus, uint16_t wWriteLen );
  * @return: string representation of the I2C bus.
  */
 char* I2C_busToStr( I2C_Bus_t iBus );
+
+/**
+ * @brief  Posts an event read a block of data from a memory device on any I2C bus.
+ *
+ * @note:  This function should only be called from RTOS controlled thread/AO.
+ * It is non-blocking and instantly returns.
+ *
+ * @param [in] iBus: I2C_Bus_t type specifying the I2C bus where device lives.
+ *    @arg I2CBus1
+ * @param [in] addr: internal memory address of the device on the I2C bus.
+ * @param [in] bytesToRead : uint8_t variable specifying how many bytes to read.
+ * @param [in] accType: AccessType_t that specifies who the caller is.
+ * @param [in] *callingAO: QActive pointer to the AO that called this function.
+ *                         If called by a FreeRTOS thread, this should be NULL.
+ * @return None
+ */
+//void I2C_readBufferEVT(
+//      I2C_Bus_t iBus,
+//      uint16_t addr,
+//      uint16_t bytesToRead,
+//      AccessType_t accType,
+//      QActive* callingAO
+//);
 
 /**
  * @brief  Reads a block of data from a memory device on any I2C bus.

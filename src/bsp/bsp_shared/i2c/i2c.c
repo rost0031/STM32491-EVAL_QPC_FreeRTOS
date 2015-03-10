@@ -525,6 +525,42 @@ char* I2C_busToStr( I2C_Bus_t iBus )
 }
 
 
+
+
+///******************************************************************************/
+//void I2C_readBufferEVT(
+//      I2C_Bus_t iBus,
+//      uint16_t addr,
+//      uint16_t bytesToRead,
+//      AccessType_t accType,
+//      QActive* callingAO
+//)
+//{
+//   /* Build and directly post event to read I2C dev memory on the specified
+//    * bus. Since this function should not be directly called by users, by this
+//    * point, the caller functions have already checked most of the parameters to
+//    * the function  */
+//
+//   /* Directly post the event to the I2CDevXMgr based on what bus is specified */
+//   switch( iBus ) {
+//                                             /* Add other I2C busses here ... */
+//      case I2CBus1:
+//      default:
+//         I2CReadReqEvt *i2cReadReqEvt = Q_NEW(I2CReadReqEvt, I2C1_DEV_RAW_MEM_READ_SIG);
+//         i2cReadReqEvt->addr        = addr;
+//         i2cReadReqEvt->bytes       = bytesToRead;
+//         i2cReadReqEvt->accessType  = accType;
+//         QACTIVE_POST(AO_I2C1DevMgr, (QEvt *)(i2cReadReqEvt), callingAO);
+//         break;
+//   }
+//}
+
+/******************************************************************************/
+/***                      Blocking functions for I2C                        ***/
+/* These functions block when called and should only be called before any AOs */
+/* or threads are running or after they have crashed.                         */
+/******************************************************************************/
+
 /******************************************************************************/
 CBErrorCode I2C_readBufferBLK(
       I2C_Bus_t iBus,
@@ -852,7 +888,7 @@ inline void I2C1_DMAReadCallback( void )
       I2C_AcknowledgeConfig(I2C1, ENABLE);        /* Re-enable Acknowledgment */
       /* End of STM32 I2C HW bug workaround */
 
-      //      /* Disable DMA so it doesn't keep outputting the buffer. */
+      /* Disable DMA so it doesn't keep outputting the buffer. */
       DMA_Cmd( DMA1_Stream0, DISABLE );
 
       /* Don't transport the data with the event.  The appropriate I2CBusMgr AO

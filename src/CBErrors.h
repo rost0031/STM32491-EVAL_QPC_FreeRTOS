@@ -111,6 +111,11 @@ typedef enum CBErrors
    ERR_DB_ELEM_NOT_FOUND                                       = 0x00080002,
    ERR_DB_ELEM_IS_READ_ONLY                                    = 0x00080003,
 
+   /* I2C Device general error category           0x00090000 - 0x0009FFFF */
+   ERR_I2C_DEV_INVALID_DEVICE                                  = 0x00090000,
+   ERR_I2C_DEV_EEPROM_MEM_ADDR_BOUNDARY                        = 0x00090001,
+   ERR_I2C_DEV_IS_READ_ONLY                                    = 0x00090002,
+
    /* Reserved errors                            0xFFFFFFFE - 0xFFFFFFFF */
    ERR_UNIMPLEMENTED                                           = 0xFFFFFFFE,
    ERR_UNKNOWN                                                 = 0xFFFFFFFF

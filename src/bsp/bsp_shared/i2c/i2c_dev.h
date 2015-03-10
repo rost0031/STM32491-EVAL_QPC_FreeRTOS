@@ -196,73 +196,142 @@ CBErrorCode I2C_calcPageWriteSizes(
       uint16_t pageSize
 );
 
+/**
+ * @brief  Posts an event read a block of data from a memory device on any I2C bus.
+ *
+ * @note:  This function should only be called from RTOS controlled thread/AO.
+ * It is non-blocking and instantly returns.
+ *
+ * @param [in] iDev: I2C_Dev_t type specifying the I2C Device.
+ *    @arg EEPROM: 256 bytes of main EEPROM memory
+ *    @arg SN_ROM: SN RO EEPROM memory that contains 128 bit unique id
+ *    @arg EUI_ROM: EUI RO EEPROM memory that contains 64 bit MAC address.
+ * @param [in] addr: internal memory address of the device on the I2C bus.
+ * @param [in] bytesToRead : uint8_t variable specifying how many bytes to read.
+ * @param  [in] accessType: AccessType_t that specifies how the function is being
+ * accessed.
+ *    @arg ACCESS_BARE_METAL: blocking access that is slow.  Don't use once the
+ *                            RTOS is running.
+ *    @arg ACCESS_QPC:        non-blocking, event based access.
+ *    @arg ACCESS_FREERTOS:   non-blocking, but waits on queue to know the status.
+ * @param [in] *callingAO: QActive pointer to the AO that called this function.
+ *                         If called by a FreeRTOS thread, this should be NULL.
+ * @return CBErrorCode: status of the read operation
+ *    @arg ERR_NONE: if no errors occurred
+ */
+CBErrorCode I2C_readDevMemEVT(
+      I2C_Dev_t iDev,
+      uint16_t offset,
+      uint16_t bytesToRead,
+      AccessType_t accType,
+      QActive* callingAO
+);
+
+/**
+ * @brief  Posts an event write a block of data to a memory device on any I2C bus.
+ *
+ * @note:  This function should only be called from RTOS controlled thread/AO.
+ * It is non-blocking and instantly returns.
+ *
+ * @param [in] iDev: I2C_Dev_t type specifying the I2C Device.
+ *    @arg EEPROM: 256 bytes of main EEPROM memory
+ * @param [in] offset: uint16_t offset from beginning of device memory to write
+ * to.
+ * @param [in] bytesToWrite : uint16_t variable specifying how many bytes to write.
+ * @param  [in] accessType: AccessType_t that specifies how the function is being
+ * accessed.
+ *    @arg ACCESS_BARE_METAL: blocking access that is slow.  Don't use once the
+ *                            RTOS is running.
+ *    @arg ACCESS_QPC:        non-blocking, event based access.
+ *    @arg ACCESS_FREERTOS:   non-blocking, but waits on queue to know the status.
+ * @param [in] *callingAO: QActive pointer to the AO that called this function.
+ *                         If called by a FreeRTOS thread, this should be NULL.
+ * @param [in] *pBuffer: uint8_t pointer to the buffer to store read data.
+ * @return CBErrorCode: status of the read operation
+ *    @arg ERR_NONE: if no errors occurred
+ */
+CBErrorCode I2C_writeDevMemEVT(
+      I2C_Dev_t iDev,
+      uint16_t offset,
+      uint16_t bytesToWrite,
+      AccessType_t accType,
+      QActive* callingAO,
+      uint8_t *pBuffer
+);
+
 /******************************************************************************/
 /* Blocking Functions - Don't call unless before threads/AOs started or after */
 /* they crashed                                                               */
 /******************************************************************************/
 
 /**
- * @brief   Blocking function to read data from UI64 RO section of the EEPROM.
+ * @brief  Blocking function to read a block of data from a memory device on
+ * any I2C bus.
  *
+ * @note:  This is a slow function that should not be called by any threads or
+ * objects. It's for use in case of crashes and before the entire system has
+ * come up.
+ *
+ * @param [in] iDev: I2C_Dev_t type specifying the I2C Device.
+ *    @arg EEPROM: 256 bytes of main EEPROM memory
+ *    @arg SN_ROM: SN RO EEPROM memory that contains 128 bit unique id
+ *    @arg EUI_ROM: EUI RO EEPROM memory that contains 64 bit MAC address.
+ * @param [in] offset: uint16_t offset from beginning of device memory to read
+ * from.
+ * @param [in] bytesToRead : uint16_t variable specifying how many bytes to read.
+ * @param  [in] accessType: AccessType_t that specifies how the function is being
+ * accessed.
+ *    @arg ACCESS_BARE_METAL: blocking access that is slow.  Don't use once the
+ *                            RTOS is running.
+ *    @arg ACCESS_QPC:        non-blocking, event based access.
+ *    @arg ACCESS_FREERTOS:   non-blocking, but waits on queue to know the status.
  * @param [out] *pBuffer: uint8_t pointer to the buffer to store read data.
- * @param [in]  offset: offset from beginning of EEPROM memory to read from.
- * @param [in] bytesToRead: uint8_t variable specifying how many bytes to read
- *
+ * @param [in] bufSize: uint8_t maximum size of storage pointed to by *pBuffer
  * @return CBErrorCode: status of the read operation
  *    @arg ERR_NONE: if no errors occurred
  */
-CBErrorCode I2C_readUi64RomBLK(
-      uint8_t* pBuffer,
+CBErrorCode I2C_readDevMemBLK(
+      I2C_Dev_t iDev,
       uint16_t offset,
-      uint16_t bytesToRead
+      uint16_t bytesToRead,
+      AccessType_t accType,
+      uint8_t* pBuffer,
+      uint8_t  bufSize
 );
 
 /**
- * @brief   Blocking function to read data from UI64 RO section of the EEPROM.
+ * @brief  Blocking function to write a block of data to a memory device on
+ * any I2C bus.
  *
- * @param [out] *pBuffer: uint8_t pointer to the buffer to store read data.
- * @param [in]  offset: offset from beginning of EEPROM memory to read from.
- * @param [in] bytesToRead: uint8_t variable specifying how many bytes to read
+ * @note:  This is a slow function that should not be called by any threads or
+ * objects. It's for use in case of crashes and before the entire system has
+ * come up.
  *
+ * @param [in] iDev: I2C_Dev_t type specifying the I2C Device.
+ *    @arg EEPROM: 256 bytes of main EEPROM memory
+ *    @arg SN_ROM: SN RO EEPROM memory that contains 128 bit unique id
+ *    @arg EUI_ROM: EUI RO EEPROM memory that contains 64 bit MAC address.
+ * @param [in] offset: uint16_t offset from beginning of device memory to write
+ * to.
+ * @param [in] bytesToWrite : uint16_t variable specifying how many bytes to write.
+ * @param  [in] accessType: AccessType_t that specifies how the function is being
+ * accessed.
+ *    @arg ACCESS_BARE_METAL: blocking access that is slow.  Don't use once the
+ *                            RTOS is running.
+ *    @arg ACCESS_QPC:        non-blocking, event based access.
+ *    @arg ACCESS_FREERTOS:   non-blocking, but waits on queue to know the status.
+ * @param [out] *pBuffer: uint8_t pointer to the buffer to write.
+ * @param [in] bufSize: uint8_t maximum size of storage pointed to by *pBuffer
  * @return CBErrorCode: status of the read operation
  *    @arg ERR_NONE: if no errors occurred
  */
-CBErrorCode I2C_readSnRomBLK(
-      uint8_t* pBuffer,
+CBErrorCode I2C_writeDevMemBLK(
+      I2C_Dev_t iDev,
       uint16_t offset,
-      uint16_t bytesToRead
-);
-
-/**
- * @brief   Blocking function to read data from EEPROM.
- *
- * @param [out] *pBuffer: uint8_t pointer to the buffer to store read data.
- * @param [in]  offset: offset from beginning of EEPROM memory to read from.
- * @param [in] bytesToRead: uint8_t variable specifying how many bytes to read
- *
- * @return CBErrorCode: status of the read operation
- *    @arg ERR_NONE: if no errors occurred
- */
-CBErrorCode I2C_readEepromBLK(
+      uint16_t bytesToWrite,
+      AccessType_t accType,
       uint8_t* pBuffer,
-      uint16_t offset,
-      uint16_t bytesToRead
-);
-
-/**
- * @brief   Blocking function to write data to EEPROM.
- *
- * @param [out] *pBuffer: uint8_t pointer to the buffer of data to write.
- * @param [in]  offset: offset from beginning of EEPROM memory to write from.
- * @param [in] bytesToWrite: uint8_t variable specifying how many bytes to write
- *
- * @return CBErrorCode: status of the write operation
- *    @arg ERR_NONE: if no errors occurred
- */
-CBErrorCode I2C_writeEepromBLK(
-      uint8_t* pBuffer,
-      uint16_t offset,
-      uint16_t bytesToWrite
+      uint8_t  bufSize
 );
 
 /**

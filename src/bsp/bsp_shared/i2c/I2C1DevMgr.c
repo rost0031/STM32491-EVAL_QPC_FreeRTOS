@@ -258,8 +258,6 @@ static QState I2C1DevMgr_initial(I2C1DevMgr * const me, QEvt const * const e) {
     QS_FUN_DICTIONARY(&I2C1DevMgr_Active);
     QS_FUN_DICTIONARY(&I2C1DevMgr_Idle);
 
-    QActive_subscribe((QActive *)me, I2C1_DEV_SN_READ_SIG);
-    QActive_subscribe((QActive *)me, I2C1_DEV_EUI64_READ_SIG);
     QActive_subscribe((QActive *)me, I2C1_DEV_RAW_MEM_WRITE_SIG);
     QActive_subscribe((QActive *)me, I2C1_DEV_RAW_MEM_READ_SIG);
 
@@ -372,10 +370,8 @@ static QState I2C1DevMgr_Busy(I2C1DevMgr * const me, QEvt const * const e) {
             status_ = Q_TRAN(&I2C1DevMgr_Idle);
             break;
         }
-        /* ${AOs::I2C1DevMgr::SM::Active::Busy::I2C1_DEV_RAW_MEM_READ, I2C1_DEV_SN_READ, I2C1_DEV_EUI64_READ, I2C1_DEV_RAW_MEM_WRITE} */
+        /* ${AOs::I2C1DevMgr::SM::Active::Busy::I2C1_DEV_RAW_MEM_READ, I2C1_DEV_RAW_MEM_WRITE} */
         case I2C1_DEV_RAW_MEM_READ_SIG: /* intentionally fall through */
-        case I2C1_DEV_SN_READ_SIG: /* intentionally fall through */
-        case I2C1_DEV_EUI64_READ_SIG: /* intentionally fall through */
         case I2C1_DEV_RAW_MEM_WRITE_SIG: {
             if (QEQueue_getNFree(&me->deferredEvtQueue) > 0) {
                /* defer the request - this event will be handled
@@ -778,14 +774,10 @@ static QState I2C1DevMgr_WriteMem(I2C1DevMgr * const me, QEvt const * const e) {
             DBG_printf("Got I2C_BUS_DONE with error: 0x%08x\n", me->errorCode);
             /* ${AOs::I2C1DevMgr::SM::Active::Busy::WriteMem::I2C_BUS_DONE::[NoErr?]} */
             if (ERR_NONE == me->errorCode) {
-                /* Set this so the state machine remembers the result */
-                me->errorCode = ERR_NONE;
-                LOG_printf("Got I2C_BUS_DONE with no error\n");
                 status_ = Q_TRAN(&I2C1DevMgr_PostWriteWait);
             }
             /* ${AOs::I2C1DevMgr::SM::Active::Busy::WriteMem::I2C_BUS_DONE::[else]} */
             else {
-                DBG_printf("Took this path despite error being 0x%08x\n", me->errorCode);
                 status_ = Q_TRAN(&I2C1DevMgr_Idle);
             }
             break;
@@ -951,26 +943,6 @@ static QState I2C1DevMgr_Idle(I2C1DevMgr * const me, QEvt const * const e) {
             me->accessType = ((I2CReadReqEvt const *)e)->accessType;
             me->addrSize   = I2C_getMemAddrSize(me->iDev);
             me->i2cDevOp   = I2C_OP_MEM_READ;
-            status_ = Q_TRAN(&I2C1DevMgr_CheckingBus);
-            break;
-        }
-        /* ${AOs::I2C1DevMgr::SM::Active::Idle::I2C1_DEV_SN_READ} */
-        case I2C1_DEV_SN_READ_SIG: {
-            me->iDev = SN_ROM; // Set which device is being accessed
-            me->addrStart = I2C_getMinMemAddr(me->iDev);
-            me->addrSize  = I2C_getMemAddrSize(me->iDev);
-            me->bytesTotal = I2C_getPageSize(me->iDev);
-            me->i2cDevOp = I2C_OP_MEM_READ;
-            status_ = Q_TRAN(&I2C1DevMgr_CheckingBus);
-            break;
-        }
-        /* ${AOs::I2C1DevMgr::SM::Active::Idle::I2C1_DEV_EUI64_READ} */
-        case I2C1_DEV_EUI64_READ_SIG: {
-            me->iDev = EUI_ROM; // Set which device is being accessed
-            me->addrStart = I2C_getMinMemAddr(me->iDev);
-            me->addrSize  = I2C_getMemAddrSize(me->iDev);
-            me->bytesTotal = I2C_getPageSize(me->iDev);
-            me->i2cDevOp = I2C_OP_MEM_READ;
             status_ = Q_TRAN(&I2C1DevMgr_CheckingBus);
             break;
         }

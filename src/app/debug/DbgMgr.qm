@@ -96,13 +96,14 @@ CBErrorCode err = CON_hexToStr(
 
 MENU_printf(
     me-&gt;menuReqSrc,
-    &quot;--- Test Done  --- Read %d bytes from device %s on %s: %s\n&quot;,
+    &quot;--- Test Done  --- Read %d bytes from device %s on %s: %s with error: 0x%08x\n&quot;,
     ((I2CReadDoneEvt const *)e)-&gt;bytes,
     I2C_devToStr( ((I2CReadDoneEvt const *)e)-&gt;i2cDev ),
     I2C_busToStr(
         I2C_getBus( ((I2CReadDoneEvt const *)e)-&gt;i2cDev )
     ),
-    tmp
+    tmp,
+    ((I2CReadDoneEvt const *)e)-&gt;status
 );
 
 
@@ -117,12 +118,13 @@ LOG_printf(&quot;Received I2C1_DEV_WRITE_DONE\n&quot;);
 
 MENU_printf(
     me-&gt;menuReqSrc,
-    &quot;--- Test Done  --- Wrote %d bytes to %s on %s.\n&quot;,
+    &quot;--- Test Done  --- Wrote %d bytes to device %s on %s with error: 0x%08x\n&quot;,
     ((I2CWriteDoneEvt const *)e)-&gt;bytes,
     I2C_devToStr( ((I2CWriteDoneEvt const *)e)-&gt;i2cDev ),
     I2C_busToStr(
         I2C_getBus( ((I2CWriteDoneEvt const *)e)-&gt;i2cDev )
-    )
+    ),
+    ((I2CWriteDoneEvt const *)e)-&gt;status
 );</action>
       <tran_glyph conn="3,47,3,-1,21">
        <action box="0,-2,21,2"/>

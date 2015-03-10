@@ -61,6 +61,19 @@ typedef enum DB_Elements {
 
 /* Exported constants --------------------------------------------------------*/
 /* Exported functions --------------------------------------------------------*/
+/**
+ * @brief   Get a string representation of a DB element.
+ *
+ * @param  [in] elem: DB_Elem_t that specifies what element to retrieve.
+ *    @arg DB_MAGIC_WORD: only used to validate that the DB even exists.
+ *    @arg DB_VERSION: version of the DB.  To be used for future upgrades.
+ *    @arg DB_MAC_ADDR: MAC address stored in the RO part of DB.
+ *    @arg DB_IP_ADDR: IP address stored in the RW part of DB.
+ *    @arg DB_SN: Serial number stored in the RO part of DB.
+ * @return str: char* representation of DB element if found,
+ *             "" if not found.
+ */
+char* DB_elemToStr( DB_Elem_t elem );
 
 /**
  * @brief   Check if Settings DB in EEPROM is valid.
