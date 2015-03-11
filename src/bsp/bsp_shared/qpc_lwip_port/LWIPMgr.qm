@@ -331,6 +331,17 @@ QActive_recall(
     (QActive *)me,
     &amp;me-&gt;deferredEvtQueue
 );</entry>
+      <exit>/* Failed to send data, probably because out of pbufs.  Defer the event
+ * (if possible) and it will try again after getting back from &quot;Sending&quot;
+ * state. */
+if (QEQueue_getNFree(&amp;me-&gt;deferredEvtQueue) &gt; 0) {
+    /* defer the request - this event will be handled
+     * when the state machine goes back to Idle state */
+    QActive_defer((QActive *)me, &amp;me-&gt;deferredEvtQueue, e);
+} else {
+    /* notify the request sender that the request was ignored.. */
+    err_slow_printf(&quot;Unable to defer an ETH event&quot;);
+}</exit>
       <tran trig="DBG_MENU">
        <action>/************************************************************/
 /* WARNING: Do not use any fast logging functions here.  In
@@ -339,6 +350,7 @@ QActive_recall(
 /************************************************************/</action>
        <choice>
         <guard brief="else"/>
+        <action>DBG_printf(&quot;Conn NULL\n&quot;);</action>
         <choice_glyph conn="26,14,4,-1,4">
          <action box="1,2,10,2"/>
         </choice_glyph>
@@ -349,10 +361,11 @@ QActive_recall(
     (u8_t *)((LrgDataEvt const *)e)-&gt;dataBuf,
     ((LrgDataEvt const *)e)-&gt;dataLen
 );</action>
-        <choice>
+        <choice target="../../../../7">
          <guard>else</guard>
-         <choice_glyph conn="59,14,4,-1,4">
-          <action box="0,2,10,2"/>
+         <action>WRN_printf(&quot;MEM unavailable, trying again in a bit...\n&quot;);</action>
+         <choice_glyph conn="59,14,4,3,6,40">
+          <action box="0,4,10,2"/>
          </choice_glyph>
         </choice>
         <choice>
@@ -367,14 +380,7 @@ bool dataSent = LWIP_tcpSend(
 pbuf_free(p);                                  // don't leak the pbuf!</action>
          <choice target="../../../../../7">
           <guard brief="Data not sent?">false == dataSent</guard>
-          <action>if (QEQueue_getNFree(&amp;me-&gt;deferredEvtQueue) &gt; 0) {
-    /* defer the request - this event will be handled
-     * when the state machine goes back to Idle state */
-    QActive_defer((QActive *)me, &amp;me-&gt;deferredEvtQueue, e);
-} else {
-    /* notify the request sender that the request was ignored.. */
-    err_slow_printf(&quot;Unable to defer an ETH event&quot;);
-}</action>
+          <action>pbuf_free(p);                                  // don't leak the pbuf!</action>
           <choice_glyph conn="73,14,5,3,26">
            <action box="1,-2,14,2"/>
           </choice_glyph>
@@ -411,10 +417,11 @@ pbuf_free(p);                                  // don't leak the pbuf!</action>
     (u8_t *)((LrgDataEvt const *)e)-&gt;dataBuf,
     ((LrgDataEvt const *)e)-&gt;dataLen
 );</action>
-         <choice>
+         <choice target="../../../../../7">
           <guard>else</guard>
-          <choice_glyph conn="59,23,4,-1,4">
-           <action box="0,2,10,2"/>
+          <action>WRN_printf(&quot;MEM unavailable, trying again in a bit...\n&quot;);</action>
+          <choice_glyph conn="59,23,4,3,6,40">
+           <action box="0,4,10,2"/>
           </choice_glyph>
          </choice>
          <choice>
@@ -429,15 +436,7 @@ bool dataSent = LWIP_tcpSend(
 pbuf_free(p);                                  // don't leak the pbuf!</action>
           <choice target="../../../../../../7">
            <guard brief="Data not sent?">false == dataSent</guard>
-           <action>/* Failed to send data.  Defer the event (if possible) */
-if (QEQueue_getNFree(&amp;me-&gt;deferredEvtQueue) &gt; 0) {
-    /* defer the request - this event will be handled
-     * when the state machine goes back to Idle state */
-    QActive_defer((QActive *)me, &amp;me-&gt;deferredEvtQueue, e);
-} else {
-    /* notify the request sender that the request was ignored.. */
-    err_slow_printf(&quot;Unable to defer an ETH event&quot;);
-}</action>
+           <action>pbuf_free(p);                                  // don't leak the pbuf!</action>
            <choice_glyph conn="73,23,5,3,26">
             <action box="1,-2,14,2"/>
            </choice_glyph>
@@ -496,10 +495,11 @@ if (me-&gt;upcb-&gt;remote_port != (uint16_t)0) {
     (u8_t *)((LrgDataEvt const *)e)-&gt;dataBuf,
     ((LrgDataEvt const *)e)-&gt;dataLen
 );</action>
-        <choice>
+        <choice target="../../../../7">
          <guard>else</guard>
-         <choice_glyph conn="59,35,4,-1,4">
-          <action box="0,2,10,2"/>
+         <action>WRN_printf(&quot;MEM unavailable, trying again in a bit...\n&quot;);</action>
+         <choice_glyph conn="59,35,4,3,6,40">
+          <action box="0,4,10,2"/>
          </choice_glyph>
         </choice>
         <choice>
@@ -514,15 +514,7 @@ bool dataSent = LWIP_tcpSend(
 pbuf_free(p);                                  // don't leak the pbuf!</action>
          <choice target="../../../../../7">
           <guard brief="Data not sent?">false == dataSent</guard>
-          <action>/* Failed to send data.  Defer the event (if possible) */
-if (QEQueue_getNFree(&amp;me-&gt;deferredEvtQueue) &gt; 0) {
-    /* defer the request - this event will be handled
-     * when the state machine goes back to Idle state */
-    QActive_defer((QActive *)me, &amp;me-&gt;deferredEvtQueue, e);
-} else {
-    /* notify the request sender that the request was ignored.. */
-    err_slow_printf(&quot;Unable to defer an ETH event&quot;);
-}</action>
+          <action>pbuf_free(p);                                  // don't leak the pbuf!</action>
           <choice_glyph conn="73,35,5,3,26">
            <action box="1,-2,14,2"/>
           </choice_glyph>
@@ -554,6 +546,7 @@ if (QEQueue_getNFree(&amp;me-&gt;deferredEvtQueue) &gt; 0) {
       </tran>
       <state_glyph node="7,6,76,48">
        <entry box="1,2,6,2"/>
+       <exit box="1,4,6,2"/>
       </state_glyph>
      </state>
      <state name="Sending">

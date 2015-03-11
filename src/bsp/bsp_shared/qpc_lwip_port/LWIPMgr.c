@@ -671,6 +671,22 @@ static QState LWIPMgr_Idle(LWIPMgr * const me, QEvt const * const e) {
             status_ = Q_HANDLED();
             break;
         }
+        /* ${AOs::LWIPMgr::SM::Active::Idle} */
+        case Q_EXIT_SIG: {
+            /* Failed to send data, probably because out of pbufs.  Defer the event
+             * (if possible) and it will try again after getting back from "Sending"
+             * state. */
+            if (QEQueue_getNFree(&me->deferredEvtQueue) > 0) {
+                /* defer the request - this event will be handled
+                 * when the state machine goes back to Idle state */
+                QActive_defer((QActive *)me, &me->deferredEvtQueue, e);
+            } else {
+                /* notify the request sender that the request was ignored.. */
+                err_slow_printf("Unable to defer an ETH event");
+            }
+            status_ = Q_HANDLED();
+            break;
+        }
         /* ${AOs::LWIPMgr::SM::Active::Idle::DBG_MENU} */
         case DBG_MENU_SIG: {
             /************************************************************/
@@ -696,14 +712,7 @@ static QState LWIPMgr_Idle(LWIPMgr * const me, QEvt const * const e) {
                     pbuf_free(p);                                  // don't leak the pbuf!
                     /* ${AOs::LWIPMgr::SM::Active::Idle::DBG_MENU::[ConnExists?]::[MemAvail?]::[Datanotsent?]} */
                     if (false == dataSent) {
-                        if (QEQueue_getNFree(&me->deferredEvtQueue) > 0) {
-                            /* defer the request - this event will be handled
-                             * when the state machine goes back to Idle state */
-                            QActive_defer((QActive *)me, &me->deferredEvtQueue, e);
-                        } else {
-                            /* notify the request sender that the request was ignored.. */
-                            err_slow_printf("Unable to defer an ETH event");
-                        }
+                        pbuf_free(p);                                  // don't leak the pbuf!
                         status_ = Q_TRAN(&LWIPMgr_Sending);
                     }
                     /* ${AOs::LWIPMgr::SM::Active::Idle::DBG_MENU::[ConnExists?]::[MemAvail?]::[else]} */
@@ -713,11 +722,13 @@ static QState LWIPMgr_Idle(LWIPMgr * const me, QEvt const * const e) {
                 }
                 /* ${AOs::LWIPMgr::SM::Active::Idle::DBG_MENU::[ConnExists?]::[else]} */
                 else {
-                    status_ = Q_HANDLED();
+                    WRN_printf("MEM unavailable, trying again in a bit...\n");
+                    status_ = Q_TRAN(&LWIPMgr_Sending);
                 }
             }
             /* ${AOs::LWIPMgr::SM::Active::Idle::DBG_MENU::[else]} */
             else {
+                DBG_printf("Conn NULL\n");
                 status_ = Q_HANDLED();
             }
             break;
@@ -750,15 +761,7 @@ static QState LWIPMgr_Idle(LWIPMgr * const me, QEvt const * const e) {
                         pbuf_free(p);                                  // don't leak the pbuf!
                         /* ${..LWIPMgr::SM::Active::Idle::DBG_LOG, ETH_LOG_TCP_SEND::[EthDbgEnabled?]::[ConnExists?]::[MemAvail?]::[Datanotsent?]} */
                         if (false == dataSent) {
-                            /* Failed to send data.  Defer the event (if possible) */
-                            if (QEQueue_getNFree(&me->deferredEvtQueue) > 0) {
-                                /* defer the request - this event will be handled
-                                 * when the state machine goes back to Idle state */
-                                QActive_defer((QActive *)me, &me->deferredEvtQueue, e);
-                            } else {
-                                /* notify the request sender that the request was ignored.. */
-                                err_slow_printf("Unable to defer an ETH event");
-                            }
+                            pbuf_free(p);                                  // don't leak the pbuf!
                             status_ = Q_TRAN(&LWIPMgr_Sending);
                         }
                         /* ${..LWIPMgr::SM::Active::Idle::DBG_LOG, ETH_LOG_TCP_SEND::[EthDbgEnabled?]::[ConnExists?]::[MemAvail?]::[else]} */
@@ -768,7 +771,8 @@ static QState LWIPMgr_Idle(LWIPMgr * const me, QEvt const * const e) {
                     }
                     /* ${AOs::LWIPMgr::SM::Active::Idle::DBG_LOG, ETH_LOG_TCP_SEND::[EthDbgEnabled?]::[ConnExists?]::[else]} */
                     else {
-                        status_ = Q_HANDLED();
+                        WRN_printf("MEM unavailable, trying again in a bit...\n");
+                        status_ = Q_TRAN(&LWIPMgr_Sending);
                     }
                 }
                 /* ${AOs::LWIPMgr::SM::Active::Idle::DBG_LOG, ETH_LOG_TCP_SEND::[EthDbgEnabled?]::[else]} */
@@ -815,15 +819,7 @@ static QState LWIPMgr_Idle(LWIPMgr * const me, QEvt const * const e) {
                     pbuf_free(p);                                  // don't leak the pbuf!
                     /* ${AOs::LWIPMgr::SM::Active::Idle::ETH_SYS_TCP_SEND::[ConnExists?]::[MemAvail?]::[Datanotsent?]} */
                     if (false == dataSent) {
-                        /* Failed to send data.  Defer the event (if possible) */
-                        if (QEQueue_getNFree(&me->deferredEvtQueue) > 0) {
-                            /* defer the request - this event will be handled
-                             * when the state machine goes back to Idle state */
-                            QActive_defer((QActive *)me, &me->deferredEvtQueue, e);
-                        } else {
-                            /* notify the request sender that the request was ignored.. */
-                            err_slow_printf("Unable to defer an ETH event");
-                        }
+                        pbuf_free(p);                                  // don't leak the pbuf!
                         status_ = Q_TRAN(&LWIPMgr_Sending);
                     }
                     /* ${AOs::LWIPMgr::SM::Active::Idle::ETH_SYS_TCP_SEND::[ConnExists?]::[MemAvail?]::[else]} */
@@ -833,7 +829,8 @@ static QState LWIPMgr_Idle(LWIPMgr * const me, QEvt const * const e) {
                 }
                 /* ${AOs::LWIPMgr::SM::Active::Idle::ETH_SYS_TCP_SEND::[ConnExists?]::[else]} */
                 else {
-                    status_ = Q_HANDLED();
+                    WRN_printf("MEM unavailable, trying again in a bit...\n");
+                    status_ = Q_TRAN(&LWIPMgr_Sending);
                 }
             }
             /* ${AOs::LWIPMgr::SM::Active::Idle::ETH_SYS_TCP_SEND::[else]} */
