@@ -349,11 +349,6 @@ CBErrorCode DB_setElemBLK(
    /* 3. Call the location dependent functions to write the data to DB */
    switch( loc ) {
       case DB_EEPROM:
-//         status = I2C_writeEepromBLK(
-//               pBuffer,
-//               settingsDB[elem].offset,
-//               settingsDB[elem].size
-//         );
          status = I2C_writeDevMemBLK(
                DB_I2C_devices[loc],                // I2C_Dev_t iDev,
                settingsDB[elem].offset,            // uint16_t offset,
@@ -392,7 +387,7 @@ DB_getElemBLK_ERR_HANDLE:         /* Handle any error that may have occurred. */
 
 /**
  * @}
- * end addtogroup groupCoupler
+ * end addtogroup groupSettings
  */
 
 /******** Copyright (C) 2015 Datacard. All rights reserved *****END OF FILE****/

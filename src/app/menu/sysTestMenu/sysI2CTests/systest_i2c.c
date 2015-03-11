@@ -224,21 +224,6 @@ void MENU_i2cEEPROMWriteTestAction(
          "Error 0x%08x running EUI_ROM READ test\n",
          status
    );
-
-
-
-//   /* Publish event to start an EEPROM read */
-//   I2CWriteReqEvt *i2cWriteReqEvt = Q_NEW(I2CWriteReqEvt, I2C1_DEV_RAW_MEM_WRITE_SIG);
-//   i2cWriteReqEvt->addr = memAddr;
-//   i2cWriteReqEvt->bytes  = bytes;
-//   i2cWriteReqEvt->i2cDev = EEPROM;
-//   MEMCPY(
-//         i2cWriteReqEvt->dataBuf,
-//         tmp,
-//         bytes
-//   );
-//   i2cWriteReqEvt->accessType = ACCESS_QPC;
-//   QF_PUBLISH((QEvent *)i2cWriteReqEvt, AO_DbgMgr);
 }
 
 /**
