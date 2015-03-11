@@ -163,7 +163,7 @@ The STM32F207 allows computing and verifying the IP, UDP, TCP and ICMP checksums
    lwIP is compiled. 4 byte alignment -> define MEM_ALIGNMENT to 4, 2
    byte alignment -> define MEM_ALIGNMENT to 2. */
 #define MEM_ALIGNMENT                   4           // default is 1
-#define MEM_SIZE                        (2 * 1024)  // default is 1600
+#define MEM_SIZE                        (3 * 1024)  // default is 1600
 //#define MEMP_SEPARATE_POOLS             0
 //#define MEMP_OVERFLOW_CHECK             0
 //#define MEMP_SANITY_CHECK               0

@@ -28,7 +28,7 @@
  * @brief   How many times per second that the RTOS should attempt to handle its
  * events.  Tells QPC how often to run with respect to system clock.
  */
-#define BSP_TICKS_PER_SEC                                                  1000
+#define BSP_TICKS_PER_SEC                                                  10000
 
 /* Exported macros -----------------------------------------------------------*/
 /**

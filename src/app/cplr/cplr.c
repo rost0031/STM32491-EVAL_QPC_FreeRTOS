@@ -17,6 +17,7 @@
 #include "dbg_out_cntrl.h"
 #include "cplr.h"
 #include "LWIPMgr.h"
+#include "i2c_dev.h"                                 /* For I2C functionality */
 
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */
@@ -42,6 +43,11 @@ void CPLR_Task( void* pvParameters )
                        processing this (main) one, a different local pointer
                        should be used and garbage collected after. */
 
+   CBErrorCode status = ERR_NONE; /* Keep track of failures of various func
+                                     calls and commands.  If this is ever set
+                                     to something other than ERR_NONE, it will
+                                     be printed out at the end of the for loop*/
+
    for (;;) {                         /* Beginning of the thread forever loop */
       /* Check if there's data in the queue and process it if there. */
 
@@ -49,15 +55,77 @@ void CPLR_Task( void* pvParameters )
       if ( evt != (QEvt *)0 ) { /* Check whether an event is present in queue */
 
          switch( evt->sig ) {        /* Identify the event by its signal enum */
+            case CPLR_ETH_SYS_TEST_SIG:
+               DBG_printf(
+                     "Received CPLR_ETH_SYS_TEST_SIG (%d) signal with event EthEvt of len: %d\n",
+                     evt->sig,
+                     ((EthEvt const *)evt)->msg_len
+               );
+
+               /* Going to use this signal to test some stuff in this thread */
+               /* Do a read from the EEPROM on the I2C Bus */
+               status = I2C_readDevMemEVT(
+                     EEPROM,                                         // I2C_Dev_t iDev,
+                     0x00,                                           // uint16_t offset,
+                     17,                                             // uint16_t bytesToRead,
+                     ACCESS_FREERTOS,                                // AccessType_t accType,
+                     NULL                                            // QActive* callingAO
+               );
+               if ( ERR_NONE != status ) {
+                  ERR_printf("Error calling I2C_readDevMemEVT()\n");
+                  goto CPLR_Task_ERR_HANDLE; /* Stop and jump to error handling */
+               }
+
+               /* If we got here, there were no errors during the call to
+                * I2C_readDevMemEVT() so we can expect an event from that driver
+                */
+               uint32_t timeout = 1000;
+               QEvt const *evtI2CDone = 0;
+
+               /* We only expect an I2C read done signal and no others */
+               do {
+                  evtI2CDone = QEQueue_get(&CPLR_evtQueue);
+                  if (evtI2CDone != (QEvt *)0 ) {
+                     break;
+                  } else {
+                     vTaskDelay(1);
+                  }
+               } while ( --timeout != 0 );
+
+               if ( 0 == timeout ) {
+                  ERR_printf("Timed out waiting for an event\n");
+               } else {
+                  switch( evtI2CDone->sig ) {
+                     case I2C1_DEV_READ_DONE_SIG:
+                        DBG_printf("Got I2C1_DEV_READ_DONE_SIG\n");
+                        break;
+                     default:
+                        WRN_printf("Unknown signal %d\n", evtI2CDone->sig);
+                        break;
+                  }
+                  QF_gc(evt);
+               }
 
 
+               break;
+
+            default:
+               WRN_printf("Received an unknown signal: %d. Ignoring...\n", evt->sig);
+               break;
 
          }
          /* If any data from the event needs to be used after garbage
           * collection, it should be locally stored if. */
 
-         DBG_printf("Received EthEvt of len: %d\n", ((EthEvt const *)evt)->msg_len);
 
+CPLR_Task_ERR_HANDLE:             /* Handle any error that may have occurred. */
+         /* Print error if exists */
+         ERR_COND_OUTPUT(
+               status,
+               ACCESS_FREERTOS,
+               "Error 0x%08x occurred in FreeRTOS thread!!!\n",
+               status
+         );
 
          QF_gc(evt); /* !!! Don't forget to garbage collect the event after
                         processing the event.  After this, any data to which
@@ -65,9 +133,10 @@ void CPLR_Task( void* pvParameters )
                         be referenced. */
       }
 
+//      vTaskSuspend(NULL);
       vTaskDelay(1); /* Always task-delay so this thread can go to sleep while
                         other threads/AOs can process their data */
-   }
+   }                                        /* End of the thread forever loop */
 }
 
 /**

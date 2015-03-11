@@ -47,6 +47,7 @@
 #include "i2c.h"                                  /* For I2C bus declarations */
 #include "i2c_dev.h"                           /* For I2C device declarations */
 #include "I2CBusMgr.h"
+#include "cplr.h"
 
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */
@@ -350,13 +351,25 @@ static QState I2C1DevMgr_Busy(I2C1DevMgr * const me, QEvt const * const e) {
                     i2cReadDoneEvt->status = me->errorCode;
                     i2cReadDoneEvt->bytes = 0;
                     i2cReadDoneEvt->i2cDev = me->iDev;
-                    QF_PUBLISH((QEvt *)i2cReadDoneEvt, AO_I2C1DevMgr);
+                    if ( ACCESS_FREERTOS == me->accessType ) {
+                        /* Post directly to the "raw" queue for FreeRTOS task to read */
+                        QEQueue_postFIFO(&CPLR_evtQueue, (QEvt *)i2cReadDoneEvt);
+                    } else {
+                        /* Publish the event so other AOs can get it if they want */
+                        QF_PUBLISH((QEvt *)i2cReadDoneEvt, AO_I2C1DevMgr);
+                    }
                 } else if ( I2C_OP_MEM_WRITE == me->i2cDevOp ) {
                     I2CWriteDoneEvt *i2cWriteDoneEvt = Q_NEW(I2CWriteDoneEvt, I2C1_DEV_WRITE_DONE_SIG);
                     i2cWriteDoneEvt->status = me->errorCode;
                     i2cWriteDoneEvt->bytes = 0;
                     i2cWriteDoneEvt->i2cDev = me->iDev;
-                    QF_PUBLISH((QEvt *)i2cWriteDoneEvt, AO_I2C1DevMgr);
+                    if ( ACCESS_FREERTOS == me->accessType ) {
+                        /* Post directly to the "raw" queue for FreeRTOS task to read */
+                        QEQueue_postFIFO(&CPLR_evtQueue, (QEvt *)i2cWriteDoneEvt);
+                    } else {
+                        /* Publish the event so other AOs can get it if they want */
+                        QF_PUBLISH((QEvt *)i2cWriteDoneEvt, AO_I2C1DevMgr);
+                    }
                 } else {
                     WRN_printf("Unimplemented I2C operation: %d, not sending a response\n", me->i2cDevOp);
                 }
@@ -713,7 +726,14 @@ static QState I2C1DevMgr_ReadMem(I2C1DevMgr * const me, QEvt const * const e) {
                     ((I2CBusDataEvt const *)e)->dataBuf,
                     i2cReadDoneEvt->bytes
                 );
-                QF_PUBLISH((QEvt *)i2cReadDoneEvt, AO_I2C1DevMgr);
+
+                if ( ACCESS_FREERTOS == me->accessType ) {
+                    /* Post directly to the "raw" queue for FreeRTOS task to read */
+                    QEQueue_postFIFO(&CPLR_evtQueue, (QEvt *)i2cReadDoneEvt);
+                } else {
+                    /* Publish the event so other AOs can get it if they want */
+                    QF_PUBLISH((QEvt *)i2cReadDoneEvt, AO_I2C1DevMgr);
+                }
                 status_ = Q_TRAN(&I2C1DevMgr_Idle);
             }
             /* ${AOs::I2C1DevMgr::SM::Active::Busy::ReadMem::I2C_BUS_DONE::[else]} */
@@ -840,7 +860,14 @@ static QState I2C1DevMgr_PostWriteWait(I2C1DevMgr * const me, QEvt const * const
                 i2cWriteDoneEvt->status = me->errorCode;
                 i2cWriteDoneEvt->i2cDev = me->iDev;
                 i2cWriteDoneEvt->bytes  = me->bytesTotal;
-                QF_PUBLISH((QEvt *)i2cWriteDoneEvt, AO_I2C1DevMgr);
+
+                if ( ACCESS_FREERTOS == me->accessType ) {
+                    /* Post directly to the "raw" queue for FreeRTOS task to read */
+                    QEQueue_postFIFO(&CPLR_evtQueue, (QEvt *)i2cWriteDoneEvt);
+                } else {
+                    /* Publish the event so other AOs can get it if they want */
+                    QF_PUBLISH((QEvt *)i2cWriteDoneEvt, AO_I2C1DevMgr);
+                }
                 status_ = Q_TRAN(&I2C1DevMgr_Idle);
             }
             break;

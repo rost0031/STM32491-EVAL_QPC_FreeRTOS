@@ -237,13 +237,25 @@ if ( ERR_NONE != me-&gt;errorCode ) {
         i2cReadDoneEvt-&gt;status = me-&gt;errorCode;
         i2cReadDoneEvt-&gt;bytes = 0;
         i2cReadDoneEvt-&gt;i2cDev = me-&gt;iDev;
-        QF_PUBLISH((QEvt *)i2cReadDoneEvt, AO_I2C1DevMgr);
+        if ( ACCESS_FREERTOS == me-&gt;accessType ) {
+            /* Post directly to the &quot;raw&quot; queue for FreeRTOS task to read */
+            QEQueue_postFIFO(&amp;CPLR_evtQueue, (QEvt *)i2cReadDoneEvt);
+        } else {
+            /* Publish the event so other AOs can get it if they want */
+            QF_PUBLISH((QEvt *)i2cReadDoneEvt, AO_I2C1DevMgr);
+        }
     } else if ( I2C_OP_MEM_WRITE == me-&gt;i2cDevOp ) {
         I2CWriteDoneEvt *i2cWriteDoneEvt = Q_NEW(I2CWriteDoneEvt, I2C1_DEV_WRITE_DONE_SIG);
         i2cWriteDoneEvt-&gt;status = me-&gt;errorCode;
         i2cWriteDoneEvt-&gt;bytes = 0;
         i2cWriteDoneEvt-&gt;i2cDev = me-&gt;iDev;
-        QF_PUBLISH((QEvt *)i2cWriteDoneEvt, AO_I2C1DevMgr);
+        if ( ACCESS_FREERTOS == me-&gt;accessType ) {
+            /* Post directly to the &quot;raw&quot; queue for FreeRTOS task to read */
+            QEQueue_postFIFO(&amp;CPLR_evtQueue, (QEvt *)i2cWriteDoneEvt);
+        } else {
+            /* Publish the event so other AOs can get it if they want */
+            QF_PUBLISH((QEvt *)i2cWriteDoneEvt, AO_I2C1DevMgr);
+        }
     } else {
         WRN_printf(&quot;Unimplemented I2C operation: %d, not sending a response\n&quot;, me-&gt;i2cDevOp);
     }
@@ -533,7 +545,14 @@ MEMCPY(
     ((I2CBusDataEvt const *)e)-&gt;dataBuf,
     i2cReadDoneEvt-&gt;bytes
 );
-QF_PUBLISH((QEvt *)i2cReadDoneEvt, AO_I2C1DevMgr);</action>
+
+if ( ACCESS_FREERTOS == me-&gt;accessType ) {
+    /* Post directly to the &quot;raw&quot; queue for FreeRTOS task to read */
+    QEQueue_postFIFO(&amp;CPLR_evtQueue, (QEvt *)i2cReadDoneEvt);
+} else {
+    /* Publish the event so other AOs can get it if they want */
+    QF_PUBLISH((QEvt *)i2cReadDoneEvt, AO_I2C1DevMgr);
+}</action>
          <choice_glyph conn="128,44,5,1,9,11,-111">
           <action box="1,-2,10,2"/>
          </choice_glyph>
@@ -625,7 +644,14 @@ I2CWriteDoneEvt *i2cWriteDoneEvt = Q_NEW(I2CWriteDoneEvt, I2C1_DEV_WRITE_DONE_SI
 i2cWriteDoneEvt-&gt;status = me-&gt;errorCode;
 i2cWriteDoneEvt-&gt;i2cDev = me-&gt;iDev;
 i2cWriteDoneEvt-&gt;bytes  = me-&gt;bytesTotal;
-QF_PUBLISH((QEvt *)i2cWriteDoneEvt, AO_I2C1DevMgr);</action>
+
+if ( ACCESS_FREERTOS == me-&gt;accessType ) {
+    /* Post directly to the &quot;raw&quot; queue for FreeRTOS task to read */
+    QEQueue_postFIFO(&amp;CPLR_evtQueue, (QEvt *)i2cWriteDoneEvt);
+} else {
+    /* Publish the event so other AOs can get it if they want */
+    QF_PUBLISH((QEvt *)i2cWriteDoneEvt, AO_I2C1DevMgr);
+}</action>
          <choice_glyph conn="58,59,5,1,-32">
           <action box="-10,0,6,2"/>
          </choice_glyph>
@@ -863,6 +889,7 @@ dbg_slow_printf(&quot;Constructor\n&quot;);</code>
 #include &quot;i2c.h&quot;                                  /* For I2C bus declarations */
 #include &quot;i2c_dev.h&quot;                           /* For I2C device declarations */
 #include &quot;I2CBusMgr.h&quot;
+#include &quot;cplr.h&quot;
 
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */

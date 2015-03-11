@@ -40,12 +40,6 @@ typedef enum {
    DB_FLASH                  /**< Setting is located in the main FLASH memory */
 } DB_ElemLoc_t;
 
-/**< How many I2C devices there in the system where DB elements may be stored */
-static const uint8_t nI2CDevicesForDB = DB_UI_ROM + 1;
-
-
-
-
 /**
  * Description type of each DB element (location, etc).
  */
