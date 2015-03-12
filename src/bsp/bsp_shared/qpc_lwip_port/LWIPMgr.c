@@ -1333,7 +1333,7 @@ static void LWIP_tcpClose(struct tcp_pcb * tpcb, struct echo_state * es) {
             LWIPMgr_es_log = NULL;
             LOG_printf("Log/Dbg TCP Connection on port %d closed\n", tpcb->local_port);
         } else if ( LWIPMgr_sysPort == tpcb->local_port ) {
-            LWIPMgr_es_log = NULL;
+            LWIPMgr_es_sys = NULL;
             LOG_printf("System TCP Connection on port %d closed\n", tpcb->local_port);
         } else {
             WRN_printf(
@@ -1366,7 +1366,7 @@ static void LWIP_tcpError(void * arg, err_t err) {
             LWIPMgr_es_log = NULL;
             LOG_printf("Log/Dbg TCP Connection on port %d closed\n", es->pcb->local_port);
         } else if ( LWIPMgr_sysPort == es->pcb->local_port ) {
-            LWIPMgr_es_log = NULL;
+            LWIPMgr_es_sys = NULL;
             LOG_printf("System TCP Connection on port %d closed\n", es->pcb->local_port);
         } else {
             WRN_printf(

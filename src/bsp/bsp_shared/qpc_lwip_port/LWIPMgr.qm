@@ -782,7 +782,7 @@ if (es != NULL) {
         LWIPMgr_es_log = NULL;
         LOG_printf(&quot;Log/Dbg TCP Connection on port %d closed\n&quot;, es-&gt;pcb-&gt;local_port);
     } else if ( LWIPMgr_sysPort == es-&gt;pcb-&gt;local_port ) {
-        LWIPMgr_es_log = NULL;
+        LWIPMgr_es_sys = NULL;
         LOG_printf(&quot;System TCP Connection on port %d closed\n&quot;, es-&gt;pcb-&gt;local_port);
     } else {
         WRN_printf(
@@ -818,7 +818,7 @@ if (es != NULL) {
         LWIPMgr_es_log = NULL;
         LOG_printf(&quot;Log/Dbg TCP Connection on port %d closed\n&quot;, tpcb-&gt;local_port);
     } else if ( LWIPMgr_sysPort == tpcb-&gt;local_port ) {
-        LWIPMgr_es_log = NULL;
+        LWIPMgr_es_sys = NULL;
         LOG_printf(&quot;System TCP Connection on port %d closed\n&quot;, tpcb-&gt;local_port);
     } else {
         WRN_printf(

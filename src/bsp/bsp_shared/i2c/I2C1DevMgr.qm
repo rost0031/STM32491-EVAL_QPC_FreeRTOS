@@ -240,6 +240,7 @@ if ( ERR_NONE != me-&gt;errorCode ) {
         if ( ACCESS_FREERTOS == me-&gt;accessType ) {
             /* Post directly to the &quot;raw&quot; queue for FreeRTOS task to read */
             QEQueue_postFIFO(&amp;CPLR_evtQueue, (QEvt *)i2cReadDoneEvt);
+            // vTaskResume( xHandle_CPLR );
         } else {
             /* Publish the event so other AOs can get it if they want */
             QF_PUBLISH((QEvt *)i2cReadDoneEvt, AO_I2C1DevMgr);
@@ -549,6 +550,7 @@ MEMCPY(
 if ( ACCESS_FREERTOS == me-&gt;accessType ) {
     /* Post directly to the &quot;raw&quot; queue for FreeRTOS task to read */
     QEQueue_postFIFO(&amp;CPLR_evtQueue, (QEvt *)i2cReadDoneEvt);
+    vTaskResume( xHandle_CPLR );
 } else {
     /* Publish the event so other AOs can get it if they want */
     QF_PUBLISH((QEvt *)i2cReadDoneEvt, AO_I2C1DevMgr);

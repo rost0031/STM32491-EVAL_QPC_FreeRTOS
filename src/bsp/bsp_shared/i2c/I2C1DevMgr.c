@@ -354,6 +354,7 @@ static QState I2C1DevMgr_Busy(I2C1DevMgr * const me, QEvt const * const e) {
                     if ( ACCESS_FREERTOS == me->accessType ) {
                         /* Post directly to the "raw" queue for FreeRTOS task to read */
                         QEQueue_postFIFO(&CPLR_evtQueue, (QEvt *)i2cReadDoneEvt);
+                        // vTaskResume( xHandle_CPLR );
                     } else {
                         /* Publish the event so other AOs can get it if they want */
                         QF_PUBLISH((QEvt *)i2cReadDoneEvt, AO_I2C1DevMgr);
@@ -730,6 +731,7 @@ static QState I2C1DevMgr_ReadMem(I2C1DevMgr * const me, QEvt const * const e) {
                 if ( ACCESS_FREERTOS == me->accessType ) {
                     /* Post directly to the "raw" queue for FreeRTOS task to read */
                     QEQueue_postFIFO(&CPLR_evtQueue, (QEvt *)i2cReadDoneEvt);
+                    vTaskResume( xHandle_CPLR );
                 } else {
                     /* Publish the event so other AOs can get it if they want */
                     QF_PUBLISH((QEvt *)i2cReadDoneEvt, AO_I2C1DevMgr);

@@ -282,9 +282,9 @@ int main(void)
           CPLR_Task,
           ( const char * ) "CPLRTask",                    /* Name of the task */
           THREAD_STACK_SIZE,                         /* per-thread stack size */
-          NULL,
+          NULL,                             /* arguments to the task function */
           CPLR_PRIORITY,                                          /* priority */
-          ( xTaskHandle * ) NULL
+          ( xTaskHandle * ) &xHandle_CPLR                      /* Task handle */
     );
 
     log_slow_printf("Starting QPC. All logging from here on out shouldn't show 'SLOW'!!!\n\n");

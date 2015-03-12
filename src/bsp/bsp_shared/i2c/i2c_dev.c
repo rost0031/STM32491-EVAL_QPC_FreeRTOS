@@ -23,6 +23,7 @@
 #include "stm32f4xx_dma.h"                           /* For STM32 DMA support */
 #include "stm32f4xx_i2c.h"                           /* For STM32 DMA support */
 #include "I2C1DevMgr.h"                    /* For access to the I2C1DevMgr AO */
+#include "cplr.h"
 
 /* Compile-time called macros ------------------------------------------------*/
 Q_DEFINE_THIS_FILE                  /* For QSPY to know the name of this file */
@@ -213,6 +214,94 @@ CBErrorCode I2C_calcPageWriteSizes(
       *writeTotalPages = 1;
    }
    return( ERR_NONE );
+}
+
+/******************************************************************************/
+CBErrorCode I2C_readDevMemFRT(
+      I2C_Dev_t iDev,
+      uint16_t offset,
+      uint8_t *pBuffer,
+      uint16_t nBufferSize,
+      uint16_t *pBytesRead,
+      uint16_t nBytesToRead
+)
+{
+   CBErrorCode status = ERR_NONE; /* Keep track of the errors that may occur.
+                                     This gets returned at the end of the
+                                     function */
+   QSignal sig = 0;               /* Signal which will be used in the event to
+                                     be posted. This may change based on which
+                                     AO will be posted to depending on which I2C
+                                     device was passed in */
+   QActive* aoToPostTo = 0;       /* AO to which to directly post the even. This
+                                     will change depending on which I2C device
+                                     was passed in */
+
+   /* Check buffer sizes */
+   if( nBytesToRead > nBufferSize ) {
+      status = ERR_MEM_BUFFER_LEN;
+      goto I2C_readDevMemFRT_ERR_HANDLER;  /* Stop and jump to error handling */
+   }
+
+   if ( NULL == pBuffer ) {
+      status = ERR_MEM_NULL_VALUE;
+      goto I2C_readDevMemFRT_ERR_HANDLER;  /* Stop and jump to error handling */
+   }
+
+   /* Issue a non-blocking call to read I2C */
+   status = I2C_readDevMemEVT(
+      iDev,                                        // I2C_Dev_t iDev,
+      offset,                                      // uint16_t offset,
+      nBytesToRead,                                // uint16_t bytesToRead,
+      ACCESS_FREERTOS,                             // AccessType_t accType,
+      (QActive *)NULL                              // QActive* callingAO
+   );
+
+   if( ERR_NONE != status ) {
+      goto I2C_readDevMemFRT_ERR_HANDLER;  /* Stop and jump to error handling */
+   }
+
+   /* Suspend the task.  Once something has been put into the queue, the AO that
+    * put it there, will wake up this task. */
+   DBG_printf("Suspending Task\n");
+   vTaskSuspend( xHandle_CPLR );
+
+   DBG_printf("Task resumed\n");
+   /* The task has been awakened by the I2CXDevMgr AO because it has put an
+    * event into the raw queue */
+   QEvt const *evtI2CDone = QEQueue_get(&CPLR_evtQueue);
+   if (evtI2CDone != (QEvt *)0 ) {
+      LOG_printf("Found expected event in queue\n");
+      switch( evtI2CDone->sig ) {
+         case I2C1_DEV_READ_DONE_SIG:
+            DBG_printf("Got I2C1_DEV_READ_DONE_SIG\n");
+            *pBytesRead = ((I2CReadDoneEvt *) evtI2CDone)->bytes;
+            status = ((I2CReadDoneEvt *) evtI2CDone)->status;
+            MEMCPY(pBuffer,
+                  ((I2CReadDoneEvt *) evtI2CDone)->dataBuf,
+                  *pBytesRead
+            );
+
+            break;
+         default:
+            WRN_printf("Unknown signal %d\n", evtI2CDone->sig);
+            break;
+      }
+      QF_gc(evtI2CDone);         /* Don't forget to garbage collect the event */
+   } else {
+      WRN_printf("Expected event not found in queue\n");
+   }
+
+I2C_readDevMemFRT_ERR_HANDLER:    /* Handle any error that may have occurred. */
+   ERR_COND_OUTPUT(
+         status,
+         ACCESS_FREERTOS,
+         "Error 0x%08x reading I2C device %s on %s at mem addr 0x%02x\n",
+         status,
+         I2C_devToStr(iDev),
+         I2C_busToStr( I2C_getBus(iDev) ),
+         I2C_getMemAddr( iDev ) + offset
+   );
 }
 
 /******************************************************************************/

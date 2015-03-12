@@ -29,6 +29,7 @@ DBG_DEFINE_THIS_MODULE( DBG_MODL_CPLR );/* For debug system to ID this module */
 /* Private variables and Local objects ---------------------------------------*/
 QEQueue CPLR_evtQueue;         /**< raw queue to talk between FreeRTOS and QP */
 
+TaskHandle_t xHandle_CPLR;                       /**< Handle to the CPLR task */
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
 
@@ -61,7 +62,7 @@ void CPLR_Task( void* pvParameters )
                      evt->sig,
                      ((EthEvt const *)evt)->msg_len
                );
-
+#if 0
                /* Going to use this signal to test some stuff in this thread */
                /* Do a read from the EEPROM on the I2C Bus */
                status = I2C_readDevMemEVT(
@@ -106,7 +107,33 @@ void CPLR_Task( void* pvParameters )
                   QF_gc(evt);
                }
 
+#endif
+               uint8_t buffer[20];
+               uint16_t bytesRead = 0;
 
+               DBG_printf("Issuing I2C_readDevMemFRT()\n");
+               status = I2C_readDevMemFRT(
+                     EEPROM,                          // I2C_Dev_t iDev,
+                     0x00,                            // uint16_t offset,
+                     buffer,                          // uint8_t *pBuffer,
+                     sizeof(buffer),                  // uint16_t nBufferSize,
+                     &bytesRead,                      // uint16_t *pBytesRead,
+                     17                               // uint16_t nBytesToRead
+               );
+
+               char tmp[120];
+               uint16_t tmpLen = 0;
+               status = CON_hexToStr(
+                     (const uint8_t *)buffer,             // data to convert
+                     bytesRead,                           // length of data to convert
+                     tmp,                                 // where to write output
+                     sizeof(tmp),                         // max size of output buffer
+                     &tmpLen,                             // size of the resulting output
+                     0,                                   // no columns
+                     ' ',                                 // separator
+                     true                                 // bPrintX
+               );
+               DBG_printf("I2C_readDevMemFRT() returned having read %d bytes: %s\n", bytesRead, tmp);
                break;
 
             default:

@@ -24,8 +24,8 @@
 /* Exported defines ----------------------------------------------------------*/
 /* Exported macros -----------------------------------------------------------*/
 /* Exported types ------------------------------------------------------------*/
- extern QEQueue CPLR_evtQueue; /**< Global raw queue to talk between FreeRTOS and QP */
-
+extern QEQueue CPLR_evtQueue; /**< Global raw queue to talk between FreeRTOS and QP */
+extern TaskHandle_t xHandle_CPLR; /**< Globally accessible handle to the CPLR task */
 /* Exported constants --------------------------------------------------------*/
 /* Exported functions --------------------------------------------------------*/
 

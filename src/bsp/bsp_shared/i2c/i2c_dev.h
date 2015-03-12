@@ -196,6 +196,15 @@ CBErrorCode I2C_calcPageWriteSizes(
       uint16_t pageSize
 );
 
+CBErrorCode I2C_readDevMemFRT(
+      I2C_Dev_t iDev,
+      uint16_t offset,
+      uint8_t *pBuffer,
+      uint16_t nBufferSize,
+      uint16_t *pBytesRead,
+      uint16_t nBytesToRead
+);
+
 /**
  * @brief  Posts an event read a block of data from a memory device on any I2C bus.
  *
