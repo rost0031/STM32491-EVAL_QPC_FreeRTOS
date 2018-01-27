@@ -12,8 +12,8 @@
  *
  * @date    03/01/2013
  * @author  Harry Rostovtsev
- * @email   harry_rostovtsev@datacard.com
- * Copyright (C) 2013 Datacard. All rights reserved.
+ * @email   rost0031@gmail.com
+ * Copyright (C) 2013 Harry Rostovtsev. All rights reserved.
  */
 // $Log$
 #ifndef BASE64_WRAPPER_H_
@@ -80,4 +80,4 @@ int base64_encode(char *in, int in_len, char *out, int out_max_len);
 int base64_decode(char *in, int in_len, char *out, int out_max_len);
 
 #endif                                                   /* BASE64_WRAPPER_H_ */
-/******** Copyright (C) 2013 Datacard. All rights reserved *****END OF FILE****/
+/******** Copyright (C) 2013 Harry Rostovtsev. All rights reserved *****END OF FILE****/

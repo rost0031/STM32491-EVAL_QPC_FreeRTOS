@@ -33,8 +33,8 @@
  *
  * @date    10/24/2014
  * @author  Harry Rostovtsev
- * @email   harry_rostovtsev@datacard.com
- * Copyright (C) 2014 Datacard. All rights reserved.
+ * @email   rost0031@gmail.com
+ * Copyright (C) 2014 Harry Rostovtsev. All rights reserved.
  *
  * @addtogroup groupI2C
  * @{
@@ -1042,4 +1042,4 @@ static QState I2C1DevMgr_Idle(I2C1DevMgr * const me, QEvt const * const e) {
 /**
  * @} end addtogroup groupI2C
  */
-/******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/
+/******** Copyright (C) 2014 Harry Rostovtsev. All rights reserved *****END OF FILE****/

@@ -1753,8 +1753,8 @@ dbg_slow_printf(&quot;Constructor\n&quot;);</code>
  *
  * @date    10/24/2014
  * @author  Harry Rostovtsev
- * @email   harry_rostovtsev@datacard.com
- * Copyright (C) 2014 Datacard. All rights reserved.
+ * @email   rost0031@gmail.com
+ * Copyright (C) 2014 Harry Rostovtsev. All rights reserved.
  *
  * @addtogroup groupI2C
  * @{
@@ -1792,7 +1792,7 @@ $define(AOs::I2CBusMgr)
 /**
  * @} end addtogroup groupI2C
  */
-/******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/</text>
+/******** Copyright (C) 2014 Harry Rostovtsev. All rights reserved *****END OF FILE****/</text>
   </file>
   <file name="I2CBusMgr_gen.h">
    <text>/**
@@ -1811,8 +1811,8 @@ $define(AOs::I2CBusMgr)
  *
  * @date    10/24/2014
  * @author  Harry Rostovtsev
- * @email   harry_rostovtsev@datacard.com
- * Copyright (C) 2014 Datacard. All rights reserved.
+ * @email   rost0031@gmail.com
+ * Copyright (C) 2014 Harry Rostovtsev. All rights reserved.
  *
  * @addtogroup groupI2C
  * @{
@@ -1843,7 +1843,7 @@ $declare(AOs::AO_I2CBusMgr[MAX_I2C_BUS])
  * @} end addtogroup groupI2C
  */
 #endif                                                        /* I2CBUSMGR_H_ */
-/******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/</text>
+/******** Copyright (C) 2014 Harry Rostovtsev. All rights reserved *****END OF FILE****/</text>
   </file>
  </directory>
 </model>

@@ -4,8 +4,8 @@
  *
  * @date   	09/29/2014
  * @author 	Harry Rostovtsev
- * @email  	harry_rostovtsev@datacard.com
- * Copyright (C) 2014 Datacard. All rights reserved.
+ * @email  	rost0031@gmail.com
+ * Copyright (C) 2014 Harry Rostovtsev. All rights reserved.
  *
  * @addtogroup groupComm
  * @{
@@ -52,4 +52,4 @@ CBErrorCode COMM_parseMsg( uint8_t *pBuffer, uint16_t bufferLen, MsgSrc msgSourc
 #endif
 
 #endif                                                             /* COMM_H_ */
-/******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/
+/******** Copyright (C) 2014 Harry Rostovtsev. All rights reserved *****END OF FILE****/

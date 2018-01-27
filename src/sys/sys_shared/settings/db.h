@@ -21,8 +21,8 @@
  *
  * @date 	Feb 24, 2015
  * @author	Harry Rostovtsev
- * @email   harry_rostovtsev@datacard.com
- * Copyright (C) 2015 Datacard.  All rights reserved. 
+ * @email   rost0031@gmail.com
+ * Copyright (C) 2015 Harry Rostovtsev.  All rights reserved. 
  *
  * @addtogroup groupSettings
  * @{
@@ -185,4 +185,4 @@ CBErrorCode DB_setElemBLK(
  * end addtogroup groupSettings
  */
 #endif                                                               /* DB_H_ */
-/******** Copyright (C) 2015 Datacard. All rights reserved *****END OF FILE****/
+/******** Copyright (C) 2015 Harry Rostovtsev. All rights reserved *****END OF FILE****/

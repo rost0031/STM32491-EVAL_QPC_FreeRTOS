@@ -5,8 +5,8 @@
  *
  * @date   	09/23/2014
  * @author 	Harry Rostovtsev
- * @email  	harry_rostovtsev@datacard.com
- * Copyright (C) 2014 Datacard. All rights reserved.
+ * @email  	rost0031@gmail.com
+ * Copyright (C) 2014 Harry Rostovtsev. All rights reserved.
  *
  * @addtogroup groupNOR
  * @{
@@ -561,4 +561,4 @@ inline void NOR_CallbackExample( void )
  * end addtogroup groupNOR
  */
 
-/******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/
+/******** Copyright (C) 2014 Harry Rostovtsev. All rights reserved *****END OF FILE****/

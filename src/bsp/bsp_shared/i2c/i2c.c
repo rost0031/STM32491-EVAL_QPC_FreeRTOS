@@ -4,8 +4,8 @@
  *
  * @date   	06/30/2014
  * @author 	Harry Rostovtsev
- * @email  	harry_rostovtsev@datacard.com
- * Copyright (C) 2014 Datacard. All rights reserved.
+ * @email  	rost0031@gmail.com
+ * Copyright (C) 2014 Harry Rostovtsev. All rights reserved.
  *
  * @addtogroup groupI2C
  * @{
@@ -971,4 +971,4 @@ static CBErrorCode I2C_TIMEOUT_UserCallbackRaw(
  * end addtogroup groupI2C
  */
 
-/******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/
+/******** Copyright (C) 2014 Harry Rostovtsev. All rights reserved *****END OF FILE****/

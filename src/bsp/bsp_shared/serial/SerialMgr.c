@@ -26,8 +26,8 @@
  *
  * @date    06/02/2014
  * @author  Harry Rostovtsev
- * @email   harry_rostovtsev@datacard.com
- * Copyright (C) 2014 Datacard. All rights reserved.
+ * @email   rost0031@gmail.com
+ * Copyright (C) 2014 Harry Rostovtsev. All rights reserved.
  *
  * @addtogroup groupSerial
  * @{
@@ -364,4 +364,4 @@ static QState SerialMgr_Busy(SerialMgr * const me, QEvt const * const e) {
 /**
  * @} end addtogroup groupSerial
  */
-/******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/
+/******** Copyright (C) 2014 Harry Rostovtsev. All rights reserved *****END OF FILE****/

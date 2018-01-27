@@ -6,8 +6,8 @@
  *
  * @date   	1/22/2013
  * @author 	Harry Rostovtsev
- * @email  	harry_rostovtsev@datacard.com
- * Copyright (C) 2013 Datacard. All rights reserved.
+ * @email  	rost0031@gmail.com
+ * Copyright (C) 2013 Harry Rostovtsev. All rights reserved.
  */
 // $Log$
 #ifndef FLASH_IF_H_
@@ -100,4 +100,4 @@ uint32_t FLASH_Read_UINT32(uint32_t address);
 FLASH_Status FLASH_Write_UINT32(uint32_t address, uint32_t data);
 
 #endif /* FLASH_IF_H_ */
-/******** Copyright (C) 2013 Datacard. All rights reserved *****END OF FILE****/
+/******** Copyright (C) 2013 Harry Rostovtsev. All rights reserved *****END OF FILE****/

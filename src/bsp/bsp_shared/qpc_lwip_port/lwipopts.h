@@ -4,8 +4,8 @@
  * @brief  lwIP options for the Redwood_H1 Board
  * @date   09/27/2012
  * @author Harry Rostovtsev
- * @email  harry_rostovtsev@datacard.com
- * Copyright (C) 2012 Datacard. All rights reserved.
+ * @email  rost0031@gmail.com
+ * Copyright (C) 2012 Harry Rostovtsev. All rights reserved.
  */
 // $Log$
 
@@ -568,4 +568,4 @@ The STM32F207 allows computing and verifying the IP, UDP, TCP and ICMP checksums
 //#define DNS_DEBUG                       LWIP_DBG_OFF
 
 #endif /* __LWIPOPTS_H__ */
- /*********** Copyright (C) 2012 Datacard. All rights reserved *****END OF FILE****/
+ /*********** Copyright (C) 2012 Harry Rostovtsev. All rights reserved *****END OF FILE****/

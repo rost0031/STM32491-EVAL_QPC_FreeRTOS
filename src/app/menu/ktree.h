@@ -5,8 +5,8 @@
  *
  * @date    09/29/2014
  * @author  Harry Rostovtsev
- * @email   harry_rostovtsev@datacard.com
- * Copyright (C) 2014 Datacard. All rights reserved.
+ * @email   rost0031@gmail.com
+ * Copyright (C) 2014 Harry Rostovtsev. All rights reserved.
  *
  * # Design of the KTREE algorithm
  * The Menu is built around a k-ary tree (k-tree) which is implemented as a
@@ -236,4 +236,4 @@ void KTREE_fakeMenuTest( void );
 #endif
 
 #endif                                                            /* KTREE_H_ */
-/******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/
+/******** Copyright (C) 2014 Harry Rostovtsev. All rights reserved *****END OF FILE****/

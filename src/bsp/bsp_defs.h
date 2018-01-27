@@ -4,8 +4,8 @@
  *
  * @date   09/27/2012
  * @author Harry Rostovtsev
- * @email  harry_rostovtsev@datacard.com
- * Copyright (C) 2012 Datacard. All rights reserved.
+ * @email  rost0031@gmail.com
+ * Copyright (C) 2012 Harry Rostovtsev. All rights reserved.
  *
  * @addtogroup groupBSP
  * @{
@@ -124,4 +124,4 @@ Q_ASSERT_COMPILE(MAX_KERNEL_AWARE_CMSIS_PRI <= (0xFF >>( 8 - __NVIC_PRIO_BITS)))
  */
 
 #endif                                                         /* BSP_DEFS_H_ */
-/******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/
+/******** Copyright (C) 2014 Harry Rostovtsev. All rights reserved *****END OF FILE****/

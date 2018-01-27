@@ -6,8 +6,8 @@
  *
  * @date   	09/27/2012
  * @author 	Harry Rostovtsev
- * @email  	harry_rostovtsev@datacard.com
- * Copyright (C) 2012 Datacard. All rights reserved.
+ * @email  	rost0031@gmail.com
+ * Copyright (C) 2012 Harry Rostovtsev. All rights reserved.
  *
  * @addtogroup groupLWIP_QPC_Eth
  * @{
@@ -72,4 +72,4 @@ struct pbuf *pbuf_new(u8_t *data, u16_t len);
  */
 
 #endif                                                             /* LWIP_H_ */
-/******** Copyright (C) 2012 Datacard. All rights reserved *****END OF FILE****/
+/******** Copyright (C) 2012 Harry Rostovtsev. All rights reserved *****END OF FILE****/

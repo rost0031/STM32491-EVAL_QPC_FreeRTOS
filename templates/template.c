@@ -4,8 +4,8 @@
  *
  * @date 	Feb 13, 2015
  * @author	<Your Name>
- * @email   <your_email@datacard.com>
- * Copyright (C) <Year> Datacard.  All rights reserved.
+ * @email   <your_email@Harry Rostovtsev.com>
+ * Copyright (C) <Year> Harry Rostovtsev.  All rights reserved.
  *
  * @addtogroup group<GroupNameForDoxygenDocumentation>
  * @{
@@ -37,4 +37,4 @@ void function( void* pvParameters )
  * end addtogroup group<GroupNameForDoxygenDocumentation>
  */
 
-/******** Copyright (C) <Year> Datacard. All rights reserved *****END OF FILE****/
+/******** Copyright (C) <Year> Harry Rostovtsev. All rights reserved *****END OF FILE****/

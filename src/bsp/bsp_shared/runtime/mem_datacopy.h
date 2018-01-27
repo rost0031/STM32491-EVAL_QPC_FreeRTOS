@@ -5,8 +5,8 @@
  *
  * @date   	1/07/2013
  * @author 	Harry Rostovtsev
- * @email  	harry_rostovtsev@datacard.com
- * Copyright (C) 2012 Datacard. All rights reserved.
+ * @email  	rost0031@gmail.com
+ * Copyright (C) 2012 Harry Rostovtsev. All rights reserved.
  */
 
 #ifndef MEM_DATACOPY_H_

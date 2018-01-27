@@ -234,8 +234,8 @@ QEQueue_init(
  *
  * @date    06/02/2014
  * @author  Harry Rostovtsev
- * @email   harry_rostovtsev@datacard.com
- * Copyright (C) 2014 Datacard. All rights reserved.
+ * @email   rost0031@gmail.com
+ * Copyright (C) 2014 Harry Rostovtsev. All rights reserved.
  *
  * @addtogroup groupSerial
  * @{
@@ -270,7 +270,7 @@ $define(AOs::SerialMgr)
 /**
  * @} end addtogroup groupSerial
  */
-/******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/</text>
+/******** Copyright (C) 2014 Harry Rostovtsev. All rights reserved *****END OF FILE****/</text>
   </file>
   <file name="SerialMgr_gen.h">
    <text>/**
@@ -284,8 +284,8 @@ $define(AOs::SerialMgr)
  *
  * @date    06/02/2014
  * @author  Harry Rostovtsev
- * @email   harry_rostovtsev@datacard.com
- * Copyright (C) 2014 Datacard. All rights reserved.
+ * @email   rost0031@gmail.com
+ * Copyright (C) 2014 Harry Rostovtsev. All rights reserved.
  *
  * @addtogroup groupSerial
  * @{
@@ -313,7 +313,7 @@ $declare(AOs::AO_SerialMgr)
  * @} end addtogroup groupSerial
  */
 #endif                                                        /* SERIALMGR_H_ */
-/******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/</text>
+/******** Copyright (C) 2014 Harry Rostovtsev. All rights reserved *****END OF FILE****/</text>
   </file>
  </directory>
 </model>

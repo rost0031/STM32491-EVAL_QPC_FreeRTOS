@@ -5,8 +5,8 @@
  *
  * @date   06/06/2014
  * @author Harry Rostovtsev
- * @email  Harry_Rostovtsev@datacard.com
- * Copyright (C) 2014 Datacard. All rights reserved.
+ * @email  rost0031@gmail.com
+ * Copyright (C) 2014 Harry Rostovtsev. All rights reserved.
  *
  * @addtogroup groupTime
  * @{
@@ -240,4 +240,4 @@ time_T TIME_getTime( void )
  * end addtogroup groupTime
  */
 
-/******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/
+/******** Copyright (C) 2014 Harry Rostovtsev. All rights reserved *****END OF FILE****/

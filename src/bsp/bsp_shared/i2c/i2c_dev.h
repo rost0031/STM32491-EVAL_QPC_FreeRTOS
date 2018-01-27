@@ -4,8 +4,8 @@
  *
  * @date    10/28/2014
  * @author  Harry Rostovtsev
- * @email   harry_rostovtsev@datacard.com
- * Copyright (C) 2014 Datacard. All rights reserved.
+ * @email   rost0031@gmail.com
+ * Copyright (C) 2014 Harry Rostovtsev. All rights reserved.
  *
  * @addtogroup groupI2C
  * @{
@@ -412,4 +412,4 @@ CBErrorCode I2C_writeDevMemBLK(
 #endif
 
 #endif                                                          /* I2C_DEV_H_ */
-/******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/
+/******** Copyright (C) 2014 Harry Rostovtsev. All rights reserved *****END OF FILE****/

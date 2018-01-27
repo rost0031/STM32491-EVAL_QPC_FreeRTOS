@@ -4,8 +4,8 @@
  *
  * @date   	10/13/2014
  * @author 	Harry Rostovtsev
- * @email  	harry_rostovtsev@datacard.com
- * Copyright (C) 2014 Datacard. All rights reserved.
+ * @email  	rost0031@gmail.com
+ * Copyright (C) 2014 Harry Rostovtsev. All rights reserved.
  *
  * @addtogroup groupMenu
  * @{
@@ -82,4 +82,4 @@ void MENU_toggleEthDebugAction(
 #endif
 
 #endif                                                    /* DBG_OUT_CNTRL_H_ */
-/******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/
+/******** Copyright (C) 2014 Harry Rostovtsev. All rights reserved *****END OF FILE****/

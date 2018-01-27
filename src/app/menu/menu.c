@@ -5,8 +5,8 @@
  *
  * @date    09/29/2014
  * @author  Harry Rostovtsev
- * @email   harry_rostovtsev@datacard.com
- * Copyright (C) 2014 Datacard. All rights reserved.
+ * @email   rost0031@gmail.com
+ * Copyright (C) 2014 Harry Rostovtsev. All rights reserved.
  *
  * @addtogroup groupMenu
  * @{
@@ -412,4 +412,4 @@ static void MENU_printNode( treeNode_t* node, MsgSrc msgSrc )
  * end addtogroup groupMenu
  */
 
-/******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/
+/******** Copyright (C) 2014 Harry Rostovtsev. All rights reserved *****END OF FILE****/

@@ -7,8 +7,8 @@
  *
  * @date   01/22/2013
  * @author Harry Rostovtsev
- * @email  harry_rostovhtsev@datacard.com
- * Copyright (C) 2013 Datacard. All rights reserved.
+ * @email  harry_rostovhtsev@Harry Rostovtsev.com
+ * Copyright (C) 2013 Harry Rostovtsev. All rights reserved.
  *
  * @addtogroup groupSharedBSP
  * @{
@@ -66,4 +66,4 @@ uint32_t CRC32_Calc( char *buffer, int size );
  */
 
 #endif                                                      /* CRC32COMPAT_H_ */
-/******** Copyright (C) 2013 Datacard. All rights reserved *****END OF FILE****/
+/******** Copyright (C) 2013 Harry Rostovtsev. All rights reserved *****END OF FILE****/

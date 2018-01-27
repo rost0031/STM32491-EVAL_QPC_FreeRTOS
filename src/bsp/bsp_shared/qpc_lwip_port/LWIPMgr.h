@@ -32,8 +32,8 @@
  *
  * @date       06/09/2014
  * @author     Harry Rostovtsev
- * @email      harry_rostovtsev@datacard.com
- * Copyright (C) 2014 Datacard. All rights reserved.
+ * @email      rost0031@gmail.com
+ * Copyright (C) 2014 Harry Rostovtsev. All rights reserved.
  *
  * @addtogroup groupLWIP_QPC_Eth
  * @{
@@ -123,4 +123,4 @@ void ETH_SendMsg_Handler(MsgEvt const *e);
  * end addtogroup groupLWIP_QPC_Eth
  */
 #endif                                                          /* LWIPMGR_H_ */
-/******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/
+/******** Copyright (C) 2014 Harry Rostovtsev. All rights reserved *****END OF FILE****/

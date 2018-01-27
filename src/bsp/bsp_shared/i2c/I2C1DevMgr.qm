@@ -877,8 +877,8 @@ dbg_slow_printf(&quot;Constructor\n&quot;);</code>
  *
  * @date    10/24/2014
  * @author  Harry Rostovtsev
- * @email   harry_rostovtsev@datacard.com
- * Copyright (C) 2014 Datacard. All rights reserved.
+ * @email   rost0031@gmail.com
+ * Copyright (C) 2014 Harry Rostovtsev. All rights reserved.
  *
  * @addtogroup groupI2C
  * @{
@@ -916,7 +916,7 @@ $define(AOs::I2C1DevMgr)
 /**
  * @} end addtogroup groupI2C
  */
-/******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/</text>
+/******** Copyright (C) 2014 Harry Rostovtsev. All rights reserved *****END OF FILE****/</text>
   </file>
   <file name="I2C1DevMgr_gen.h">
    <text>/**
@@ -937,8 +937,8 @@ $define(AOs::I2C1DevMgr)
  *
  * @date    10/24/2014
  * @author  Harry Rostovtsev
- * @email   harry_rostovtsev@datacard.com
- * Copyright (C) 2014 Datacard. All rights reserved.
+ * @email   rost0031@gmail.com
+ * Copyright (C) 2014 Harry Rostovtsev. All rights reserved.
  *
  * @addtogroup groupI2C
  * @{
@@ -967,7 +967,7 @@ $declare(AOs::AO_I2C1DevMgr)
  * @} end addtogroup groupI2C
  */
 #endif                                                       /* I2C1DEVMGR_H_ */
-/******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/</text>
+/******** Copyright (C) 2014 Harry Rostovtsev. All rights reserved *****END OF FILE****/</text>
   </file>
  </directory>
 </model>

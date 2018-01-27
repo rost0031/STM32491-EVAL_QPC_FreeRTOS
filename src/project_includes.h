@@ -8,8 +8,8 @@
  *
  * @date   06/19/2014
  * @author Harry Rostovtsev
- * @email  harry_rostovtsev@datacard.com
- * Copyright (C) 2014 Datacard. All rights reserved.
+ * @email  rost0031@gmail.com
+ * Copyright (C) 2014 Harry Rostovtsev. All rights reserved.
  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
@@ -77,7 +77,7 @@
  *
  * <b>Copyright Notice</b>
  *
- * Copyright (C) 2014 Datacard. All rights reserved.
+ * Copyright (C) 2014 Harry Rostovtsev. All rights reserved.
  */
 
 
@@ -225,4 +225,4 @@
 /* Exported constants --------------------------------------------------------*/
 /* Exported functions --------------------------------------------------------*/
 #endif                                                 /* PROJECT_INCLUDES_H_ */
-/******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/
+/******** Copyright (C) 2014 Harry Rostovtsev. All rights reserved *****END OF FILE****/

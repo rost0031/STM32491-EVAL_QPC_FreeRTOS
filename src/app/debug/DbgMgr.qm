@@ -168,8 +168,8 @@ QActive_ctor(&amp;me-&gt;super, (QStateHandler)&amp;DbgMgr_initial);</code>
  *
  * @date    10/15/2014
  * @author  Harry Rostovtsev
- * @email   harry_rostovtsev@datacard.com
- * Copyright (C) 2014 Datacard. All rights reserved.
+ * @email   rost0031@gmail.com
+ * Copyright (C) 2014 Harry Rostovtsev. All rights reserved.
  *
  * @addtogroup groupDbg
  * @{
@@ -207,7 +207,7 @@ $define(AOs::DbgMgr)
 /**
  * @} end addtogroup groupDbg
  */
-/******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/</text>
+/******** Copyright (C) 2014 Harry Rostovtsev. All rights reserved *****END OF FILE****/</text>
   </file>
   <file name="DbgMgr_gen.h">
    <text>/**
@@ -223,8 +223,8 @@ $define(AOs::DbgMgr)
  *
  * @date    10/15/2014
  * @author  Harry Rostovtsev
- * @email   harry_rostovtsev@datacard.com
- * Copyright (C) 2014 Datacard. All rights reserved.
+ * @email   rost0031@gmail.com
+ * Copyright (C) 2014 Harry Rostovtsev. All rights reserved.
  *
  * @addtogroup groupDbg
  * @{
@@ -257,7 +257,7 @@ $declare(AOs::AO_DbgMgr)
  * @} end addtogroup groupDbg
  */
 #endif                                                           /* DBGMGR_H_ */
-/******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/</text>
+/******** Copyright (C) 2014 Harry Rostovtsev. All rights reserved *****END OF FILE****/</text>
   </file>
  </directory>
 </model>

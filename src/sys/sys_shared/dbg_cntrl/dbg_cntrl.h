@@ -3,8 +3,8 @@
  * @brief  Declarations for debug and output functions over DMA serial console.
  * @date   09/09/2014
  * @author Harry Rostovtsev
- * @email  harry_rostovtsev@datacard.com
- * Copyright (C) 2014 Datacard. All rights reserved.
+ * @email  rost0031@gmail.com
+ * Copyright (C) 2014 Harry Rostovtsev. All rights reserved.
  *
  * @addtogroup groupDbgCntrl
  * @{
@@ -696,4 +696,4 @@ extern uint32_t  glbDbgConfig; /**< Allow global access to debug info */
  * @} end group groupDbgSlow
  */
 #endif                                                        /* DBG_CNTRL_H_ */
-/******** Copyright (C) 2014 Datacard. All rights reserved *****END OF FILE****/
+/******** Copyright (C) 2014 Harry Rostovtsev. All rights reserved *****END OF FILE****/
